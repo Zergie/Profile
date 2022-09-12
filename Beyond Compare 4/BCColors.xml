@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Produced by Beyond Compare 4 from Scooter Software -->
+<BCColors Version="1" MinVersion="1">
+	<TDirColors>
+		<DisjointFGColor Value="$00FF00"/>
+		<FontStr Value="Consolas;10"/>
+	</TDirColors>
+	<TFileColors>
+		<BGColor Value="$262525"/>
+		<ElementPSs>
+			<Item>
+				<ElementStr Value="&#2;Keyword"/>
+				<ValueStr Value="$20D69C56"/>
+			</Item>
+			<Item>
+				<ElementStr Value="&#2;Number"/>
+				<ValueStr Value="$A8CEB5"/>
+			</Item>
+			<Item>
+				<ElementStr Value="&#2;String"/>
+				<ValueStr Value="$859DD6"/>
+			</Item>
+			<Item>
+				<ElementStr Value="&#2;Directive"/>
+				<ValueStr Value="$9B9B9B"/>
+			</Item>
+			<Item>
+				<ElementStr Value="&#2;Comment"/>
+				<ValueStr Value="$4AA657"/>
+			</Item>
+		</ElementPSs>
+		<FGColor Value="$DCDCDC"/>
+		<GutterBGColor Value="$262525"/>
+		<HasInsigConflictBGColor Value="$414141"/>
+		<HasInsigDiffBGColor Value="$442525"/>
+		<HasInsigLeftBGColor Value="$262525"/>
+		<HasInsigRightBGColor Value="$262525"/>
+		<HasSigConflictBGColor Value="$1C1830"/>
+		<HasSigDiffBGColor Value="$262543"/>
+		<HasSigLeftBGColor Value="$211032"/>
+		<HasSigRightBGColor Value="$254325"/>
+		<InsigDiffFGColor Value="$FF5E5E"/>
+		<ListFontStr Value="Consolas;10"/>
+		<OutputBGColor Value="$003944"/>
+		<SelFocusedBGColor Value="$784F26"/>
+		<SigDiffFGColor Value="$3C2BD5"/>
+		<WhitespaceBGColor Value="$262525"/>
+		<WhitespaceFGColor Value="$FF000015"/>
+	</TFileColors>
+</BCColors>

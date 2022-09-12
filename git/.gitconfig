@@ -1,0 +1,93 @@
+[user]
+	email = wpuchinger@rocom.de
+	name = Wolfgang Puchinger
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[core]
+	ignorecase = false
+	pager = less --raw-control-chars
+	autocrlf = true
+	editor = C:/tools/neovim/nvim-win64/bin/nvim.exe \
+				-c 'startinsert' \
+				+'set termguicolors' \
+				+'inoremap <C-S> <ESC>:wq<CR>' \
+				+'inoremap <C-_> <C-o>z=' \
+				+'map <ESC> :q!<CR>' \
+				;
+[diff]
+	tool = bc
+[difftool "bc"]
+    cmd = \"c:/Program Files/Beyond Compare 4/bcomp.exe\" "$LOCAL" "$REMOTE" //title1=remote //title2=local //expandall
+[difftool "patch"]
+    cmd = \"C:/Program Files/Git/usr/bin/diff.exe\" "$LOCAL" "$REMOTE" --ignore-case --ignore-blank-lines --strip-trailing-cr > "$REMOTE.patch"
+[difftool]
+	prompt = false
+[merge]
+	tool = bc
+[mergetool]
+	prompt = true
+[mergetool "bc"]
+	path = c:/Program Files/Beyond Compare 4/bcomp.exe
+[i18n]
+	logOutputEncoding = utf-8
+[interactive]
+	singlekey = true
+[alias]
+	# logs
+	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
+	log-long   = log --color --graph --pretty=format:'%C(auto)%H%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
+	log-short  = log-pretty -5
+	
+	# shortcuts
+	plog = log-pretty
+	llog = log-long
+	slog = log-short
+
+	# branch management
+	pull-all = "!\
+		BRANCH=`git symbolic-ref --short HEAD`; \
+		for i in $(git for-each-ref --format='%(refname:short)' refs/heads/ | grep 'main\\|master\\|release'); \
+		do \
+			git checkout $i && git pull; \
+		done; \
+		git checkout $BRANCH; \
+	"
+	clean-branches = "!\
+		git checkout master || git checkout main && \
+		git pull ; \
+		git remote update origin --prune && \
+		for branch in $(git branch -vv | grep ': gone]' | awk '{print $1}'); do git branch -D $branch; done && \
+		git prune && \
+		git gc && \
+		git fsck && \
+		git pull && \
+		echo '' && \
+		echo 'Active branches are:' && \
+		git branch \
+	"
+	update-submodules = "!\
+		git submodule update --remote && \
+		git add . && \
+		git commit \
+	"
+	resolve-merge-conflict = "!\
+		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
+		for file in $FILES; do \
+			PATH=$(echo ./$file); \
+			'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
+		done; \
+	"
+	format = "!\
+		pwsh.exe -NoProfile -NonInteractive -Command  \" \
+		New-Alias -Name Format-Files -Value 'C:/Users/Puchinger.ROCOM.000/Documents/PowerShell/Enter-TauOfficeShell/Format-Files.ps1'; \
+		Get-GitStatus | Format-Files; \
+		\"; \
+	"
+	add-patch = "!\
+		git format; \
+		git add -p; \
+	"
+	

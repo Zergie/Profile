@@ -1,0 +1,227 @@
+$pwsh = Get-Process -PID $PID
+
+if ($pwsh.Commandline.EndsWith(".exe`"")) {
+    if ($(Get-ExecutionPolicy) -ne "ByPass") {
+        Start-Process $pwsh.Path -Verb RunAs "-Command","Set-ExecutionPolicy -ExecutionPolicy Bypass"
+    }
+    
+    $history_size = Get-ChildItem $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt | ForEach-Object { $_.Length / 1Mb }
+    if ($history_size -gt 10) {
+        Write-Host -ForegroundColor DarkGray "ConsoleHost_history : $(($_.Length / 1Mb).ToString("0.00")) Mb"
+    }
+
+    # initialize veracrypt
+    if (-not (Test-Path D:\)) {
+        $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
+
+        if ((Test-Path $veracypt_exe)) {
+            $name = "Encrypted"
+            $drive = "D:"
+        
+            Write-Host "mounting drive '$name'.." -ForegroundColor Yellow
+            $pass = Read-Host 'What is your password?' -AsSecureString
+        
+            & $veracypt_exe /d d /q /s | Out-Null
+            & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $((New-Object PSCredential "user",$pass).GetNetworkCredential().Password)
+        
+            while (-not (Test-Path $drive)) { Start-Sleep 1 }
+            $rename = New-Object -ComObject Shell.Application  
+            $rename.NameSpace("$drive\").Self.Name = "$name"
+        }
+    }
+
+    # import modules
+    Import-Module -SkipEditionCheck Microsoft.PowerShell.ConsoleGuiTools
+    Import-Module -SkipEditionCheck posh-git
+    Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
+    $GitPromptSettings.EnableFileStatusFromCache = $true
+
+    Get-ChildItem $PSScriptRoot -Filter Enter-*.ps1 |
+    ForEach-Object { 
+        Invoke-Expression "function $($_.BaseName) { & `"$($pwsh.Path)`" -noe -NoLogo -File `"$($_.FullName)`" }"
+    }
+
+    # load scripts
+    @(
+        Get-ChildItem "$PSScriptRoot\Startup\*.ps1" 
+    ) |
+        Where-Object Name -NE "Invoke-RestApi.ps1" |
+        ForEach-Object {
+            New-Alias -Name $_.BaseName -Value $_.FullName
+        }
+
+    # set alias to my programs
+    Set-Alias bcomp "C:/Program Files/Beyond Compare 4/bcomp.exe"
+    Set-Alias nvim "C:/tools/neovim/nvim-win64/bin/nvim.exe"
+    Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
+    Set-Alias choco "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
+    Set-Alias code "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
+
+    # set alias to my scripts
+    $dockerScript = "D:\Daten\docker.ps1"
+    New-Alias d $dockerScript # todo: remove alias
+    New-Alias gt Get-SqlTable
+    New-Alias rt Remove-SqlTable
+    New-Alias gf Get-SqlField
+    New-Alias gd Get-SqlDatabases
+    New-Alias sd Set-SqlDatabase
+    New-Alias gr Get-Random
+    New-Alias ut Update-SqlTable
+    New-Alias it Import-SqlTable
+    New-Alias s Get-string
+
+    # start mssql container
+    Start-Job -ArgumentList $credentials,$dockerScript -ScriptBlock {
+        param ([Hashtable] $credentials, [string] $dockerScript)
+    
+        function Test-SqlServerConnection {
+            $requestCallback = $state = $null
+            $socket = $credentials.ServerInstance -Split ','
+            $h = ($socket | Select-Object -First 1).ToString()
+            $p = ($socket | Select-Object -Skip 1 -First 1).ToString()
+            $client = New-Object System.Net.Sockets.TcpClient
+            $client.BeginConnect($h,$p,$requestCallback,$state) | Out-Null
+            foreach ($i in 0..99) {
+                if ($client.Connected) { 
+                    break
+                } else { 
+                    Start-Sleep -Milliseconds 1
+                }
+            }
+            $connected = $client.Connected
+            $client.Close()
+    
+            return $connected
+        }
+    
+        if (Test-SqlServerConnection) {
+            Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
+        } else {
+            Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'." 
+            & $dockerScript -Start
+    
+            if (Test-SqlServerConnection) {
+                Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
+            } else {
+                Write-Host "Could not connect to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Red
+            }
+        }
+    } | Out-Null
+
+    # set argument completer
+    Register-ArgumentCompleter -CommandName (Get-Alias Install-Database).ResolvedCommand -ParameterName Path -ScriptBlock { param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+        $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter docker_ftp.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
+    
+        if ($shouldUpdateJson) {
+            $ftp = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:ftp = (@\{[^}]+})").Matches.Groups[1].Value
+            
+            $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$($ftp.root)")
+            $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
+            $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
+            $FTPResponse = $FTPRequest.GetResponse()
+            $ResponseStream = $FTPResponse.GetResponseStream()
+            $StreamReader = New-Object System.IO.StreamReader $ResponseStream
+            $folders = ($StreamReader.ReadToEnd() -split "`n" ) | 
+                Where-Object { -not $_.Contains(".") } |
+                Where-Object { $_ -gt "" }
+            $StreamReader.close()
+            $ResponseStream.close()
+            $FTPResponse.Close()
+            
+            $subfolders = New-Object System.Collections.ArrayList
+            $folders |
+                ForEach-Object {
+                    $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$_")
+                    $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
+                    $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
+                    $FTPResponse = $FTPRequest.GetResponse()
+                    $ResponseStream = $FTPResponse.GetResponseStream()
+                    $StreamReader = New-Object System.IO.StreamReader $ResponseStream
+                    ($StreamReader.ReadToEnd() -split "`n" ) | 
+                        Where-Object { $_ -gt "" } |
+                        ForEach-Object { $_.Trim("`r", "`n") } |
+                        ForEach-Object { $subfolders.Add("ftp://$_") | Out-Null }
+                    $StreamReader.close()
+                    $ResponseStream.close()
+                    $FTPResponse.Close()
+                }
+            $subfolders | ConvertTo-Json | Out-File -Encoding UTF8 "$env:TEMP/docker_ftp.json"
+        }
+        
+        @(
+            @(
+                Get-ChildItem -Directory | 
+                    Where-Object { (Get-ChildItem "$($_.FullName)/*.bak" | Measure-Object).Count -ge 2 }
+                Get-ChildItem -File *.zip
+                Get-ChildItem -File *.7z
+            ) | 
+                Resolve-Path -Relative |
+                ForEach-Object { ($_ -replace "^.\\","") + "\" } |
+                ForEach-Object { ($_ -replace "\.(zip|7z)\\$",".`$1") } |
+                ForEach-Object { if (" " -in $_) { "`"$_`"" } else { $_ } }
+            Get-Content "$env:TEMP/docker_ftp.json" -Encoding UTF8 | ConvertFrom-Json
+        ) 
+            | ForEach-Object { $_.ToString() }
+            | Where-Object { $_.StartsWith($wordToComplete, [System.StringComparison]::OrdinalIgnoreCase) }
+            | ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+    }
+    
+    "Database","DatabaseName" |
+        ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                Invoke-Sqlcmd -Query "SELECT name FROM sys.databases WHERE database_id > 4 AND name LIKE '$wordToComplete%' ORDER BY name" | 
+                ForEach-Object name | 
+                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+    }}
+    
+    "Table","TableName" |
+        ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
+                if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
+                Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT name FROM sys.tables WHERE name LIKE '$wordToComplete%' ORDER BY name" |
+                ForEach-Object { if ($_.name -like '* *') { "'$($_.name)'" } else { $_.name } } |
+                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+    }}
+    
+    "ColumnName","Fields","Sort","Filter" |
+        ForEach-Object { Register-ArgumentCompleter -CommandName ("Get-SqlTable,Update-SqlTable,Remove-SqlTable,Read-SqlTableData" -split "," | Get-Alias -ErrorAction SilentlyContinue | ForEach-Object ResolvedCommand) -ParameterName $_ -ScriptBlock {
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
+                if ( $fakeBoundParameter.Contains("TableName")   ) { $fakeBoundParameter.Table    = $fakeBoundParameter.TableName }
+                if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
+                Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT COLUMN_NAME FROM Information_Schema.columns WHERE TABLE_NAME LIKE '$($fakeBoundParameter.Table)' AND COLUMN_NAME LIKE '$wordToComplete%' ORDER BY COLUMN_NAME" |
+                ForEach-Object COLUMN_NAME |
+                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+    }}
+    
+
+    # set new location
+    if ((Get-Location).Path -eq $env:USERPROFILE -and (Test-Path "C:\GIT")) {
+        Set-Location C:\GIT
+    }
+}
+
+$credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
+$PSDefaultParameterValues = @{
+    "Out-ConsoleGridView:OutputMode" = "Single"
+    
+    "*:Encoding" = 1252
+    
+    "Invoke-SqlCmd:ServerInstance" = $credentials.ServerInstance
+    "Invoke-SqlCmd:Username" = $credentials.Username
+    "Invoke-SqlCmd:Password" = $credentials.Password
+    "*:Database" = "master"
+    
+    "Write-SqlTableData:ServerInstance" = $credentials.ServerInstance
+    "Write-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+    "Write-SqlTableData:SchemaName" = "dbo"
+    "Write-SqlTableData:DatabaseName" = "master"
+
+    "Read-SqlTableData:ServerInstance" = $credentials.ServerInstance
+    "Read-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+    "Read-SqlTableData:SchemaName" = "dbo"
+    "Read-SqlTableData:DatabaseName" = "master"
+}
+
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete 

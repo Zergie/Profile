@@ -1,0 +1,4736 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Produced by Beyond Compare 4 from Scooter Software -->
+<BCSessions Version="1" MinVersion="1">
+	<TDirCompareSession Value="BETREUEN.scc &lt;--> tau-office.scc">
+		<LastModified Value="2016-04-12 10:00:22"/>
+		<Rules>
+			<ContentCompareKind Value="ccCRC32"/>
+			<UseContentComparison Value="True"/>
+			<UseTimestampComparison Value="False"/>
+		</Rules>
+		<Specs>
+			<Left Value="D:\TFS\Behörde\BETREUEN\BETREUEN.scc"/>
+			<Right Value="D:\TFS\Tau-Office\tau-office\tau-office.scc"/>
+		</Specs>
+		<State>
+			<DirHandling Value="dirCompareFilesOnly"/>
+			<DisplayFilter Value="[showSame, showLeftChanged, showRightChanged, showConflict]"/>
+		</State>
+	</TDirCompareSession>
+	<TDirCompareSession Value="tau-office-basis.scc &lt;--> tau-office.scc">
+		<LastModified Value="2016-04-12 10:00:22"/>
+		<Rules>
+			<UseTimestampComparison Value="False"/>
+		</Rules>
+		<Specs>
+			<Left Value="D:\TFS\Basisstatistik\tau-office-basis\tau-office-basis.scc"/>
+			<Right Value="D:\TFS\Tau-Office\tau-office\tau-office.scc"/>
+		</Specs>
+		<State>
+			<DirHandling Value="dirCompareFilesOnly"/>
+			<DisplayFilter Value="[showSame, showLeftChanged, showRightChanged, showConflict]"/>
+			<InsigIgnored Value="True"/>
+		</State>
+	</TDirCompareSession>
+	<TTextCompareSession Value="emaw-v2.09.xsd &lt;--> emaw-v2.08.xsd">
+		<LastModified Value="2016-04-12 10:00:22"/>
+		<Rules>
+			<ElementSigs>
+				<Item>
+					<ElementStr Value="Checksum"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="Metadata"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="NoSaveCTIWhenDisabled"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="Test"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="documentation"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="annotation"/>
+					<ValueBool Value="False"/>
+				</Item>
+				<Item>
+					<ElementStr Value="Leerzeichen"/>
+					<ValueBool Value="False"/>
+				</Item>
+			</ElementSigs>
+			<EmbeddedWSSig Value="True"/>
+			<TrailWSSig Value="True"/>
+		</Rules>
+		<Specs>
+			<Left Value="C:\Tau-Office1\emaw-v2.09.xsd"/>
+			<Right Value="C:\Tau-Office1\emaw-v2.08.xsd"/>
+		</Specs>
+		<State>
+			<InsigIgnored Value="True"/>
+			<ShowContext Value="True"/>
+		</State>
+	</TTextCompareSession>
+	<TSessionFolder>
+		<Items>
+			<TSessionFolder>
+				<Items>
+					<TTextCompareSession Value="old.rdp &lt;--> test.rdp">
+						<LastModified Value="2022-09-13 13:50:49"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="description"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\old.rdp"/>
+							<Right Value="C:\temp\test.rdp"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="stadt_nuernberg &lt;--> master">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-09-13 12:18:17"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\master"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> stadt_nuernberg.xml">
+						<LastModified Value="2022-09-13 12:18:17"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+							<Insigs>
+								<_0>
+									<FindText Value="description='[^']+'"/>
+									<IsRegExp Value="True"/>
+								</_0>
+								<_1>
+									<FindText Value="&lt;description>.+&lt;/description>"/>
+									<IsRegExp Value="True"/>
+								</_1>
+							</Insigs>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\schema\schema.xml"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="stadt_nuernberg &lt;--> master">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-09-12 14:55:02"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\DBMS\stadt_nuernberg"/>
+							<Right Value="C:\GIT\DBMS\master"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="orig.sql &lt;--> new.sql">
+						<LastModified Value="2022-08-26 15:06:17"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\orig.sql"/>
+							<Right Value="C:\temp\new.sql"/>
+						</Specs>
+						<State>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AdminTool.log">
+						<LastModified Value="2022-08-26 14:15:32"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\Downloads\AdminTool.log"/>
+						</Specs>
+						<State>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="679052739780864953.pdf &lt;--> test">
+						<Formats>
+							<Left Value=""/>
+							<Right Value=""/>
+						</Formats>
+						<LastModified Value="2022-08-18 12:16:26"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\679052739780864953.pdf"/>
+							<Right Value="C:\temp\test"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="test &lt;--> 679052739780864953.pdf">
+						<Formats>
+							<Left Value=""/>
+							<Right Value=""/>
+						</Formats>
+						<LastModified Value="2022-08-18 12:09:55"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\test"/>
+							<Right Value="C:\temp\679052739780864953.pdf"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="utils.vbp &lt;--> utils_tlbimp.vbp">
+						<LastModified Value="2022-08-17 15:54:30"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office-utils\utils.vbp"/>
+							<Right Value="C:\GIT\TauOffice\tau-office-utils\utils_tlbimp.vbp"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> schema_new.xml">
+						<LastModified Value="2022-08-02 09:37:28"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\DBMS\schema\schema.xml"/>
+							<Right Value="C:\GIT\DBMS\schema\schema_new.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="schema &lt;--> schema_new">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-06-29 16:08:37"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\DBMS\temp\schema"/>
+							<Right Value="C:\GIT\DBMS\temp\schema_new"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+							<SortCol Value="colSize"/>
+							<SortSide Value="dsRight"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> schema_new2.xml">
+						<LastModified Value="2022-06-29 16:03:40"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\DBMS\schema\schema.xml"/>
+							<Right Value="C:\GIT\DBMS\schema\schema_new2.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xml">
+						<LastModified Value="2022-06-15 14:00:45"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Program Files (x86)\Tau-Office\schema.xml"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\schema.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="dbms-patch.embedded.json &lt;--> script-json.embedded.json">
+						<LastModified Value="2022-06-02 09:25:07"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\rocom-service.dbms-patch-0.0.1\syntax\dbms-patch.embedded.json"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\sissel.json-script-tag-0.3.2\syntax\script-json.embedded.json"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="rocom-service.dbms-patch-0.0.1 &lt;--> sissel.json-script-tag-0.3.2">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-06-02 09:25:06"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\rocom-service.dbms-patch-0.0.1"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\sissel.json-script-tag-0.3.2"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+							<SortCol Value="colSize"/>
+							<SortSide Value="dsRight"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="package.json">
+						<LastModified Value="2022-06-02 09:25:06"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\rocom-service.dbms-patch-0.0.1\package.json"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\sissel.json-script-tag-0.3.2\package.json"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="syntaxes &lt;--> syntax">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-06-02 08:42:36"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\rocom-service.dbms-patch-0.0.1\syntaxes"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\.vscode\extensions\sissel.json-script-tag-0.3.2\syntax"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+							<SortCol Value="colSize"/>
+							<SortSide Value="dsRight"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="Druck_Aufgabenbreiche.ACR &lt;--> Druck_Aufgabenbereiche.ACR">
+						<LastModified Value="2022-05-17 15:49:08"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office\source\Druck_Aufgabenbreiche.ACR"/>
+							<Right Value="C:\GIT\TauOffice\tau-office\source\Druck_Aufgabenbereiche.ACR"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xml">
+						<LastModified Value="2022-05-03 13:59:02"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Program Files (x86)\Tau-Office\schema.xml"/>
+							<Right Value="C:\Program Files (x86)\Tau-Office\DBMS\schema\schema.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AddictionCareStatistic.cs">
+						<LastModified Value="2022-04-29 10:05:13"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office-plugins\Statistics\Statistics\AddictionCareStatistic\2021\AddictionCareStatistic.cs"/>
+							<Right Value="C:\GIT\TauOffice\tau-office-plugins\Statistics\Statistics\AddictionCareStatistic\2022\AddictionCareStatistic.cs"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="comp.xml &lt;--> 3907_20220228150526_042.xml">
+						<LastModified Value="2022-04-29 09:50:32"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\comp.xml"/>
+							<Right Value="C:\temp\3907_20220228150526_042.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="3907_20220228150526.xml &lt;--> 3907_20220228150526_042.xml">
+						<LastModified Value="2022-04-29 09:49:26"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\Downloads\3907_20220228150526.xml"/>
+							<Right Value="C:\temp\3907_20220228150526_042.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="QueueTools.py">
+						<LastModified Value="2022-04-13 09:50:04"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\QuickAndDirty\bsc\bnbmultiplier\QueueTools.py"/>
+							<Right Value="C:\GIT\QuickAndDirty\bsc\contracts\QueueTools.py"/>
+						</Specs>
+						<State>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="old.reg &lt;--> new.reg">
+						<LastModified Value="2022-04-04 12:32:58"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\Desktop\old.reg"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\Desktop\new.reg"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xsd &lt;--> schema.xsd.new">
+						<LastModified Value="2022-02-25 13:40:35"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\schema\schema.xsd"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\schema.xsd.new"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="source">
+						<Filters>
+							<NameFilter Value="-*.bak;-*.AC[FRQS];-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-02-25 13:01:29"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office\source"/>
+							<Right Value="C:\GIT\TauOffice\tau-office-basis\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="expected &lt;--> actual">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-02-22 09:55:49"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\WriteIssuesFromReferenceDatabaseToTemp\expected"/>
+							<Right Value="C:\temp\WriteIssuesFromReferenceDatabaseToTemp\actual"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="schema.xsd">
+						<LastModified Value="2022-02-21 15:02:00"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\Schema\v1.0\schema.xsd"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\Schema\schema.xsd"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="2_Anlage 1.txt">
+						<LastModified Value="2022-02-21 12:27:06"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\WriteIssuesFromReferenceDatabaseToTemp\expected\2_Anlage 1.txt"/>
+							<Right Value="C:\temp\WriteIssuesFromReferenceDatabaseToTemp\actual\2_Anlage 1.txt"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> test.xml">
+						<LastModified Value="2022-02-21 12:27:06"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\Schema\schema.xml"/>
+							<Right Value="C:\temp\test.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="SchemaAfterStrukturupdateXml.xml &lt;--> schema.xml">
+						<LastModified Value="2022-02-21 11:46:37"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\Admintool\DBMS\Resources\SchemaAfterStrukturupdateXml.xml"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\Schema\schema.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Abrechnung_10060B.ACR &lt;--> Abrechnung_10060H.ACR">
+						<LastModified Value="2022-02-17 14:12:25"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office\source\Abrechnung_10060B.ACR"/>
+							<Right Value="C:\GIT\TauOffice\tau-office\source\Abrechnung_10060H.ACR"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> SchemaAfterStrukturupdateXml.xml">
+						<LastModified Value="2022-02-16 12:39:19"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\Schema\schema.xml"/>
+							<Right Value="C:\GIT\TauOffice\Admintool\DBMS\Resources\SchemaAfterStrukturupdateXml.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="schema.xsd">
+						<LastModified Value="2022-02-16 12:38:32"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\Schema\schema.xsd"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\Schema\v1.0\schema.xsd"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="expected &lt;--> actual">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-02-16 12:20:18"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\expected"/>
+							<Right Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\actual"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="1_Anlage 6.txt">
+						<LastModified Value="2022-02-16 12:16:48"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\expected\1_Anlage 6.txt"/>
+							<Right Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\actual\1_Anlage 6.txt"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AGS.txt">
+						<LastModified Value="2022-02-16 11:43:49"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\expected\AGS.txt"/>
+							<Right Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\actual\AGS.txt"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AdminToolProtokol.txt">
+						<LastModified Value="2022-02-16 11:29:31"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\expected\AdminToolProtokol.txt"/>
+							<Right Value="C:\temp\SolveAll_WithReferenceDatabase_ReturnsIssues\actual\AdminToolProtokol.txt"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Expected.txt &lt;--> Actual.txt">
+						<LastModified Value="2022-02-15 16:57:21"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\Expected.txt"/>
+							<Right Value="C:\temp\Actual.txt"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="Fixture &lt;--> DatabaseFixture">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-02-14 12:49:54"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\Admintool\AdminTool.Test\DBMS\Fixture"/>
+							<Right Value="C:\GIT\TauOffice\Admintool\AdminTool.Test\DatabaseFixture"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="IndexTrait.cs &lt;--> IndexField.cs">
+						<LastModified Value="2022-01-20 17:32:47"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger\Desktop\source\TauOffice\Admintool\DBMS\Traits\IndexTrait.cs"/>
+							<Right Value="C:\Users\Puchinger\Desktop\source\TauOffice\Admintool\DBMS\Traits\IndexField.cs"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="remote &lt;--> local">
+						<LastModified Value="2022-01-11 16:19:30"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Right Value="C:\Users\Puchinger\Desktop\source\TauOffice\Admintool\TauOfficeHelper.Tests\TestBase.cs"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="Admintool">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-01-10 13:51:18"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\Admintool"/>
+							<Right Value="C:\Users\Puchinger\Desktop\source\TauOffice\Admintool"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showSame, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Admintool">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-01-10 12:28:03"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger\Desktop\source\TauOffice\Admintool"/>
+							<Right Value="C:\temp\Admintool"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showSame, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="Recorder.xml">
+						<LastModified Value="2021-12-16 12:29:44"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger\Desktop\source\RollerCoinBot\_worker\1\persistant\Recorder.xml"/>
+							<Right Value="C:\Users\Puchinger\Desktop\source\RollerCoinBot\_worker\0\persistant\Recorder.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="mod_BasisStatistik_XML.ACM">
+						<LastModified Value="2021-12-07 12:22:00"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger\Desktop\source\TauOffice\tau-office-basis\source\mod_BasisStatistik_XML.ACM"/>
+							<Right Value="C:\Users\Puchinger\Desktop\source\TauOffice\tau-office\source\mod_BasisStatistik_XML.ACM"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="IntegrationsmanagementStatistic2018.cs &lt;--> IntegrationsmanagementStatistic2021.cs">
+						<LastModified Value="2021-11-30 10:53:19"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger\Desktop\source\TauOffice\tau-office-plugins\Statistics\Statistics\IntegrationsManagementStatistic\IntegrationsmanagementStatistic2018.cs"/>
+							<Right Value="C:\Users\Puchinger\Desktop\source\TauOffice\tau-office-plugins\Statistics\Statistics\IntegrationsManagementStatistic\IntegrationsmanagementStatistic2021.cs"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="VIS_REFERENZ.xml &lt;--> BBH_PLUS.xml">
+						<LastModified Value="2021-11-02 10:27:25"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Program Files (x86)\Tau-Office2\VIS_REFERENZ.xml"/>
+							<Right Value="C:\Program Files (x86)\Tau-Office2\BBH_PLUS.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TPixCompareSession Value="alt.png &lt;--> neu.png">
+						<LastModified Value="2021-10-27 12:43:54"/>
+						<Specs>
+							<Left Value="C:\temp\alt.png"/>
+							<Right Value="C:\temp\neu.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Ghost Value="False"/>
+							<Tolerance Value="0"/>
+						</State>
+					</TPixCompareSession>
+					<TVerCompareSession Value="Accounting_setup.dll &lt;--> Accounting.dll">
+						<LastModified Value="2021-10-19 14:00:08"/>
+						<Specs>
+							<Left Value="C:\temp\Accounting_setup.dll"/>
+							<Right Value="C:\temp\Accounting.dll"/>
+						</Specs>
+					</TVerCompareSession>
+					<TPixCompareSession Value="middle_bug.png &lt;--> middle_bug.webp">
+						<LastModified Value="2021-10-14 14:34:16"/>
+						<Specs>
+							<Left Value="C:\temp\middle_bug.png"/>
+							<Right Value="C:\temp\middle_bug.webp"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Ghost Value="False"/>
+							<Tolerance Value="0"/>
+						</State>
+					</TPixCompareSession>
+					<TTextCompareSession Value="setup.nsi">
+						<LastModified Value="2021-10-04 12:32:08"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\NSI\setup.nsi"/>
+							<Right Value="C:\GIT\azure\TauOffice\NSI\setup.nsi"/>
+						</Specs>
+						<State>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="setup.nsi">
+						<LastModified Value="2021-10-04 12:31:48"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\NSI\setup.nsi"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="tau-office &lt;--> source">
+						<Filters>
+							<NameFilter Value="*.ACT"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:29:32"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOfficeOld\Tau-Office Helper\ &lt;--> tau-office-helper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:15:08"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOfficeOld\Tau-Office Helper\"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Tau-Office Helper &lt;--> TauOfficeHelper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:15:08"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\Tau-Office Helper\Tau-Office Helper"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Tau-Office Helper.Test &lt;--> TauOfficeHelper.Tests">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:14:10"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\Tau-Office Helper\Tau-Office Helper.Test"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper.Tests"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="struktur">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:13:38"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\struktur"/>
+							<Right Value="C:\GIT\azure\TauOffice\struktur"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="StrukturCheck &lt;--> source">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:12:23"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\StrukturCheck"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-strukturcheck\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="source">
+						<Filters>
+							<NameFilter Value="*.act"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:07:47"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="tau-office-basis &lt;--> source">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 11:07:47"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="References.ACREF">
+						<LastModified Value="2021-10-04 11:07:47"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="References.ACREF">
+						<LastModified Value="2021-10-04 11:07:47"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis\References.ACREF"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Prg_Optionen.ACT">
+						<LastModified Value="2021-10-04 10:58:51"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\Prg_Optionen.ACT"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\Prg_Optionen.ACT"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="source &lt;--> tau-office-updater">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 10:53:20"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office-updater\source"/>
+							<Right Value="C:\GIT\azure\TauOfficeOld\tau-office-updater"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Plugins &lt;--> tau-office-plugins">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 10:53:19"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Plugins"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-plugins"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="tau-office-updater">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-10-04 10:53:19"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office-updater"/>
+							<Right Value="C:\GIT\azure\TauOfficeOld\tau-office-updater"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="utils.vbp">
+						<LastModified Value="2021-10-04 10:32:32"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\utils\utils.vbp"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-utils\utils.vbp"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="tau-office &lt;--> source">
+						<Filters>
+							<NameFilter Value="*.act"/>
+						</Filters>
+						<LastModified Value="2021-10-01 16:41:44"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="Tau-Office Helper.csproj &lt;--> TauOfficeHelper.csproj">
+						<LastModified Value="2021-09-30 10:15:26"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Tau-Office Helper\Tau-Office Helper\Tau-Office Helper.csproj"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper\TauOfficeHelper.csproj"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Tau-Office Helper.Test.csproj &lt;--> TauOfficeHelper.Tests.csproj">
+						<LastModified Value="2021-09-30 10:15:26"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Tau-Office Helper\Tau-Office Helper.Test\Tau-Office Helper.Test.csproj"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper.Tests\TauOfficeHelper.Tests.csproj"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Tau-Office Helper.sln">
+						<LastModified Value="2021-09-29 11:22:39"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Tau-Office Helper\Tau-Office Helper.sln"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\Tau-Office Helper.sln"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\.\Tau-Office Helper\ &lt;--> tau-office-helper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-09-29 11:10:04"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\.\Tau-Office Helper\"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Tau-Office Helper.Test &lt;--> TauOfficeHelper.Tests">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-09-29 11:09:31"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Tau-Office Helper\Tau-Office Helper.Test"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper.Tests"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Tau-Office Helper &lt;--> TauOfficeHelper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-09-29 11:07:56"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Tau-Office Helper\Tau-Office Helper"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper\TauOfficeHelper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="References.ACREF">
+						<LastModified Value="2021-09-29 09:55:46"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\References.ACREF"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="remote &lt;--> local">
+						<LastModified Value="2021-09-27 12:20:12"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\.gitattributes"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Tagesansicht_Anmerkung.ACF">
+						<LastModified Value="2021-09-16 09:30:47"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\Tagesansicht_Anmerkung.ACF"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source\Tagesansicht_Anmerkung.ACF"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="remote &lt;--> local">
+						<LastModified Value="2021-09-16 09:23:58"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source\Tagesansicht_Anmerkung.ACF"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="ASD1_20181210 047.xml &lt;--> ASD1.xml">
+						<LastModified Value="2021-09-02 14:09:21"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\Desktop\ASD1_20181210 047.xml"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\Desktop\ASD1.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="ASD1_20190809 016.xml &lt;--> ASD1_20181210 047.xml">
+						<LastModified Value="2021-09-02 14:09:21"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Users\Puchinger.ROCOM.000\Desktop\ASD1_20190809 016.xml"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\Desktop\ASD1_20181210 047.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="local &lt;--> remote">
+						<LastModified Value="2021-08-11 10:52:37"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\1"/>
+							<Right Value="C:\GIT\azure\TauOffice\2"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Sprint-7.md &lt;--> Sprint-8.md">
+						<LastModified Value="2021-07-15 11:36:58"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\wiki\Notes\Sprint-7.md"/>
+							<Right Value="C:\GIT\azure\wiki\Notes\Sprint-8.md"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="azure-pipelines.yml">
+						<LastModified Value="2021-07-08 10:09:57"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\azure-pipelines.yml"/>
+							<Right Value="C:\GIT\azure\TauServer\azure-pipelines.yml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="modODBC.ACM">
+						<LastModified Value="2021-07-07 11:09:10"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\modODBC.ACM"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\modODBC.ACM"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="TauError.log">
+						<LastModified Value="2021-07-06 14:57:13"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Tau-Office\2021_Q1\TauError.log"/>
+							<Right Value="C:\Tau-Office\2021_Q2\TauError.log"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\Helper\ &lt;--> C:\GIT\azure\TauOffice\Admintool\">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\;-.*\;-bin\"/>
+						</Filters>
+						<LastModified Value="2021-06-24 17:09:42"/>
+						<Rules>
+							<AlignWiths>
+								<_0>
+									<FindText Value="TauOfficeHelper.csproj"/>
+									<PathMask Value=".\TauOfficeHelper\"/>
+									<ReplaceText Value="TauOfficeHelperMain.csproj"/>
+								</_0>
+								<_1>
+									<FindText Value="TauOfficeHelper.csproj"/>
+									<PathMask Value=".\"/>
+									<ReplaceText Value="TauOfficeHelperMain.csproj"/>
+								</_1>
+							</AlignWiths>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\Helper\"/>
+							<Right Value="C:\GIT\azure\TauOffice\Admintool\"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="TauOfficeHelper">
+						<Filters>
+							<NameFilter Value="-*.bak;-.*\;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-24 16:49:36"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\Admintool\TauOfficeHelper"/>
+							<Right Value="C:\GIT\azure\Helper\TauOfficeHelper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="PDFLibrary.cls.old &lt;--> PDFLibrary.cls">
+						<LastModified Value="2021-06-23 13:39:52"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office-utils\source\PDFLibrary.cls.old"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-utils\source\PDFLibrary.cls"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="PostBox.ACF &lt;--> ThemenUebersicht.ACF">
+						<LastModified Value="2021-06-09 15:57:32"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\PostBox.ACF"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office\source\ThemenUebersicht.ACF"/>
+						</Specs>
+						<State>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="config_20211002.xml">
+						<LastModified Value="2021-06-09 11:19:07"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Right Value="C:\GIT\azure\TauOffice\struktur\config_20211002.xml"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="Utils &lt;--> tau-office-utils">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-08 11:20:43"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\Utils"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-utils"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="Plugins &lt;--> tau-office-plugins">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-08 11:19:18"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\Plugins"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-plugins"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\StrukturCheck\ &lt;--> source">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-08 10:51:33"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\StrukturCheck\"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-strukturcheck\source"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Tau-Office Helper\ &lt;--> tau-office-helper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-08 10:50:55"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Tau-Office Helper\"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-helper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="edd07886-8901-4243-b24b-f8bd9924647f..docx &lt;--> 6932.docx">
+						<Formats>
+							<Left Value=""/>
+						</Formats>
+						<LastModified Value="2021-06-08 08:57:13"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\mantis3\TFS\edd07886-8901-4243-b24b-f8bd9924647f..docx"/>
+							<Right Value="C:\Users\Puchinger.ROCOM.000\Downloads\6932.docx"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\Helper\..\TauOffice 2021.04.16\Tau-Office Helper\ &lt;--> Helper">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-07 16:22:34"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\Helper\..\TauOffice 2021.04.16\Tau-Office Helper\"/>
+							<Right Value="C:\GIT\azure\Helper"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files\ &lt;--> Files">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-07 16:21:39"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files\"/>
+							<Right Value="C:\GIT\azure\TauOffice\Files"/>
+						</Specs>
+						<State>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files_tau\ &lt;--> Files">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2021-06-07 16:21:39"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files_tau\"/>
+							<Right Value="C:\GIT\azure\TauOffice\Files"/>
+						</Specs>
+						<State>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Plugins\ &lt;--> tau-office-plugins">
+						<Filters>
+							<NameFilter Value="-*.bak;-.*\;-obj\;-packages\;-bin\"/>
+						</Filters>
+						<LastModified Value="2021-06-07 16:20:11"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Plugins\"/>
+							<Right Value="C:\GIT\azure\TauOffice\tau-office-plugins"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<SortDown Value="True"/>
+						</State>
+					</TDirCompareSession>
+				</Items>
+			</TSessionFolder>
+			<TDirCompareSession>
+				<Filters>
+					<NameFilter Value="-*.bak;-obj\;-packages\"/>
+				</Filters>
+				<Rules>
+					<ContentCompareKind Value="ccCRC32"/>
+					<FollowSymLinks Value="True"/>
+					<UseContentComparison Value="True"/>
+					<UseTimestampComparison Value="False"/>
+				</Rules>
+				<State>
+					<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+					<InsigIgnored Value="True"/>
+				</State>
+			</TDirCompareSession>
+			<TTextCompareSession>
+				<Rules>
+					<ElementSigs>
+						<Item>
+							<ElementStr Value="Checksum"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Metadata"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="NoSaveCTIWhenDisabled"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Test"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="documentation"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="annotation"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Layout"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Kommentar2"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Kommentar3"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="Leerzeichen"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="TO_BUILD Anweisung"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="generated"/>
+							<ValueBool Value="False"/>
+						</Item>
+						<Item>
+							<ElementStr Value="description"/>
+							<ValueBool Value="False"/>
+						</Item>
+					</ElementSigs>
+					<EmbeddedWSSig Value="True"/>
+				</Rules>
+				<State>
+					<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+					<InsigIgnored Value="True"/>
+					<ShowContext Value="True"/>
+				</State>
+			</TTextCompareSession>
+			<TTextMergeSession>
+				<State>
+					<DisplayFilter Value="[showConflict]"/>
+					<InsigIgnored Value="True"/>
+					<ShowContext Value="True"/>
+				</State>
+			</TTextMergeSession>
+			<TDataCompareSession>
+				<State>
+					<InsigIgnored Value="True"/>
+				</State>
+			</TDataCompareSession>
+			<THexCompareSession>
+				<State>
+					<DisplayFilter Value="favDiff"/>
+				</State>
+			</THexCompareSession>
+			<TPixCompareSession>
+				<State>
+					<DiffMode Value="diffBlend"/>
+					<Ghost Value="False"/>
+					<Tolerance Value="0"/>
+				</State>
+			</TPixCompareSession>
+		</Items>
+	</TSessionFolder>
+</BCSessions>

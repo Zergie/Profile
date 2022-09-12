@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Produced by Beyond Compare 4 from Scooter Software -->
+<BCFileFormats Version="1">
+	<TTextFormat Value="&#2;JS">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="XML Sorted">
+		<ConvertKind Value="convertXMLSort"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;CPP">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;COBOL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TDataFormat Value="&#2;CSV">
+		<UseRes Value="True"/>
+	</TDataFormat>
+	<TTextFormat Value="&#2;DFM">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PAS">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TVerFormat Value="&#2;EXE">
+		<UseRes Value="True"/>
+	</TVerFormat>
+	<TTextFormat Value="&#2;HTML">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;JAVA">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TMP3Format Value="&#2;MP3">
+		<UseRes Value="True"/>
+	</TMP3Format>
+	<TDataFormat Value="&#2;MSEXCEL">
+		<UseRes Value="True"/>
+	</TDataFormat>
+	<TTextFormat Value="&#2;MSWORD">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PDF">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PERL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TPixFormat Value="&#2;PIX">
+		<UseRes Value="True"/>
+	</TPixFormat>
+	<TTextFormat Value="&#2;PYTHON">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;REG">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;RTF">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;SORT">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;SQL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;VB">
+		<CustomElementCaseSigs>
+			<Item>
+				<ElementStr Value="Test"/>
+				<ValueBool Value="False"/>
+			</Item>
+			<Item>
+				<ElementStr Value="Kommentar2"/>
+				<ValueBool Value="False"/>
+			</Item>
+			<Item>
+				<ElementStr Value="Kommentar3"/>
+				<ValueBool Value="False"/>
+			</Item>
+			<Item>
+				<ElementStr Value="TO_BUILD Anweisung"/>
+				<ValueBool Value="False"/>
+			</Item>
+		</CustomElementCaseSigs>
+		<Grammar>
+			<_0 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="&#2;Comment"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="('[^#]|rem[ \t])"/>
+				<StopText Value="[^_ \t][ \t]*$"/>
+			</_0>
+			<_1 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;Comment"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="(^|\s+)('|rem[ \t]).*$"/>
+			</_1>
+			<_2 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;Comment"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="('|rem[ \t])[ \t]*$"/>
+			</_2>
+			<_3 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;LineNum"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="^\d+\s*"/>
+			</_3>
+			<_4 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Checksum"/>
+				<IsRegExp Value="True"/>
+				<Text Value="^Checksum =[-]?\d+$"/>
+			</_4>
+			<_5 Value="TListTextGrammarItem">
+				<ElementStr Value="&#2;Keyword"/>
+				<CaseSensitive Value="False"/>
+				<Items>
+					<_0 Value="addhandler"/>
+					<_1 Value="addressof"/>
+					<_2 Value="alias"/>
+					<_3 Value="and"/>
+					<_4 Value="andalso"/>
+					<_5 Value="ansi"/>
+					<_6 Value="as"/>
+					<_7 Value="assembly"/>
+					<_8 Value="auto"/>
+					<_9 Value="boolean"/>
+					<_10 Value="byref"/>
+					<_11 Value="byte"/>
+					<_12 Value="byval"/>
+					<_13 Value="call"/>
+					<_14 Value="case"/>
+					<_15 Value="catch"/>
+					<_16 Value="cbool"/>
+					<_17 Value="cbyte"/>
+					<_18 Value="cchar"/>
+					<_19 Value="cdate"/>
+					<_20 Value="cdbl"/>
+					<_21 Value="cdec"/>
+					<_22 Value="char"/>
+					<_23 Value="cint"/>
+					<_24 Value="class"/>
+					<_25 Value="clng"/>
+					<_26 Value="cobj"/>
+					<_27 Value="const"/>
+					<_28 Value="cshort"/>
+					<_29 Value="csng"/>
+					<_30 Value="cstr"/>
+					<_31 Value="ctype"/>
+					<_32 Value="date"/>
+					<_33 Value="decimal"/>
+					<_34 Value="declare"/>
+					<_35 Value="default"/>
+					<_36 Value="delegate"/>
+					<_37 Value="dim"/>
+					<_38 Value="directcast"/>
+					<_39 Value="do"/>
+					<_40 Value="double"/>
+					<_41 Value="each"/>
+					<_42 Value="else"/>
+					<_43 Value="elseif"/>
+					<_44 Value="end"/>
+					<_45 Value="enum"/>
+					<_46 Value="erase"/>
+					<_47 Value="error"/>
+					<_48 Value="event"/>
+					<_49 Value="exit"/>
+					<_50 Value="explicit"/>
+					<_51 Value="false"/>
+					<_52 Value="finally"/>
+					<_53 Value="for"/>
+					<_54 Value="friend"/>
+					<_55 Value="function"/>
+					<_56 Value="get"/>
+					<_57 Value="gettype"/>
+					<_58 Value="goto"/>
+					<_59 Value="handles"/>
+					<_60 Value="if"/>
+					<_61 Value="implements"/>
+					<_62 Value="imports"/>
+					<_63 Value="in"/>
+					<_64 Value="inherits"/>
+					<_65 Value="integer"/>
+					<_66 Value="interface"/>
+					<_67 Value="is"/>
+					<_68 Value="let"/>
+					<_69 Value="lib"/>
+					<_70 Value="like"/>
+					<_71 Value="long"/>
+					<_72 Value="loop"/>
+					<_73 Value="me"/>
+					<_74 Value="mod"/>
+					<_75 Value="module"/>
+					<_76 Value="mustinherit"/>
+					<_77 Value="mustoverride"/>
+					<_78 Value="mybase"/>
+					<_79 Value="myclass"/>
+					<_80 Value="namespace"/>
+					<_81 Value="new"/>
+					<_82 Value="next"/>
+					<_83 Value="not"/>
+					<_84 Value="nothing"/>
+					<_85 Value="notinheritable"/>
+					<_86 Value="notoverridable"/>
+					<_87 Value="object"/>
+					<_88 Value="on"/>
+					<_89 Value="option"/>
+					<_90 Value="optional"/>
+					<_91 Value="or"/>
+					<_92 Value="orelse"/>
+					<_93 Value="overloads"/>
+					<_94 Value="overridable"/>
+					<_95 Value="overrides"/>
+					<_96 Value="paramarray"/>
+					<_97 Value="preserve"/>
+					<_98 Value="private"/>
+					<_99 Value="property"/>
+					<_100 Value="protected"/>
+					<_101 Value="public"/>
+					<_102 Value="raiseevent"/>
+					<_103 Value="readonly"/>
+					<_104 Value="redim"/>
+					<_105 Value="region"/>
+					<_106 Value="removehandler"/>
+					<_107 Value="resume"/>
+					<_108 Value="return"/>
+					<_109 Value="select"/>
+					<_110 Value="set"/>
+					<_111 Value="shadows"/>
+					<_112 Value="shared"/>
+					<_113 Value="short"/>
+					<_114 Value="single"/>
+					<_115 Value="static"/>
+					<_116 Value="step"/>
+					<_117 Value="stop"/>
+					<_118 Value="string"/>
+					<_119 Value="structure"/>
+					<_120 Value="sub"/>
+					<_121 Value="synclock"/>
+					<_122 Value="then"/>
+					<_123 Value="throw"/>
+					<_124 Value="to"/>
+					<_125 Value="true"/>
+					<_126 Value="try"/>
+					<_127 Value="typeof"/>
+					<_128 Value="unicode"/>
+					<_129 Value="until"/>
+					<_130 Value="variant"/>
+					<_131 Value="wend"/>
+					<_132 Value="when"/>
+					<_133 Value="while"/>
+					<_134 Value="with"/>
+					<_135 Value="withevents"/>
+					<_136 Value="writeonly"/>
+					<_137 Value="xor"/>
+				</Items>
+			</_5>
+			<_6 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;Identifier"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="[_a-z]\w*"/>
+			</_6>
+			<_7 Value="TListTextGrammarItem">
+				<ElementStr Value="&#2;Number"/>
+				<IsRegExp Value="True"/>
+				<Items>
+					<_0 Value="\d+(S|I|L)"/>
+					<_1 Value="\d+(\.\d+)?([Ee][+-]?\d+)?(F|R|D)?"/>
+				</Items>
+			</_7>
+			<_8 Value="TListTextGrammarItem">
+				<ElementStr Value="&#2;Number"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Items>
+					<_0 Value="\&amp;h[a-f\d]+"/>
+					<_1 Value="\&amp;o[0-7]+"/>
+				</Items>
+			</_8>
+			<_9 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;String"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="&quot;([^&quot;]|&quot;&quot;)*$"/>
+			</_9>
+			<_10 Value="TBasicTextGrammarItem">
+				<ElementStr Value="&#2;String"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="&quot;([^&quot;]|&quot;&quot;)*&quot;c?"/>
+			</_10>
+			<_11 Value="TListTextGrammarItem">
+				<ElementStr Value="&#2;Operator"/>
+				<Items>
+					<_0 Value="("/>
+					<_1 Value=")"/>
+					<_2 Value="."/>
+					<_3 Value="!"/>
+					<_4 Value="#"/>
+					<_5 Value=","/>
+					<_6 Value=":"/>
+					<_7 Value="&amp;"/>
+					<_8 Value="+"/>
+					<_9 Value="-"/>
+					<_10 Value="/"/>
+					<_11 Value="\"/>
+					<_12 Value="*"/>
+					<_13 Value="^"/>
+					<_14 Value="="/>
+					<_15 Value="&lt;"/>
+					<_16 Value=">"/>
+					<_17 Value="["/>
+					<_18 Value="]"/>
+				</Items>
+			</_11>
+			<_12 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Metadata"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="\s+0x[\dabcdef]+\s*[,]*"/>
+			</_12>
+			<_13 Value="TBasicTextGrammarItem">
+				<ElementStr Value="NoSaveCTIWhenDisabled"/>
+				<Text Value="    NoSaveCTIWhenDisabled =1"/>
+			</_13>
+			<_14 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Layout"/>
+				<IsRegExp Value="True"/>
+				<Text Value="^\s*LayoutCached((Left)|(Top)|(Width)|(Height))\s*=\d+"/>
+			</_14>
+			<_15 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Entwurfsänderung"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="^\s+\w+ =((\d+)|( NotDefault)|&quot;[^&quot;]+&quot;)$"/>
+			</_15>
+		</Grammar>
+		<LineNumCaseSig Value="False"/>
+		<Mask Value="*.bas;*.cls;*.ctl;*.frm;*.vb;*.vbp;*.vbs;*.acm;*.acf;*.acr"/>
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;XML">
+		<CustomElementCaseSigs>
+			<Item>
+				<ElementStr Value="documentation"/>
+				<ValueBool Value="False"/>
+			</Item>
+		</CustomElementCaseSigs>
+		<Grammar>
+			<_0 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="annotation"/>
+				<Text Value="&lt;xsd:annotation>"/>
+				<StopText Value="&lt;/xsd:annotation>"/>
+			</_0>
+			<_1 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="documentation"/>
+				<Text Value="&lt;xsd:documentation"/>
+				<StopText Value="&lt;/xsd:documentation>"/>
+			</_1>
+			<_2 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="&#2;Comment"/>
+				<Text Value="&lt;!--"/>
+				<StopText Value="-->"/>
+			</_2>
+			<_3 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="&#2;String"/>
+				<Text Value="&quot;"/>
+				<StopEOL Value="True"/>
+				<StopText Value="&quot;"/>
+			</_3>
+			<_4 Value="TListTextGrammarItem">
+				<ElementStr Value="&#2;Operator"/>
+				<Items>
+					<_0 Value="&lt;"/>
+					<_1 Value="/>"/>
+					<_2 Value=">"/>
+				</Items>
+			</_4>
+			<_5 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Leerzeichen"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="\s"/>
+			</_5>
+			<_6 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="Tag_Aktiv"/>
+				<CaseSensitive Value="False"/>
+				<Text Value="&lt;Aktiv>"/>
+				<StopText Value="&lt;/Aktiv>"/>
+			</_6>
+			<_7 Value="TBasicTextGrammarItem">
+				<ElementStr Value="Neues Element"/>
+				<CaseSensitive Value="False"/>
+				<IsRegExp Value="True"/>
+				<Text Value="&lt;to_build [^>]+>"/>
+			</_7>
+			<_8 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="generated"/>
+				<CaseSensitive Value="False"/>
+				<Text Value=" generated=&quot;"/>
+				<StopText Value="&quot;"/>
+			</_8>
+			<_9 Value="TDelimitedTextGrammarItem">
+				<ElementStr Value="TO_BUILD Anweisung"/>
+				<CaseSensitive Value="False"/>
+				<Text Value="&lt;to_build "/>
+				<StopText Value="/>"/>
+			</_9>
+		</Grammar>
+		<Mask Value="*.xml;*.xsd;*.xsl;*.act"/>
+		<UseRes Value="True"/>
+	</TTextFormat>
+</BCFileFormats>

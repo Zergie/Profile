@@ -1,0 +1,4 @@
+
+        Stop-SqlServer
+        Start-SqlServer
+    
