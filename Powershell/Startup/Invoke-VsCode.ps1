@@ -19,12 +19,20 @@ param (
 begin {
 }
 process {
-    if ($Path.GetType().FullName -eq 'System.Management.Automation.ScriptBlock') {
-        $Path = Invoke-Command $Path
+    if ($Path -is [System.Management.Automation.ScriptBlock]) {
+        if ($Path -like "* -?") {
+            $Path = Invoke-Expression "Get-Command $($Path.ToString() -replace '\s+-\?$','')"
+        } else {
+            $Path = Invoke-Command $Path
+        }
     }
-
-    if ($Path.GetType().FullName -eq 'System.Management.Automation.AliasInfo') {
+    
+    while ($Path -is [System.Management.Automation.AliasInfo]) {
         $Path = $Path.Definition
+
+        if (!(Test-Path $Path)) {
+            $Path = Get-Command $Path
+        }
     }
     
     if ($PSBoundParameters['Debug'].IsPresent) {
