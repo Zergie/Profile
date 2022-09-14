@@ -31,7 +31,6 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     }
 
     # import modules
-    Import-Module -SkipEditionCheck Microsoft.PowerShell.ConsoleGuiTools
     Import-Module -SkipEditionCheck posh-git
     Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
     $GitPromptSettings.EnableFileStatusFromCache = $true
@@ -203,9 +202,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 }
 
 $credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
-$PSDefaultParameterValues = @{
-    "Out-ConsoleGridView:OutputMode" = "Single"
-    
+$PSDefaultParameterValues = @{    
     "*:Encoding" = 1252
     
     "Invoke-SqlCmd:ServerInstance" = $credentials.ServerInstance

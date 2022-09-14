@@ -7,7 +7,6 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 $modules = @(
     "posh-git"
-    "Microsoft.PowerShell.ConsoleGuiTools"
     # "7Zip4PowerShell"
 )
 

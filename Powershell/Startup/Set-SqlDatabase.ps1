@@ -10,9 +10,7 @@ begin {
 }
 process {
     if ($PSDefaultParameterValues["*:Database"] -eq $Database) {
-        $Database = & "$PSScriptRoot\Get-SqlDatabases.ps1" | 
-                        Out-ConsoleGridView -OutputMode Single |
-                        ForEach-Object Name
+        Write-Host "Already on $Database"
     }
 
     if ($Database -eq "..") {
