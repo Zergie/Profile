@@ -47,14 +47,6 @@
 	slog = log-short
 
 	# branch management
-	pull-all = "!\
-		BRANCH=`git symbolic-ref --short HEAD`; \
-		for i in $(git for-each-ref --format='%(refname:short)' refs/heads/ | grep 'main\\|master\\|release'); \
-		do \
-			git checkout $i && git pull; \
-		done; \
-		git checkout $BRANCH; \
-	"
 	clean-branches = "!\
 		git checkout master || git checkout main && \
 		git pull ; \
@@ -68,26 +60,10 @@
 		echo 'Active branches are:' && \
 		git branch \
 	"
-	update-submodules = "!\
-		git submodule update --remote && \
-		git add . && \
-		git commit \
-	"
 	resolve-merge-conflict = "!\
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
 		for file in $FILES; do \
 			PATH=$(echo ./$file); \
 			'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
 		done; \
-	"
-	format = "!\
-		pwsh.exe -NoProfile -NonInteractive -Command  \" \
-		New-Alias -Name Format-Files -Value 'C:/Users/Puchinger.ROCOM.000/Documents/PowerShell/Enter-TauOfficeShell/Format-Files.ps1'; \
-		Get-GitStatus | Format-Files; \
-		\"; \
-	"
-	add-patch = "!\
-		git format; \
-		git add -p; \
-	"
-	
+	"	
