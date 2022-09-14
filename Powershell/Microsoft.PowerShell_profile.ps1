@@ -108,63 +108,6 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     } | Out-Null
 
     # set argument completer
-    Register-ArgumentCompleter -CommandName (Get-Alias Install-Database).ResolvedCommand -ParameterName Path -ScriptBlock { param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
-        $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter docker_ftp.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
-    
-        if ($shouldUpdateJson) {
-            $ftp = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:ftp = (@\{[^}]+})").Matches.Groups[1].Value
-            
-            $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$($ftp.root)")
-            $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
-            $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
-            $FTPResponse = $FTPRequest.GetResponse()
-            $ResponseStream = $FTPResponse.GetResponseStream()
-            $StreamReader = New-Object System.IO.StreamReader $ResponseStream
-            $folders = ($StreamReader.ReadToEnd() -split "`n" ) | 
-                Where-Object { -not $_.Contains(".") } |
-                Where-Object { $_ -gt "" }
-            $StreamReader.close()
-            $ResponseStream.close()
-            $FTPResponse.Close()
-            
-            $subfolders = New-Object System.Collections.ArrayList
-            $folders |
-                ForEach-Object {
-                    $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$_")
-                    $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
-                    $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
-                    $FTPResponse = $FTPRequest.GetResponse()
-                    $ResponseStream = $FTPResponse.GetResponseStream()
-                    $StreamReader = New-Object System.IO.StreamReader $ResponseStream
-                    ($StreamReader.ReadToEnd() -split "`n" ) | 
-                        Where-Object { $_ -gt "" } |
-                        ForEach-Object { $_.Trim("`r", "`n") } |
-                        ForEach-Object { $subfolders.Add("ftp://$_") | Out-Null }
-                    $StreamReader.close()
-                    $ResponseStream.close()
-                    $FTPResponse.Close()
-                }
-            $subfolders | ConvertTo-Json | Out-File -Encoding UTF8 "$env:TEMP/docker_ftp.json"
-        }
-        
-        @(
-            @(
-                Get-ChildItem -Directory | 
-                    Where-Object { (Get-ChildItem "$($_.FullName)/*.bak" | Measure-Object).Count -ge 2 }
-                Get-ChildItem -File *.zip
-                Get-ChildItem -File *.7z
-            ) | 
-                Resolve-Path -Relative |
-                ForEach-Object { ($_ -replace "^.\\","") + "\" } |
-                ForEach-Object { ($_ -replace "\.(zip|7z)\\$",".`$1") } |
-                ForEach-Object { if (" " -in $_) { "`"$_`"" } else { $_ } }
-            Get-Content "$env:TEMP/docker_ftp.json" -Encoding UTF8 | ConvertFrom-Json
-        ) 
-            | ForEach-Object { $_.ToString() }
-            | Where-Object { $_.StartsWith($wordToComplete, [System.StringComparison]::OrdinalIgnoreCase) }
-            | ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-    }
-    
     "Database","DatabaseName" |
         ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
             param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
