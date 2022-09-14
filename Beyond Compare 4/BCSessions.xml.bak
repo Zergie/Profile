@@ -81,6 +81,189 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="old.rdp &lt;--> test.rdp">
+						<LastModified Value="2022-09-13 13:50:49"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="description"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\temp\old.rdp"/>
+							<Right Value="C:\temp\test.rdp"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="stadt_nuernberg &lt;--> master">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-09-13 12:18:17"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\master"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
+					<TTextCompareSession Value="schema.xml &lt;--> stadt_nuernberg.xml">
+						<LastModified Value="2022-09-13 12:18:17"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+							<Insigs>
+								<_0>
+									<FindText Value="description='[^']+'"/>
+									<IsRegExp Value="True"/>
+								</_0>
+								<_1>
+									<FindText Value="&lt;description>.+&lt;/description>"/>
+									<IsRegExp Value="True"/>
+								</_1>
+							</Insigs>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\DBMS\schema\schema.xml"/>
+							<Right Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg.xml"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TDirCompareSession Value="stadt_nuernberg &lt;--> master">
+						<Filters>
+							<NameFilter Value="-*.bak;-obj\;-packages\"/>
+						</Filters>
+						<LastModified Value="2022-09-12 14:55:02"/>
+						<Rules>
+							<ContentCompareKind Value="ccCRC32"/>
+							<FollowSymLinks Value="True"/>
+							<UseContentComparison Value="True"/>
+							<UseTimestampComparison Value="False"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\DBMS\stadt_nuernberg"/>
+							<Right Value="C:\GIT\DBMS\master"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+							<InsigIgnored Value="True"/>
+						</State>
+					</TDirCompareSession>
 					<TTextCompareSession Value="orig.sql &lt;--> new.sql">
 						<LastModified Value="2022-08-26 15:06:17"/>
 						<Rules>
@@ -2902,7 +3085,7 @@
 							<EmbeddedWSSig Value="True"/>
 						</Rules>
 						<Specs>
-							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis\References.ACREF"/>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
 							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
 						</Specs>
 						<State>
@@ -2966,7 +3149,7 @@
 							<EmbeddedWSSig Value="True"/>
 						</Rules>
 						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
+							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis\References.ACREF"/>
 							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
 						</Specs>
 						<State>
@@ -4443,85 +4626,6 @@
 							<SortDown Value="True"/>
 						</State>
 					</TDirCompareSession>
-					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\utils\ &lt;--> tau-office-utils">
-						<Filters>
-							<NameFilter Value="-*.bak;-obj\;-packages\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 16:20:11"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\utils\"/>
-							<Right Value="C:\GIT\azure\TauOffice\tau-office-utils"/>
-						</Specs>
-						<State>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
-					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\tau-office\ &lt;--> source">
-						<Filters>
-							<NameFilter Value="-*.bak;-obj\;-packages\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 16:14:06"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\tau-office\"/>
-							<Right Value="C:\GIT\azure\TauOffice\tau-office\source"/>
-						</Specs>
-						<State>
-							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
-					<TDirCompareSession Value="struktur &lt;--> C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\struktur\">
-						<Filters>
-							<NameFilter Value="-*.bak;-obj\;-packages\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 16:12:47"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\struktur"/>
-							<Right Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\struktur\"/>
-						</Specs>
-						<State>
-							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
-					<TDirCompareSession Value="tau-office &lt;--> source">
-						<Filters>
-							<NameFilter Value="-*.bak;-obj\;-packages\;-temp\;-backups\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 10:58:56"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice 2021.04.16\tau-office"/>
-							<Right Value="C:\GIT\azure\TauOffice\tau-office\source"/>
-						</Specs>
-						<State>
-							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
 				</Items>
 			</TSessionFolder>
 			<TDirCompareSession>
@@ -4537,8 +4641,6 @@
 				<State>
 					<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
 					<InsigIgnored Value="True"/>
-					<SortCol Value="colSize"/>
-					<SortSide Value="dsRight"/>
 				</State>
 			</TDirCompareSession>
 			<TTextCompareSession>
@@ -4592,11 +4694,16 @@
 							<ElementStr Value="generated"/>
 							<ValueBool Value="False"/>
 						</Item>
+						<Item>
+							<ElementStr Value="description"/>
+							<ValueBool Value="False"/>
+						</Item>
 					</ElementSigs>
 					<EmbeddedWSSig Value="True"/>
 				</Rules>
 				<State>
 					<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+					<InsigIgnored Value="True"/>
 					<ShowContext Value="True"/>
 				</State>
 			</TTextCompareSession>

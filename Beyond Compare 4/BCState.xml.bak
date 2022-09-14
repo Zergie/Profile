@@ -7,7 +7,7 @@
 			<TCheckForUpdatesDialog Value="1875;1525;2445;1828"/>
 			<TDataCompareSessionDialog Value="454;1407;985;1944"/>
 			<TDataFormatDialog Value="459;1380;980;1936"/>
-			<TDirCompareSessionDialog Value="1894;1397;2425;1934"/>
+			<TDirCompareSessionDialog Value="1894;1400;2425;1937"/>
 			<TDirLoadErrorDialog Value="478;460;961;580"/>
 			<TFileFormatManagerDialog Value="1821;1354;2741;1978"/>
 			<THexCompareViewFrame Value="0;850;1440;2462"/>
@@ -20,18 +20,18 @@
 			<TRestoreDialog Value="513;1474;927;1857"/>
 			<TSessionSaveAsDialog Value="552;1548;902;1797"/>
 			<TSourceControlManagerDialog Value="397;1353;1039;1977"/>
-			<TTextCompareSessionDialog Value="1881;1397;2438;1934"/>
+			<TTextCompareSessionDialog Value="1881;1400;2438;1937"/>
 			<TTextCompareViewFrame Value="0;850;1440;2462"/>
-			<TTextFormatDialog Value="1899;1387;2420;1943"/>
+			<TTextFormatDialog Value="1899;1391;2420;1947"/>
 			<TTextInfoDialog Value="267;340;700;707"/>
 			<TVerInfoDialog Value="503;1487;936;1854"/>
-			<TViewFrame Value="0;0;1440;1040"/>
+			<TViewFrame Value="0;824;1440;2527"/>
 		</FormPositions>
 	</TBcState>
 	<TCheckForUpdatesState>
 		<Build Value="26655"/>
 		<CheckID Value="273778395316224"/>
-		<LastChecked Value="2022-09-05 10:12:58"/>
+		<LastChecked Value="2022-09-12 12:05:25"/>
 		<MsgBody Value="Beyond Compare is not affected by the Log4J vulnerability. Our IT systems are also secured against it."/>
 		<MsgDate Value="2022-01-04 00:00:00"/>
 		<MsgTitle Value="LOG4J"/>
@@ -73,37 +73,37 @@
 	</TDataFindState>
 	<TDirCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16892\left"/>
-			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21660\left"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a17924\left"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21952\left"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a13360\left"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a10380\left"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a14772\left"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a13580\left"/>
-			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a33104\left"/>
+			<_0 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg"/>
+			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a24860\left"/>
+			<_2 Value="C:\GIT\DBMS\master"/>
+			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a27240\left"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a19920\left"/>
+			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a27224\left"/>
+			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16892\left"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21660\left"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a17924\left"/>
 		</LeftMRUSpecs>
 		<MRUFilters>
 			<_0 Value="-*.bak;-obj\;-packages\"/>
-			<_1 Value="-*.bak;-*.AC[FRQS];-obj\;-packages\"/>
-			<_2 Value="-*.bak;-*.AC[FRTQS];-obj\;-packages\"/>
-			<_3 Value="-*.bak;-*.AC[RTQS];-obj\;-packages\"/>
-			<_4 Value="-*.bak;-*.AC[RFQS];-obj\;-packages\"/>
-			<_5 Value="-*.bak;-*.AC[RFQ];-obj\;-packages\"/>
-			<_6 Value="-*.bak;-*.AC[RF];-obj\;-packages\"/>
-			<_7 Value="-*.bak;-*.AC[RT];-obj\;-packages\"/>
-			<_8 Value="-*.bak;-*.AC[RT};-obj\;-packages\;"/>
+			<_1 Value="-*.bak;-*.png;-obj\;-packages\"/>
+			<_2 Value="-*.bak;-*.AC[FRQS];-obj\;-packages\"/>
+			<_3 Value="-*.bak;-*.AC[FRTQS];-obj\;-packages\"/>
+			<_4 Value="-*.bak;-*.AC[RTQS];-obj\;-packages\"/>
+			<_5 Value="-*.bak;-*.AC[RFQS];-obj\;-packages\"/>
+			<_6 Value="-*.bak;-*.AC[RFQ];-obj\;-packages\"/>
+			<_7 Value="-*.bak;-*.AC[RF];-obj\;-packages\"/>
+			<_8 Value="-*.bak;-*.AC[RT];-obj\;-packages\"/>
 		</MRUFilters>
 		<RightMRUSpecs>
-			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16892\right"/>
-			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21660\right"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a17924\right"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21952\right"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a13360\right"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a10380\right"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a14772\right"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a13580\right"/>
-			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a33104\right"/>
+			<_0 Value="C:\GIT\TauOffice\DBMS\schema\master"/>
+			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a24860\right"/>
+			<_2 Value="C:\GIT\DBMS\stadt_nuernberg"/>
+			<_3 Value="C:\GIT\DBMS"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a27240\right"/>
+			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a19920\right"/>
+			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a27224\right"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16892\right"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a21660\right"/>
 		</RightMRUSpecs>
 	</TDirCompareState>
 	<TFileFormatManagerState>
@@ -149,45 +149,45 @@
 	<TPixCompareState>
 		<CenterRatio Value="905"/>
 		<LeftMRUSpecs>
-			<_0 Value="C:\temp\alt.png"/>
-			<_1 Value="C:\temp\middle_bug.png"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_preview\0001_actual.png"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7A2_1_2021_SmallAmount_ReturnsAccurateQuota\0001_actual.png"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0002_actual.png"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0001_actual.png"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_3Records_ReturnsOnePage\0001_actual.png"/>
-			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_4Records_ReturnsTwoPages\0002_actual.png"/>
+			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\a5488a76-76b0-481f-90ff-5f5ba31e55ff\Report.Reports.Billing.BillingG0419_1Record_WithOddEuroValue_ReturnsCorrectFormattedValues\0001_actual.png"/>
+			<_1 Value="C:\temp\alt.png"/>
+			<_2 Value="C:\temp\middle_bug.png"/>
+			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_preview\0001_actual.png"/>
+			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7A2_1_2021_SmallAmount_ReturnsAccurateQuota\0001_actual.png"/>
+			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0002_actual.png"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0001_actual.png"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_3Records_ReturnsOnePage\0001_actual.png"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Consolas;10"/>
 			<_1 Value="Segoe UI;9;;1"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\temp\neu.png"/>
-			<_1 Value="C:\temp\middle_bug.webp"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_preview\0001_expected.png"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7A2_1_2021_SmallAmount_ReturnsAccurateQuota\0001_expected.png"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0002_expected.png"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0001_expected.png"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_3Records_ReturnsOnePage\0001_expected.png"/>
-			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_4Records_ReturnsTwoPages\0002_expected.png"/>
+			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\a5488a76-76b0-481f-90ff-5f5ba31e55ff\Report.Reports.Billing.BillingG0419_1Record_WithOddEuroValue_ReturnsCorrectFormattedValues\0001_expected.png"/>
+			<_1 Value="C:\temp\neu.png"/>
+			<_2 Value="C:\temp\middle_bug.webp"/>
+			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.Billing.BillingG0419_preview\0001_expected.png"/>
+			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7A2_1_2021_SmallAmount_ReturnsAccurateQuota\0001_expected.png"/>
+			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0002_expected.png"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_7Records_ReturnsTwoPages\0001_expected.png"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Report.Reports.InsO_2021.InsO_Anlage7_1_2021_3Records_ReturnsOnePage\0001_expected.png"/>
 		</RightMRUSpecs>
 		<TagWidth Value="412"/>
-		<ZoomPct Value="80"/>
+		<ZoomPct Value="75"/>
 	</TPixCompareState>
 	<TTextCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\a4lkD9_schema.xml"/>
-			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\YXmwHp_clsAufwendung.ACM"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Se6cXh_clsEmawUtils.ACM"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\61Kg7S_Create-DbTableDictionary.ps1"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\nV92Gc_Create-DbTableDictionary.ps1"/>
-			<_5 Value="C:\temp\orig.sql"/>
-			<_6 Value="C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Dm1lgN_DokuTyp.ACF"/>
-			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\ko33xc_u_Registrierung.ACF"/>
+			<_0 Value="C:\temp\test.rdp"/>
+			<_1 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\ListenGen1.xml"/>
+			<_2 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\department.xml"/>
+			<_3 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\config.xml"/>
+			<_4 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\Adressen.xml"/>
+			<_5 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\Aufwendungen.xml"/>
+			<_6 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\Betreuer.xml"/>
+			<_7 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\Konto.xml"/>
+			<_8 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\Kontodruck Reihenfolge.xml"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Consolas;10"/>
@@ -201,15 +201,15 @@
 			<_8 Value="Consolas;6"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\GIT\DBMS\schema\schema.xml"/>
-			<_1 Value="C:\GIT\TauOffice\tau-office\source\clsAufwendung.ACM"/>
-			<_2 Value="C:\GIT\TauOffice\tau-office\source\clsEmawUtils.ACM"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\I2mYBT_Create-DbTableDictionary.ps1"/>
-			<_4 Value="C:\GIT\TauOffice\Admintool\Scripts\Create-DbTableDictionary.ps1"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a17924\right\tau-office\source\WIP_ServerViews.sql"/>
-			<_6 Value="C:\temp\new.sql"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\Downloads\AdminTool.log"/>
-			<_8 Value="C:\GIT\TauOffice\tau-office\source\DokuTyp.ACF"/>
+			<_0 Value="C:\temp\old.rdp"/>
+			<_1 Value="C:\GIT\TauOffice\DBMS\schema\master\table\ListenGen1.xml"/>
+			<_2 Value="C:\GIT\TauOffice\DBMS\schema\master\department.xml"/>
+			<_3 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Adressen.xml"/>
+			<_4 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Aufwendungen.xml"/>
+			<_5 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Betreuer.xml"/>
+			<_6 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Konto.xml"/>
+			<_7 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Kontodruck Reihenfolge.xml"/>
+			<_8 Value="C:\GIT\TauOffice\DBMS\schema\master\table\Kontotypen.xml"/>
 		</RightMRUSpecs>
 	</TTextCompareState>
 	<TTextEditState>
@@ -225,20 +225,27 @@
 	</TTextEditState>
 	<TTextFindState>
 		<FindItems>
-			<_0 Value="dll"/>
-			<_1 Value="m_Treeview.Data\(&quot;path&quot;"/>
-			<_2 Value="pdf"/>
-			<_3 Value="BelegErfassenReplizierung"/>
-			<_4 Value="Btn_Beleg_erfassen_Click"/>
-			<_5 Value="'Kurztexte"/>
-			<_6 Value="ADR_"/>
-			<_7 Value="Next"/>
-			<_8 Value="Stammdaten_stad"/>
+			<_0 Value="description='Filter[^']+' "/>
+			<_1 Value="description='Filter_[^']+' "/>
+			<_2 Value="description='Spalte [^']+' "/>
+			<_3 Value="description='Spalte [^' ]+' "/>
+			<_4 Value="description='[^' ]+' "/>
+			<_5 Value="description='[^' ]' "/>
+			<_6 Value="description='Spalte [^']' "/>
+			<_7 Value="description='[^']{15}' "/>
+			<_8 Value="description='[^']{14}' "/>
 		</FindItems>
 		<IsRegExp Value="True"/>
 		<ReplaceItems>
-			<_0 Value="m_OpenForAutomation"/>
-			<_1/>
+			<_0/>
+			<_1 Value="$1"/>
+			<_2 Value="Maske &quot;Betreuer&quot;"/>
+			<_3 Value="Register &quot;Wohnung&quot;"/>
+			<_4 Value="Adresse"/>
+			<_5 Value="&quot;Wohnungen&quot;"/>
+			<_6 Value="Maske &quot;Stammdaten&quot;"/>
+			<_7 Value="Stammdaten"/>
+			<_8 Value="m_OpenForAutomation"/>
 		</ReplaceItems>
 		<Wrap Value="True"/>
 	</TTextFindState>
