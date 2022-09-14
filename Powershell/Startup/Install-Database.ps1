@@ -5,8 +5,17 @@ Param(
     $Path
 )
 
-$p = $PSBoundParameters.GetEnumerator() | ForEach-Object -Begin { $r=@{} } -Process { $r.Add($_.Key, $_.Value) } -End{ $r }
+if ($PSDefaultParameterValues["*:Database"] -ne "master") {
+    $old = $PSDefaultParameterValues["*:Database"]
+    Set-SqlDatabase master
+}
+
+$result = @{}
+$p = $PSBoundParameters.GetEnumerator() | ForEach-Object -Process { $result.Add($_.Key, $_.Value) } -End{ $result }
 $p.Remove("Path")
 
 & $dockerScript -Install $Path @p
     
+if ($null -ne $old) {
+    Set-SqlDatabase $old
+}
