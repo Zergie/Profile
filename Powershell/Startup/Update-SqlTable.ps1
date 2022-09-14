@@ -27,6 +27,16 @@
         $connection.Open()
     }
     Process {
+        if ($Data -is [Hashtable]) {
+            $Data = [PSCustomObject]$Data
+        }
+
+        $data_types = Invoke-Sqlcmd `
+                        -Database $Database `
+                        -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
+
+
+        
         $Query = "UPDATE "
 
         if ($Table.Contains(".")) {
@@ -50,9 +60,22 @@
         foreach ($p in $Data.psobject.properties | Where-Object Name -ne $Filter) {
             if ($null -eq $p.Value) {
                 $db_value = [System.DBNull]::Value
+            } elseif ( $p.Name -in $data_types.column_name ) {
+                if ($p.Value.Length -eq 0) {
+                    $db_value = [System.DBNull]::Value
+                } else {
+                    $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
+                    
+                    if ($sql_data_type -eq "datetime") {
+                        $db_value = [Datetime]::Parse($p.Value)
+                    } else {
+                        $db_value = $p.Value
+                    }
+                }
             } else {
                 $db_value = $p.Value
             }
+            Write-Verbose "$($p.Name): $db_value"
             $command.Parameters.AddWithValue($p.Name, $db_value) | Out-Null
         }
         if ($PSBoundParameters.ContainsKey("Filter")) {
