@@ -9,12 +9,13 @@ param(
 begin {
 }
 process {
-    if ($PSDefaultParameterValues["*:Database"] -eq $Database) {
-        Write-Host "Already on $Database"
-    }
-
     if ($Database -eq "..") {
         $Database = "master"
+    }
+
+    if ($PSDefaultParameterValues["*:Database"] -eq $Database) {
+        Write-Host "Already on $Database"
+        exit 1
     }
     
     if ($Database -in (Invoke-Sqlcmd -Database master -Query "SELECT name FROM sys.databases ORDER BY name" | ForEach-Object Name)) {
