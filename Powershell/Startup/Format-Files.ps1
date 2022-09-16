@@ -143,7 +143,6 @@ end {
                 }
             }
             
-            Write-Host "$($item.Name) done"
             $index += 1
         }
 
@@ -151,6 +150,7 @@ end {
         Get-ChildItem -Recurse -Filter *.patch | Remove-Item
 
         Write-Progress -Completed
+        Write-Host "$count files formatted"
     }
 
     foreach ($key in @($PSDefaultParameterValues.Keys)) {

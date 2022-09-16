@@ -4,8 +4,7 @@
 param(
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true,
-               HelpMessage="Path to one or more locations.")]
+               ValueFromPipelineByPropertyName=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Date = (Get-Date).ToString("yyyy-MM-dd")
@@ -16,6 +15,7 @@ DynamicParam {
     # param Name
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $true
     $AttributeCollection.Add($ParameterAttribute)
 

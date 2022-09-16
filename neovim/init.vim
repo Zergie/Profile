@@ -1,5 +1,6 @@
 call plug#begin('~/AppData/Local/nvim/plugged')
     "  Plug 'github/copilot.vim'
+    Plug 'tomasiser/vim-code-dark'
 call plug#end()
 
 " enable github copilot for all files
@@ -12,3 +13,9 @@ au VimLeave * set guicursor=a:ver100
 set spell spelllang=en_us
 set langmenu=en_US
 let $LANG = 'en_US'
+
+" activate line numbers
+set number relativenumber
+
+" color scheme
+colorscheme codedark

@@ -38,13 +38,17 @@
 [alias]
 	# logs
 	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
-	log-long   = log --color --graph --pretty=format:'%C(auto)%H%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
-	log-short  = log-pretty -5
-	
+	log-short  = log-pretty -10
+	log-branch = "!\
+                BRANCH=`git symbolic-ref --short HEAD`; \
+                LAST_COMMON_COMMIT=`git rev-list ^master $BRANCH | tail -n1`; \
+                git log-pretty $LAST_COMMON_COMMIT^1..HEAD; \
+		"
+
 	# shortcuts
 	plog = log-pretty
-	llog = log-long
 	slog = log-short
+	blog = log-branch
 
 	# branch management
 	clean-branches = "!\
@@ -58,7 +62,8 @@
 		git pull && \
 		echo '' && \
 		echo 'Active branches are:' && \
-		git branch \
+		git branch; \
+		git checkout -; \
 	"
 	resolve-merge-conflict = "!\
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
