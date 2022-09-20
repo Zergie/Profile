@@ -40,10 +40,13 @@
 	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
 	log-short  = log-pretty -10
 	log-branch = "!\
-                BRANCH=`git symbolic-ref --short HEAD`; \
-                LAST_COMMON_COMMIT=`git rev-list ^master $BRANCH | tail -n1`; \
-                git log-pretty $LAST_COMMON_COMMIT^1..HEAD; \
-		"
+		MAIN_BRANCH=^`git branch --track --no-color | cut -c 3- | grep 'main\\|master'` ;\
+		BRANCH=`git symbolic-ref --short HEAD`; \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit rev-list $MAIN_BRANCH $BRANCH\\033[0m\"; \
+		LAST_COMMON_COMMIT=`git rev-list $MAIN_BRANCH $BRANCH | tail -n1`; \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit log-pretty $LAST_COMMON_COMMIT^1..HEAD\\033[0m\"; \
+		git log-pretty $LAST_COMMON_COMMIT^1..HEAD 2> /dev/null; \
+	"
 
 	# shortcuts
 	plog = log-pretty

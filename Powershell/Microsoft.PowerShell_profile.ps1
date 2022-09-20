@@ -58,110 +58,111 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"
-    New-Alias d $dockerScript # todo: remove alias
-    New-Alias gt Get-SqlTable
-    New-Alias rt Remove-SqlTable
-    New-Alias gf Get-SqlField
-    New-Alias gd Get-SqlDatabases
-    New-Alias sd Set-SqlDatabase
-    New-Alias gr Get-Random
-    New-Alias ut Update-SqlTable
-    New-Alias it Import-SqlTable
-    New-Alias s Get-string
+    if ((Test-Path $dockerScript)) {
+        New-Alias d $dockerScript # todo: remove alias
+        New-Alias gt Get-SqlTable
+        New-Alias rt Remove-SqlTable
+        New-Alias gf Get-SqlField
+        New-Alias gd Get-SqlDatabases
+        New-Alias sd Set-SqlDatabase
+        New-Alias gr Get-Random
+        New-Alias ut Update-SqlTable
+        New-Alias it Import-SqlTable
+        New-Alias s Get-string
 
-    # start mssql container
-    Start-Job -ArgumentList $credentials,$dockerScript -ScriptBlock {
-        param ([Hashtable] $credentials, [string] $dockerScript)
-    
-        function Test-SqlServerConnection {
-            $requestCallback = $state = $null
-            $socket = $credentials.ServerInstance -Split ','
-            $h = ($socket | Select-Object -First 1).ToString()
-            $p = ($socket | Select-Object -Skip 1 -First 1).ToString()
-            $client = New-Object System.Net.Sockets.TcpClient
-            $client.BeginConnect($h,$p,$requestCallback,$state) | Out-Null
-            foreach ($i in 0..99) {
-                if ($client.Connected) { 
-                    break
-                } else { 
-                    Start-Sleep -Milliseconds 1
+        # start mssql container
+        Start-Job -ArgumentList $credentials,$dockerScript -ScriptBlock {
+            param ([Hashtable] $credentials, [string] $dockerScript)
+        
+            function Test-SqlServerConnection {
+                $requestCallback = $state = $null
+                $socket = $credentials.ServerInstance -Split ','
+                $h = ($socket | Select-Object -First 1).ToString()
+                $p = ($socket | Select-Object -Skip 1 -First 1).ToString()
+                $client = New-Object System.Net.Sockets.TcpClient
+                $client.BeginConnect($h,$p,$requestCallback,$state) | Out-Null
+                foreach ($i in 0..99) {
+                    if ($client.Connected) { 
+                        break
+                    } else { 
+                        Start-Sleep -Milliseconds 1
+                    }
                 }
+                $connected = $client.Connected
+                $client.Close()
+        
+                return $connected
             }
-            $connected = $client.Connected
-            $client.Close()
-    
-            return $connected
-        }
-    
-        if (Test-SqlServerConnection) {
-            Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
-        } else {
-            Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'." 
-            & $dockerScript -Start
-    
+        
             if (Test-SqlServerConnection) {
                 Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
             } else {
-                Write-Host "Could not connect to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Red
+                Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'." 
+                & $dockerScript -Start
+        
+                if (Test-SqlServerConnection) {
+                    Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
+                } else {
+                    Write-Host "Could not connect to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Red
+                }
             }
-        }
-    } | Out-Null
+        } | Out-Null
 
-    # set argument completer
-    "Database","DatabaseName" |
-        ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-                Invoke-Sqlcmd -Query "SELECT name FROM sys.databases WHERE database_id > 4 AND name LIKE '$wordToComplete%' ORDER BY name" | 
-                ForEach-Object name | 
-                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-    }}
-    
-    "Table","TableName" |
-        ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-                if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
-                if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
-                Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT name FROM sys.tables WHERE name LIKE '$wordToComplete%' ORDER BY name" |
-                ForEach-Object { if ($_.name -like '* *') { "'$($_.name)'" } else { $_.name } } |
-                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-    }}
-    
-    "ColumnName","Fields","Sort","Filter" |
-        ForEach-Object { Register-ArgumentCompleter -CommandName ("Get-SqlTable,Update-SqlTable,Remove-SqlTable,Read-SqlTableData" -split "," | Get-Alias -ErrorAction SilentlyContinue | ForEach-Object ResolvedCommand) -ParameterName $_ -ScriptBlock {
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-                if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
-                if ( $fakeBoundParameter.Contains("TableName")   ) { $fakeBoundParameter.Table    = $fakeBoundParameter.TableName }
-                if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
-                Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT COLUMN_NAME FROM Information_Schema.columns WHERE TABLE_NAME LIKE '$($fakeBoundParameter.Table)' AND COLUMN_NAME LIKE '$wordToComplete%' ORDER BY COLUMN_NAME" |
-                ForEach-Object COLUMN_NAME |
-                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-    }}
-    
+        # set argument completer
+        "Database","DatabaseName" |
+            ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                    Invoke-Sqlcmd -Query "SELECT name FROM sys.databases WHERE database_id > 4 AND name LIKE '$wordToComplete%' ORDER BY name" | 
+                    ForEach-Object name | 
+                    ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+        }}
+        
+        "Table","TableName" |
+            ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                    if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
+                    if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
+                    Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT name FROM sys.tables WHERE name LIKE '$wordToComplete%' ORDER BY name" |
+                    ForEach-Object { if ($_.name -like '* *') { "'$($_.name)'" } else { $_.name } } |
+                    ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+        }}
+        
+        "ColumnName","Fields","Sort","Filter" |
+            ForEach-Object { Register-ArgumentCompleter -CommandName ("Get-SqlTable,Update-SqlTable,Remove-SqlTable,Read-SqlTableData" -split "," | Get-Alias -ErrorAction SilentlyContinue | ForEach-Object ResolvedCommand) -ParameterName $_ -ScriptBlock {
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+                    if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
+                    if ( $fakeBoundParameter.Contains("TableName")   ) { $fakeBoundParameter.Table    = $fakeBoundParameter.TableName }
+                    if (-not $fakeBoundParameter.Contains("Database")) { $fakeBoundParameter.Database = $PSDefaultParameterValues["*:Database"] }
+                    Invoke-Sqlcmd -Database $fakeBoundParameter.Database -Query "SELECT COLUMN_NAME FROM Information_Schema.columns WHERE TABLE_NAME LIKE '$($fakeBoundParameter.Table)' AND COLUMN_NAME LIKE '$wordToComplete%' ORDER BY COLUMN_NAME" |
+                    ForEach-Object COLUMN_NAME |
+                    ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+        }}
+
+        $credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
+        $PSDefaultParameterValues = @{    
+            "*:Encoding" = 1252
+            
+            "Invoke-SqlCmd:ServerInstance" = $credentials.ServerInstance
+            "Invoke-SqlCmd:Username" = $credentials.Username
+            "Invoke-SqlCmd:Password" = $credentials.Password
+            "*:Database" = "master"
+            
+            "Write-SqlTableData:ServerInstance" = $credentials.ServerInstance
+            "Write-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Write-SqlTableData:SchemaName" = "dbo"
+            "Write-SqlTableData:DatabaseName" = "master"
+
+            "Read-SqlTableData:ServerInstance" = $credentials.ServerInstance
+            "Read-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Read-SqlTableData:SchemaName" = "dbo"
+            "Read-SqlTableData:DatabaseName" = "master"
+        }
+    }
 
     # set new location
     if ((Get-Location).Path -eq $env:USERPROFILE -and (Test-Path "C:\GIT")) {
         Set-Location C:\GIT
     }
-}
-
-$credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
-$PSDefaultParameterValues = @{    
-    "*:Encoding" = 1252
-    
-    "Invoke-SqlCmd:ServerInstance" = $credentials.ServerInstance
-    "Invoke-SqlCmd:Username" = $credentials.Username
-    "Invoke-SqlCmd:Password" = $credentials.Password
-    "*:Database" = "master"
-    
-    "Write-SqlTableData:ServerInstance" = $credentials.ServerInstance
-    "Write-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-    "Write-SqlTableData:SchemaName" = "dbo"
-    "Write-SqlTableData:DatabaseName" = "master"
-
-    "Read-SqlTableData:ServerInstance" = $credentials.ServerInstance
-    "Read-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-    "Read-SqlTableData:SchemaName" = "dbo"
-    "Read-SqlTableData:DatabaseName" = "master"
 }
 
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete 
