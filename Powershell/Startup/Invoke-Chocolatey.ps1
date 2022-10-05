@@ -17,7 +17,7 @@ param (
 begin {
 }
 process {    
-    $cmd = "& 'C:\ProgramData\chocolatey\bin\choco.exe' $Command $Arguments"
+    $cmd = ". 'C:\ProgramData\chocolatey\bin\choco.exe' $Command $Arguments"
     $i=0
     Write-Debug $cmd
     
@@ -60,13 +60,12 @@ process {
                 } elseif ($_ -match "\d+ packages \w+" ) {
                     $end_found = $true
                     $_ | Write-Host -ForegroundColor Yellow
-                } elseif ($_ -match "[^ ]+ \d+(\.\d+){3}") {
+                } elseif ($_ -match "[^ ]+ \d+(\.\d+){1,3}") {
                     $array = $_ -split " "
 
                     [PSCustomObject]@{
                         "package name"= $array | Select-Object -First 1
-                        "version"     = $array | Select-Object -Skip 1 -First 1
-                        "description" = $array | Select-Object -Skip 2 | Join-String -Separator " "
+                        "version"     = [Version]::new(($array | Select-Object -Skip 1 -First 1))
                     }
                 }
                 $i++
