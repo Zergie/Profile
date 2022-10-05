@@ -54,7 +54,11 @@
                     $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
                     
                     if ($sql_data_type -eq "datetime") {
-                        $db_value = [Datetime]::Parse($p.Value)
+                        try {
+                            $db_value = [Datetime]::ParseExact($p.Value, "MM/dd/yyyy HH:mm:ss", $null)
+                        } catch {
+                            $db_value = [Datetime]::Parse($p.Value)
+                        }
                     } else {
                         $db_value = $p.Value
                     }

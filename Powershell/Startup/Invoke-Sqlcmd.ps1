@@ -128,7 +128,8 @@ process {
         $PSBoundParameters['Query'] = [string]$PSBoundParameters['Query']
 
         if ($PSBoundParameters['Verbose'].IsPresent) {
-            $PSBoundParameters | ConvertTo-Json -Compress | Write-Host -ForegroundColor Magenta
+            ($PSBoundParameters | ConvertTo-Json -Compress) -replace '"Verbose":\{[^\}]+\},?','' |
+                Write-Host -ForegroundColor Magenta
         }
 
         $outBuffer = $null

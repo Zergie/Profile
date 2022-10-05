@@ -25,7 +25,7 @@ Param
 
     [Parameter(ValueFromPipelineByPropertyName=$true)]
     [string]
-    $Gateway = "test",
+    $Gateway,
 
     [switch]
     $FullScreen,

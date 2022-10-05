@@ -2,12 +2,19 @@
 param (
         [Parameter(Mandatory=$true,
                 Position=0,
-                ParameterSetName="TeamParameterSet",
+                ParameterSetName="RocomParameterSet",
                 ValueFromPipeline=$false,
                 ValueFromPipelineByPropertyName=$false)]
-        [ValidateSet('rocom','rocom-service')]
-        [string]
-        $Team,
+        [switch]
+        $rocom,
+
+        [Parameter(Mandatory=$true,
+                Position=0,
+                ParameterSetName="RocomServiceParameterSet",
+                ValueFromPipeline=$false,
+                ValueFromPipelineByPropertyName=$false)]
+        [switch]
+        $rocomservice,
 
         [Parameter(Mandatory=$true,
                    Position=1,
@@ -28,7 +35,11 @@ param (
         $Year,
 
         [Parameter(Mandatory=$false,
-                ParameterSetName="TeamParameterSet",
+                ParameterSetName="RocomParameterSet",
+                ValueFromPipeline=$false,
+                ValueFromPipelineByPropertyName=$false)]
+        [Parameter(Mandatory=$false,
+                ParameterSetName="RocomServiceParameterSet",
                 ValueFromPipeline=$false,
                 ValueFromPipelineByPropertyName=$false)]
         [Parameter(Mandatory=$false,
@@ -48,7 +59,7 @@ process {
 }
 end {
     $dates = {
-        if ($Team.Length -gt 0) {
+        if ($rocom -or $rocomservice) {
             $dat = (Get-Date)
             $dat = $dat.AddDays(-$dat.Day + 1)
             [PSCustomObject]@{month = $dat.Month; year = $dat.Year}
@@ -93,30 +104,27 @@ end {
         throw
     }
     
-    switch ($team) {
-        'rocom' {
-            $response = [PSCustomObject]@{
-                status=$response.status
-                error=$response.error
-                legend=$response.legend
-                holidays=$response.holidays |
-                    Where-Object { 
-                        $_.event -eq $false -or
-                        $_.title -NotIn $rocom_service_employees
-                    }
-            }
+    if ($rocom) {
+        $response = [PSCustomObject]@{
+            status=$response.status
+            error=$response.error
+            legend=$response.legend
+            holidays=$response.holidays |
+                Where-Object { 
+                    $_.event -eq $false -or
+                    $_.title -NotIn $rocom_service_employees
+                }
         }
-        'rocom-service' {
-            $response = [PSCustomObject]@{
-                status=$response.status
-                error=$response.error
-                legend=$response.legend
-                holidays=$response.holidays |
-                    Where-Object { 
-                        $_.event -eq $false -or
-                        $_.title -In $rocom_service_employees
-                    }
-            }
+    } elseif ($rocomservice) {
+        $response = [PSCustomObject]@{
+            status=$response.status
+            error=$response.error
+            legend=$response.legend
+            holidays=$response.holidays |
+                Where-Object { 
+                    $_.event -eq $false -or
+                    $_.title -In $rocom_service_employees
+                }
         }
     }
 
