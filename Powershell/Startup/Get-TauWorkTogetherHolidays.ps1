@@ -92,8 +92,20 @@ end {
 
             if ($response.logout -eq $true) {
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
-                Write-Host "You are logged out. Please login again and press enter." -ForegroundColor Red -NoNewline
-                Read-Host 
+                Start-Sleep -Seconds 1
+                $pwd = Get-Content "$PSScriptRoot\..\secrets.json" | 
+                            ConvertFrom-Json | 
+                            ForEach-Object Get-TauWorkTogetherHolidays |
+                            ForEach-Object Password
+                Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                    var pwd = document.querySelectorAll('input[type=password]')[0];
+                    pwd.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+                    pwd.value = '$pwd';
+                    pwd.dispatchEvent(new Event('compositionend', { bubbles: true }));
+                    document.querySelectorAll('button')[0].click();
+                    " | 
+                    ForEach-Object Content
+                Start-Sleep -Seconds 1
             }
         }
         
