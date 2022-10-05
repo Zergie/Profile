@@ -16,5 +16,5 @@ param (
     [string]
     $RemaingArguments
 )
-$PsBoundParameters["Editor"] = "C:\Program Files\Microsoft VS Code\bin\code.cmd"
+$PsBoundParameters["Editor"] = "C:/tools/neovim/nvim-win64/bin/nvim.exe"
 . "$PsScriptRoot\Invoke-Editor.ps1" @PsBoundParameters

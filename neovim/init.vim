@@ -1,6 +1,19 @@
 call plug#begin('~/AppData/Local/nvim/plugged')
     Plug 'tomasiser/vim-code-dark'
+    Plug 'airblade/vim-gitgutter'  " shows +/- when modifying a file in git
+    Plug 'junegunn/vim-easy-align' " allows align e.g. vipga=
 call plug#end()
+
+
+" <vim-easy-align>
+" Start interactive EasyAlign in visual mode (e.g. vipga=)
+xmap ga <Plug>(EasyAlign)
+
+" Start interactive EasyAlign for a motion/text object (e.g. gaip=)
+nmap ga <Plug>(EasyAlign)
+nmap ga <Plug>(EasyAlign)
+" </vim-easy-align>
+
 
 " enter the current millenium
 set nocompatible
@@ -18,14 +31,6 @@ filetype plugin on
 
 " Display all matching files when we tab complete
 set wildmenu
-
-" Tweaks for browsing
-let g:netrw_banner=0        " disable annoying banner
-" let g:netrw_browse_split=4  " open in prior window
-" let g:netrw_altv=1          " open splits to the right
-" let g:netrw_liststyle=3     " tree view
-" let g:netrw_list_hide=netrw_gitignore#Hide()
-" let g:netrw_list_hide.=',\(^\|\s\s\)\zs\.\S\+'
 
 " use pwsh as shell
 set shell=cmd.exe

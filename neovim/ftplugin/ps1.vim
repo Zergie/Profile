@@ -2,4 +2,6 @@
 "     Language: Windows PowerShell
 "   Maintainer:	Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
-set nospell
+
+" run script with F5
+nmap <buffer> <F5> :!. %:p<CR>
