@@ -72,3 +72,5 @@ Install-Directory `
 Install-Directory `
     "$PSScriptRoot\neovim" `
     "$env:USERPROFILE\AppData\Local\nvim"
+
+. C:/tools/neovim/nvim-win64/bin/nvim.exe +'PlugInstall|q|q'

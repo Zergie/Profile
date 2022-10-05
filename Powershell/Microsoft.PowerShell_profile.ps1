@@ -50,11 +50,13 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         }
 
     # set alias to my programs
-    Set-Alias bcomp "C:/Program Files/Beyond Compare 4/bcomp.exe"
-    Set-Alias nvim "C:/tools/neovim/nvim-win64/bin/nvim.exe"
+    Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
+    Set-Alias nvim    "C:/tools/neovim/nvim-win64/bin/nvim.exe"
+    Set-Alias vim     "C:/tools/neovim/nvim-win64/bin/nvim.exe"
+    Set-Alias vi      "C:/tools/neovim/nvim-win64/bin/nvim.exe"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
-    Set-Alias choco "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
-    Set-Alias code "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
+    Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
+    Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"
