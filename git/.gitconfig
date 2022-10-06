@@ -12,6 +12,7 @@
 	autocrlf = true
 	editor = C:/tools/neovim/nvim-win64/bin/nvim.exe \
 				-c 'startinsert' \
+                +'set spell' \
 				+'inoremap <C-S> <ESC>:wq<CR>' \
 				+'inoremap <C-_> <C-o>z=' \
 				+'map <ESC> :q!<CR>' \

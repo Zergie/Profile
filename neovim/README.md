@@ -31,8 +31,8 @@
 
 `gt`  - Go to next tab.
 `gT`  - Go to previous tab.
-`g1t` - Go to first tab.
-`g2t` - Go to second tab.
+`1gt` - Go to first tab.
+`2gt` - Go to second tab.
 
 ## Split Windows
 

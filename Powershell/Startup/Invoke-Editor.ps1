@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$false,
+    [Parameter(Mandatory=$true,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
@@ -8,53 +8,54 @@ param (
     $Editor,
 
     [Parameter(Mandatory=$false,
-               Position=0,
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true)]
-    [ValidateNotNullOrEmpty()]
-    [object]
-    $Path,
-
-    [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false,
-               ValueFromRemainingArguments=$true
-               )]
-    [string]
-    $RemainingArguments
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]
+    $Arguments
 )
 begin {
 }
 process {
-    if ($Path -is [System.Management.Automation.ScriptBlock]) {
-        if ($Path -like "* -?") {
-            $Path = Invoke-Expression "Get-Command $($Path.ToString() -replace '\s+-\?$','')"
-        } else {
-            $Path = Invoke-Command $Path
-        }
-    }
-    
-    while ($Path -is [System.Management.Automation.AliasInfo]) {
-        $Path = $Path.Definition
+    $args = @()
 
-        if (!(Test-Path $Path)) {
-            $Path = Get-Command $Path
+    foreach ($path in $Arguments) {
+        if ($path -eq "-Verbose") {
+            $PSBoundParameters['Verbose'] = $true
+            $VerbosePreference = 'Continue'
+            $path = ""
+        } elseif ($path -eq "-Debug") {
+            $PSBoundParameters['Debug'] = $true
+            $DebugPreference = 'Continue'
+            $path = ""
+        } elseif ($path.EndsWith("-?")) {
+            $path = Get-Command $path.SubString(0, $path.Length-3)
         }
+
+        while ($path -is [System.Management.Automation.AliasInfo]) {
+            $path = $path.Definition
+
+            if (!(Test-Path $path)) {
+                $path = Get-Command $path
+            }
+        }
+
+        $args += $path
     }
-    
-    if ($PSBoundParameters['Debug'].IsPresent) {
-        Write-Host -ForegroundColor Cyan  "== PSBoundParameters =="
+     
+    if ($PSBoundParameters['Debug']) {
+        Write-Host -ForegroundColor Cyan  "== PsBoundParameters =="
         $PSBoundParameters | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan 
-        
-        Write-Host -ForegroundColor Cyan "== Path =="
-        $Path | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan 
-    }
-    
-    if ($RemainingArguments.Length -gt 0) {
-        $RemainingArguments = $RemainingArguments.Substring("-RemainingArguments".Length)
+
+        Write-Host -ForegroundColor Cyan  "== args =="
+        $args | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan 
     }
 
-    . $Editor $path $RemainingArguments
+    if ($PSBoundParameters['Debug']) {
+        Write-Host -ForegroundColor Cyan ". $Editor $args"
+    } else {
+        . $Editor $args
+    }
 }
 end {        
 }

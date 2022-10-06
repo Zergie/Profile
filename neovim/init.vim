@@ -1,6 +1,5 @@
 call plug#begin('~/AppData/Local/nvim/plugged')
     Plug 'tomasiser/vim-code-dark'
-    Plug 'airblade/vim-gitgutter'  " shows +/- when modifying a file in git
     Plug 'junegunn/vim-easy-align' " allows align e.g. vipga=
 call plug#end()
 
@@ -45,7 +44,7 @@ nmap <F6> :w \| !wt -w 0 sp -d %:p:h cmd /C "git add -p && pause"<CR><CR>
 au VimLeave * set guicursor=a:ver100
 
 " set language to english
-set spell spelllang=en_us
+set spelllang=en_us
 set langmenu=en_US
 let $LANG = 'en_US'
 
