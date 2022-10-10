@@ -9,12 +9,12 @@ function Install-File {
     Write-Host -ForegroundColor Magenta "Installing '$source' -> '$Destination'"
     Remove-Item "$Destination" -Force -ErrorAction SilentlyContinue | Out-Null
 
-    $old = Get-Location
     $directory = [System.IO.Path]::GetDirectoryName($Destination)
     $filename = [System.IO.Path]::GetFileName($Destination)
-    Set-Location $directory | Out-Null
+    
+    Push-Location $directory | Out-Null
     New-Item -Type HardLink -Name "$filename" -Value "$Source" | Out-Null
-    Set-Location $old
+    Pop-Location
 }
 
 function Install-Directory {
@@ -25,13 +25,13 @@ function Install-Directory {
     Write-Host -ForegroundColor Magenta "Installing '$source' -> '$Destination'"
     Remove-Item "$Destination" -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 
-    $old = Get-Location
     $directory = [System.IO.Path]::GetDirectoryName($Destination)
     $filename = [System.IO.Path]::GetFileName($Destination)
     try { mkdir $directory | Out-Null } catch {}
-    Set-Location $directory | Out-Null
+
+    Push-Location $directory | Out-Null
     New-Item -Type Junction -Name "$filename" -Value "$Source" | Out-Null
-    Set-Location $old
+    Pop-Location
 }
 
 if ((Test-Path "$PSScriptRoot\secrets")) {
@@ -72,6 +72,10 @@ Install-Directory `
 Install-Directory `
     "$PSScriptRoot\neovim" `
     "$env:USERPROFILE\AppData\Local\nvim"
+
+New-Item -Type Directory -Path "$PSScriptRoot\neovim\PowerShellEditorServices" | Push-Location | Out-Null
+Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/coc-extensions/coc-powershell/master/downloadPSES.ps1"))
+Pop-Location
 
 . "C:/tools/neovim/nvim-win64/bin/nvim.exe" `
     +'PlugInstall' `

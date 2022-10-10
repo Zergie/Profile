@@ -8,6 +8,13 @@ param (
     $Editor,
 
     [Parameter(Mandatory=$false,
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]
+    $Input,
+
+    [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
@@ -53,6 +60,8 @@ process {
 
     if ($PSBoundParameters['Debug']) {
         Write-Host -ForegroundColor Cyan ". $Editor $args"
+    } elseif ($Input.Length -gt 0) {
+        $Input | . $Editor $args
     } else {
         . $Editor $args
     }

@@ -1,8 +1,15 @@
 call plug#begin('~/AppData/Local/nvim/plugged')
-    Plug 'tomasiser/vim-code-dark'
+    Plug 'tomasiser/vim-code-dark' " theme like vscode dark
     Plug 'junegunn/vim-easy-align' " allows align e.g. vipga=
+    Plug 'neovim/nvim-lspconfig'
+    Plug 'hrsh7th/cmp-nvim-lsp'
+    Plug 'hrsh7th/cmp-buffer'
+    Plug 'hrsh7th/cmp-path'
+    Plug 'hrsh7th/cmp-cmdline'
+    Plug 'hrsh7th/nvim-cmp'
 call plug#end()
 
+lua require('wpuchinger')
 
 " <vim-easy-align>
 " Start interactive EasyAlign in visual mode (e.g. vipga=)
@@ -10,9 +17,11 @@ xmap ga <Plug>(EasyAlign)
 
 " Start interactive EasyAlign for a motion/text object (e.g. gaip=)
 nmap ga <Plug>(EasyAlign)
-nmap ga <Plug>(EasyAlign)
 " </vim-easy-align>
 
+" <nvim-cmp>
+set completeopt=menu,menuone,noselect
+" </nvim-cmp>
 
 " enter the current millenium
 set nocompatible
@@ -37,8 +46,12 @@ set shellcmdflag=/c\ pwsh.exe\ -NoLogo\ -NoProfile\ -NonInteractive\ -ExecutionP
 set shellpipe=|
 set shellredir=>
 
+" enter insert after :term
+autocmd TermOpen * startinsert
+
 " some keys
-nmap <F6> :w \| !wt -w 0 sp -d %:p:h cmd /C "git add -p && pause"<CR><CR>
+" nmap <F6> :w \| !wt -w 0 sp -d %:p:h cmd /C "git add -p && pause"<CR><CR>
+nmap <F6> :w \| :tabe \| :term git add -p %:p:h<CR>
 
 " change cursor back to pwsh default on leaving vim
 au VimLeave * set guicursor=a:ver100
