@@ -1,10 +1,53 @@
 #Requires -RunAsAdministrator
 $ErrorActionPreference = 'Stop'
 
+function Get-GithubRelease {
+    param(
+        [string] $Repo,
+        [string] $File,
+        [string] $OutFolder
+    )
+    if (!$IsCoreCLR) {
+        # We only need to do this in Windows PowerShell.
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    }
+
+    Remove-Item $OutFolder -Force -Recurse -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $OutFolder | Out-Null
+    Push-Location $OutFolder
+
+    $releases = "https://api.github.com/repos/$Repo/releases"
+
+    Write-Host -ForegroundColor Cyan "Determining latest release for $Repo ..."
+    $tag = ((Invoke-RestMethod $releases)| Where-Object { $_.prerelease -eq $false })[0].tag_name
+    Write-Host -ForegroundColor Cyan "Latest Release: $tag"
+
+    Write-Host -ForegroundColor Cyan "Downloading : $tag"
+    $download = "https://github.com/$Repo/releases/download/$tag/$File"
+    $zip = "temp.zip"
+    Invoke-WebRequest $download -OutFile $zip
+
+    Write-Host -ForegroundColor Cyan "Extracting release files..."
+    Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
+    Remove-Item $zip -Force
+
+    Write-Host -ForegroundColor Cyan "Release install completed."
+
+    Pop-Location
+}
+
+function Update-File {
+    param (
+        [string] $OrgFile,
+        [string] $PatchFile
+    )
+    . "C:\Program Files\Git\usr\bin\patch.exe" $OrgFile $PatchFile 
+}
+
 function Install-File {
     param (
-        [String] $Source,
-        [String] $Destination
+        [string] $Source,
+        [string] $Destination
     )
     Write-Host -ForegroundColor Magenta "Installing '$source' -> '$Destination'"
     Remove-Item "$Destination" -Force -ErrorAction SilentlyContinue | Out-Null
@@ -19,8 +62,8 @@ function Install-File {
 
 function Install-Directory {
     param (
-        [String] $Source,
-        [String] $Destination
+        [string] $Source,
+        [string] $Destination
     )
     Write-Host -ForegroundColor Magenta "Installing '$source' -> '$Destination'"
     Remove-Item "$Destination" -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
@@ -63,7 +106,7 @@ Install-Directory `
 Install-Directory `
     "$PSScriptRoot\bat" `
     "$env:APPDATA\bat"
-& "$env:ProgramData\chocolatey\bin\bat.exe" cache --build
+. "$env:ProgramData\chocolatey\bin\bat.exe" cache --build
 
 Install-Directory `
     "$PSScriptRoot\Beyond Compare 4" `
@@ -73,10 +116,17 @@ Install-Directory `
     "$PSScriptRoot\neovim" `
     "$env:USERPROFILE\AppData\Local\nvim"
 
-New-Item -Type Directory -Path "$PSScriptRoot\neovim\PowerShellEditorServices" | Push-Location | Out-Null
-Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/coc-extensions/coc-powershell/master/downloadPSES.ps1"))
-Pop-Location
-
+Get-GithubRelease `
+    -Repo "PowerShell/PowerShellEditorServices" `
+    -File "PowerShellEditorServices.zip" `
+    -OutFolder "$PSScriptRoot\neovim\PowershellEditorServices"
+Get-GithubRelease `
+    -Repo "redhat-developer/vscode-xml" `
+    -File "lemminx-win32.zip" `
+    -OutFolder "$PSScriptRoot\neovim\lemminx"
+Update-File `
+    "C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua" `
+    "$PSScriptRoot\patches\util.lua.patch"
 . "C:/tools/neovim/nvim-win64/bin/nvim.exe" `
     +'PlugInstall' `
     +'|q|q'

@@ -13,9 +13,8 @@ param (
 Process {
 
     New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
-    #New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
 
-    $global:holidays = Get-TauWorkTogetherHolidays -Team rocom-service |
+    $global:holidays = Get-TauWorkTogetherHolidays -rocomservice |
                             ForEach-Object holidays
     $team = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/_apis/projects/{projectId}/teams/{teamId}/members?api-version=6.0' |
                         ForEach-Object value |

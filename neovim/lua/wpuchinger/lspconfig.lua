@@ -42,6 +42,11 @@ lspconfig['pyright'].setup{
     on_attach = on_attach,
     flags = lsp_flags,
 }
+lspconfig['lemminx'].setup{
+    on_attach = on_attach,
+    flags = lsp_flags,
+    cmd = { 'c:/GIT/Profile/neovim/lemminx/lemminx-win32.exe' },
+}
 lspconfig['powershell_es'].setup{
     on_attach = on_attach,
     flags = lsp_flags,

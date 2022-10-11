@@ -4,4 +4,4 @@
 
 
 " run script with F5
-nmap <buffer> <F5> :!. %:p<CR>
+nmap <buffer> <F5> :w \| :term pwsh -NoProfile -File %:p<CR>

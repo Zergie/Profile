@@ -43,6 +43,11 @@ $tools = @(
     [PsCustomObject]@{name="wsl2"}
 )
 
+$npm = @(
+    [PsCustomObject]@{name="pyright"}     # python LSP Server for NeoVim
+    [PsCustomObject]@{name="vsce"}        # used for Visual Studio Code Plugin Development
+)
+
 foreach ($tool in $modules) {
     Write-Host -ForegroundColor Magenta "Installing $tool"
     Install-Module -Name $tool -Force
@@ -73,6 +78,11 @@ foreach ($tool in $tools | Where-Object pin -EQ $true) {
 $choco_packages_without_version = $tools | Where-Object version -EQ $null | ForEach-Object name
 Write-Host -ForegroundColor Magenta "Installing $choco_packages_without_version"
 Invoke-Expression "choco install $choco_packages_without_version -y"
+
+foreach ($tool in $npm) {
+    Write-Host -ForegroundColor Magenta "Installing $($tool.name)"
+    npm install -g $tool.name
+}
 
 Write-Host -ForegroundColor Magenta "Configuring Windows Defender"
 Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"
