@@ -1,12 +1,12 @@
 call plug#begin('~/AppData/Local/nvim/plugged')
     Plug 'tomasiser/vim-code-dark' " theme like vscode dark
     Plug 'junegunn/vim-easy-align' " allows align e.g. vipga=
-    Plug 'neovim/nvim-lspconfig'
-    Plug 'hrsh7th/cmp-nvim-lsp'
-    Plug 'hrsh7th/cmp-buffer'
-    Plug 'hrsh7th/cmp-path'
-    Plug 'hrsh7th/cmp-cmdline'
-    Plug 'hrsh7th/nvim-cmp'
+    Plug 'neovim/nvim-lspconfig'   " Simplifies Langauge Server configuration
+    Plug 'hrsh7th/cmp-nvim-lsp'    " completion helper
+    Plug 'hrsh7th/cmp-buffer'      " completion helper
+    Plug 'hrsh7th/cmp-path'        " completion helper
+    Plug 'hrsh7th/cmp-cmdline'     " completion helper
+    Plug 'hrsh7th/nvim-cmp'        " completion helper
 call plug#end()
 
 lua require('wpuchinger')
@@ -41,17 +41,18 @@ filetype plugin on
 set wildmenu
 
 " use pwsh as shell
-set shell=cmd.exe
-set shellcmdflag=/c\ pwsh.exe\ -NoLogo\ -NoProfile\ -NonInteractive\ -ExecutionPolicy\ RemoteSigned\ -Command
-set shellpipe=|
-set shellredir=>
+" set shell=cmd.exe
+" set shellcmdflag=/c\ pwsh.exe\ -NoLogo\ -NoProfile\ -NonInteractive\ -ExecutionPolicy\ RemoteSigned\ -Command
+" set shellpipe=|
+" set shellredir=>
 
 " enter insert after :term
 autocmd TermOpen * startinsert
 
 " some keys
-" nmap <F6> :w \| !wt -w 0 sp -d %:p:h cmd /C "git add -p && pause"<CR><CR>
-nmap <F6> :w \| :tabe \| :term git add -p %:p:h<CR>
+tnoremap <silent>  <C-\><C-n>
+tnoremap <silent>  <C-\><C-n>:bd!<CR>
+nmap <F6> :w \| :tabe \| :term git add -p .<CR>
 
 " change cursor back to pwsh default on leaving vim
 au VimLeave * set guicursor=a:ver100
@@ -85,3 +86,7 @@ colorscheme codedark
 au BufRead,BufNewFile *.ACM set filetype=vba
 au BufRead,BufNewFile *.ACR set filetype=vba
 au BufRead,BufNewFile *.ACF set filetype=vba
+
+" vb file extensions
+au BufRead,BufNewFile *.cls set filetype=vb
+au BufRead,BufNewFile *.bas set filetype=vb

@@ -218,6 +218,6 @@ Process {
         Add-Type -AssemblyName System.Windows.Forms
         [System.Windows.Forms.SendKeys]::SendWait("$Password{Enter}")
 
-        # Remove-Item C:\temp\$Name.rdp
+        Remove-Item C:\temp\$Name.rdp
     }
 }

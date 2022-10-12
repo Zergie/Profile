@@ -44,8 +44,9 @@ $tools = @(
 )
 
 $npm = @(
-    [PsCustomObject]@{name="pyright"}     # python LSP Server for NeoVim
-    [PsCustomObject]@{name="vsce"}        # used for Visual Studio Code Plugin Development
+    [PsCustomObject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
+    [PsCustomObject]@{name="pyright"}                 # python LSP Server for NeoVim
+    [PsCustomObject]@{name="vsce"}                    # used for Visual Studio Code Plugin Development
 )
 
 foreach ($tool in $modules) {

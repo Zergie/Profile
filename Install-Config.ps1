@@ -127,6 +127,5 @@ Get-GithubRelease `
 Update-File `
     "C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua" `
     "$PSScriptRoot\patches\util.lua.patch"
-. "C:/tools/neovim/nvim-win64/bin/nvim.exe" `
-    +'PlugInstall' `
-    +'|q|q'
+
+. "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'PlugUpgrade|PlugInstall|PlugUpdate|q|q'
