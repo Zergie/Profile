@@ -2,11 +2,17 @@ call plug#begin('~/AppData/Local/nvim/plugged')
     Plug 'tomasiser/vim-code-dark' " theme like vscode dark
     Plug 'junegunn/vim-easy-align' " allows align e.g. vipga=
     Plug 'neovim/nvim-lspconfig'   " Simplifies Langauge Server configuration
-    Plug 'hrsh7th/cmp-nvim-lsp'    " completion helper
-    Plug 'hrsh7th/cmp-buffer'      " completion helper
-    Plug 'hrsh7th/cmp-path'        " completion helper
-    Plug 'hrsh7th/cmp-cmdline'     " completion helper
-    Plug 'hrsh7th/nvim-cmp'        " completion helper
+
+    " fuzzy finder
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'nvim-telescope/telescope.nvim'
+
+    " completions
+    Plug 'hrsh7th/cmp-nvim-lsp'
+    Plug 'hrsh7th/cmp-buffer'
+    Plug 'hrsh7th/cmp-path'
+    Plug 'hrsh7th/cmp-cmdline'
+    Plug 'hrsh7th/nvim-cmp'
 call plug#end()
 
 lua require('wpuchinger')
@@ -19,12 +25,23 @@ xmap ga <Plug>(EasyAlign)
 nmap ga <Plug>(EasyAlign)
 " </vim-easy-align>
 
+" <telescope>
+nnoremap <leader>ff <cmd>Telescope find_files theme=ivy<cr>
+nnoremap <leader>fc <cmd>Telescope current_buffer_fuzzy_find theme=ivy<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep  theme=ivy<cr>
+nnoremap <leader>fb <cmd>Telescope buffers    theme=ivy<cr>
+nnoremap <leader>fs <cmd>Telescope git_status theme=ivy<cr>
+nnoremap <leader>fm <cmd>Telescope marks      theme=ivy<cr>
+nnoremap <leader>fr <cmd>Telescope registers  theme=ivy<cr>
+nnoremap <leader>ft <cmd>Telescope builtin    theme=ivy<cr>
+" </telescope>
+
+nnoremap <leader>cd <cmd>cd %:p:h<cr>
+
+
 " <nvim-cmp>
 set completeopt=menu,menuone,noselect
 " </nvim-cmp>
-
-" enter the current millenium
-set nocompatible
 
 " set termguicolors
 set termguicolors
@@ -32,6 +49,10 @@ set termguicolors
 " enable syntax and plugins (for netrw)
 syntax enable
 filetype plugin on
+
+" configure preview (for netrw)
+let g:netrw_preview   = 1
+let g:netrw_winsize   = 30
 
 " Search down into subfolders
 " Provides tab-completion for all file-related tasks

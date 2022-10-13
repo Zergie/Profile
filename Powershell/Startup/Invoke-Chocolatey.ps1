@@ -70,6 +70,16 @@ process {
                 }
                 $i++
             }
+    } elseif ($Command -eq "pin" -and $Arguments.Length -eq 0) {
+        Invoke-Expression $cmd |
+            ForEach-Object {
+                if ($i -lt 1) { 
+                    $_ | Write-Host -ForegroundColor Green
+                } else {
+                    $_ | ConvertFrom-Csv -Delimiter "|" -Header "package name".PadRight(32),"version"
+                }
+                $i++
+            }
     } else {
         Invoke-Expression $cmd
     }

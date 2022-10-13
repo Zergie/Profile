@@ -31,7 +31,7 @@
 	<TCheckForUpdatesState>
 		<Build Value="26655"/>
 		<CheckID Value="273778395316224"/>
-		<LastChecked Value="2022-09-12 12:05:25"/>
+		<LastChecked Value="2022-09-26 10:18:33"/>
 		<MsgBody Value="Beyond Compare is not affected by the Log4J vulnerability. Our IT systems are also secured against it."/>
 		<MsgDate Value="2022-01-04 00:00:00"/>
 		<MsgTitle Value="LOG4J"/>
@@ -179,15 +179,15 @@
 	</TPixCompareState>
 	<TTextCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\tau-office\source\Opt_VorgangAbschliessen.ACF"/>
-			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\I18N\ResourceDictionaries\Resources.de-DE.resx"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\AdminToolApp\ViewModel\AdminSettingsMenuItemViewModel.cs"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\tau-office\source\Opt_Vorgänge.ACF"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\Model\UserManagement\GlobalAccountInfo.cs"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\AdminToolApp\App.cs"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\Model\Delegates.cs"/>
-			<_7 Value="C:\temp\test.rdp"/>
-			<_8 Value="C:\GIT\TauOffice\DBMS\schema\stadt_nuernberg\table\ListenGen1.xml"/>
+			<_0 Value="C:\Program Files (x86)\Tau-Office\Listengenerator_220928121437.rtf"/>
+			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\Ly3BCw_schema.xml"/>
+			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\e5PoWN_DBMS"/>
+			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\yhniVO_FiBu_Export.ACF"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\PB379M_FiBu_Export.ACF"/>
+			<_5 Value="C:\GIT\TauOffice\tau-office-utils\source\ICFProvider.cls"/>
+			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\tau-office\source\Opt_VorgangAbschliessen.ACF"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\I18N\ResourceDictionaries\Resources.de-DE.resx"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\left\Admintool\AdminToolApp\ViewModel\AdminSettingsMenuItemViewModel.cs"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Consolas;10"/>
@@ -201,15 +201,15 @@
 			<_8 Value="Consolas;6"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\I18N\ResourceDictionaries\Resources.de-DE.resx"/>
-			<_1 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\AdminToolApp\ViewModel\AdminSettingsMenuItemViewModel.cs"/>
-			<_2 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\tau-office\source\Opt_Vorgänge.ACF"/>
-			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\UserControls\FinalizeTasksOption\View\FinalizeTasksOptionView.xaml.cs"/>
-			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\Model\Hirarchy\Option\FinalizeTasksOption.cs"/>
-			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\Model\UserManagement\GlobalAccountInfo.cs"/>
-			<_6 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\AdminToolApp\App.cs"/>
-			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\Model\Delegates.cs"/>
-			<_8 Value="C:\temp\old.rdp"/>
+			<_0 Value="C:\temp\test.rtf"/>
+			<_1 Value="C:\temp\test.rtf_temp"/>
+			<_2 Value="C:\GIT\TauOffice\DBMS\schema\schema.xml"/>
+			<_3 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\nDriBH_DBMS"/>
+			<_4 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\tq4trf_FiBu_Export.ACF"/>
+			<_5 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\ExLIhR_FiBu_Export.ACF"/>
+			<_6 Value="C:\GIT\TauOffice\tau-office-utils\source\ICFProvider2.cls"/>
+			<_7 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\I18N\ResourceDictionaries\Resources.de-DE.resx"/>
+			<_8 Value="C:\Users\Puchinger.ROCOM.000\AppData\Local\Temp\git-difftool.a16956\right\Admintool\AdminToolApp\ViewModel\AdminSettingsMenuItemViewModel.cs"/>
 		</RightMRUSpecs>
 	</TTextCompareState>
 	<TTextEditState>
@@ -225,15 +225,15 @@
 	</TTextEditState>
 	<TTextFindState>
 		<FindItems>
-			<_0 Value="FinalizeOpenTasks"/>
-			<_1 Value="description='Filter[^']+' "/>
-			<_2 Value="description='Filter_[^']+' "/>
-			<_3 Value="description='Spalte [^']+' "/>
-			<_4 Value="description='Spalte [^' ]+' "/>
-			<_5 Value="description='[^' ]+' "/>
-			<_6 Value="description='[^' ]' "/>
-			<_7 Value="description='Spalte [^']' "/>
-			<_8 Value="description='[^']{15}' "/>
+			<_0 Value="FibuSplitExport"/>
+			<_1 Value="d3714eb61"/>
+			<_2 Value="Get_Optionen"/>
+			<_3 Value="FinalizeOpenTasks"/>
+			<_4 Value="description='Filter[^']+' "/>
+			<_5 Value="description='Filter_[^']+' "/>
+			<_6 Value="description='Spalte [^']+' "/>
+			<_7 Value="description='Spalte [^' ]+' "/>
+			<_8 Value="description='[^' ]+' "/>
 		</FindItems>
 		<IsRegExp Value="True"/>
 		<ReplaceItems>

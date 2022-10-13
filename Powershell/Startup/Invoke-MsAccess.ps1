@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$false,
-              Position=1,
-              ValueFromRemainingArguments=$true)]
+               Position=1,
+               ValueFromRemainingArguments=$true)]
     [object[]]
     $Arguments,
 
@@ -19,8 +19,7 @@ DynamicParam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
-    # $ParameterAttribute.ParameterSetName = "ParameterSetName"
+    $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
@@ -30,7 +29,7 @@ DynamicParam {
                     $_
                 }
             } |
-            Select-String -Pattern "^(|Public )(Sub|Function) ([^(]+)" |
+            Select-String -Pattern "^(|Public )(Sub|Function) ([^(]+)" -Encoding 1252 |
             ForEach-Object { $_.Matches.Groups[3].Value }
         "Eval"
         # "DynaLoader.Unload"
@@ -41,11 +40,41 @@ DynamicParam {
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Procedure", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
+    # param GetOptionen
+    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
+    $ParameterAttribute.Mandatory = $false
+    $AttributeCollection.Add($ParameterAttribute)
+
+    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(
+        rg '^.*[GS]et_Optionen[\( ]\"([^\"]+)\"[\), ].*$' "C:\GIT\TauOffice\tau-office\source\" --replace "`$1" --no-filename |
+            Group-Object |
+            ForEach-Object name
+    )
+    $AttributeCollection.Add($ValidateSetAttribute)
+
+    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("GetOptionen", [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
+
+    # param SetOptionen
+    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
+    $ParameterAttribute.Mandatory = $false
+    $AttributeCollection.Add($ParameterAttribute)
+
+    $AttributeCollection.Add($ValidateSetAttribute) # reuse from GetOptionen
+
+    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("SetOptionen", [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
     return $RuntimeParameterDictionary
 }
 process {
 $Procedure = $PSBoundParameters.Procedure
+$GetOptionen = $PSBoundParameters.GetOptionen
+$SetOptionen = $PSBoundParameters.SetOptionen
 
 function Invoke-VBScript {
     Param
@@ -92,6 +121,14 @@ if ($Inspect) {
         }
 
 } else {
+     if ($null -ne $GetOptionen) {
+        $Procedure = "Get_Optionen"
+        $Arguments = $GetOptionen
+    } elseif ($null -ne $SetOptionen) {
+        $Procedure = "Set_Optionen"
+        $Arguments = @($SetOptionen, $Arguments)
+    }
+
     if ($Arguments.Count -gt 0) {
         $Arguments = $Arguments | 
             ForEach-Object `

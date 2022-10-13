@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 $ErrorActionPreference = 'Stop'
 
-Write-Host -ForegroundColor Magenta "Installing chocolatey"
+Write-Host -ForegroundColor Cyan "Installing chocolatey"
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 
@@ -41,6 +41,7 @@ $tools = @(
     [PsCustomObject]@{name="vscode"}
     [PsCustomObject]@{name="wireshark"}
     [PsCustomObject]@{name="wsl2"}
+    [PsCustomObject]@{name="ripgrep"}
 )
 
 $npm = @(
@@ -50,40 +51,33 @@ $npm = @(
 )
 
 foreach ($tool in $modules) {
-    Write-Host -ForegroundColor Magenta "Installing $tool"
+    Write-Host -ForegroundColor Cyan "Installing $tool"
     Install-Module -Name $tool -Force
 }
 
 foreach ($tool in $tools | Where-Object version -NE $null) {
-    Write-Host -ForegroundColor Magenta "Installing $($tool.name) (version $($tool.version))"
-    choco install $tool.name --version $tool.version --allow-downgrade -y
-
-    if ($null -ne $tool.pin) {
-        if ($null -ne $tool.reason) {
-            choco pin add --name $tool.name --reason "$($tool.reason)"
-        } else {
-            choco pin add --name $tool.name
-        }
-    }
+    "choco install $($tool.name) --version $($tool.version) --allow-downgrade -y" |
+        ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
 }
 
 foreach ($tool in $tools | Where-Object pin -EQ $true) {
-    Write-Host -ForegroundColor Magenta "Pinning $($tool.name) (version $($tool.version))"
     if ($null -ne $tool.reason) {
-        choco pin add --name $tool.name --reason "$($tool.reason)"
+        "choco pin add --name=$($tool.name)" |
+            ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
+
     } else {
-        choco pin add --name $tool.name
+        "choco pin add --name $($tool.name)" |
+            ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
     }
 }
 
 $choco_packages_without_version = $tools | Where-Object version -EQ $null | ForEach-Object name
-Write-Host -ForegroundColor Magenta "Installing $choco_packages_without_version"
-Invoke-Expression "choco install $choco_packages_without_version -y"
+"choco install $choco_packages_without_version -y" |
+        ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
 
-foreach ($tool in $npm) {
-    Write-Host -ForegroundColor Magenta "Installing $($tool.name)"
-    npm install -g $tool.name
-}
+"npm install -g $($npm.name)" |
+        ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
 
-Write-Host -ForegroundColor Magenta "Configuring Windows Defender"
+
+Write-Host -ForegroundColor Cyan "Configuring Windows Defender"
 Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"

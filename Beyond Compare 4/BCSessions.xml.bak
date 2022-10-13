@@ -81,6 +81,147 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="Listengenerator_220928121437.rtf &lt;--> test.rtf">
+						<Formats>
+							<Left Value=""/>
+							<Right Value=""/>
+						</Formats>
+						<LastModified Value="2022-09-28 14:47:27"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="description"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\Program Files (x86)\Tau-Office\Listengenerator_220928121437.rtf"/>
+							<Right Value="C:\temp\test.rtf"/>
+						</Specs>
+						<State>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
+					<TTextCompareSession Value="ICFProvider.cls &lt;--> ICFProvider2.cls">
+						<LastModified Value="2022-09-15 11:29:09"/>
+						<Rules>
+							<ElementSigs>
+								<Item>
+									<ElementStr Value="Checksum"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Metadata"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="NoSaveCTIWhenDisabled"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Test"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="documentation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="annotation"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Layout"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar2"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Kommentar3"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="Leerzeichen"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="TO_BUILD Anweisung"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="generated"/>
+									<ValueBool Value="False"/>
+								</Item>
+								<Item>
+									<ElementStr Value="description"/>
+									<ValueBool Value="False"/>
+								</Item>
+							</ElementSigs>
+							<EmbeddedWSSig Value="True"/>
+						</Rules>
+						<Specs>
+							<Left Value="C:\GIT\TauOffice\tau-office-utils\source\ICFProvider.cls"/>
+							<Right Value="C:\GIT\TauOffice\tau-office-utils\source\ICFProvider2.cls"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
+							<InsigIgnored Value="True"/>
+							<ShowContext Value="True"/>
+						</State>
+					</TTextCompareSession>
 					<TTextCompareSession Value="old.rdp &lt;--> test.rdp">
 						<LastModified Value="2022-09-13 13:50:49"/>
 						<Rules>
@@ -3085,7 +3226,7 @@
 							<EmbeddedWSSig Value="True"/>
 						</Rules>
 						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
+							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis\References.ACREF"/>
 							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
 						</Specs>
 						<State>
@@ -3149,7 +3290,7 @@
 							<EmbeddedWSSig Value="True"/>
 						</Rules>
 						<Specs>
-							<Left Value="C:\GIT\azure\TauOfficeOld\tau-office-basis\References.ACREF"/>
+							<Left Value="C:\GIT\azure\TauOffice\tau-office\source\References.ACREF"/>
 							<Right Value="C:\GIT\azure\TauOffice\tau-office-basis\source\References.ACREF"/>
 						</Specs>
 						<State>
@@ -4587,45 +4728,6 @@
 							<SortDown Value="True"/>
 						</State>
 					</TDirCompareSession>
-					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files_tau\ &lt;--> Files">
-						<Filters>
-							<NameFilter Value="-*.bak;-obj\;-packages\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 16:21:39"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Files_tau\"/>
-							<Right Value="C:\GIT\azure\TauOffice\Files"/>
-						</Specs>
-						<State>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
-					<TDirCompareSession Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Plugins\ &lt;--> tau-office-plugins">
-						<Filters>
-							<NameFilter Value="-*.bak;-.*\;-obj\;-packages\;-bin\"/>
-						</Filters>
-						<LastModified Value="2021-06-07 16:20:11"/>
-						<Rules>
-							<ContentCompareKind Value="ccCRC32"/>
-							<FollowSymLinks Value="True"/>
-							<UseContentComparison Value="True"/>
-							<UseTimestampComparison Value="False"/>
-						</Rules>
-						<Specs>
-							<Left Value="C:\GIT\azure\TauOffice\..\TauOffice 2021.04.16\Plugins\"/>
-							<Right Value="C:\GIT\azure\TauOffice\tau-office-plugins"/>
-						</Specs>
-						<State>
-							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
-							<SortDown Value="True"/>
-						</State>
-					</TDirCompareSession>
 				</Items>
 			</TSessionFolder>
 			<TDirCompareSession>
@@ -4702,7 +4804,6 @@
 					<EmbeddedWSSig Value="True"/>
 				</Rules>
 				<State>
-					<DisplayFilter Value="[showLeftMod, showRightMod, showDiffMod]"/>
 					<InsigIgnored Value="True"/>
 					<ShowContext Value="True"/>
 				</State>
