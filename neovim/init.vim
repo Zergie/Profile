@@ -26,17 +26,18 @@ nmap ga <Plug>(EasyAlign)
 " </vim-easy-align>
 
 " <telescope>
-nnoremap <leader>ff <cmd>Telescope find_files theme=ivy<cr>
-nnoremap <leader>fc <cmd>Telescope current_buffer_fuzzy_find theme=ivy<cr>
-nnoremap <leader>fg <cmd>Telescope live_grep  theme=ivy<cr>
-nnoremap <leader>fb <cmd>Telescope buffers    theme=ivy<cr>
-nnoremap <leader>fs <cmd>Telescope git_status theme=ivy<cr>
-nnoremap <leader>fm <cmd>Telescope marks      theme=ivy<cr>
-nnoremap <leader>fr <cmd>Telescope registers  theme=ivy<cr>
-nnoremap <leader>ft <cmd>Telescope builtin    theme=ivy<cr>
+nnoremap <leader>fc :Telescope current_buffer_fuzzy_find theme=ivy<cr>
+nnoremap <leader>ff :Telescope find_files                theme=ivy<cr>
+nnoremap <leader>fg :Telescope live_grep                 theme=ivy<cr>
+nnoremap <leader>ft :Telescope builtin                   theme=ivy<cr>
+nnoremap <leader>m  :Telescope marks                     theme=ivy<cr>
+nnoremap <leader>b  :Telescope buffers                   theme=ivy<cr>
+nnoremap <leader>r  :Telescope registers                 theme=ivy<cr>
 " </telescope>
 
 nnoremap <leader>cd <cmd>cd %:p:h<cr>
+nnoremap <C-j> :m-2<cr>
+nnoremap <C-k> :m+1<cr>
 
 
 " <nvim-cmp>
@@ -111,3 +112,4 @@ au BufRead,BufNewFile *.ACF set filetype=vba
 " vb file extensions
 au BufRead,BufNewFile *.cls set filetype=vb
 au BufRead,BufNewFile *.bas set filetype=vb
+au BufRead,BufNewFile *.vbp set filetype=vbp

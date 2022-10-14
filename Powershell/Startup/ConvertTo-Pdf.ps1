@@ -1,6 +1,4 @@
 #Requires -PSEdition Core
-
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
             Position=0,
@@ -18,33 +16,35 @@ begin {
 }
 process {
     $Path = (Resolve-Path $Path).ProviderPath
-    $path_pdf = "$([System.IO.Path]::GetDirectoryName($Path))\$([System.IO.Path]::GetFileNameWithoutExtension($Path)).pdf"
-    Remove-Item $path_pdf -Force -ErrorAction SilentlyContinue
+    if ([System.IO.Path]::GetExtension($Path) -ne ".pdf") {
+        $path_pdf = "$([System.IO.Path]::GetDirectoryName($Path))\$([System.IO.Path]::GetFileNameWithoutExtension($Path)).pdf"
+        Remove-Item $path_pdf -Force -ErrorAction SilentlyContinue
 
-    $document = $word.Documents.Open("$Path")
-    # $document.ExportAsFixedFormat($path_pdf, 17)
+        $document = $word.Documents.Open("$Path")
+        # $document.ExportAsFixedFormat($path_pdf, 17)
 
-    $params = @{
-        OutputFileName = $path_pdf
-        ExportFormat = 17 ## wdExportFormatPDF
-        Item = if ($document.Comments.Count -gt 0) { 
-                    7 ## wdExportDocumentWithMarkup 
-                } else { 
-                    0 ## wdExportDocumentContent 
-                }
-    } 
-    $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
-        $null,     ## Binder
-        $document, ## Target
-        ([Object[]]($params.Values)), ## providedArgs
-        $null,  ## Modifiers
-        $null,  ## Culture
-        ([String[]]($params.Keys))  ## NamedParameters
-    )
+        $params = @{
+            OutputFileName = $path_pdf
+            ExportFormat = 17 ## wdExportFormatPDF
+            Item = if ($document.Comments.Count -gt 0) { 
+                        7 ## wdExportDocumentWithMarkup 
+                    } else { 
+                        0 ## wdExportDocumentContent 
+                    }
+        } 
+        $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
+            $null,     ## Binder
+            $document, ## Target
+            ([Object[]]($params.Values)), ## providedArgs
+            $null,  ## Modifiers
+            $null,  ## Culture
+            ([String[]]($params.Keys))  ## NamedParameters
+        )
 
-    $document.Close($false)
+        $document.Close($false)
 
-    Get-ChildItem $path_pdf
+        Get-ChildItem $path_pdf
+    }
 }
 end {
     $word.Quit()

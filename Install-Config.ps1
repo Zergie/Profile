@@ -124,6 +124,10 @@ Get-GithubRelease `
     -Repo "redhat-developer/vscode-xml" `
     -File "lemminx-win32.zip" `
     -OutFolder "$PSScriptRoot\neovim\lemminx"
+Get-GithubRelease `
+    -Repo "OmniSharp/omnisharp-roslyn" `
+    -File "omnisharp-win-x64-net6.0.zip" `
+    -OutFolder "$PSScriptRoot\neovim\omnisharp"
 Update-File `
     "C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua" `
     "$PSScriptRoot\patches\util.lua.patch"

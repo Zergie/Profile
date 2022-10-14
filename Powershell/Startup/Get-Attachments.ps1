@@ -20,7 +20,7 @@ param (
     $Filter = "^(?!(#\d+_)?Rückmeldung).+\.(docx|pdf)$"
 )
 begin {
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    New-Alias -Name "Invoke-RestApi"  -Value "$PSScriptRoot\Invoke-RestApi.ps1"  -ErrorAction SilentlyContinue
 }
 process {
     $folder = "$((Get-Location).Path)\$WorkItem"

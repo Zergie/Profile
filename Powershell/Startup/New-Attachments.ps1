@@ -1,6 +1,4 @@
 #Requires -PSEdition Core
-
-[CmdletBinding()]
 param (
     # Specifies a path to one or more locations.
     [Parameter(Mandatory=$true,
@@ -15,7 +13,7 @@ param (
     $Path
 )
 Begin {
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    New-Alias -Name "Invoke-RestApi"  -Value "$PSScriptRoot\Invoke-RestApi.ps1"  -ErrorAction SilentlyContinue
     $Items = @()
 }
 Process{

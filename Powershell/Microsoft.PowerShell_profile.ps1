@@ -170,4 +170,5 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 Set-PSReadLineOption -ViModeIndicator Script -ViModeChangeHandler $Function:OnViModeChange
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineKeyHandler -Chord "Ctrl+f" -Function AcceptSuggestion
+Set-PSReadLineKeyHandler -Chord "Alt+f" -Function AcceptNextSuggestionWord
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete 

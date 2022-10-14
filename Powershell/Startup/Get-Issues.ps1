@@ -1,6 +1,4 @@
 #Requires -PSEdition Core
-
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
                Position=0,
@@ -9,7 +7,13 @@ param (
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
     [int[]]
-    $Id
+    $Id,
+
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $ConvertAttachmentsToPdf
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -57,7 +61,10 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 begin {
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    New-Alias -Name "Invoke-RestApi"  -Value "$PSScriptRoot\Invoke-RestApi.ps1"  -ErrorAction SilentlyContinue
+    New-Alias -Name "Get-Attachments" -Value "$PSScriptRoot\Get-Attachments.ps1" -ErrorAction SilentlyContinue
+    New-Alias -Name "New-Attachments" -Value "$PSScriptRoot\New-Attachments.ps1" -ErrorAction SilentlyContinue
+    New-Alias -Name "ConvertTo-Pdf"   -Value "$PSScriptRoot\ConvertTo-Pdf.ps1"   -ErrorAction SilentlyContinue
 }
 process {
     $IterationName = $PSBoundParameters['Iteration']
@@ -124,18 +131,28 @@ process {
     }
 
     $workitems = $downloaded | Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" }
-    $workitems | 
-        ForEach-Object {
-            [PSCustomObject]@{
-                id=             $_.id
-                rev=            $_.rev
-                "System.State"= $_.fields.'System.State'
-                "System.Title"= $_.fields.'System.Title'
-                "System.AssignedTo"=
-                                $_.fields.'System.AssignedTo'.DisplayName
-                "fields"=       $_.fields
-                "relations"=    $_.relations
-                "url"=          $_.url
+
+    if ($ConvertAttachmentsToPdf) {
+        $pdfs = $workitems |
+                    Get-Attachments |
+                    ConvertTo-Pdf |
+                    Where-Object { $null -ne $_ }
+        $pdfs
+        New-Attachments -Path $pdfs
+    } else {
+        $workitems | 
+            ForEach-Object {
+                [PSCustomObject]@{
+                    id=             $_.id
+                    rev=            $_.rev
+                    "System.State"= $_.fields.'System.State'
+                    "System.Title"= $_.fields.'System.Title'
+                    "System.AssignedTo"=
+                                    $_.fields.'System.AssignedTo'.DisplayName
+                    "fields"=       $_.fields
+                    "relations"=    $_.relations
+                    "url"=          $_.url
+                }
             }
-        }
+    }
 }
