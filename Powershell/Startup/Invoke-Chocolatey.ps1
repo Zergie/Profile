@@ -22,12 +22,12 @@ process {
     Write-Debug $cmd
     
     if ($Command -eq "outdated") {
+        $found_begin = $false
         Invoke-Expression $cmd |
             ForEach-Object {
-                if ($i -lt 3) { 
-                    $_ 
-                }
-                elseif ($_ -like "*|*") { 
+                if (!$found_begin) {
+                    $_
+                } elseif ($_ -like "*|*") { 
                     if (($i % 2) -eq 1) {
                         $c = "`e[38;5;8m"
                     } else {
@@ -47,7 +47,10 @@ process {
                 else { 
                     $_ 
                 }
-                $i++
+
+                if ($_.StartsWith(' Output is package name')) {
+                    $found_begin = $true
+                }
             }
     } elseif ($Command -eq "list" -and $Arguments -notmatch "(-h|--help|-\?)") {
         $end_found = $false
