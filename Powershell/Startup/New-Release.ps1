@@ -1,6 +1,4 @@
 #Requires -PSEdition Core
-
-[CmdletBinding()]
 param(
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$true,
@@ -54,6 +52,7 @@ process {
         git push --set-upstream origin $Branch
     }
 
+    Write-Host -ForegroundColor Cyan "Patching *.yml"
     Get-ChildItem -Recurse -Filter *.yml |
         ForEach-Object {
             $file = $_.FullName
@@ -90,7 +89,38 @@ process {
                 Set-Content $file -Encoding utf8
         }
 
+    Write-Host -ForegroundColor Cyan "Adding dbms patches"
+    $highest = Get-ChildItem struktur\ |
+        Where-Object Name -Match "^(main|department)_\d{4}[a-z]\d{3}\.xml" |
+        ForEach-Object {
+            [pscustomobject]@{
+                Database = $_.Name -replace "^([a-z]+)_\d{4}[a-z]\d{3}.xml","`$1"
+                Year     = $_.Name -replace "^[a-z]+_(\d{4})[a-z]\d{3}.xml","`$1"
+                Revision = $_.Name -replace "^[a-z]+_\d{4}([a-z])\d{3}.xml","`$1"
+                Number   = $_.Name -replace "^[a-z]+_\d{4}[a-z](\d{3}).xml","`$1"
+            }
+        } |
+        Where-Object Year -eq $Year |
+        Sort-Object Year, Revision |
+        Select-Object -Last 1
+
+    "main","department" |
+        ForEach-Object {
+            $revision = if ($null -eq $highest) { 'a' } else { [char](([int]($highest.Revision.ToCharArray()[0]))+1) }
+            $path = "struktur\${_}_${Year}${Revision}001.xml"
+
+            @(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<?xml-model href='../dbms/schema/schema-patch.xsd'?>"
+                "<schema-patch version='1.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
+                "</schema-patch>"
+            ) | Set-Content -Path  -Encoding utf8
+
+            git add $path
+        }
+
+
+    Write-Host -ForegroundColor Cyan "Committing to repo"
     git add *.yml
-    git commit -m "release ${Year}/${Quartal}"
 }
 end {}

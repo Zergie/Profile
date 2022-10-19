@@ -15,7 +15,10 @@ call plug#begin('~/AppData/Local/nvim/plugged')
     Plug 'hrsh7th/nvim-cmp'
 call plug#end()
 
-lua require('wpuchinger')
+lua require 'user.cmp'
+lua require 'user.keymaps'
+lua require 'user.lspconfig'
+lua require 'user.telescope'
 
 " <vim-easy-align>
 " Start interactive EasyAlign in visual mode (e.g. vipga=)
@@ -25,27 +28,9 @@ xmap ga <Plug>(EasyAlign)
 nmap ga <Plug>(EasyAlign)
 " </vim-easy-align>
 
-" <telescope>
-nnoremap <leader>fc :Telescope current_buffer_fuzzy_find theme=ivy<cr>
-nnoremap <leader>ff :Telescope find_files                theme=ivy<cr>
-nnoremap <leader>fg :Telescope live_grep                 theme=ivy<cr>
-nnoremap <leader>ft :Telescope builtin                   theme=ivy<cr>
-nnoremap <leader>m  :Telescope marks                     theme=ivy<cr>
-nnoremap <leader>b  :Telescope buffers                   theme=ivy<cr>
-nnoremap <leader>r  :Telescope registers                 theme=ivy<cr>
-" </telescope>
-
-nnoremap <leader>cd <cmd>cd %:p:h<cr>
-nnoremap <C-j> :m-2<cr>
-nnoremap <C-k> :m+1<cr>
-
-
 " <nvim-cmp>
 set completeopt=menu,menuone,noselect
 " </nvim-cmp>
-
-" set termguicolors
-set termguicolors
 
 " enable syntax and plugins (for netrw)
 syntax enable
@@ -96,6 +81,9 @@ set smartcase
 "  /copyright\C    " Case sensitive
 "  /Copyright\c    " Case insensitive
 
+" disable mouse
+set mouse=
+
 " use spaces instead of tabs
 set tabstop=4
 set shiftwidth=4
@@ -113,3 +101,6 @@ au BufRead,BufNewFile *.ACF set filetype=vba
 au BufRead,BufNewFile *.cls set filetype=vb
 au BufRead,BufNewFile *.bas set filetype=vb
 au BufRead,BufNewFile *.vbp set filetype=vbp
+
+" to file extensions
+au BufRead,BufNewFile *.article set filetype=article 

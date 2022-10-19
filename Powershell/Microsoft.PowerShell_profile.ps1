@@ -51,12 +51,11 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 
     # set alias to my programs
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
-    Set-Alias nvim    "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
-    Set-Alias vim     "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
+    Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"
@@ -143,18 +142,22 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         $credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
         $PSDefaultParameterValues = @{    
             "*:Encoding" = 1252
-            
-            "Invoke-SqlCmd:ServerInstance" = $credentials.ServerInstance
-            "Invoke-SqlCmd:Username" = $credentials.Username
-            "Invoke-SqlCmd:Password" = $credentials.Password
             "*:Database" = "master"
+            "*:ServerInstance" = $credentials.ServerInstance
+
+            "Invoke-Sqlcmd:Username" = $credentials.Username
+            "Invoke-Sqlcmd:Password" = $credentials.Password
+
+            "Update-SqlTable:Username" = $credentials.Username
+            "Update-SqlTable:Password" = $credentials.Password
             
-            "Write-SqlTableData:ServerInstance" = $credentials.ServerInstance
+            "Import-SqlTable:Username" = $credentials.Username
+            "Import-SqlTable:Password" = $credentials.Password
+            
             "Write-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
             "Write-SqlTableData:SchemaName" = "dbo"
             "Write-SqlTableData:DatabaseName" = "master"
 
-            "Read-SqlTableData:ServerInstance" = $credentials.ServerInstance
             "Read-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
             "Read-SqlTableData:SchemaName" = "dbo"
             "Read-SqlTableData:DatabaseName" = "master"
@@ -169,6 +172,6 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 
 Set-PSReadLineOption -ViModeIndicator Script -ViModeChangeHandler $Function:OnViModeChange
 Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineKeyHandler -Chord "Ctrl+f" -Function AcceptSuggestion
-Set-PSReadLineKeyHandler -Chord "Alt+f" -Function AcceptNextSuggestionWord
-Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete 
+Set-PSReadLineKeyHandler -Chord "Alt+f" -Function AcceptSuggestion
+Set-PSReadLineKeyHandler -Chord "Ctrl+f" -Function AcceptNextSuggestionWord
+Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete 

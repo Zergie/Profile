@@ -1,4 +1,3 @@
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$false,
                Position=1,
@@ -43,7 +42,6 @@ DynamicParam {
     # param GetOptionen
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
@@ -60,7 +58,6 @@ DynamicParam {
     # param SetOptionen
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 

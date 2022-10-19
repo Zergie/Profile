@@ -19,7 +19,7 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
   vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
   vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
+  vim.keymap.set('n', 'gk', vim.lsp.buf.signature_help, bufopts)
   vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, bufopts)
   vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, bufopts)
   vim.keymap.set('n', '<space>wl', function()
@@ -34,23 +34,24 @@ end
 
 local lspconfig = require('lspconfig')
 
+-- local capabilities = require('cmp_nvim_lsp').default_capabilities()
 local lsp_flags = {
   -- This is the default in Nvim 0.7+
   debounce_text_changes = 150,
 }
 lspconfig['pyright'].setup{
-    on_attach = on_attach,
-    flags = lsp_flags,
+    on_attach    = on_attach,
+    flags        = lsp_flags,
 }
 lspconfig['lemminx'].setup{
-    on_attach = on_attach,
-    flags = lsp_flags,
-    cmd = { 'c:/GIT/Profile/neovim/lemminx/lemminx-win32.exe' },
+    on_attach    = on_attach,
+    flags        = lsp_flags,
+    cmd          = { 'c:/GIT/Profile/neovim/lemminx/lemminx-win32.exe' },
 }
 lspconfig['omnisharp'].setup{
-    on_attach = on_attach,
-    flags = lsp_flags,
-    cmd = { 'dotnet', 'c:/GIT/Profile/neovim/omnisharp/OmniSharp.dll' },
+    on_attach    = on_attach,
+    flags        = lsp_flags,
+    cmd          = { 'dotnet', 'c:/GIT/Profile/neovim/omnisharp/OmniSharp.dll' },
     
     -- Enables support for reading code style, naming convention and analyzer
     -- settings from .editorconfig.
@@ -88,7 +89,7 @@ lspconfig['omnisharp'].setup{
     analyze_open_documents_only = false,
 }
 lspconfig['powershell_es'].setup{
-    on_attach = on_attach,
-    flags = lsp_flags,
-    bundle_path = 'c:/GIT/Profile/neovim/PowerShellEditorServices',
+    on_attach    = on_attach,
+    flags        = lsp_flags,
+    bundle_path  = 'c:/GIT/Profile/neovim/PowerShellEditorServices',
 }

@@ -1,6 +1,5 @@
 #Requires -PSEdition Core
 
-[CmdletBinding()]
 param (
     # Specifies a path to one or more locations.
     [Parameter(Mandatory=$true,

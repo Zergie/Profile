@@ -23,22 +23,19 @@ SetTitleMatchMode 2
 #IfWinActive Open Database
 ^1::SendInput T€chn{!}k1{enter}
 
-#IfWinActive XSD-Schema öffnen
-^1::SendInput C:\Builds\tools\XML-Schema\Strukturupdates.xsd{enter}
-
 #IfWinActive C:\Users\Puchinger.ROCOM.000\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\AutoHotkey.ahk
 ~^s::
 sleep 100
 reload
 return
 
-#IfWinActive ahk_exe WindowsTerminal.exe
-::;;::
-suspend On
-SendInput $(s )
-suspend Off
-Send {left}
-return
+; #IfWinActive ahk_exe WindowsTerminal.exe
+; ::;;::
+; suspend On
+; SendInput $(s )
+; suspend Off
+; Send {left}
+; return
 
 #IfWinActive
 ^1::
@@ -77,6 +74,37 @@ Send ^v
 return
 
 
+; 
+; volume control with <LWIN> & mouse wheel
+;
+LWin & WheelUp::
+SoundSet, +4
+Send, {Blind} {Volume_Up} 
+return
+
+LWin & WheelDown::
+SoundSet, -4
+Send {Blind} {Volume_Down} 
+return
+
+
+
+; 
+; remap <TAB> to <ESC> for neovim
+;
+#IfWinActive [neovim] ahk_exe WindowsTerminal.exe
+$Tab up::
+Send, {Escape Up}
+return
+
+$Tab::
+Send, {Escape Down}
+KeyWait, Tab
+return
+
+
+
+#IfWinNotActive ahk_exe WindowsTerminal.exe
 ;
 ; shortcuts
 ;
@@ -236,40 +264,20 @@ XButton2::
 Send, {Blind}{CtrlDown}{LWinDown}{Right}{LWinUp}{CtrlUp}
 return
 
-
-
-LWIN & MButton::
-Send, {Blind} 
-WinGetTitle, Title, A
-WinMove, %Title%,,,,, A_ScreenHeight/3
-return
-
-LShift & MButton::
-Winset, Alwaysontop, , A
-return
-
-LWin & WheelUp::
-SoundSet, +4
-Send, {Blind} {Volume_Up} 
-return
-
-LWin & WheelDown::
-SoundSet, -4
-Send {Blind} {Volume_Down} 
-return
-
 ; Shift + Wheel for horizontal scrolling
-+WheelUp::
+
 ; Scroll to the left
++WheelUp::
 MouseGetPos,,,id, fcontrol,1
 SendMessage, 0x114, 0, 0, %fcontrol%, ahk_id %id% ; 0x114 is WM_HSCROLL and the 0 after it is SB_LINERIGHT.
 return
 
-+WheelDown::
 ;Scroll to the right
++WheelDown::
 MouseGetPos,,,id, fcontrol,1
 SendMessage, 0x114, 1, 0, %fcontrol%, ahk_id %id% ;  0x114 is WM_HSCROLL and the 1 after it is SB_LINELEFT.
 return
+
 
 ;
 ; GUI

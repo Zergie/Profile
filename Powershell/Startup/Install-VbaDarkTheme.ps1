@@ -57,19 +57,23 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
     }
 }
 
-# C:\GIT\github\VBEThemeColorEditor\VBEThemeColorEditor\VBEThemeColorEditorCli\bin\Debug\VBEThemeColorEditorCli.exe `
-#     --Theme "$root\VBE7.1.DLL" `
-#     --VBE "C:\Program Files (x86)\Common Files\Microsoft Shared\VBA\VBA7\VBE7.DLL"
 
-# C:\GIT\github\VBEThemeColorEditor\VBEThemeColorEditor\VBEThemeColorEditorCli\bin\Debug\VBEThemeColorEditorCli.exe `
-#     --Theme "$root\VBE7.1.DLL" `
-#     --VBE "C:\Program Files (x86)\Common Files\Microsoft Shared\VBA\VBA7.1\VBE7.DLL"
+[psCustomObject]@{
+    CodeForeColors = "5 5 12 2 5 15 9 5 5 5 0 0 0 0 0 0"
+    CodeBackColors = "2 7 2 16 12 2 2 2 10 2 0 0 0 0 0 0"
+    FontFace       = "Consolas"
+    FontHeight     = 10
+} | 
+    ForEach-Object {
+        $item = $_
 
-# if (Test-Path "C:\Program Files\Microsoft Office 15\root\vfs\ProgramFilesCommonX86\Microsoft Shared\VBA") {
-#     & $vbeThemeColorEditor.FullName `
-#         --Theme "$root\VBE7.1.DLL" `
-#         --VBE "C:\Program Files\Microsoft Office 15\root\vfs\ProgramFilesCommonX86\Microsoft Shared\VBA\VBA7.1\VBE7.DLL"
-#     Write-Host "Microsoft Office 15 patched" -ForegroundColor Green
-# } else {
-#     Write-Host "Microsoft Office 15 not found" -ForegroundColor Red
-# }
+        Get-Member -InputObject $item -MemberType NoteProperty |
+            ForEach-Object {
+                [psCustomObject]@{Name=$_.Name; Value=$item."$($_.Name)" }
+            }
+    } |
+    ForEach-Object {
+        Write-Host -ForegroundColor Green "Writing to registry: $($_.Name) = $($_.Value)"
+        Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\VBA\7.0\Common\" -Name $_.Name -Value $_.Value
+        Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\VBA\7.1\Common\" -Name $_.Name -Value $_.Value
+    } 

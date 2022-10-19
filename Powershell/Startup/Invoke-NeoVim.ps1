@@ -1,3 +1,4 @@
+$host.ui.RawUI.WindowTitle = "[neovim]"
 $editorArgs = @{ Editor="C:/tools/neovim/nvim-win64/bin/nvim.exe" ` }
 if ($args.Length  -gt 0) { $editorArgs["Arguments"] = $args  }
 if ($input.MoveNext()) {

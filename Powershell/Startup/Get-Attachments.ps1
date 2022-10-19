@@ -1,6 +1,5 @@
 #Requires -PSEdition Core
 
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
                Position=0,

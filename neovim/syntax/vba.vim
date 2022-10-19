@@ -6,8 +6,8 @@ if exists("b:current_syntax")
         finish
 endif
 
-" VB is case insensitive
-syn case ignore
+" VB is case insensitive, but we do not want mix cases in our git repo
+" syn case ignore
 
 syn keyword vbOperator AddressOf Eqv Imp In
 syn keyword vbOperator Mod Not To Xor
@@ -68,8 +68,7 @@ syn keyword vbStatement Compare Text Binary Database
 syn keyword vbKeyword Binary Date Empty Error Get
 syn keyword vbKeyword Input Lock New Nothing Null On
 syn keyword vbKeyword Option ParamArray Print Private Property
-syn keyword vbKeyword Public
-syn keyword vbKeyword Resume Seek
+syn keyword vbKeyword Public Resume Seek Debug Assert
 syn keyword vbKeyword Set Static Step WithEvents
 syn keyword vbKeyword If Then ElseIf Else Select Case
 
@@ -78,7 +77,7 @@ syn keyword vbControl Optional ByRef ByVal And Or Is Like As TypeOf
 syn keyword vbTodo contained    TODO
 
 " Functions
-syn match vbFunction "\v(Function|Sub|Property (G|L|S)et)@<=\w[a-z0-9_]*"
+syn match vbFunction "\v(Function|Sub|Property (G|L|S)et) @<=\w[a-z0-9_]*"
 
 " Datatypes
 syn match vbType  "\v( (As|Is) )@<=\w[a-z0-9_]*"
@@ -93,9 +92,9 @@ syn match vbNumber "\.\d\+\>"
 syn match  vbNumber            "{[[:xdigit:]-]\+}\|&[hH][[:xdigit:]]\+&"
 syn match  vbNumber            ":[[:xdigit:]]\+"
 syn match  vbNumber            "[-+]\=\<\d\+\>"
-syn match  vbFloat              "[-+]\=\<\d\+[eE][\-+]\=\d\+"
-syn match  vbFloat              "[-+]\=\<\d\+\.\d*\([eE][\-+]\=\d\+\)\="
-syn match  vbFloat              "[-+]\=\<\.\d\+\([eE][\-+]\=\d\+\)\="
+syn match  vbFloat             "[-+]\=\<\d\+[eE][\-+]\=\d\+"
+syn match  vbFloat             "[-+]\=\<\d\+\.\d*\([eE][\-+]\=\d\+\)\="
+syn match  vbFloat             "[-+]\=\<\.\d\+\([eE][\-+]\=\d\+\)\="
 
 " String and Character constants
 syn region  vbString		start=+"+  end=+"\|$+

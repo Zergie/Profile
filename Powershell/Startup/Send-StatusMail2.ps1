@@ -1,6 +1,4 @@
 #Requires -PSEdition Core
-
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
                ParameterSetName="WorkitemIdParameterSetName",
@@ -60,8 +58,8 @@ Process {
     $start_date = $Start
     $end_date   = $End
 
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
-    New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
+    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
+    New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1" -ErrorAction SilentlyContinue
 
     Write-Host "Downloading parents.."
     if ($Workitem.Count -gt 0) {
@@ -201,7 +199,7 @@ Process {
         ForEach-Object {
             $i=$_
             [pscustomobject] @{
-                teamMember=$teamMembers |? displayName -eq $i.title
+                teamMember=$teamMembers | Where-Object displayName -eq $i.title
                 daysOff = @{start=$i.start;end=$i.start}
             }
         }

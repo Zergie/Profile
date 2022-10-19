@@ -1,6 +1,5 @@
 #Requires -PSEdition Core
 
-[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
                Position=0,
@@ -67,7 +66,7 @@ end {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
             switch -regex ($item.Extension) {
-                "^(.ACT|.xml)$" {  
+                "^(.ACT)$" {  
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
                     $settings = [System.Xml.XmlWriterSettings]::new()

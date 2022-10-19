@@ -1,4 +1,3 @@
-[CmdletBinding()]
 param(
     [Parameter(Position=0, ValueFromPipeline=$true, ValueFromRemainingArguments=$true)]
     [System.Object]

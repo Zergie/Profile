@@ -1,6 +1,5 @@
 
 #Requires -PSEdition Core
-[CmdletBinding()]
 param(
     [Parameter(Mandatory=$false)]
     [switch]
@@ -104,7 +103,6 @@ begin {
 
     # helper functions
     function Start-WaitingForPipelineToFinish {
-        [CmdletBinding()]
         param (
             [Parameter(Mandatory=$true, Position=0)]
             [object]

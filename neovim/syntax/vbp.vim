@@ -2,12 +2,12 @@
 " Language:     Visual Basic - Project File
 
 " quit when a syntax file was already loaded
-" if exists("b:current_syntax")
-"     finish
-" endif
+if exists("b:current_syntax")
+    finish
+endif
 
-" VB is case insensitive
-syn case ignore
+" VB is case insensitive, but we do not want mix cases in our git repo
+" syn case ignore
 
 syn match vbKeyword "\v^\w+"
 
