@@ -1,3 +1,4 @@
+[cmdletbinding()]
 Param(
 )
 dynamicparam {

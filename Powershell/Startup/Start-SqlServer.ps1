@@ -1,3 +1,2 @@
-
-        & $dockerScript -Start
+. $dockerScript -Start
     
