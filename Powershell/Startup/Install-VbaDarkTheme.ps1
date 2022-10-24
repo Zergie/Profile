@@ -1,14 +1,34 @@
+[cmdletbinding()]
+param(
+    [Parameter()]
+    [switch]
+    $ReInstall
+)
+
 # Self-elevate the script if required
 if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-    Start-Process `
-        -FilePath (Get-Process -PID $PID).Path `
-        -Verb Runas `
-        -ArgumentList "-File `"$($MyInvocation.MyCommand.Path)`" $($MyInvocation.UnboundArguments)"
+    $p = @{
+        FilePath = (Get-Process -PID $PID).Path 
+        Verb = "Runas"
+        ArgumentList = @(
+                            if ($PSBoundParameters.Debug.IsPresent) { "-NoExit" }
+                            "-File"
+                            "`"$($MyInvocation.MyCommand.Path)`""
+                            $MyInvocation.BoundParameters.GetEnumerator() | 
+                                ForEach-Object { "-$($_.Key)" }
+            ) | Join-String -Separator " "
+    }
+    $p | ConvertTo-Json | Write-Debug
+    Start-Process @p
     exit
 }
 
 Get-Process | Where-Object { $_.Name -in "MsAccess","Excel","Outlook","VB6","WinWord" } | ForEach-Object { $_.CloseMainWindow(); Start-Sleep -Seconds 1 }
 Get-Process | Where-Object { $_.Name -in "MsAccess","Excel","Outlook","VB6","WinWord" } | Stop-Process -Force | ForEach-Object { Start-Sleep -Seconds 1 }
+
+if ($Reinstall) {
+    Get-ChildItem $env:TEMP -Filter VBEThemeColorEditor | Remove-Item -Force -Recurse
+}
 
 $vbeThemeColorEditor = Get-ChildItem $env:TEMP -Filter VBEThemeColorEditor | Get-ChildItem -Recurse -Filter VBEThemeColorEditorCli.exe | Select-Object -First 1
 if ($null -eq $vbeThemeColorEditor) {

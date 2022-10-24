@@ -119,15 +119,19 @@ Install-Directory `
 Get-GithubRelease `
     -Repo "PowerShell/PowerShellEditorServices" `
     -File "PowerShellEditorServices.zip" `
-    -OutFolder "$PSScriptRoot\neovim\PowershellEditorServices"
+    -OutFolder "$PSScriptRoot\neovim\lsp_server\PowershellEditorServices"
 Get-GithubRelease `
     -Repo "redhat-developer/vscode-xml" `
     -File "lemminx-win32.zip" `
-    -OutFolder "$PSScriptRoot\neovim\lemminx"
+    -OutFolder "$PSScriptRoot\neovim\lsp_server\lemminx"
 Get-GithubRelease `
     -Repo "OmniSharp/omnisharp-roslyn" `
     -File "omnisharp-win-x64-net6.0.zip" `
-    -OutFolder "$PSScriptRoot\neovim\omnisharp"
+    -OutFolder "$PSScriptRoot\neovim\lsp_server\omnisharp"
+Get-GithubRelease `
+    -Repo "sumneko/lua-language-server" `
+    -File "lua-language-server-3.5.6-win32-x64.zip" `
+    -OutFolder "$PSScriptRoot\neovim\lsp_server\lua-language-server"
 Update-File `
     "C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua" `
     "$PSScriptRoot\patches\util.lua.patch"

@@ -39,6 +39,7 @@ return
 
 #IfWinActive
 ^1::
+Send, {CtrlUp}
 ClipSave := Clipboard
 SendInput %ClipSave%
 return
