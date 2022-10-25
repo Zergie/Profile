@@ -78,25 +78,25 @@ begin {
 
     # param Name
     if ($AllExceptSetup) {
-        $Name = [PSCustomObject]@{
+        $Name = [pscustomobject]@{
             "Stage 1"= @(
-                [PSCustomObject]@{ id= 45; name= "TauOffice Plugins" }
-                [PSCustomObject]@{ id= 51; name= "TauOffice Controls" }
-                [PSCustomObject]@{ id= 44; name= "TauOffice Utils" }
+                [pscustomobject]@{ id= 45; name= "TauOffice Plugins" }
+                [pscustomobject]@{ id= 51; name= "TauOffice Controls" }
+                [pscustomobject]@{ id= 44; name= "TauOffice Utils" }
             )
             "Stage 2"= @(
-                [PSCustomObject]@{ id= 40; name= "AdminTool" }
-                [PSCustomObject]@{ id= 35; name= "TauOffice MDE" }
-                [PSCustomObject]@{ id= 46; name= "TauOffice Basisstatistik" }
-                [PSCustomObject]@{ id= 48; name= "TauOffice Strukturcheck" }
-                [PSCustomObject]@{ id= 47; name= "TauOffice Updater" }
+                [pscustomobject]@{ id= 40; name= "AdminTool" }
+                [pscustomobject]@{ id= 35; name= "TauOffice MDE" }
+                [pscustomobject]@{ id= 46; name= "TauOffice Basisstatistik" }
+                [pscustomobject]@{ id= 48; name= "TauOffice Strukturcheck" }
+                [pscustomobject]@{ id= 47; name= "TauOffice Updater" }
             )
         }
     } else  {
-        $Name = [PSCustomObject]@{
+        $Name = [pscustomobject]@{
             "Stage 1"= Invoke-RestApi -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/pipelines?api-version=6.0-preview.1" |
                             ForEach-Object { $_.value } |
-                            ForEach-Object { [PSCustomObject]@{ id= $_.Id; name= $_.name } } |
+                            ForEach-Object { [pscustomobject]@{ id= $_.Id; name= $_.name } } |
                             Where-Object { $_.name -in $PSBoundParameters['Name'] }
         }
     }

@@ -65,9 +65,9 @@ process {
                 } elseif ($_ -match "[^ ]+ \d+(\.\d+){1,3}") {
                     $array = $_ -split " "
 
-                    [PSCustomObject]@{
-                        "package name"= $array | Select-Object -First 1
-                        "version"     = [Version]::new(($array | Select-Object -Skip 1 -First 1))
+                    [pscustomobject]@{
+                        "package name" = $array | Select-Object -First 1
+                        "version"      = [Version]::new(($array | Select-Object -Skip 1 -First 1))
                     }
                 }
                 $i++

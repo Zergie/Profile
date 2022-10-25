@@ -23,7 +23,7 @@ param(
     $Table,
 
     [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-    [PSCustomObject]
+    [pscustomobject]
     $Data
 )
 Begin {
@@ -39,7 +39,7 @@ Begin {
 }
 Process {
     if ($Data -is [Hashtable]) {
-        $Data = [PSCustomObject]$Data
+        $Data = [pscustomobject]$Data
     }
 
     $data_types = Invoke-Sqlcmd `

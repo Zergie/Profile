@@ -112,7 +112,7 @@ if ($Inspect) {
             $count = ($procedure_match.Matches.Value -split "`r`n").Count
             $end =  $start - 1 + $count
             
-            [PSCustomObject]@{path=$match.path;start=$start;count=$count;end=$end} | ConvertTo-Json | Write-Debug
+            [pscustomobject]@{path=$match.path;start=$start;count=$count;end=$end} | ConvertTo-Json | Write-Debug
             
             bat $_.path --paging never --line-range $start`:$end
         }

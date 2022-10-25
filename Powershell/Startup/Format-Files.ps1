@@ -89,7 +89,7 @@ end {
                     
                     $lineno = 0
                     $content = Get-Content $item -Encoding 1250 |
-                                ForEach-Object { $lineno++; [PSCustomObject]@{ number= $lineno; content= $_ } }
+                                ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }
                     
                     $content | 
                     ForEach-Object {

@@ -124,7 +124,7 @@
                 $PSBoundParameters.Remove('Minimum') | Out-Null
                 $PSBoundParameters.Remove('Maximum') | Out-Null
                 $start= Get-Random -Time @PSBoundParameters
-                [PSCustomObject]@{
+                [pscustomobject]@{
                     start= $start
                     end=   $start.AddMinutes($diff)
                 }
@@ -139,7 +139,7 @@
                     $PSBoundParameters.Remove('Maximum') | Out-Null
                     $PSBoundParameters.Remove('Count') | Out-Null
                     $start= Get-Random -Date @PSBoundParameters
-                    [PSCustomObject]@{
+                    [pscustomobject]@{
                         start= $start
                         end=   $start.AddDays($_)
                     }

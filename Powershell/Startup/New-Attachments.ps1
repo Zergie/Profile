@@ -17,7 +17,7 @@ Begin {
     $Items = @()
 }
 Process{
-    $Items += [PSCustomObject]@{
+    $Items += [pscustomobject]@{
                 ID = $null        
                 Name = $null
                 Path = ($Path | Resolve-Path).ProviderPath
@@ -56,7 +56,7 @@ End{
 
                                 $index = $indexes | Where-Object workitem -eq $w.id | Select-Object -First 1
                                 if ($null -eq $index) {
-                                    $index = [PSCustomObject]@{ workitem = $w.id; number = 0 }
+                                    $index = [pscustomobject]@{ workitem = $w.id; number = 0 }
                                     $indexes += $index
                                 }
 

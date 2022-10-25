@@ -132,7 +132,7 @@ Process {
     }
 
     if ($DoNotConnect) {
-        [PSCustomObject]@{
+        [pscustomobject]@{
             Type=$Type
             Address=$Address
             Username=$Username

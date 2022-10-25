@@ -18,7 +18,7 @@ Begin {
     $Items = @()
 }
 Process{
-    $Items += [PSCustomObject]@{
+    $Items += [pscustomobject]@{
         ID = [int]::Parse([System.IO.Path]::GetFileNameWithoutExtension($Path))
         Path = ($Path | Resolve-Path).ProviderPath
     }

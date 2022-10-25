@@ -78,7 +78,7 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
 }
 
 
-[psCustomObject]@{
+[pscustomobject]@{
     CodeForeColors = "5 5 12 2 5 15 9 5 5 5 0 0 0 0 0 0"
     CodeBackColors = "2 7 2 16 12 2 2 2 10 2 0 0 0 0 0 0"
     FontFace       = "Consolas"
@@ -89,7 +89,7 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
 
         Get-Member -InputObject $item -MemberType NoteProperty |
             ForEach-Object {
-                [psCustomObject]@{Name=$_.Name; Value=$item."$($_.Name)" }
+                [pscustomobject]@{Name=$_.Name; Value=$item."$($_.Name)" }
             }
     } |
     ForEach-Object {

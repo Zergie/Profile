@@ -11,43 +11,43 @@ $modules = @(
 )
 
 $tools = @(
-    [PsCustomObject]@{name="7zip"}
-    [PsCustomObject]@{name="autohotkey"}
-    [PsCustomObject]@{name="bat"}
-    [PsCustomObject]@{name="BatteryBar"}
-    [PsCustomObject]@{name="beyondcompare"}
-    [PsCustomObject]@{name="brave";reason="brave has integrated updates";pin=$true}
-    [PsCustomObject]@{name="discord"}
-    [PsCustomObject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates";pin=$true}
-    [PsCustomObject]@{name="gimp"}
-    [PsCustomObject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
-    [PsCustomObject]@{name="git-status-cache-posh-client"}
-    [PsCustomObject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
-    [PsCustomObject]@{name="gsudo"}
-    [PsCustomObject]@{name="InkScape"}
-    [PsCustomObject]@{name="microsoft-teams"}
-    [PsCustomObject]@{name="microsoft-windows-terminal"}
-    [PsCustomObject]@{name="neovim"}
-    [PsCustomObject]@{name="nodejs-lts" ;}
-    [PsCustomObject]@{name="nuget.commandline"}
-    [PsCustomObject]@{name="obs-studio"}
-    [PsCustomObject]@{name="phonerlite"}
-    [PsCustomObject]@{name="poshgit"}
-    [PsCustomObject]@{name="powershell-core"}
-    [PsCustomObject]@{name="powertoys"}
-    [PsCustomObject]@{name="sql-server-management-studio"}
-    [PsCustomObject]@{name="treesizefree"}
-    [PsCustomObject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
-    [PsCustomObject]@{name="vscode"}
-    [PsCustomObject]@{name="wireshark"}
-    [PsCustomObject]@{name="wsl2"}
-    [PsCustomObject]@{name="ripgrep"}
+    [pscustomobject]@{name="7zip"}
+    [pscustomobject]@{name="autohotkey"}
+    [pscustomobject]@{name="bat"}
+    [pscustomobject]@{name="BatteryBar"}
+    [pscustomobject]@{name="beyondcompare"}
+    [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
+    [pscustomobject]@{name="discord"}
+    [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates";pin=$true}
+    [pscustomobject]@{name="gimp"}
+    [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
+    [pscustomobject]@{name="git-status-cache-posh-client"}
+    [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
+    [pscustomobject]@{name="gsudo"}
+    [pscustomobject]@{name="InkScape"}
+    [pscustomobject]@{name="microsoft-teams"}
+    [pscustomobject]@{name="microsoft-windows-terminal"}
+    [pscustomobject]@{name="neovim"}
+    [pscustomobject]@{name="nodejs-lts" ;}
+    [pscustomobject]@{name="nuget.commandline"}
+    [pscustomobject]@{name="obs-studio"}
+    [pscustomobject]@{name="phonerlite"}
+    [pscustomobject]@{name="poshgit"}
+    [pscustomobject]@{name="powershell-core"}
+    [pscustomobject]@{name="powertoys"}
+    [pscustomobject]@{name="sql-server-management-studio"}
+    [pscustomobject]@{name="treesizefree"}
+    [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
+    [pscustomobject]@{name="vscode"}
+    [pscustomobject]@{name="wireshark"}
+    [pscustomobject]@{name="wsl2"}
+    [pscustomobject]@{name="ripgrep"}
 )
 
 $npm = @(
-    [PsCustomObject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
-    [PsCustomObject]@{name="pyright"}                 # python LSP Server for NeoVim
-    [PsCustomObject]@{name="vsce"}                    # used for Visual Studio Code Plugin Development
+    [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
+    [pscustomobject]@{name="pyright"}                 # python LSP Server for NeoVim
+    [pscustomobject]@{name="vsce"}                    # used for Visual Studio Code Plugin Development
 )
 
 foreach ($tool in $modules) {

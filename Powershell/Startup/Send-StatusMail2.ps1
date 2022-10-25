@@ -212,7 +212,7 @@ Process {
             $ret = $null
             foreach ($rev in $_.revisions | Sort-Object rev) {
                 if ($null -eq $ret) {
-                    $ret = [PSCustomObject]@{ workitem = $_; ToDo = $null; Doing = $null; Done = $null; }
+                    $ret = [pscustomobject]@{ workitem = $_; ToDo = $null; Doing = $null; Done = $null; }
                 }
 
                 if ($rev.fields.'System.State' -eq 'To Do' -and $null -eq $ret.ToDo) {
@@ -268,7 +268,7 @@ Process {
                                 Where-Object { $_.daysOff.start -le $date -and $_.daysOff.end -ge $date }
                     
                     if ($dayOff.Count -eq 0 -and $date -notin $team_daysOff) {
-                        [PSCustomObject]@{
+                        [pscustomobject]@{
                             Datum = $date
                             Oberpunkt = $downloaded | Where-Object id -EQ $w.fields.'System.Parent' | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
                             Arbeitsschritt = "$($w.fields.'System.Title') ($($w.fields.'System.WorkItemType') $($w.id))"

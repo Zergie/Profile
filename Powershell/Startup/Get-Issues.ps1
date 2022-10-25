@@ -142,7 +142,7 @@ process {
     } else {
         $workitems | 
             ForEach-Object {
-                [PSCustomObject]@{
+                [pscustomobject]@{
                     id=             $_.id
                     rev=            $_.rev
                     "System.State"= $_.fields.'System.State'

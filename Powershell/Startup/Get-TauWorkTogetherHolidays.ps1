@@ -61,11 +61,11 @@ end {
         if ($rocom -or $rocomservice) {
             $dat = (Get-Date)
             $dat = $dat.AddDays(-$dat.Day + 1)
-            [PSCustomObject]@{month = $dat.Month; year = $dat.Year}
+            [pscustomobject]@{month = $dat.Month; year = $dat.Year}
             $dat = $dat.AddMonths(1)
-            [PSCustomObject]@{month = $dat.Month; year = $dat.Year}
+            [pscustomobject]@{month = $dat.Month; year = $dat.Year}
         } else {
-            [PSCustomObject]@{month = $Month; year = $Year}
+            [pscustomobject]@{month = $Month; year = $Year}
         }
     } | 
     Invoke-Expression
@@ -79,7 +79,7 @@ end {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | ForEach-Object Content
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
 
-        $response = [PSCustomObject]@{ logout = $true }
+        $response = [pscustomobject]@{ logout = $true }
         while ($response.logout -eq $true) {
             $response = $dates |
                         ForEach-Object { 
@@ -116,7 +116,7 @@ end {
     }
     
     if ($rocom) {
-        $response = [PSCustomObject]@{
+        $response = [pscustomobject]@{
             status=$response.status
             error=$response.error
             legend=$response.legend
@@ -127,7 +127,7 @@ end {
                 }
         }
     } elseif ($rocomservice) {
-        $response = [PSCustomObject]@{
+        $response = [pscustomobject]@{
             status=$response.status
             error=$response.error
             legend=$response.legend
