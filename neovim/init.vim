@@ -16,12 +16,20 @@ call plug#begin('~/AppData/Local/nvim/plugged')
 
     " snipets
     Plug 'hrsh7th/vim-vsnip'
+
+    " testing
+    Plug 'folke/which-key.nvim'
 call plug#end()
 
 lua require 'user.cmp'
 lua require 'user.keymaps'
 lua require 'user.lspconfig'
 lua require 'user.telescope'
+lua require 'user.which-key'
+
+let g:mapleader = "\<Space>"
+let g:maplocalleader = ','
+set timeoutlen=0
 
 " <vim-easy-align>
 " Start interactive EasyAlign in visual mode (e.g. vipga=)
@@ -84,8 +92,12 @@ set smartcase
 "  /copyright\C    " Case sensitive
 "  /Copyright\c    " Case insensitive
 
-" disable mouse
 set mouse=
+" disable mouse, except mousewheel
+" set mouse=a
+" nnoremap <leftmouse> <nop>
+" nnoremap <middlemouse> <nop>
+" nnoremap <rightmouse> <nop>
 
 " use spaces instead of tabs
 set tabstop=4
