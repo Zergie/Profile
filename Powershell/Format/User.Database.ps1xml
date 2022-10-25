@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>User.Database</Name>
+            <ViewSelectedBy>
+                <TypeName>User.Database</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>name</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>state_desc</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>compatibility_level </Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
+                                    "`e[38;5;2m$($_.name)`e[0m"
+                                } else {
+                                    $_.name
+                                }
+                                </ScriptBlock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
+                                    "`e[38;5;2m$($_.state_desc)`e[0m"
+                                } else {
+                                    $_.state_desc
+                                }
+                                </ScriptBlock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
+                                    "`e[38;5;2m$($_.compatibility_level)`e[0m"
+                                } else {
+                                    $_.compatibility_level
+                                }
+                                </ScriptBlock>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>
