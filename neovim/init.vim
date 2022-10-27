@@ -17,7 +17,7 @@ call plug#begin('~/AppData/Local/nvim/plugged')
     " snipets
     Plug 'hrsh7th/vim-vsnip'
 
-    " testing
+    " inline key help
     Plug 'folke/which-key.nvim'
 call plug#end()
 
@@ -28,8 +28,13 @@ lua require 'user.telescope'
 lua require 'user.which-key'
 
 let g:mapleader = "\<Space>"
-let g:maplocalleader = ','
+
+set colorcolumn=100
+set scrolloff=8
+
+" <which-key>
 set timeoutlen=0
+" </which-key>
 
 " <vim-easy-align>
 " Start interactive EasyAlign in visual mode (e.g. vipga=)
@@ -51,10 +56,6 @@ filetype plugin on
 let g:netrw_preview   = 1
 let g:netrw_winsize   = 30
 
-" Search down into subfolders
-" Provides tab-completion for all file-related tasks
-" set path+=**
-
 " Display all matching files when we tab complete
 set wildmenu
 
@@ -73,15 +74,18 @@ tnoremap <silent>  <C-\><C-n>:bd!<CR>
 nmap <F6> :w \| :tabe \| :term git add -p .<CR>
 
 " change cursor back to pwsh default on leaving vim
-au VimLeave * set guicursor=a:ver100
+autocmd VimLeave * set guicursor=a:ver100
+
 
 " set language to english
 set spelllang=en_us
 set langmenu=en_US
 let $LANG = 'en_US'
 
+
 " activate line numbers
 set number relativenumber
+
 
 " search case insensitiv
 set ignorecase
@@ -92,6 +96,7 @@ set smartcase
 "  /copyright\C    " Case sensitive
 "  /Copyright\c    " Case insensitive
 
+
 set mouse=
 " disable mouse, except mousewheel
 " set mouse=a
@@ -99,10 +104,28 @@ set mouse=
 " nnoremap <middlemouse> <nop>
 " nnoremap <rightmouse> <nop>
 
+
 " use spaces instead of tabs
 set tabstop=4
 set shiftwidth=4
 set expandtab
+set smartindent
+
+
+" Removes trailing spaces
+function! TrimWhiteSpace()
+  %s/\([^ ]\)\s*$/\1/
+  ''
+endfunction
+
+augroup user_trimws
+    autocmd!
+    autocmd BufWritePre * :call TrimWhiteSpace()
+augroup END
+
+
+" (testing) remove black background when `git commit`
+highlight Normal guibg=None
 
 " color scheme
 colorscheme codedark
@@ -118,4 +141,4 @@ au BufRead,BufNewFile *.bas set filetype=vb
 au BufRead,BufNewFile *.vbp set filetype=vbp
 
 " to file extensions
-au BufRead,BufNewFile *.article set filetype=article 
+au BufRead,BufNewFile *.article set filetype=article

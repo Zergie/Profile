@@ -15,8 +15,8 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
         $expression = @(
             "sudo"
             "`"$($MyInvocation.MyCommand.Path)`""
-            $MyInvocation.BoundParameters.GetEnumerator() | 
-                ForEach-Object { "-$($_.Key) $($_.Value)" } 
+            $MyInvocation.BoundParameters.GetEnumerator() |
+                ForEach-Object { "-$($_.Key) $($_.Value)" }
         ) | Join-String -Separator " "
         Write-Host -ForegroundColor Cyan $expression
         Invoke-Expression $expression
@@ -101,8 +101,8 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
                       destination = "$env:USERPROFILE\.gitconfig"}
 
-    [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal\settings.json"
-                      destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"}
+    [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal"
+                      destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"}
 
     [pscustomobject]@{source      = "$PSScriptRoot\Powershell"
                       destination = "$env:USERPROFILE\Documents\PowerShell"}
@@ -161,7 +161,7 @@ function Update-File {
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Patch
     )
     process {
-        . "C:\Program Files\Git\usr\bin\patch.exe" $File $Patch 
+        . "C:\Program Files\Git\usr\bin\patch.exe" $File $Patch
     }
 }
 
@@ -171,20 +171,23 @@ function Install-Junction {
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Destination
     )
     process {
-        Write-Host -ForegroundColor Cyan "Installing '$source' -> '$Destination'"
-        Remove-Item "$Destination" -Force -ErrorAction SilentlyContinue | Out-Null
+        Remove-Item $Destination -Force -ErrorAction SilentlyContinue | Out-Null
 
         $directory = [System.IO.Path]::GetDirectoryName($Destination)
         $filename = [System.IO.Path]::GetFileName($Destination)
         
         if ((Test-Path $source -PathType Leaf)) {
             Push-Location $directory | Out-Null
-            New-Item -Type HardLink -Name "$filename" -Value "$Source" | Out-Null
+            "New-Item -Type HardLink -Name `"$filename`" -Value `"$Source`"" |
+                ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
+                Out-Null
             Pop-Location
         } else {
             try { mkdir $directory | Out-Null } catch {}
             Push-Location $directory | Out-Null
-            New-Item -Type Junction -Name "$filename" -Value "$Source" | Out-Null
+            "New-Item -Type Junction -Name `"$filename`" -Value `"$Source`"" |
+                ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
+                Out-Null
             Pop-Location
         }
     }
