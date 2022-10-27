@@ -46,15 +46,19 @@ keymap("n", "<A-k>", ":m+1<cr>", opts)
 keymap("n", "<Space>cd", ":cd %:p:h<cr>", opts)
 
 -- Telescope
-keymap("n", "<Space>fc", ":Telescope current_buffer_fuzzy_find theme=ivy<cr>", opts)
-keymap("n", "<Space>ff", ":Telescope find_files                theme=ivy<cr>", opts)
-keymap("n", "<Space>fg", ":Telescope live_grep                 theme=ivy<cr>", opts)
-keymap("n", "<Space>ft", ":Telescope builtin                   theme=ivy<cr>", opts)
-keymap("n", "<Space>m", " :Telescope marks                     theme=ivy<cr>", opts)
-keymap("n", "<Space>b", " :Telescope buffers                   theme=ivy<cr>", opts)
-keymap("n", "<Space>r", " :Telescope resume                    theme=ivy<cr>", opts)
+keymap("n", "<Space>s", ":Telescope current_buffer_fuzzy_find<cr>", opts)
+keymap("n", "<Space>f", ":Telescope find_files               <cr>", opts)
+keymap("n", "<Space>g", ":Telescope live_grep                <cr>", opts)
+keymap("n", "<Space>t", ":Telescope builtin                  <cr>", opts)
+keymap("n", "<Space>m", ":Telescope marks                    <cr>", opts)
+keymap("n", "<Space>b", ":Telescope buffers                  <cr>", opts)
+keymap("n", "<Space>r", ":Telescope resume                   <cr>", opts)
 
 -- Syntax info
 keymap("n", "<F10>", [[
 :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 ]], opts)
+
+-- Easy Align
+keymap("x", "ga", "<Plug>(EasyAlign)", opts)
+keymap("n", "ga", "<Plug>(EasyAlign)", opts)

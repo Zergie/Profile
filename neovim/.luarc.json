@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+    "Lua.diagnostics.globals": [
+        "vim",
+        "lfs"
+    ],
+    "Lua.workspace.checkThirdParty": false,
+    "Lua.workspace.library": [
+        "C:\\Users\\user\\AppData\\Local\\nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\vscode.nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\vim-easy-align",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\nvim-lspconfig",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\plenary.nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\telescope.nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-nvim-lsp",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-buffer",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-path",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-cmdline",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\nvim-cmp",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\vim-vsnip",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\which-key.nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\lightspeed.nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\vim-repeat",
+        "C:\\tools\\neovim\\nvim-win64\\share\\nvim\\runtime",
+        "C:\\tools\\neovim\\nvim-win64\\lib\\nvim",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-nvim-lsp\\after",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-buffer\\after",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-path\\after",
+        "C:\\Users\\user\\AppData\\Local\\nvim\\plugged\\cmp-cmdline\\after",
+        "${3rd}/lfs/library"
+    ]
+}
