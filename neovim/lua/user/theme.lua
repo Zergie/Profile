@@ -22,3 +22,8 @@ require('vscode').setup({
         Cursor = { fg = c.vscDarkBlue, bg = c.vscLightGreen, bold = true },
     }
 })
+
+-- Plug hop
+vim.api.nvim_set_hl(0, 'HopNextKey',  {ctermbg=15, bg='#f72f38'})
+vim.api.nvim_set_hl(0, 'HopNextKey1', {ctermbg=15, bg='#f72f38'})
+vim.api.nvim_set_hl(0, 'HopNextKey2', {ctermbg=15, bg='#f72f38'})

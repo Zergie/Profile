@@ -7,7 +7,19 @@ vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 vim.opt.smartindent = true
 
--- Display all matching files when we tab complete
+-- remap leader to space
+vim.g.mapleader = ' '
+
+-- configure preview for netrw
+vim.g.netrw_preview = 1
+vim.g.netrw_winsize = 30
+
+-- language settings
+vim.opt.spelllang = 'en_us'
+vim.opt.langmenu = 'en_US'
+vim.api.nvim_exec('language en_US', true)
+
+-- display all matching files when we tab complete
 vim.opt.wildmenu = true
 
 -- search case insensitiv
@@ -18,10 +30,11 @@ vim.opt.ignorecase = true
 --  /copyright\C    " Case sensitive
 --  /Copyright\c    " Case insensitive
 
-vim.wo.signcolumn = 'number'
+vim.opt.signcolumn = 'number'
 
 -- Plug which-key
-vim.opt.timeoutlen = 0
+vim.opt.timeoutlen = 250
 
 -- Plug nvim-cmp
 vim.opt.completeopt = 'menu,menuone,noselect'
+
