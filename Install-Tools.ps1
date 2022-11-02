@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [ValidateSet("*", "chocolatey", "pwsh-modules", "npm", "junctions", "patches", "github-releases", "commands", "fonts")]
+    [ValidateSet("*", "chocolatey", "pwsh-modules", "npm", "junctions", "patches", "github-releases", "commands")]
     [string]
     $Install = "*"
 )
@@ -49,6 +49,7 @@ $tools = @(
     [pscustomobject]@{name="microsoft-teams"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
+    [pscustomobject]@{name="nerd-fonts-Cousine"}
     [pscustomobject]@{name="nodejs-lts" ;}
     [pscustomobject]@{name="nuget.commandline"}
     [pscustomobject]@{name="obs-studio"}
@@ -115,10 +116,14 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\neovim\lua\server_configurations\rsvbalsp.lua"
+                      destination = "$PSScriptRoot\neovim\plugged\nvim-lspconfig\lua\lspconfig\server_configurations\rsvbalsp.lua"}
 )
 
 $commands = @(
     { . "$env:ProgramData\chocolatey\bin\bat.exe" cache --build                             }
+    { Remove-Item -Force -Recurse "$PSScriptRoot\neovim\lsp_server\omnisharp\de" -ErrorAction SilentlyContinue }
     { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'PlugUpgrade|PlugInstall|PlugUpdate|q|q' }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
 )
@@ -254,19 +259,4 @@ if ($Install -in @('*', 'commands')) {
         Write-Host -ForegroundColor Cyan "$item"
         Invoke-Command -ScriptBlock $item
     }
-}
-
-# install my nerd font
-if ($Install -in @('fonts')) {
-    Remove-Item -Force -Recurse .\patched-fonts\ -ErrorAction SilentlyContinue
-    Invoke-WebRequest "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/install.ps1" -OutFile "$PSScriptRoot/install.ps1"
-
-    New-Item -ItemType Directory "$PSScriptRoot/patched-fonts/complete" | Push-Location
-    (Invoke-RestMethod "https://api.github.com/repos/ryanoasis/nerd-fonts/contents/patched-fonts/AurulentSansMono/complete").GetEnumerator() |
-        ForEach-Object { Invoke-WebRequest $_.download_url -OutFile $_.name }
-    Pop-Location
-
-    . "$PSScriptRoot/install.ps1" -WindowsCompatibleOnly -FontName complete
-    Remove-item -Force "$PSScriptRoot/install.ps1"
-    Remove-item -Force -Recurse "$PSScriptRoot/patched-fonts"
 }

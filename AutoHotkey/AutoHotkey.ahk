@@ -1,5 +1,6 @@
 #Include %A_LineFile%\..\libs\WinClipAPI.ahk 
 #Include %A_LineFile%\..\libs\WinClip.ahk 
+#Include %A_LineFile%\..\Minimal.ahk 
 
 CoordMode, Mouse, Window
 SetKeyDelay -1

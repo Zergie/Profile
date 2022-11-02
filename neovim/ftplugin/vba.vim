@@ -1,5 +1,5 @@
 " Vim filetype plugin file
-"     Language: Windows PowerShell
+"     Language: Visual Basic for Application
 "   Maintainer:	Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
 set nospell

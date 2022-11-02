@@ -71,7 +71,7 @@ process {
     $State = $PSBoundParameters['State']
 
     $downloaded = @()
-    if ($IterationName -eq "@Current Iteration") { 
+    if ($IterationName -eq "@Current Iteration") {
         $missing_ids = Invoke-RestApi `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
                 -Body @{
@@ -138,9 +138,11 @@ process {
                     ConvertTo-Pdf |
                     Where-Object { $null -ne $_ }
         $pdfs
-        New-Attachments -Path $pdfs
+        if ($null -ne $pdfs) {
+            New-Attachments -Path $pdfs
+        }
     } else {
-        $workitems | 
+        $workitems |
             ForEach-Object {
                 [pscustomobject]@{
                     id=             $_.id

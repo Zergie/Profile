@@ -14,14 +14,6 @@ local keymap = vim.api.nvim_set_keymap
 -- Remap space
 keymap("", "<Space>", "<nop>", opts)
 
--- Remap for <ESC>
-keymap("n", "<C-j>", "<ESC>", opts)
-keymap("i", "<C-j>", "<ESC>", opts)
-keymap("v", "<C-j>", "<ESC>", opts)
-keymap("x", "<C-j>", "<ESC>", opts)
-keymap("t", "<C-j>", "<ESC>", opts)
-keymap("c", "<C-j>", "<ESC>", opts)
-
 -- Better window navigation
 keymap("n", "<C-h>", "<C-w>h", opts)
 keymap("n", "<C-j>", "<C-w>j", opts)
@@ -66,19 +58,19 @@ keymap("n", "<Leader>r", ":Telescope resume                   <cr>", opts)
 -- Hop
 local hop = require('hop')
 hop.setup()
-local directions = require('hop.hint').HintDirection
-vim.keymap.set('', '<Leader>f', function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, opts)
-vim.keymap.set('', '<Leader>F', function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, opts)
-vim.keymap.set('', '<Leader>t', function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, opts)
-vim.keymap.set('', '<Leader>T', function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, opts)
-keymap("n", "<Leader>b", ":HopWordBC<cr>", opts)
+-- local directions = require('hop.hint').HintDirection
+-- vim.keymap.set('', '<Leader>f', function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, opts)
+-- vim.keymap.set('', '<Leader>F', function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, opts)
+-- vim.keymap.set('', '<Leader>t', function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, opts)
+-- vim.keymap.set('', '<Leader>T', function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, opts)
 keymap("n", "<Leader>w", ":HopWordAC<cr>", opts)
+keymap("n", "<Leader>W", ":HopWordBC<cr>", opts)
 keymap("n", "<Leader>j", ":HopLineAC<cr>", opts)
 keymap("n", "<Leader>k", ":HopLineBC<cr>", opts)
 keymap("n", "s", ":HopChar2AC<cr>", opts)
 keymap("n", "S", ":HopChar2BC<cr>", opts)
-keymap("v", "<Leader>b", ":HopWordBC<cr>", opts)
 keymap("v", "<Leader>w", ":HopWordAC<cr>", opts)
+keymap("v", "<Leader>W", ":HopWordBC<cr>", opts)
 keymap("v", "<Leader>j", ":HopLineAC<cr>", opts)
 keymap("v", "<Leader>k", ":HopLineBC<cr>", opts)
 keymap("v", "s", ":HopChar2AC<cr>", opts)
@@ -87,3 +79,10 @@ keymap("v", "S", ":HopChar2BC<cr>", opts)
 -- Easy Align
 keymap("x", "ga", "<Plug>(EasyAlign)", opts)
 keymap("n", "ga", "<Plug>(EasyAlign)", opts)
+
+-- Fugitive
+keymap("n", "<Leader>h", ":Gclog -- %<cr>", opts)
+keymap("n", "[q", ":cprev<cr>", opts)
+keymap("n", "]q", ":cnext<cr>", opts)
+keymap("n", "[Q", ":cfirst<cr>", opts)
+keymap("n", "]Q", ":clast<cr>", opts)

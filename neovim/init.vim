@@ -25,19 +25,20 @@ call plug#begin('~/AppData/Local/nvim/plugged')
     " inline key help
     Plug 'folke/which-key.nvim'
 
-    " testing
+    " extended vim motions
     Plug 'phaazon/hop.nvim'
-    "Plug 'ggandor/lightspeed.nvim'
-    "Plug 'tpope/vim-repeat'
+
+    " git integration
+    Plug 'tpope/vim-fugitive'
 call plug#end()
 
 lua require 'user.opt'
 lua require 'user.cmp'
-lua require 'user.keymaps'
 lua require 'user.lspconfig'
 lua require 'user.telescope'
 lua require 'user.which-key'
 lua require 'user.theme'
+lua require 'user.keymaps'
 
 " enter insert after :term
 autocmd TermOpen * startinsert

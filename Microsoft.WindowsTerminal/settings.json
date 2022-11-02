@@ -167,6 +167,14 @@
         {
             "command": 
             {
+                "action": "splitPane",
+                "split": "right"
+            },
+            "keys": "alt+shift+\\"
+        },
+        {
+            "command": 
+            {
                 "action": "copy",
                 "singleLine": false
             },
@@ -202,6 +210,14 @@
                 "index": 1
             },
             "keys": "ctrl+alt+2"
+        },
+        {
+            "command": "unbound",
+            "keys": "alt+shift+plus"
+        },
+        {
+            "command": "unbound",
+            "keys": "alt+enter"
         },
         {
             "command": 
@@ -257,7 +273,7 @@
         {
             "font": 
             {
-                "face": "AurulentSansMono NF",
+                "face": "MesloLGS NFM",
                 "size": 10
             },
             "padding": "5, 5, 5, 5"
