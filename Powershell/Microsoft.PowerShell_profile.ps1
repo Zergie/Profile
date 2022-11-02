@@ -30,40 +30,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         }
     }
 
-    # import modules
-    Import-Module -SkipEditionCheck posh-git
-    Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
-    $GitPromptSettings.EnableFileStatusFromCache = $true
-
-    # colors
-    $GitPromptSettings.DefaultPromptPath.Text = "`e[38;2;32;32;32m`e[48;5;70m`e[0m`e[97m`e[48;5;70m `$(Get-PromptPath) `e[0m`e[38;5;70m"
-
-    $GitPromptSettings.PathStatusSeparator.Text = "`e[38;2;32;32;32m`e[40m"
-
-    $GitPromptSettings.BeforeStatus.Text = "█"
-    $GitPromptSettings.BeforeStatus.ForegroundColor = [System.ConsoleColor]::Black
-    $GitPromptSettings.BeforeStatus.BackgroundColor = [System.Console]::Black
-
-    $GitPromptSettings.DefaultColor.BackgroundColor = [System.ConsoleColor]::Black
-
-    $GitPromptSettings.BranchColor.BackgroundColor                      = [System.ConsoleColor]::Black
-    $GitPromptSettings.BranchGoneStatusSymbol.BackgroundColor           = [System.ConsoleColor]::Black
-    $GitPromptSettings.BranchIdenticalStatusSymbol.BackgroundColor      = [System.ConsoleColor]::Black
-    $GitPromptSettings.BranchAheadStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
-    $GitPromptSettings.BranchBehindStatusSymbol.BackgroundColor         = [System.ConsoleColor]::Black
-    $GitPromptSettings.DelimStatus.BackgroundColor                      = [System.ConsoleColor]::Black
-    $GitPromptSettings.LocalStagedStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
-    $GitPromptSettings.BranchBehindAndAheadStatusSymbol.BackgroundColor = [System.ConsoleColor]::Black
-
-    $GitPromptSettings.LocalWorkingStatusSymbol.BackgroundColor = [System.ConsoleColor]::Black
-
-    $GitPromptSettings.AfterStatus.Text = "█"
-    $GitPromptSettings.AfterStatus.ForegroundColor = [System.ConsoleColor]::Black
-    $GitPromptSettings.AfterStatus.BackgroundColor = [System.Console]::Black
-
-    $GitPromptSettings.DefaultPromptPrefix.Text = "`n┌ `e[38;2;32;32;32m`e[48;5;33m`e[0m`e[48;5;33m `$((Get-Date).ToString(`"HH:mm`")) `e[0m`e[38;5;33m"
-    $GitPromptSettings.DefaultPromptSuffix.Text = "`e[38;2;32;32;32m`e[48;5;248m  `$(((Get-History)[-1].EndExecutionTime - (Get-History)[-1].StartExecutionTime) | ForEach-Object { if (`$_.TotalSeconds -gt 1) { `$_.ToString('s\.f') + ' s' } else { `$_.TotalMilliseconds.ToString('0') + ' ms' } } ) `e[48;2;32;32;32m`e[38;5;248m `n`e[0m└ "
-
+    . "$PSScriptRoot\Install-Prompt.ps1"
 
     Get-ChildItem $PSScriptRoot -Filter Enter-*.ps1 |
     ForEach-Object {
