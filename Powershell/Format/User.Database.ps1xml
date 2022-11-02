@@ -27,29 +27,25 @@
                             <TableColumnItem>
                                 <ScriptBlock>
                                 if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
-                                    "`e[38;5;2m$($_.name)`e[0m"
+                                    "`e[38;5;29m`e[48;5;29m`e[97m$($_.name)"
                                 } else {
-                                    $_.name
+                                    " $($_.name)"
                                 }
                                 </ScriptBlock>
                             </TableColumnItem>
 
                             <TableColumnItem>
                                 <ScriptBlock>
-                                if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
-                                    "`e[38;5;2m$($_.state_desc)`e[0m"
-                                } else {
-                                    $_.state_desc
-                                }
+                                    "$($_.state_desc)"
                                 </ScriptBlock>
                             </TableColumnItem>
 
                             <TableColumnItem>
                                 <ScriptBlock>
                                 if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
-                                    "`e[38;5;2m$($_.compatibility_level)`e[0m"
+                                    "$($_.compatibility_level)`e[0m`e[38;5;29m`e[0m"
                                 } else {
-                                    $_.compatibility_level
+                                    "$($_.compatibility_level)"
                                 }
                                 </ScriptBlock>
                             </TableColumnItem>

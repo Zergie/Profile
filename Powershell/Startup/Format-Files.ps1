@@ -1,5 +1,5 @@
 #Requires -PSEdition Core
-
+[CmdletBinding()]
 param (
     [Parameter(Mandatory=$true,
                Position=0,
@@ -37,15 +37,16 @@ process {
     }
 
     if ($null -ne $Path) {
-        $pathes += $Path | Get-ChildItem 
+        $pathes += $Path | Get-ChildItem
     } elseif ($null -ne $InputObject) {
         $pathes += @(
-                    $InputObject.Working
-                    $InputObject.Index 
-                    ) 
+                        $InputObject.Working
+                        $InputObject.Index
+                    )
                     | Where-Object { $null -ne $_ }
+                    | ForEach-Object { [System.IO.Path]::Combine($InputObject.GitDir, "..", $_) }
                     | Where-Object { Test-Path $_ -PathType Leaf }
-                    | Get-ChildItem 
+                    | Get-ChildItem
     }
 }
 end {
@@ -66,7 +67,7 @@ end {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
             switch -regex ($item.Extension) {
-                "^(.ACT)$" {  
+                "^(.ACT)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
                     $settings = [System.Xml.XmlWriterSettings]::new()
@@ -91,7 +92,7 @@ end {
                     $content = Get-Content $item -Encoding 1250 |
                                 ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }
                     
-                    $content | 
+                    $content |
                     ForEach-Object {
                         $line = $_
                         $error_msg = $null
@@ -103,7 +104,7 @@ end {
                         } elseif ($line.content -match "\btodo\b") {
                             $error_regex = "todo"
                             $error_msg = "todos should not be commited to production!"
-                        } 
+                        }
                         
                         if ($null -ne $error_msg) {
                             Write-Host "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
@@ -123,7 +124,7 @@ end {
                         }
 
                         $_.content
-                    } | 
+                    } |
                     ForEach-Object {
                         $line = $_
 
@@ -132,7 +133,7 @@ end {
                         } else {
                             $line
                         }
-                    } | 
+                    } |
                     Out-String |
                     ForEach-Object { $_.Trim() + "`r`n" } |
                     Set-Content $item -Encoding 1250

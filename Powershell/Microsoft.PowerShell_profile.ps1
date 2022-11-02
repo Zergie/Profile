@@ -25,7 +25,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
             & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $((New-Object PSCredential "user",$pass).GetNetworkCredential().Password)
         
             while (-not (Test-Path $drive)) { Start-Sleep 1 }
-            $rename = New-Object -ComObject Shell.Application  
+            $rename = New-Object -ComObject Shell.Application
             $rename.NameSpace("$drive\").Self.Name = "$name"
         }
     }
@@ -35,14 +35,44 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
     $GitPromptSettings.EnableFileStatusFromCache = $true
 
+    # colors
+    $GitPromptSettings.DefaultPromptPath.Text = "`e[38;2;32;32;32m`e[48;5;70m`e[0m`e[97m`e[48;5;70m `$(Get-PromptPath) `e[0m`e[38;5;70m"
+
+    $GitPromptSettings.PathStatusSeparator.Text = "`e[38;2;32;32;32m`e[40m"
+
+    $GitPromptSettings.BeforeStatus.Text = "█"
+    $GitPromptSettings.BeforeStatus.ForegroundColor = [System.ConsoleColor]::Black
+    $GitPromptSettings.BeforeStatus.BackgroundColor = [System.Console]::Black
+
+    $GitPromptSettings.DefaultColor.BackgroundColor = [System.ConsoleColor]::Black
+
+    $GitPromptSettings.BranchColor.BackgroundColor                      = [System.ConsoleColor]::Black
+    $GitPromptSettings.BranchGoneStatusSymbol.BackgroundColor           = [System.ConsoleColor]::Black
+    $GitPromptSettings.BranchIdenticalStatusSymbol.BackgroundColor      = [System.ConsoleColor]::Black
+    $GitPromptSettings.BranchAheadStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
+    $GitPromptSettings.BranchBehindStatusSymbol.BackgroundColor         = [System.ConsoleColor]::Black
+    $GitPromptSettings.DelimStatus.BackgroundColor                      = [System.ConsoleColor]::Black
+    $GitPromptSettings.LocalStagedStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
+    $GitPromptSettings.BranchBehindAndAheadStatusSymbol.BackgroundColor = [System.ConsoleColor]::Black
+
+    $GitPromptSettings.LocalWorkingStatusSymbol.BackgroundColor = [System.ConsoleColor]::Black
+
+    $GitPromptSettings.AfterStatus.Text = "█"
+    $GitPromptSettings.AfterStatus.ForegroundColor = [System.ConsoleColor]::Black
+    $GitPromptSettings.AfterStatus.BackgroundColor = [System.Console]::Black
+
+    $GitPromptSettings.DefaultPromptPrefix.Text = "`n┌ `e[38;2;32;32;32m`e[48;5;33m`e[0m`e[48;5;33m `$((Get-Date).ToString(`"HH:mm`")) `e[0m`e[38;5;33m"
+    $GitPromptSettings.DefaultPromptSuffix.Text = "`e[38;2;32;32;32m`e[48;5;248m  `$(((Get-History)[-1].EndExecutionTime - (Get-History)[-1].StartExecutionTime) | ForEach-Object { if (`$_.TotalSeconds -gt 1) { `$_.ToString('s\.f') + ' s' } else { `$_.TotalMilliseconds.ToString('0') + ' ms' } } ) `e[48;2;32;32;32m`e[38;5;248m `n`e[0m└ "
+
+
     Get-ChildItem $PSScriptRoot -Filter Enter-*.ps1 |
-    ForEach-Object { 
+    ForEach-Object {
         Invoke-Expression "function $($_.BaseName) { & `"$($pwsh.Path)`" -noe -NoLogo -File `"$($_.FullName)`" }"
     }
 
     # load scripts
     @(
-        Get-ChildItem "$PSScriptRoot\Startup\*.ps1" 
+        Get-ChildItem "$PSScriptRoot\Startup\*.ps1"
     ) |
         Where-Object Name -NE "Invoke-RestApi.ps1" |
         ForEach-Object {
@@ -83,9 +113,9 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
                 $client = New-Object System.Net.Sockets.TcpClient
                 $client.BeginConnect($h,$p,$requestCallback,$state) | Out-Null
                 foreach ($i in 0..99) {
-                    if ($client.Connected) { 
+                    if ($client.Connected) {
                         break
-                    } else { 
+                    } else {
                         Start-Sleep -Milliseconds 1
                     }
                 }
@@ -98,7 +128,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
             if (Test-SqlServerConnection) {
                 Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
             } else {
-                Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'." 
+                Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'."
                 & $dockerScript -Start
         
                 if (Test-SqlServerConnection) {
@@ -113,8 +143,8 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         "Database","DatabaseName" |
             ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
                 param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-                    Invoke-Sqlcmd -Query "SELECT name FROM sys.databases WHERE database_id > 4 AND name LIKE '$wordToComplete%' ORDER BY name" | 
-                    ForEach-Object name | 
+                    Invoke-Sqlcmd -Query "SELECT name FROM sys.databases WHERE database_id > 4 AND name LIKE '$wordToComplete%' ORDER BY name" |
+                    ForEach-Object name |
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
         
@@ -140,7 +170,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         }}
 
         $credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
-        $PSDefaultParameterValues = @{    
+        $PSDefaultParameterValues = @{
             "*:Encoding" = 1252
             "*:Database" = "master"
             "*:ServerInstance" = $credentials.ServerInstance
@@ -172,8 +202,8 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 
 Set-PSReadLineOption -ViModeIndicator Script -ViModeChangeHandler $Function:OnViModeChange
 Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete 
-Set-PSReadLineKeyHandler -Chord "Ctrl+i" -Function MenuComplete 
+Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
+Set-PSReadLineKeyHandler -Chord "Ctrl+i" -Function MenuComplete
 Set-PSReadLineKeyHandler -Chord "Ctrl+f" -Function AcceptSuggestion
 Set-PSReadLineKeyHandler -Chord "Ctrl+l" -Function AcceptNextSuggestionWord
 Set-PSReadLineKeyHandler -Chord "Ctrl+k" -Function PreviousHistory
