@@ -22,9 +22,7 @@ local on_attach = function(client, bufnr)
     vim.keymap.set('n', 'gk', vim.lsp.buf.signature_help, bufopts)
     vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, bufopts)
     vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, bufopts)
-    vim.keymap.set('n', '<space>wl', function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-    end, bufopts)
+    vim.keymap.set('n', '<space>wl', function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, bufopts)
     vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, bufopts)
     vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
     vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
@@ -61,7 +59,7 @@ lspconfig['omnisharp'].setup{
     flags        = lsp_flags,
     capabilities = capabilities,
     cmd          = { 'dotnet', 'c:/GIT/Profile/neovim/lsp_server/omnisharp/OmniSharp.dll' },
-    
+
     -- Enables support for reading code style, naming convention and analyzer
     -- settings from .editorconfig.
     enable_editorconfig_support = true,
@@ -121,6 +119,7 @@ lspconfig['sumneko_lua'].setup{
                         workspace = {
                             -- Make the server aware of Neovim runtime files
                             library = vim.api.nvim_get_runtime_file("", true),
+                            preloadFileSize = 700,
                         },
                         telemetry = {
                             -- Do not send telemetry data containing a randomized but unique identifier

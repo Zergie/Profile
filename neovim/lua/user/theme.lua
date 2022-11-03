@@ -19,11 +19,13 @@ require('vscode').setup({
     group_overrides = {
         -- this supports the same val table as vim.api.nvim_set_hl
         -- use colors from this colorscheme by requiring vscode.colors!
-        Cursor = { fg = c.vscDarkBlue, bg = c.vscLightGreen, bold = true },
+        Cursor      = { fg = c.vscDarkBlue, bg = c.vscLightGreen, bold = true },
+        CursorLine  = { bg = c.vscLeftMid },
+        ColorColumn = { bg = c.vscPopupBack },
+
+        -- Plug hop
+        HopNextKey  = { fg = c.vscRed },
+        HopNextKey1 = { fg = c.vscRed },
+        HopNextKey2 = { fg = c.vscRed },
     }
 })
-
--- Plug hop
-vim.api.nvim_set_hl(0, 'HopNextKey',  {ctermbg=15, bg='#f72f38'})
-vim.api.nvim_set_hl(0, 'HopNextKey1', {ctermbg=15, bg='#f72f38'})
-vim.api.nvim_set_hl(0, 'HopNextKey2', {ctermbg=15, bg='#f72f38'})
