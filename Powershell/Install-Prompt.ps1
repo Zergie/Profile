@@ -2,50 +2,64 @@
 param(
 )
 
+function Get-RGB {
+    param (
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [string] $hex,
+        [string] $Delimiter = ";",
+        [string] $Terminator = "m"
+    )
+    $c = ([int]"0x$($hex -replace '#','')")
+    "$($c -shr 16 -band 255)$Delimiter$($c -shr 8 -band 255)$Delimiter$($c -band 255)$Terminator"
+}
+
 # Import modules
 Import-Module -SkipEditionCheck posh-git
 Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
 $GitPromptSettings.EnableFileStatusFromCache = $true
 
 # colors
-$GitPromptSettings.BeforeStatus.ForegroundColor                     = [System.ConsoleColor]::Black
+$palette = "395B64,2C3333,404258,474E68,50577A,6B728E" -split ","
 $GitPromptSettings.BeforeStatus.BackgroundColor                     = [System.Console]::Black
-$GitPromptSettings.DefaultColor.BackgroundColor                     = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchColor.BackgroundColor                      = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchGoneStatusSymbol.BackgroundColor           = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchIdenticalStatusSymbol.BackgroundColor      = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchAheadStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchBehindStatusSymbol.BackgroundColor         = [System.ConsoleColor]::Black
-$GitPromptSettings.DelimStatus.BackgroundColor                      = [System.ConsoleColor]::Black
-$GitPromptSettings.LocalStagedStatusSymbol.BackgroundColor          = [System.ConsoleColor]::Black
-$GitPromptSettings.BranchBehindAndAheadStatusSymbol.BackgroundColor = [System.ConsoleColor]::Black
-$GitPromptSettings.LocalWorkingStatusSymbol.BackgroundColor         = [System.ConsoleColor]::Black
-$GitPromptSettings.AfterStatus.ForegroundColor                      = [System.ConsoleColor]::Black
 $GitPromptSettings.AfterStatus.BackgroundColor                      = [System.Console]::Black
+$GitPromptSettings.BeforeStatus.ForegroundColor                     = $palette[1] | Get-RGB -Delimiter "," -Terminator ""
+$GitPromptSettings.DefaultColor.BackgroundColor                     = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchColor.BackgroundColor                      = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchGoneStatusSymbol.BackgroundColor           = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchIdenticalStatusSymbol.BackgroundColor      = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchAheadStatusSymbol.BackgroundColor          = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchBehindStatusSymbol.BackgroundColor         = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.DelimStatus.BackgroundColor                      = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.LocalStagedStatusSymbol.BackgroundColor          = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.BranchBehindAndAheadStatusSymbol.BackgroundColor = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.LocalWorkingStatusSymbol.BackgroundColor         = $GitPromptSettings.BeforeStatus.ForegroundColor
+$GitPromptSettings.AfterStatus.ForegroundColor                      = $GitPromptSettings.BeforeStatus.ForegroundColor
 
-$bg0 = '0m'    # [System.ConsoleColor]::Black
-$fg1 = '255m'
-$bg1 = '33m'
-$fg2 = '255m'
-$bg2 = '17m'
-$fg3 = '255m'
-$bg3 = '242m'
+
+$fg1 = 'ffffff'    | Get-RGB
+$bg1 = $palette[0] | Get-RGB
+# $fg2 = 'xxxxxx'
+$bg2 = $palette[1] | Get-RGB
+$fg3 = 'ffffff'    | Get-RGB
+$bg3 = $palette[2] | Get-RGB
+$fg4 = 'ffffff'    | Get-RGB
+$bg4 = $palette[3] | Get-RGB
 
 # Texts
 $GitPromptSettings.PathStatusSeparator.Text = ""
 $GitPromptSettings.DefaultPromptPrefix.Text = ""
 $GitPromptSettings.DefaultPromptPath.Text   = ("`n┌ a" `
-                                                    -replace ' ', "`e[38;5;$bg1" `
-                                                    -replace '(a)', "`e[38;5;$fg1`e[48;5;$bg1 `$1 `e[38;5;$bg1`e[48;5;0m" `
+                                                    -replace ' ', "`e[38;2;$bg1" `
+                                                    -replace '(a)', "`e[38;2;$fg1`e[48;2;$bg1 `$1 `e[38;2;$bg1`e[48;2;$bg2" `
                                                 ).Replace('a' , {$(Get-PromptPath)}
                                                 )
 
 $GitPromptSettings.BeforeStatus.Text        = "█"
 $GitPromptSettings.AfterStatus.Text         = "█"
 $GitPromptSettings.DefaultPromptSuffix.Text = (".ab`nx└ " `
-                                                    -replace '\.' , "`e[38;5;$bg0`e[48;5;$bg2" `
-                                                    -replace '(a)', "`e[38;5;$fg2`e[48;5;$bg2 `$1 `e[38;5;$bg2`e[48;5;$bg3" `
-                                                    -replace '(b)', "`e[38;5;$fg3`e[48;5;$bg3`$1`e[0m`e[38;5;$bg3" `
+                                                    -replace '\.' , "`e[38;2;$bg2`e[48;2;$bg3" `
+                                                    -replace '(a)', "`e[38;2;$fg3`e[48;2;$bg3 `$1 `e[38;2;$bg3`e[48;2;$bg4" `
+                                                    -replace '(b)', "`e[38;2;$fg4`e[48;2;$bg4`$1`e[0m`e[38;2;$bg4" `
                                                     -replace 'x'  , "`e[0m"
                                                 ).Replace('a', { $((Get-Date).ToString("HH:mm")) }
                                                 ).Replace('b', { $(
