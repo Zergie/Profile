@@ -36,6 +36,14 @@ vim.opt.formatoptions:remove "c"
 vim.opt.formatoptions:remove "r"
 vim.opt.formatoptions:remove "o"
 
+-- Plug easy-align
+local easy_align_delimiters = {}
+easy_align_delimiters[';'] = {
+    pattern       = ";",
+    ignore_groups = {'!Comment'}
+}
+vim.api.nvim_set_var('easy_align_delimiters', easy_align_delimiters)
+
 -- Plug which-key
 vim.opt.timeoutlen = 250
 

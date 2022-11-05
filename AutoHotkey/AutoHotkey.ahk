@@ -1,6 +1,8 @@
-#Include %A_LineFile%\..\libs\WinClipAPI.ahk 
-#Include %A_LineFile%\..\libs\WinClip.ahk 
-#Include %A_LineFile%\..\Minimal.ahk 
+#Include %A_LineFile%\..\libs\WinClipAPI.ahk
+#Include %A_LineFile%\..\libs\WinClip.ahk
+#Include %A_LineFile%\..\HomerowMod-vars.ahk
+#Include %A_LineFile%\..\EscapeMod.ahk
+#Include %A_LineFile%\..\HomerowMod.ahk
 
 CoordMode, Mouse, Window
 SetKeyDelay -1
@@ -54,7 +56,7 @@ Gui, Add, Button, gradioSelected w150, Weiterentwicklung Tau-Office
 Gui, Add, Button, gradioSelected w150, Hotlineunterstützung
 Gui, Add, Button, gradioSelected w150, Konzeption Tau-Office
 Gui, Show, w170
-return 
+return
 
 radioSelected:
 Gui, Submit, NoHide
@@ -76,17 +78,17 @@ Send ^v
 return
 
 
-; 
+;
 ; volume control with <LWIN> & mouse wheel
 ;
 LWin & WheelUp::
 SoundSet, +4
-Send, {Blind} {Volume_Up} 
+Send, {Blind} {Volume_Up}
 return
 
 LWin & WheelDown::
 SoundSet, -4
-Send {Blind} {Volume_Down} 
+Send {Blind} {Volume_Down}
 return
 
 
@@ -117,7 +119,7 @@ IfWinActive, ahk_exe Teams.exe
 IfWinActive, ahk_exe OUTLOOK.EXE
 {
      olApp := ComObjActive("Outlook.Application")
-     ;olApp.ActiveInspector.CurrentItem.BodyFormat := 2 
+     ;olApp.ActiveInspector.CurrentItem.BodyFormat := 2
      objSel := olApp.ActiveInspector.WordEditor.Application.Selection
      objLink := olApp.ActiveInspector.WordEditor.Hyperlinks.Add(objSel.range, sLink, "", "", sText, "")
      objLink.Range.Font.Name := "Arial"
@@ -220,7 +222,7 @@ return
 
 ::;al::
 SendRaw, '#
-SendInput, TO_BUILD ALLOW_SPELLING 
+SendInput, TO_BUILD ALLOW_SPELLING
 Send, {Del}
 Send, {Space}
 return
