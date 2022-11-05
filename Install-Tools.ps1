@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter()]
+    [Parameter(Position=0)]
     [ValidateSet("*", "chocolatey", "pwsh-modules", "npm", "junctions", "patches", "github-releases", "commands")]
     [string]
     $Install = "*"
@@ -81,6 +81,8 @@ $github = @(
                       folder="$PSScriptRoot\neovim\lsp_server\omnisharp"}
     [pscustomobject]@{repo="sumneko/lua-language-server";           file="lua-language-server-3.5.6-win32-x64.zip"
                       folder="$PSScriptRoot\neovim\lsp_server\lua-language-server"}
+    [pscustomobject]@{repo="kmonad/kmonad";                         file="kmonad-*-win.exe"
+                      folder="$PSScriptRoot\kmonad";                AllowPreRelease=$true}
 )
 
 $patches = @(
@@ -134,25 +136,37 @@ function Get-GithubRelease {
     param(
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Repo,
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $File,
-        [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Folder
+        [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Folder,
+        [Parameter(ValueFromPipelineByPropertyName=$true)] [switch] $AllowPreRelease = $false
     )
     process {
-        Remove-Item $Folder -Force -Recurse -ErrorAction SilentlyContinue
-        New-Item -ItemType Directory -Path $Folder | Out-Null
+        if ($File.EndsWith(".zip")) {
+            Remove-Item $Folder -Force -Recurse -ErrorAction SilentlyContinue
+            New-Item -ItemType Directory -Path $Folder | Out-Null
+        } else {
+            Remove-Item "$Folder/$File" -Force -ErrorAction SilentlyContinue
+        }
         Push-Location $Folder
 
         $releases = "https://api.github.com/repos/$Repo/releases"
 
         Write-Host -ForegroundColor Cyan -NoNewline "Determining latest release for $Repo ..."
-        $tag = ((Invoke-RestMethod $releases)| Where-Object { $_.prerelease -eq $false })[0].tag_name
+        $release = ((Invoke-RestMethod $releases)| Where-Object { $_.prerelease -eq $AllowPreRelease })[0]
+        $tag = $release.tag_name
         Write-Host -ForegroundColor Cyan -NoNewline " $tag ..."
 
-        $download = "https://github.com/$Repo/releases/download/$tag/$File"
-        $zip = "temp.zip"
-        Invoke-WebRequest $download -OutFile $zip
+        if ($File.EndsWith(".zip")) {
+            $zip = "temp.zip"
+            $download = "https://github.com/$Repo/releases/download/$tag/$File"
+            Invoke-WebRequest $download -OutFile $zip
 
-        Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
-        Remove-Item $zip -Force
+            Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
+            Remove-Item $zip -Force
+        } else {
+            $File = ($release.assets | Where-Object Name -like $File)[0].name
+            $download = "https://github.com/$Repo/releases/download/$tag/$File"
+            Invoke-WebRequest $download -OutFile $File
+        }
 
         Write-Host -ForegroundColor Cyan " completed."
 

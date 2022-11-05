@@ -81,7 +81,7 @@ keymap("x", "ga", "<Plug>(EasyAlign)", opts)
 keymap("n", "ga", "<Plug>(EasyAlign)", opts)
 
 -- Fugitive
-keymap("n", "<Leader>h", ":Gclog -- %<cr>", opts)
+keymap("n", "<Leader>l", ":0Gclog -- %<cr>", opts)
 keymap("n", "[q", ":cprev<cr>", opts)
 keymap("n", "]q", ":cnext<cr>", opts)
 keymap("n", "[Q", ":cfirst<cr>", opts)

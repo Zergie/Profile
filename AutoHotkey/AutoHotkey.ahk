@@ -1,8 +1,6 @@
 #Include %A_LineFile%\..\libs\WinClipAPI.ahk
 #Include %A_LineFile%\..\libs\WinClip.ahk
-#Include %A_LineFile%\..\HomerowMod-vars.ahk
 #Include %A_LineFile%\..\EscapeMod.ahk
-#Include %A_LineFile%\..\HomerowMod.ahk
 
 CoordMode, Mouse, Window
 SetKeyDelay -1
