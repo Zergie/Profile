@@ -22,8 +22,15 @@
                     }
                     $key = [System.Convert]::FromBase64String("fvj1q7pqbhknRMSxzzR7N36o2iTUkaCQmGfzVVBumXIOOWutjGwGfHvFwycZXukmAiwi0EjMLDfFf9FNsHMaTG8=")
                     $text = [System.Text.Encoding]::GetEncoding(1250).GetBytes($text)
+                    Write-Debug "bytes = $($text)"
                     $text = [System.Text.Encoding]::GetEncoding(1250).GetString(
-                        $(for ($i=0; $i -lt $text.Length; $i++) { $text[$i] -bxor ($key[$i] -bxor 255 ) -bxor ($i -band 255) })
+                        $(
+                            for ($i=0; $i -lt $text.Length; $i++) {
+                                $new = $text[$i] -bxor ($key[$i] -bxor 255 ) -bxor ($i -band 255)
+                                Write-Debug "$($text[$i]) x $($key[$i]) -> $new"
+                                $new
+                            }
+                        )
                     ).SubString(1, $text.Length-17)
                     "PASSWORT=$text"
                 }
