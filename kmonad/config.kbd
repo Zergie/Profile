@@ -8,39 +8,57 @@
 )
 
 (defsrc
-    grv    1      2      3      4      5      6      7      8      9      0      -      =      bspc
-    tab    q      w      e      r      t      y      u      i      o      p      [      ]      \
-    caps   a      s      d      f      g      h      j      k      l      ;      '      \      ret
-    lsft   \      z      x      c      v      b      n      m      ,      .      /      rsft
-    lctl   lmet   lalt                 spc                         ralt   rmet          rctl
+  esc    f1     f2     f3     f4     f5     f6     f7     f8     f9     f10    f11    f12            ssrq   slck   pause
+
+  grv    1      2      3      4      5      6      7      8      9      0      -      =      bspc    ins    home   pgup    nlck   kp/    kp*    kp-
+  tab    q      w      e      r      t      y      u      i      o      p      [      ]      ret     del    end    pgdn    kp7    kp8    kp9    kp+
+  caps   a      s      d      f      g      h      j      k      l      ;      '      \                                    kp4    kp5    kp6
+  lsft   102d   z      x      c      v      b      n      m      ,      .      /      rsft                  up             kp1    kp2    kp3    kprt
+  lctl   lmet   lalt                 spc                         ralt   rmet   cmp    rctl           left   down   rght    kp0    kp.
 )
 
 (defalias
-    a (tap-hold-next-release 150 a lsft)
-    s (tap-hold-next-release 150 s lctl)
-    d (tap-hold-next-release 150 d lalt)
-    f (tap-hold-next-release 150 f lmet)
+    a (tap-hold-next-release 200 a lsft)
+    s (tap-hold-next-release 200 s lctl)
+    d (tap-hold-next-release 200 d lalt)
+    f (tap-hold-next-release 200 f lmet)
 
-    j (tap-hold-next-release 150 j rmet)
-    k (tap-hold-next-release 150 k lalt)
-    l (tap-hold-next-release 150 l rctl)
-    ; (tap-hold-next-release 150 ; rsft)
+    j (tap-hold-next-release 200 j rmet)
+    k (tap-hold-next-release 200 k lalt)
+    l (tap-hold-next-release 200 l rctl)
+    ; (tap-hold-next-release 200 ; rsft)
 
-    ctl (layer-toggle numbers)
+    spc (tap-hold-next-release 200 spc (layer-toggle spc))
+    col (layer-switch colemak-dh)
+    def (layer-switch homerowmods)
 )
 
 (deflayer homerowmods
-    _      _       _      _      _      _      _      _      _      _      _      _      _      _
-    _      _       _      _      _      _      _      _      _      _      _      _      _      _
-    _      @a      @s     @d     @f     _      _      @j     @k     @l     @;     _      _      _
-    _      _       _      _      _      _      _      _      _      _      _      _      _
-    @ctl   _       _                    _                           _      _             _
+  _      _      _      _      _      _      _      _      _      _      _      _      _              _      _      _
+
+  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _       _      _      _      _
+  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _       _      _      _      _
+  _      _      _      _      _      _      _      _      _      _      _      _      _                                    _      _      _
+  _      _      _      _      _      _      _      _      _      _      _      _      _                     _              @def   @col   _      _
+  _      _      _                    @spc                        _      _      _      _              _      _      _       _      _
 )
 
-(deflayer numbers
-    _      _       _      _      _      _      _      _      _      _      _      _      _      _
-    _      _       _      _      _      _      _      9      8      7      _      _      _      _
-    _      _       _      _      _      _      0      4      5      6      .      _      _      _
-    _      _       _      _      _      _      _      _      1      2      3      _      _
-    _      _       _                    _                           _      _             _
+(deflayer colemak-dh
+  _      _      _      _      _      _      _      _      _      _      _      _      _              _      _      _
+
+  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _       _      _      _      _
+  _      q      w      f      p      b      j      l      u      y      ;      _      _      _       _      _      _       _      _      _      _
+  _      a      r      s      t      g      m      n      e      i      o      _      _                                    _      _      _
+  _      _      z      x      c      d      v      k      h      ,      .      /      _                     _              @def   @col   _      _
+  _      _      _                    @spc                        _      _      _      _              _      _      _       _      _
+)
+
+(deflayer spc
+  _      _      _      _      _      _      _      _      _      _      _      _      _              _      _      _
+
+  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _       _      _      _      _
+  _      _      _      _      _      _      _      C-A-u  _      C-A-o  _      _      _      _       _      _      _       _      _      _      _
+  _      C-A-a  C-A-s  _      bspc   _      _      _      _      _      _      _      _                                    _      _      _
+  _      _      _      _      _      _      _      _      _      _      _      _      _                     _              @def   @col   _      _
+  _      _      _                    _                           _      _      _      _              _      _      _       _      _
 )
