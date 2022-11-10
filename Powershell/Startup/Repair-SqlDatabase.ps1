@@ -15,6 +15,8 @@ $logwatcher = Start-Job {
     Get-Content -Path $logfile -Encoding utf8 -Wait
 }
 
+Invoke-Sqlcmd -Database $department -Query "UPDATE zr_aktion SET aktiv=1 WHERE id=358"
+
 . "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" --repair $department --ini "X:\INI\$($main).ini"
 $process = Get-Process -Name "AdminTool.App"
 
