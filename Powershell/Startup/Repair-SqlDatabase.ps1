@@ -1,8 +1,12 @@
 [CmdletBinding()]
 param(
-    [Parameter()]
+    [Parameter(Mandatory=$true)]
     [string]
-    $Database
+    $Database,
+
+    [Parameter()]
+    [switch]
+    $Update
 )
 
 $department = $Database
@@ -17,7 +21,8 @@ $logwatcher = Start-Job {
 
 Invoke-Sqlcmd -Database $department -Query "UPDATE zr_aktion SET aktiv=1 WHERE id=358"
 
-. "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" --repair $department --ini "X:\INI\$($main).ini"
+$verb = if ($Update) { "--update" } else { "--repair" }
+. "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" $verb $department --ini "X:\INI\$($main).ini"
 $process = Get-Process -Name "AdminTool.App"
 
 while (!$process.HasExited) {

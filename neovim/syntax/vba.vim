@@ -60,6 +60,7 @@ syn keyword vbStatement GoTo Implements Let LineInput
 syn keyword vbStatement Load Lock Loop MkDir Name Next On OnError Open
 syn keyword vbStatement Option Preserve Private Property Public Put
 syn keyword vbStatement RaiseEvent Randomize ReDim Redim Reset Resume
+syn match   vbStatement "Goto 0"
 syn keyword vbStatement Set Static Step Stop Sub
 syn keyword vbStatement Type Until Wend While Width With
 syn keyword vbStatement Attribute
@@ -72,15 +73,14 @@ syn keyword vbKeyword Public Resume Seek Debug Assert
 syn keyword vbKeyword Set Static Step WithEvents
 syn keyword vbKeyword If Then ElseIf Else Select Case
 
-syn keyword vbControl Optional ByRef ByVal And Or Is Like As TypeOf
-
+syn keyword vbControl Optional ByRef ByVal And Or Is Like As TypeOf Not
 syn keyword vbTodo contained    TODO
 
 " Functions
 syn match vbFunction "\v(Function|Sub|Property (G|L|S)et) @<=\w[a-z0-9_]*"
 
 " Datatypes
-syn match vbType  "\v( (As|Is) )@<=\w[a-z0-9_]*"
+syn match vbType  "\v( (As|Is) )@<=\w[a-z0-9_A-Z]*"
 
 " Numbers
 " integer number, or floating point number without a dot.
