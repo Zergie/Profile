@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<?xml-model href="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd"?>
 
 <Configuration>
     <ViewDefinitions>
@@ -10,6 +11,9 @@
             <TableControl>
                 <TableHeaders>
                     <TableColumnHeader>
+                        <Label> </Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
                         <Label>name</Label>
                     </TableColumnHeader>
                     <TableColumnHeader>
@@ -17,6 +21,9 @@
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Label>compatibility_level </Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label> </Label>
                     </TableColumnHeader>
                 </TableHeaders>
                 <TableRowEntries>
@@ -27,25 +34,25 @@
                             <TableColumnItem>
                                 <ScriptBlock>
                                 if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
-                                    "`e[38;5;29m`e[48;5;29m`e[97m$($_.name)"
-                                } else {
-                                    " $($_.name)"
+                                    "`e[38;5;29m`e[48;5;29m`e[97m"
                                 }
                                 </ScriptBlock>
                             </TableColumnItem>
 
                             <TableColumnItem>
-                                <ScriptBlock>
-                                    "$($_.state_desc)"
-                                </ScriptBlock>
+                                <PropertyName>name</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>state_desc</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>compatibility_level</PropertyName>
                             </TableColumnItem>
 
                             <TableColumnItem>
                                 <ScriptBlock>
                                 if ($_.name -eq $($PSDefaultParameterValues["*:Database"])) {
-                                    "$($_.compatibility_level)`e[0m`e[38;5;29m`e[0m"
-                                } else {
-                                    "$($_.compatibility_level)"
+                                    "`e[0m`e[38;5;29m`e[0m"
                                 }
                                 </ScriptBlock>
                             </TableColumnItem>

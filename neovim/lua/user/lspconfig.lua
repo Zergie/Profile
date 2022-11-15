@@ -52,6 +52,7 @@ lspconfig['lemminx'].setup{
     on_attach    = on_attach,
     flags        = lsp_flags,
     capabilities = capabilities,
+    filetypes    = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
     cmd          = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
 }
 lspconfig['omnisharp'].setup{
