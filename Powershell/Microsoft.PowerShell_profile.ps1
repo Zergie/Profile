@@ -11,16 +11,16 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     }
 
     # initialize kmonad
-    if ($null -eq (Get-Process | Where-Object Name -like kmonad-*)) {
-        Start-Job {
-            Push-Location "C:\GIT\Profile\kmonad"
-
-            $kmonad = Get-ChildItem kmonad-*-win.exe | Select-Object -First 1
-            Start-Process -FilePath $kmonad -ArgumentList config.kbd
-
-            Pop-Location
-        }
-    }
+#    if ($null -eq (Get-Process | Where-Object Name -like kmonad-*)) {
+#        Start-Job {
+#            Push-Location "C:\GIT\Profile\kmonad"
+#
+#            $kmonad = Get-ChildItem kmonad-*-win.exe | Select-Object -First 1
+#            Start-Process -FilePath $kmonad -ArgumentList config.kbd
+#
+#            Pop-Location
+#        }
+#    }
 
     # initialize veracrypt
     if (-not (Test-Path D:\)) {
@@ -42,6 +42,10 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         }
     }
 
+    # initialize colors
+    $PSStyle.FileInfo.Directory = $PSStyle.Foreground.BrightBlue
+
+    # initialize prompt
     . "$PSScriptRoot\Install-Prompt.ps1"
 
     Get-ChildItem $PSScriptRoot -Filter Enter-*.ps1 |
