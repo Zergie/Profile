@@ -33,12 +33,12 @@ if (!$NoFilter -and !$Update) {
   "            & $veracypt_exe /v \\Device\\Harddisk0\\Partition5 /l d /a /q /p $((New-Object PSCredential \"user\",$pass).GetNetworkCredential().Password)",
   "            $pass = Read-Host ''What is your password?'' -AsSecureString",
   "            ForEach-Object token",
+  "            Microsoft.PowerShell.Archive\\Expand-Archive $zip $pwd -Force",
   "            Password=$Password",
   "        [System.Windows.Forms.SendKeys]::SendWait(\"$Password{Enter}\")",
   "        $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)",
   "        $Password=$json.Password",
   "        if ($_ -like \"PASSWORT=*\") {",
-  "        Microsoft.PowerShell.Archive\\Expand-Archive $zip $pwd -Force",
   "    ${NewPassword},",
   "    ${Password},",
   "    $Password,",
@@ -60,7 +60,7 @@ if (!$NoFilter -and !$Update) {
 Push-Location $PSScriptRoot
 $p = $PSScriptRoot -replace "\\","\\"
 
-$secrets = Get-ChildItem "$PSScriptRoot" -Recurse -File | Select-String -Pattern $pattern
+$secrets = Get-ChildItem "$PSScriptRoot" -Recurse -File -Exclude "*.exe" | Select-String -Pattern $pattern
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(\.git)\\"                                # do not include .git
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(\.gitmodule)$"                           # do not include .gitmodule
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(Powershell\\Modules|AutoHotkey\\libs)\\" # do not include external plugins
@@ -69,7 +69,7 @@ $secrets = $secrets | Where-Object Path -NotMatch "$p\\(secrets)\\"             
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Powershell\\secrets.json"                 # do not include my 'secrets.json'
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Beyond Compare 4\\BC4Key.txt"             # do not include my 'BC4Key.txt'
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Search-Secrets.ps1"                       # do not include myself
-$secrets = $secrets | Where-Object { $_.Line.Trim() -notin $allowed }
+$secrets = $secrets | Where-Object { $_.Line -notin $allowed }
 Pop-Location
 
 if ($Update) {
