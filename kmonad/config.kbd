@@ -29,18 +29,6 @@
     ; (tap-hold-next-release 200 ; rsft)
 
     spc (tap-hold-next-release 200 spc (layer-toggle spc))
-    l1  (layer-switch homerowmods)
-    l2  (layer-switch colemak-dh)
-)
-
-(deflayer homerowmods
-  _      _      _      _      _      _      _      _      _      _      _      _      _              _      _      _
-
-  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _
-  _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _
-  _      _      _      _      _      _      _      _      _      _      _      _      _
-  _      _      _      _      _      _      _      _      _      _      _      _      _                     _
-  _      _      _                    @spc                        _      _      _      _              _      _      _
 )
 
 (deflayer colemak-dh
@@ -54,11 +42,11 @@
 )
 
 (deflayer spc
-  _      @l1    @l2    _      _      _      _      _      _      _      _      _      _              _      _      _
+  _      _      _      _      _      _      _      _      _      _      _      _      _              _      _      _
 
   _      _      _      _      _      _      _      _      _      _      _      _      _      _       _      _      _
-  _      _      _      _      _      _      _      C-A-u  _      C-A-o  _      _      _      _       _      _      _
-  _      C-A-a  C-A-s  _      bspc   _      _      _      _      _      _      _      _
+  _      _      _      _      _      _      _      _      C-A-u  _      _      _      _      _       _      _      _
+  _      C-A-a  _      C-A-s  bspc   _      _      _      _      _      C-A-o  _      _
   _      _      _      _      _      _      _      _      _      _      _      _      _                     _
   _      _      _                    _                           _      _      _      _              _      _      _
 )
