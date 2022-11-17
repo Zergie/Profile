@@ -161,19 +161,19 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
             "Invoke-Sqlcmd:Username" = $credentials.Username
             "Invoke-Sqlcmd:Password" = $credentials.Password
 
-            "Update-SqlTable:Username" = $credentials.Username
-            "Update-SqlTable:Password" = $credentials.Password
+            "Update-SqlTable.ps1:Username" = $credentials.Username
+            "Update-SqlTable.ps1:Password" = $credentials.Password
             
-            "Import-SqlTable:Username" = $credentials.Username
-            "Import-SqlTable:Password" = $credentials.Password
+            "Import-SqlTable.ps1:Username" = $credentials.Username
+            "Import-SqlTable.ps1:Password" = $credentials.Password
             
-            "Write-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-            "Write-SqlTableData:SchemaName" = "dbo"
-            "Write-SqlTableData:DatabaseName" = "master"
+            "Write-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Write-SqlTableData.ps1:SchemaName" = "dbo"
+            "Write-SqlTableData.ps1:DatabaseName" = "master"
 
-            "Read-SqlTableData:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-            "Read-SqlTableData:SchemaName" = "dbo"
-            "Read-SqlTableData:DatabaseName" = "master"
+            "Read-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Read-SqlTableData.ps1:SchemaName" = "dbo"
+            "Read-SqlTableData.ps1:DatabaseName" = "master"
         }
     }
 
