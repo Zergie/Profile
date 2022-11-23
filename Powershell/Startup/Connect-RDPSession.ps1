@@ -201,7 +201,7 @@ Process {
         mstsc C:\temp\$Name.rdp
         (Get-Process -Name mstsc | Select-Object -First 1).WaitForInputIdle() | Out-Null
 
-        Add-Type -AssemblyName Microsoft.VisualBasic 
+        Add-Type -AssemblyName Microsoft.VisualBasic
         $success = $false
 
         while ($success -ne $true) {
@@ -215,7 +215,7 @@ Process {
         }
 
         Add-Type -AssemblyName System.Windows.Forms
-        [System.Windows.Forms.SendKeys]::SendWait("$Password{Enter}")
+        [System.Windows.Forms.SendKeys]::SendWait("$($Password -replace ".","{`$0}"){Enter}")
 
         Remove-Item C:\temp\$Name.rdp
     }

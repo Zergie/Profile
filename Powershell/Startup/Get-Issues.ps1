@@ -1,4 +1,5 @@
 #Requires -PSEdition Core
+[cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$true,
                Position=0,
@@ -9,31 +10,32 @@ param (
     [int[]]
     $Id,
 
+    [Parameter(Mandatory=$true,
+               Position=0,
+               ParameterSetName="NewParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [switch]
+    $New,
+
+    [Parameter(Mandatory=$true,
+               Position=0,
+               ParameterSetName="TodoParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [switch]
+    $ToDo,
+
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
     [switch]
-    $ConvertAttachmentsToPdf
+    $Update
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
-
-    # param State
-    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
-    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
-    $ParameterAttribute.ParameterSetName = "StateParameterSet"
-    $AttributeCollection.Add($ParameterAttribute)
-
-    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        "New"
-        "ToDo"
-    ))
-    $AttributeCollection.Add($ValidateSetAttribute)
-
-    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("State", [string], $AttributeCollection)
-    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
     # param Iteration
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
@@ -61,18 +63,18 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 begin {
-    New-Alias -Name "Invoke-RestApi"  -Value "$PSScriptRoot\Invoke-RestApi.ps1"  -ErrorAction SilentlyContinue
-    New-Alias -Name "Get-Attachments" -Value "$PSScriptRoot\Get-Attachments.ps1" -ErrorAction SilentlyContinue
-    New-Alias -Name "New-Attachments" -Value "$PSScriptRoot\New-Attachments.ps1" -ErrorAction SilentlyContinue
-    New-Alias -Name "ConvertTo-Pdf"   -Value "$PSScriptRoot\ConvertTo-Pdf.ps1"   -ErrorAction SilentlyContinue
+    ${Invoke-RestApi}  = "$PSScriptRoot\Invoke-RestApi.ps1"
+    ${Get-Attachments} = "$PSScriptRoot\Get-Attachments.ps1"
+    ${New-Attachments} = "$PSScriptRoot\New-Attachments.ps1"
+    ${ConvertTo-Pdf}   = "$PSScriptRoot\ConvertTo-Pdf.ps1"
+    $PSDefaultParameterValues["ForEach-Object:WhatIf"] = $false
 }
 process {
     $IterationName = $PSBoundParameters['Iteration']
-    $State = $PSBoundParameters['State']
 
     $downloaded = @()
     if ($IterationName -eq "@Current Iteration") {
-        $missing_ids = Invoke-RestApi `
+        $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
                 -Body @{
                     query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.IterationPath] = @currentIteration('[TauOffice]\TauOffice Team <id:48deb8b1-0e33-40d0-8879-71d5258a79f7>')"
@@ -81,7 +83,7 @@ process {
                 ForEach-Object id
     } elseif ($null -ne $IterationName) {
         if ($IterationName -eq "@Newest Iteration") {
-            $IterationName = Invoke-RestApi `
+            $IterationName = . ${Invoke-RestApi} `
                 -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0" |
                 ForEach-Object value |
                 ForEach-Object path |
@@ -90,25 +92,30 @@ process {
             Write-Host -ForegroundColor Magenta $IterationName
         }
 
-        $Iteration = Invoke-RestApi `
+        $Iteration = . ${Invoke-RestApi} `
                 -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0" |
                 ForEach-Object value |
                 Where-Object Path -eq $IterationName
 
-        $missing_ids = Invoke-RestApi `
+        $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations/{iterationId}/workitems?api-version=6.0-preview.1" `
                 -Variables @{ iterationId = $Iteration.Id } |
                 ForEach-Object workItemRelations |
                 ForEach-Object target |
                 ForEach-Object id
-    } elseif ($null -ne $State) {
-        $query = switch ($State) {
-            "New"   { "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.CreatedDate] >= @StartOfDay - 14" }
-            "ToDo"  { "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.State] = 'To Do'" }
-            default { throw "State '$State' is not implemented!" }
-        }
+    } elseif ($New -or $ToDo) {
+        $query = if ($New) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
+                                                   " AND [System.State] = 'To Do'" +
+                                                   " AND [System.ChangedBy] <> @Me " +
+                                                   " AND [System.CreatedDate] >= @StartOfDay - 14"
+            } elseif ($ToDo) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.State] = 'To Do'"
+            } else {
+                throw "State '$State' is not implemented!"
+            }
         
-        $missing_ids = Invoke-RestApi `
+        $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
                 -Body @{
                     query = $query
@@ -121,7 +128,7 @@ process {
                   
     while ($missing_ids.Count -gt 0) {
         while ($missing_ids.Count -gt 0) {
-            $items = Invoke-RestApi `
+            $items = . ${Invoke-RestApi} `
                         -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids}&`$expand=relations&api-version=6.0" `
                         -Variables @{ ids = ($missing_ids | Select-Object -First 200) -join "," } |
                         ForEach-Object value
@@ -132,15 +139,40 @@ process {
 
     $workitems = $downloaded | Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" }
 
-    if ($ConvertAttachmentsToPdf) {
-        $pdfs = $workitems |
-                    Get-Attachments |
-                    ConvertTo-Pdf |
-                    Where-Object { $null -ne $_ }
-        $pdfs
-        if ($null -ne $pdfs) {
-            New-Attachments -Path $pdfs
+    if ($Update) {
+        $workitems |
+            . ${Get-Attachments} -Filter ".(docx)$" |
+            . ${ConvertTo-Pdf} -OutVariable pdf
+
+        if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
+            if ($null -ne $pdfs) {
+                . ${New-Attachments} -Path $pdfs
+            }
         }
+
+        $workitems |
+            ForEach-Object {
+                [pscustomobject]@{
+                    workitem = $_
+                    priority = $_.fields.'System.Description' |
+                                Select-String -Pattern "Priorität: [^\d]+(\d+)" |
+                                ForEach-Object { $_.Matches.Groups[1].Value }
+                }
+            } -OutVariable changes |
+            ForEach-Object {
+                if ($null -ne $_.priority -and $_.workitem.fields.'Microsoft.VSTS.Common.Priority' -ne $_.priority) {
+                    if ($PSCmdlet.ShouldProcess($_.workitem.Id, "new priority: $($_.priority)")) {
+                        . ${Invoke-RestApi} ` -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
+                            -Variables @{ id = $_.workitem.Id } `
+                            -PatchBody @([ordered]@{
+                                "op"    = "add"
+                                "path"  = "/fields/Microsoft.VSTS.Common.Priority"
+                                "value" = $_.priority
+                            })
+                    }
+                }
+            }
+            
     } else {
         $workitems |
             ForEach-Object {
@@ -157,4 +189,7 @@ process {
                 }
             }
     }
+}
+end {
+    $PSDefaultParameterValues.Remove("ForEach-Object:WhatIf")
 }

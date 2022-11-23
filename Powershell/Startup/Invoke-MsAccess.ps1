@@ -42,11 +42,12 @@ DynamicParam {
     # param GetOptionen
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(
-        rg '^.*[GS]et_Optionen[\( ]\"([^\"]+)\"[\), ].*$' "C:\GIT\TauOffice\tau-office\source\" --replace "`$1" --no-filename |
+        rg '^.*[GS]et_Optionen[\( ]"([^"]+)"[\), ].*$' "C:\GIT\TauOffice\tau-office\source\" --replace "`$1" --no-filename |
             Group-Object |
             ForEach-Object name
     )
@@ -58,6 +59,7 @@ DynamicParam {
     # param SetOptionen
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
@@ -77,22 +79,22 @@ function Invoke-VBScript {
     Param
     (
         [Parameter(Mandatory = $true)]
-        [string] 
+        [string]
         $script
     )
     $path = "$($env:TEMP)\script.vbs"
     Set-Content -Path "$path" -Value $script
     
     $line = 0
-    $script -split "`n" | 
+    $script -split "`n" |
         ForEach-Object `
             -Begin   {"== vba script ==" } `
-            -Process { 
+            -Process {
                 $line++
                 $line.ToString().PadRight(3) + $_.ToString()
              } `
             -End     { "== end vba script ==" } |
-        Write-Verbose 
+        Write-Verbose
     
     cscript.exe "$path" //nologo
     Remove-Item "$path"
@@ -127,14 +129,14 @@ if ($Inspect) {
     }
 
     if ($Arguments.Count -gt 0) {
-        $Arguments = $Arguments | 
+        $Arguments = $Arguments |
             ForEach-Object `
                 -Begin { "" } `
                 -Process {
-                    $text = if ($_ -is [System.Management.Automation.ScriptBlock]) { $_.ToString() } 
+                    $text = if ($_ -is [System.Management.Automation.ScriptBlock]) { $_.ToString() }
                     else { $_ }
                     
-                    if ($text -is [String]) { "`"$( $text -replace '"','`"`"' )`"" } 
+                    if ($text -is [String]) { "`"$( $text -replace '"','`"`"' )`"" }
                     else { $text.ToString() }
                 } |
             Join-String -Separator ","
@@ -175,7 +177,7 @@ if ($Inspect) {
     set db = Nothing
     set application = Nothing
     set stdout = Nothing
-"@ | 
+"@ |
     Out-String |
     ForEach-Object {
         $text = $_
@@ -184,9 +186,9 @@ if ($Inspect) {
             $result.database = ".\" + [System.IO.Path]::GetRelativePath((Get-Location).path, $result.database)
             $result
         } catch {
-            Write-Host -ForegroundColor Red $text   
+            Write-Host -ForegroundColor Red $text
             throw
         }
-    } 
+    }
 }
 }

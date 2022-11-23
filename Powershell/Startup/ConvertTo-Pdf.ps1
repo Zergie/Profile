@@ -1,14 +1,19 @@
 #Requires -PSEdition Core
 param (
     [Parameter(Mandatory=$true,
-            Position=0,
-            ParameterSetName="ParameterSetName",
-            ValueFromPipeline=$true,
-            ValueFromPipelineByPropertyName=$true)]
+               Position=0,
+               ParameterSetName="ParameterSetName",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$true)]
     [Alias("PSPath")]
     [ValidateNotNullOrEmpty()]
     [string[]]
-    $Path
+    $Path,
+
+    [Parameter()]
+    [ValidateSet("Landscape", "Portrait")]
+    [string]
+    $Orientation
 )
 begin {
     $word = New-Object -ComObject Word.Application
@@ -21,17 +26,22 @@ process {
         Remove-Item $path_pdf -Force -ErrorAction SilentlyContinue
 
         $document = $word.Documents.Open("$Path")
-        # $document.ExportAsFixedFormat($path_pdf, 17)
+        if ($PSBoundParameters.ContainsKey("Orientation")) {
+            $document.PageSetup.Orientation = switch ($Orientation) {
+                "Portrait"  { 0 }
+                "Landscape" { 1 }
+            }
+        }
 
         $params = @{
             OutputFileName = $path_pdf
             ExportFormat = 17 ## wdExportFormatPDF
-            Item = if ($document.Comments.Count -gt 0) { 
-                        7 ## wdExportDocumentWithMarkup 
-                    } else { 
-                        0 ## wdExportDocumentContent 
+            Item = if ($document.Comments.Count -gt 0) {
+                        7 ## wdExportDocumentWithMarkup
+                    } else {
+                        0 ## wdExportDocumentContent
                     }
-        } 
+        }
         $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
             $null,     ## Binder
             $document, ## Target
@@ -39,9 +49,9 @@ process {
             $null,  ## Modifiers
             $null,  ## Culture
             ([String[]]($params.Keys))  ## NamedParameters
-        )
+        ) | Out-Null
 
-        $document.Close($false)
+        $document.Close($false) | Out-Null
 
         Get-ChildItem $path_pdf
     }
