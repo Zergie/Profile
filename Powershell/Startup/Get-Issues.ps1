@@ -142,34 +142,41 @@ process {
     if ($Update) {
         $workitems |
             . ${Get-Attachments} -Filter ".(docx)$" |
-            . ${ConvertTo-Pdf} -OutVariable pdf
+            . ${ConvertTo-Pdf} -OutVariable pdfs
 
         if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
-            if ($null -ne $pdfs) {
-                . ${New-Attachments} -Path $pdfs
-            }
+            . ${New-Attachments} -Path $pdfs
         }
+
+        $patches = @{}
+        $workitems | ForEach-Object { $patches.Add($_.Id, @()) }
 
         $workitems |
             ForEach-Object {
-                [pscustomobject]@{
-                    workitem = $_
-                    priority = $_.fields.'System.Description' |
+                $patches[$_.Id] += [ordered]@{
+                        op    = "add"
+                        path  = "/fields/Microsoft.VSTS.Common.Priority"
+                        value = $_.fields.'System.Description' |
                                 Select-String -Pattern "Priorität: [^\d]+(\d+)" |
                                 ForEach-Object { $_.Matches.Groups[1].Value }
-                }
-            } -OutVariable changes |
-            ForEach-Object {
-                if ($null -ne $_.priority -and $_.workitem.fields.'Microsoft.VSTS.Common.Priority' -ne $_.priority) {
-                    if ($PSCmdlet.ShouldProcess($_.workitem.Id, "new priority: $($_.priority)")) {
-                        . ${Invoke-RestApi} ` -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
-                            -Variables @{ id = $_.workitem.Id } `
-                            -PatchBody @([ordered]@{
-                                "op"    = "add"
-                                "path"  = "/fields/Microsoft.VSTS.Common.Priority"
-                                "value" = $_.priority
-                            })
+
                     }
+                $patches[$_.Id] += [ordered]@{
+                        op    = "add"
+                        path  = "/fields/System.Title"
+                        value = $_.fields.'System.Title' -replace 'Korrektur auf Aufgabe ID 3248 \(DevOpsID: (1816)\)', 'Erweiterung von Issue $1'
+                    }
+            }
+        
+        $patches.Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne "" }
+
+        $patches.GetEnumerator() |
+            Where-Object { $_.Value.Length -gt 0 } |
+            ForEach-Object {
+                if ($PSCmdlet.ShouldProcess($_.Key, "apply patch: $($_.Value | ConvertTo-Json -Compress)")) {
+                    . ${Invoke-RestApi} ` -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
+                        -Variables @{ id = $_.Key } `
+                        -PatchBody $_.Value
                 }
             }
             

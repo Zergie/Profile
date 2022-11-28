@@ -45,6 +45,7 @@ $tools = @(
     [pscustomobject]@{name="git-status-cache-posh-client"}
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
+    [pscustomobject]@{name="gh"}
     [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="microsoft-teams"}
     [pscustomobject]@{name="microsoft-windows-terminal"}

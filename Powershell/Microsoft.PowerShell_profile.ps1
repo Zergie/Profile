@@ -69,6 +69,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
+    Set-Alias gh      "C:\Program Files\GitHub CLI\gh.exe"
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"
