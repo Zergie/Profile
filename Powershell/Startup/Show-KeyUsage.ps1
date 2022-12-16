@@ -117,10 +117,14 @@ end {
                     $template_row = $_
                     $keys |
                         ForEach-Object {
-                            $key = $keyInfo[$_]
-                            $ret = $template_row.Replace('xx', $key.legend)
-                            $ret = $ret.Replace('yyyyyy', $key.usageString)
-                            $ret = "`e[38;2;$($key.color -join ';')m$ret`e[0m"
+                            if ($_ -eq "﵃﵃") {
+                                $ret = $template_row -replace '.',' '
+                            } else {
+                                $key = $keyInfo[$_]
+                                $ret = $template_row.Replace('xx', $key.legend)
+                                $ret = $ret.Replace('yyyyyy', $key.usageString)
+                                $ret = "`e[38;2;$($key.color -join ';')m$ret`e[0m"
+                            }
                             $ret
                         } |
                         Join-String -Separator ''

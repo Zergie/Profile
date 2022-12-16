@@ -42,10 +42,10 @@ process {
     $parts = $Endpoint -split ' '
     $method = $parts[0]
     $uri = $parts[1] -replace "{organization}", $organization `
-                        -replace "{project}", $project `
-                        -replace "{projectId}", $projectId `
-                        -replace "{team}", $team `
-                        -replace "{teamId}", $teamId `
+                     -replace "{project}",      $project `
+                     -replace "{projectId}",    $projectId `
+                     -replace "{team}",         $team `
+                     -replace "{teamId}",       $teamId `
 
     foreach ($key in $Variables.Keys) {
         $uri = $uri -replace "{$key}", [System.Web.HttpUtility]::UrlEncode($Variables[$key])
@@ -68,7 +68,7 @@ process {
     }
 
     if ($null -ne $PatchBody) {
-        $params.body = $patchbody | ConvertTo-Json -AsArray -Depth 32
+        $params.body = [System.Text.Encoding]::UTF8.GetBytes(($patchbody | ConvertTo-Json -AsArray -Depth 32))
         $params.ContentType = "application/json-patch+json"
     }
 

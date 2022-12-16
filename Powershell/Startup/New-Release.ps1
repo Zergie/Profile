@@ -36,7 +36,7 @@ begin {
     $Name = $PSBoundParameters['Name']
     
     $dat = [datetime]::Parse($Date)
-    $Branch = "release/$($dat.Year.ToString('0000'))-$($dat.Month.ToString('00'))-$($dat.Day.ToString('00'))" 
+    $Branch = "release/$($dat.Year.ToString('0000'))-$($dat.Month.ToString('00'))-$($dat.Day.ToString('00'))"
     Write-Debug "Branch: $Branch"
 
     $Year = $Name.SubString(0,4)
@@ -63,8 +63,8 @@ process {
                     if ($line -match "#.* or .*") {
                         if ($PSBoundParameters['Debug'].IsPresent) { Write-Host $line -ForegroundColor Red }
 
-                        $m = $line | 
-                                Select-String -Pattern "#(.*) or (.*)" | 
+                        $m = $line |
+                                Select-String -Pattern "#(.*) or (.*)" |
                                 Select-Object -First 1 |
                                 ForEach-Object { $_.Matches.Groups[1];$_.Matches.Groups[2] }
                         
@@ -84,7 +84,7 @@ process {
                     } else {
                         $line
                     }
-                } | 
+                } |
                 Out-String |
                 Set-Content $file -Encoding utf8
         }
@@ -114,7 +114,7 @@ process {
                 "<?xml-model href='../dbms/schema/schema-patch.xsd'?>"
                 "<schema-patch version='1.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
                 "</schema-patch>"
-            ) | Set-Content -Path  -Encoding utf8
+            ) | Set-Content -Path $path -Encoding utf8
 
             git add $path
         }

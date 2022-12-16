@@ -211,26 +211,18 @@ send {left}{left}
 return
 
 ::;oer::
-SendInput On Error Resume Next
+clipboard := On Error Resume Next
+Send, ^v
 return
 
 ::;oe0::
-SendInput On Error Goto 0
-return
-
-::;al::
-SendRaw, '#
-SendInput, TO_BUILD ALLOW_SPELLING
-Send, {Del}
-Send, {Space}
+clipboard := "On Error Goto 0"
+Send, ^v
 return
 
 ::;ss::
-SendInput, Stop ' {#}TO_BUILD FAIL
-return
-
-::;fail::
-SendInput '{#}TO_BUILD FAIL
+clipboard := "Stop ' #TO_BUILD FAIL"
+Send, ^v
 return
 
 ::;ps::

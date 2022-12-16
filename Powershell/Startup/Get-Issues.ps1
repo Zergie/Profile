@@ -108,9 +108,12 @@ process {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
                                                    " AND [System.State] = 'To Do'" +
                                                    " AND [System.ChangedBy] <> @Me " +
+                                                   " AND [System.TeamProject] = 'TauOffice'" +
                                                    " AND [System.CreatedDate] >= @StartOfDay - 14"
             } elseif ($ToDo) {
-                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.State] = 'To Do'"
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
+                                                   " AND [System.State] = 'To Do'" +
+                                                   " AND [System.TeamProject] = 'TauOffice'"
             } else {
                 throw "State '$State' is not implemented!"
             }
@@ -162,9 +165,17 @@ process {
 
                     }
                 $patches[$_.Id] += [ordered]@{
-                        op    = "add"
+                        op    = "replace"
                         path  = "/fields/System.Title"
-                        value = $_.fields.'System.Title' -replace 'Korrektur auf Aufgabe ID 3248 \(DevOpsID: (1816)\)', 'Erweiterung von Issue $1'
+                        value = $_.fields.'System.Title' -replace 'Korrektur (auf|aus) Aufgabe (ID )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3'
+                    }
+                $patches[$_.Id] += [ordered]@{
+                        op    = "replace"
+                        path  = "/fields/System.Description"
+                        value = $_.fields.'System.Description' `
+                                    -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)'`
+                                           , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
+                                                          data-vss-mention="version:1.0">#$1</a>'
                     }
             }
         

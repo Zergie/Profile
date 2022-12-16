@@ -80,10 +80,10 @@ $github = @(
                       folder="$PSScriptRoot\neovim\lsp_server\lemminx"}
     [pscustomobject]@{repo="OmniSharp/omnisharp-roslyn";            file="omnisharp-win-x64-net6.0.zip"
                       folder="$PSScriptRoot\neovim\lsp_server\omnisharp"}
-    [pscustomobject]@{repo="sumneko/lua-language-server";           file="lua-language-server-3.5.6-win32-x64.zip"
+    [pscustomobject]@{repo="sumneko/lua-language-server";           file="lua-language-server-*-win32-x64.zip"
                       folder="$PSScriptRoot\neovim\lsp_server\lua-language-server"}
-    [pscustomobject]@{repo="kmonad/kmonad";                         file="kmonad-*-win.exe"
-                      folder="$PSScriptRoot\kmonad";                AllowPreRelease=$true}
+    [pscustomobject]@{repo="m1guelpf/auto-commit";                  file="auto-commit-win-*.exe"
+                      folder="$PSScriptRoot\auto-commit"}
 )
 
 $patches = @(
@@ -148,15 +148,17 @@ function Get-GithubRelease {
         } else {
             Remove-Item "$Folder/$File" -Force -ErrorAction SilentlyContinue
         }
+        New-Item -ItemType Directory -Path $Folder -ErrorAction SilentlyContinue | Out-Null
         Push-Location $Folder
 
         $releases = "https://api.github.com/repos/$Repo/releases"
 
         Write-Host -ForegroundColor Cyan -NoNewline "Determining latest release for $Repo ..."
-        $release = ((Invoke-RestMethod $releases)| Where-Object { $_.prerelease -eq $AllowPreRelease })[0]
+        $release = ((Invoke-RestMethod $releases) | Where-Object { $_.prerelease -eq $AllowPreRelease })[0]
         $tag = $release.tag_name
         Write-Host -ForegroundColor Cyan -NoNewline " $tag ..."
 
+        $File = ($release.assets | Where-Object Name -like $File)[0].name
         if ($File.EndsWith(".zip")) {
             $zip = "temp.zip"
             $download = "https://github.com/$Repo/releases/download/$tag/$File"
@@ -165,7 +167,6 @@ function Get-GithubRelease {
             Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
             Remove-Item $zip -Force
         } else {
-            $File = ($release.assets | Where-Object Name -like $File)[0].name
             $download = "https://github.com/$Repo/releases/download/$tag/$File"
             Invoke-WebRequest $download -OutFile $File
         }
