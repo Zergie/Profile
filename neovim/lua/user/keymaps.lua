@@ -43,6 +43,12 @@ keymap("t", "<ESC>", "<C-\\><C-n>:bd!<CR>", opts)
 -- Change working Directory
 map("n", "<Leader>cd", "<cmd>cd %:p:h<cr>", "Change working directory")
 
+-- quick save
+map("n", "ZS", "<cmd>w<cr>", "Save file")
+
+-- quick exit without saving
+map("n", "Q", "<cmd>qa!<cr>", "Save file")
+
 -- Syntax info
 keymap("n", "<F10>", [[
 :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<cr>

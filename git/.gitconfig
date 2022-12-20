@@ -30,6 +30,10 @@
 [interactive]
 	singlekey = true
 [alias]
+    auto-commit = "!\
+        c:/GIT/Profile/auto-commit/auto-commit-win-x86_64.exe --review --quiet; \
+    "
+    
 	# logs
 	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
 	log-short  = log-pretty -10
@@ -68,4 +72,4 @@
 			PATH=$(echo ./$file); \
 			'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
 		done; \
-	"	
+	"

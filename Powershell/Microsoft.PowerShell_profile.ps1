@@ -10,18 +10,6 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         Write-Host -ForegroundColor DarkGray "ConsoleHost_history : $(($_.Length / 1Mb).ToString("0.00")) Mb"
     }
 
-    # initialize kmonad
-#    if ($null -eq (Get-Process | Where-Object Name -like kmonad-*)) {
-#        Start-Job {
-#            Push-Location "C:\GIT\Profile\kmonad"
-#
-#            $kmonad = Get-ChildItem kmonad-*-win.exe | Select-Object -First 1
-#            Start-Process -FilePath $kmonad -ArgumentList config.kbd
-#
-#            Pop-Location
-#        }
-#    }
-
     # initialize veracrypt
     if (-not (Test-Path D:\)) {
         $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
@@ -44,6 +32,11 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
 
     # initialize colors
     $PSStyle.FileInfo.Directory = $PSStyle.Foreground.BrightBlue
+
+    # initialize environment variables
+    $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json).'Invoke-AutoCommit'
+    $env:OPENAI_API_KEY = $secrets.token
+    Remove-Variable secrets
 
     # initialize prompt
     . "$PSScriptRoot\Install-Prompt.ps1"
