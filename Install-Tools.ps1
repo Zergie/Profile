@@ -84,6 +84,8 @@ $github = @(
                       folder="$PSScriptRoot\neovim\lsp_server\lua-language-server"}
     [pscustomobject]@{repo="m1guelpf/auto-commit";                  file="auto-commit-win-*.exe"
                       folder="$PSScriptRoot\auto-commit"}
+    [pscustomobject]@{repo="JochenBaier/fastwindowswitcher";        file="FastWindowSwitcher-*.zip"
+                      folder="$PSScriptRoot/fastwindowswitcher"}
 )
 
 $patches = @(
