@@ -8,10 +8,13 @@ vim.opt.expandtab      = true     -- Converts tabs to spaces
 vim.opt.smartindent    = true     --
 vim.g.mapleader        = ' '      -- remap leader to space
 vim.opt.wildmenu       = true     -- Display all matching files when we tab complete
-vim.opt.signcolumn     = 'number' -- Display errors/warnings from lsp instead of the line number
+vim.opt.signcolumn     = 'yes'    -- Display errors/warnings from lsp in front of the line number
 vim.opt.pumheight      = 15       -- Makes popup menu smaller
 vim.opt.splitright     = true     -- Vertical splits will automatically be to the right
 vim.opt.cursorline     = true     -- Enable highlighting of the current line
+
+-- look for .exrc files
+vim.o.exrc = true
 
 -- configure preview for netrw
 vim.g.netrw_preview = 1

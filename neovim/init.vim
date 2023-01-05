@@ -39,12 +39,7 @@ lua require 'user.telescope'
 lua require 'user.which-key'
 lua require 'user.theme'
 lua require 'user.keymaps'
-
-" enter insert after :term
-autocmd TermOpen * startinsert
-
-" change cursor back to pwsh default on leaving vim
-autocmd VimLeave * set guicursor=a:ver100
+lua require 'user.autocmd'
 
 set mouse=
 " disable mouse, except mousewheel
@@ -52,31 +47,3 @@ set mouse=
 " nnoremap <leftmouse> <nop>
 " nnoremap <middlemouse> <nop>
 " nnoremap <rightmouse> <nop>
-
-" Removes trailing spaces
-function! TrimWhiteSpace()
-  %s/\([^ ]\)\s*$/\1/
-  ''
-endfunction
-
-augroup user_trimws
-    autocmd!
-    autocmd BufWritePre * :call TrimWhiteSpace()
-augroup END
-
-
-" remove black background when `git commit`
-highlight Normal guibg=None
-
-" vba file extensions
-au BufRead,BufNewFile *.ACM set filetype=vba
-au BufRead,BufNewFile *.ACR set filetype=vba
-au BufRead,BufNewFile *.ACF set filetype=vba
-
-" vb file extensions
-au BufRead,BufNewFile *.cls set filetype=vb
-au BufRead,BufNewFile *.bas set filetype=vb
-au BufRead,BufNewFile *.vbp set filetype=vbp
-
-" to file extensions
-au BufRead,BufNewFile *.article set filetype=article
