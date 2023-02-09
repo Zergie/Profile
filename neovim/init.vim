@@ -30,6 +30,9 @@ call plug#begin('~/AppData/Local/nvim/plugged')
 
     " git integration
     Plug 'tpope/vim-fugitive'
+
+    " mermaid diagram
+    Plug 'mracos/mermaid.vim'
 call plug#end()
 
 lua require 'user.opt'

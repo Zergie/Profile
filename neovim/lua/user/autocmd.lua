@@ -4,7 +4,10 @@ local cmd                 = vim.cmd
 -- Removes trailing spaces
 nvim_create_autocmd({"BufWritePre"}, {
     pattern = "*",
-    callback = function() cmd [[ %s/\([^ ]\)\s*$/\1/ ]] end,
+    callback = function()
+        cmd [[ %s/\([^ ]\)\s*$/\1/ ]]
+        cmd [[ '' ]]
+    end,
 })
 
 -- enter insert after :term

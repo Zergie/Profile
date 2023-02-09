@@ -54,8 +54,26 @@ DynamicParam {
         "@Current Iteration"
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
-
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Iteration", [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
+
+    # param Query
+    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
+    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.ParameterSetName = "QueryParameterSet"
+    $AttributeCollection.Add($ParameterAttribute)
+
+    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+        & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                    -Endpoint 'GET https://dev.azure.com/{organization}/{project}/_apis/wit/queries?$depth=1&api-version=7.0' |
+                    ForEach-Object value |
+                    ForEach-Object children |
+                    ForEach-Object name
+    ))
+    $AttributeCollection.Add($ValidateSetAttribute)
+    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Query", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
 
@@ -71,6 +89,7 @@ begin {
 }
 process {
     $IterationName = $PSBoundParameters['Iteration']
+    $Query = $PSBoundParameters['Query']
 
     $downloaded = @()
     if ($IterationName -eq "@Current Iteration") {
@@ -103,8 +122,10 @@ process {
                 ForEach-Object workItemRelations |
                 ForEach-Object target |
                 ForEach-Object id
-    } elseif ($New -or $ToDo) {
-        $query = if ($New) {
+    } elseif ($null -ne $Id) {
+        $missing_ids = $Id
+    } else {
+        $wiql = if ($New) {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
                                                    " AND [System.State] = 'To Do'" +
                                                    " AND [System.ChangedBy] <> @Me " +
@@ -114,6 +135,13 @@ process {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
                                                    " AND [System.State] = 'To Do'" +
                                                    " AND [System.TeamProject] = 'TauOffice'"
+            } elseif ($null -ne $Query) {
+                . ${Invoke-RestApi} `
+                    -Endpoint 'GET https://dev.azure.com/{organization}/{project}/_apis/wit/queries?$depth=1&$expand=wiql&api-version=7.0' |
+                    ForEach-Object value |
+                    ForEach-Object children |
+                    Where-Object name -EQ $Query |
+                    ForEach-Object wiql
             } else {
                 throw "State '$State' is not implemented!"
             }
@@ -121,12 +149,10 @@ process {
         $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
                 -Body @{
-                    query = $query
+                    query = $wiql
                 } |
                 ForEach-Object workItems |
                 ForEach-Object id
-    } elseif ($null -ne $Id) {
-        $missing_ids = $Id
     }
                   
     while ($missing_ids.Count -gt 0) {
@@ -148,7 +174,9 @@ process {
             . ${ConvertTo-Pdf} -OutVariable pdfs
 
         if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
-            . ${New-Attachments} -Path $pdfs
+            if ($pdfs.Length -gt 0) {
+                . ${New-Attachments} -Path $pdfs
+            }
         }
 
         $patches = @{}
@@ -177,6 +205,31 @@ process {
                                            , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
                                                           data-vss-mention="version:1.0">#$1</a>'
                     }
+
+                $tasks = $_.relations |
+                            Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
+                            Measure-Object |
+                            ForEach-Object Count
+
+                if ($tasks -eq 0) {
+                    $task = . ${Invoke-RestApi} `
+                        -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/`${type}?api-version=7.0" `
+                        -Variables @{ type = "task" } `
+                        -PatchBody @([ordered]@{
+                                op    = "add"
+                                path  = "/fields/System.Title"
+                                from  = "null"
+                                value = "Implementierung und Test"
+                            })
+                    $patches[$_.Id] += [ordered]@{
+                            op    = "add"
+                            path  = "/relations/-"
+                            value = [ordered]@{
+                                rel = "System.LinkTypes.Hierarchy-Forward"
+                                url = $task.url
+                                }
+                        }
+                }
             }
         
         $patches.Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne "" }
@@ -185,7 +238,8 @@ process {
             Where-Object { $_.Value.Length -gt 0 } |
             ForEach-Object {
                 if ($PSCmdlet.ShouldProcess($_.Key, "apply patch: $($_.Value | ConvertTo-Json -Compress)")) {
-                    . ${Invoke-RestApi} ` -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
+                    . ${Invoke-RestApi} `
+                         -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
                         -Variables @{ id = $_.Key } `
                         -PatchBody $_.Value
                 }

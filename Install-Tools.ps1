@@ -70,7 +70,7 @@ $tools = @(
 $npm = @(
     [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
     [pscustomobject]@{name="pyright"}                 # python LSP Server for NeoVim
-    [pscustomobject]@{name="vsce"}                    # used for Visual Studio Code Plugin Development
+    [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
 )
 
 $github = @(

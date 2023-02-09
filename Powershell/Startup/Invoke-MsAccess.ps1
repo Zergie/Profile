@@ -1,3 +1,4 @@
+[CmdletBinding()]
 param (
     [Parameter(Mandatory=$false,
                Position=1,
@@ -155,6 +156,11 @@ if ($Inspect) {
         }
     }
 
+    $LogFile = "C:\GIT\TauOffice\tau-office\bin\TauError.log"
+    $LogEntries = Get-Content $LogFile -Encoding 1252 |
+                    Measure-Object |
+                    ForEach-Object Count
+
     Invoke-VBScript @"
     dim stdout : set stdout = CreateObject("Scripting.FileSystemObject").GetStandardStream(1)
     dim application: set application = GetObject(, "Access.Application")
@@ -189,6 +195,24 @@ if ($Inspect) {
             Write-Host -ForegroundColor Red $text
             throw
         }
+    }
+
+    $LogContent = Get-Content $LogFile -Encoding 1252 |
+        Select-Object -Skip $LogEntries |
+        Out-String
+
+    if ($LogContent.Length -gt 0) {
+        @(
+            "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+            "`e[38;5;238m       │`e[0m File: TauError.log"
+            "`e[38;5;238m───────┼─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+            $LogContent.Trim() -split "`r`n" |
+                ForEach-Object {
+                    "`e[38;5;238m       │`e[0m $_"
+                }
+            ""
+        ) |
+            Write-Host -ForegroundColor Yellow
     }
 }
 }

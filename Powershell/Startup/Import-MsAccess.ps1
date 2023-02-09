@@ -1,33 +1,63 @@
 [cmdletbinding()]
 param(
     [Parameter(Mandatory = $true,
+               ParameterSetName="PathParameterSet",
                ValueFromPipeline = $true,
-               ValueFromRemainingArguments = $true)]
-    [ValidateNotNullOrEmpty()]
+               ValueFromRemainingArguments = $true,
+               HelpMessage="Path to one or more locations.")]
     [Alias("PSPath")]
-    [Alias("working")]
+    [ValidateNotNullOrEmpty()]
     [string[]]
     $Path,
 
+    [Parameter(Mandatory=$false,
+               Position=0,
+               ParameterSetName="ObjectParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$true,
+               HelpMessage="Path to one or more locations.")]
+    [ValidateNotNullOrEmpty()]
+    [PSCustomObject[]]
+    $InputObject,
+
     [Parameter()]
     [switch]
-    $ShowDiff = $false,
+    $ShowDiff,
 
     [Parameter()]
     [switch]
     $Edit
 )
 begin {
-    $files = @()
+    $pathes = @()
 }
 process {
-    $files += Get-ChildItem $Path | Select-Object -First 1
+    if (($null -eq $Path) -and ($null -eq $InputObject)) {
+        $InputObject = Get-GitStatus
+    }
+
+    if ($null -ne $Path) {
+        $pathes += $Path | Get-ChildItem
+    } elseif ($null -ne $InputObject) {
+        $pathes += $InputObject | Get-ChildItem
+        $pathes += @(
+                        $InputObject.Working
+                        $InputObject.Index
+                    )
+                    | Where-Object { $null -ne $_ }
+                    | ForEach-Object { [System.IO.Path]::Combine($InputObject.GitDir, "..", $_) }
+                    | Where-Object { Test-Path $_ -PathType Leaf }
+                    | Get-ChildItem
+    }
+
+    Write-Debug "PSBoundParameters: $($PSBoundParameters | ConvertTo-Json)"
+    Write-Debug "pathes: $($pathes.FullName | ConvertTo-Json)"
 }
 end {
     if ($Edit) {
-        $args = $($files | Join-String -Separator " ")
-        Write-Debug $args
-        vi $args
+        $arguments = $($pathes | Join-String -Separator " ")
+        Write-Debug $arguments
+        vi $arguments
     }
 
     $script = [System.Text.StringBuilder]::new()
@@ -38,7 +68,11 @@ end {
     $script.AppendLine('on error resume next') | Out-Null
     $script.AppendLine() | Out-Null
 
-    foreach ($file in $files) {
+    Write-Host
+    foreach ($file in $pathes) {
+        Write-Host "Importing $($file.Name) .." -NoNewline
+        $warning = ""
+
         switch ($file.Extension) {
             ".ACREF" {
                 throw "$($file.Extension) is not (yet) implemented"
@@ -68,10 +102,15 @@ end {
                 $script.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
                 $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
+            ".xml" {
+                $warning = "ignored"
+            }
             default {
                 throw "$($file.Extension) is not implemented"
             }
         }
+
+        Write-Host " $warning" -ForegroundColor Yellow
     }
 
     $script = $script.ToString()
@@ -89,7 +128,7 @@ end {
     Remove-Item "$($env:TEMP)\script.vbs"
 
     if ($ShowDiff) {
-        foreach ($file in $files) {
+        foreach ($file in $pathes) {
             git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
             Remove-Item "$($file.FullName).old"
         }

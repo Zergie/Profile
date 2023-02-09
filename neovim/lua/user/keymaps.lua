@@ -29,8 +29,10 @@ keymap("n", "<C-Left>",  "<cmd>vertical resize -2<cr>", opts)
 keymap("n", "<C-Right>", "<cmd>vertical resize +2<cr>", opts)
 
 -- Navigate buffers
-map("n", "<S-l>", "<cmd>bnext<cr>",     "Next buffer")
-map("n", "<S-h>", "<cmd>bprevious<cr>", "Prev buffer")
+map("n", "<S-l>",  "<cmd>bnext<cr>",     "Next buffer")
+map("n", "<S-h>",  "<cmd>bprevious<cr>", "Prev buffer")
+map("n", "<C-b>c", "<cmd>bdelete<cr>",   "Close buffer")
+map("n", "<C-b>C", "<cmd>bdelete!<cr>",   "Close buffer!")
 
 -- Move text up and down
 map("n", "<A-j>", "<cmd>m-2<cr>", "Move text one line up")
@@ -46,8 +48,10 @@ map("n", "<Leader>cd", "<cmd>cd %:p:h<cr>", "Change working directory")
 -- quick save
 map("n", "ZS", "<cmd>w<cr>", "Save file")
 
--- quick exit without saving
-map("n", "Q", "<cmd>qa!<cr>", "Save file")
+-- open file explorer
+map("n", "<Leader>x", "<cmd>Ex<cr>",  "File Explorer")
+-- map("n", "<Leader>es", "<cmd>Sex<cr>", "File Explorer (split)")
+-- map("n", "<Leader>el", "<cmd>Lex<cr>", "File Explorer (Lex)")
 
 -- Syntax info
 keymap("n", "<F10>", [[

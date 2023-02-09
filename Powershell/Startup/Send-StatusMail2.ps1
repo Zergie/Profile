@@ -4,8 +4,10 @@ param (
                ParameterSetName="WorkitemIdParameterSetName",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$true)]
+    [Alias("Id")]
+    [ValidateNotNullOrEmpty()]
     [int[]]
-    $Workitem,    
+    $Workitem,
 
     [Parameter(Mandatory=$true,
                Position=0,
@@ -37,13 +39,13 @@ DynamicParam {
     # $ParameterAttribute.HelpMessage = ""
     $AttributeCollection.Add($ParameterAttribute)
 
-    # Generate and set the ValidateSet 
+    # Generate and set the ValidateSet
     $collection = & "$PSScriptRoot\Invoke-RestApi.ps1" `
                             -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/tags?api-version=6.0-preview.1" |
                             ForEach-Object value |
                             ForEach-Object name
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($collection)
-    $AttributeCollection.Add($ValidateSetAttribute)    
+    $AttributeCollection.Add($ValidateSetAttribute)
     
     # Create and return the dynamic parameter
     $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
@@ -87,8 +89,8 @@ Process {
             $missing_ids = $missing_ids | Select-Object -Skip 200
         }
 
-        $missing_ids += $items.relations.url | 
-                    Select-String "/workItems/(?<id>\d+)$" | 
+        $missing_ids += $items.relations.url |
+                    Select-String "/workItems/(?<id>\d+)$" |
                     ForEach-Object { [int]::Parse($_.Matches.Groups[1].Value) } |
                     Where-Object { $downloaded.id -notcontains $_ }
 
@@ -107,7 +109,7 @@ Process {
 
         if ($null -ne $rel) {
             $w = $rel.url |
-                    Select-String "/workItems/(?<id>\d+)$" | 
+                    Select-String "/workItems/(?<id>\d+)$" |
                     ForEach-Object { [int]::Parse($_.Matches.Groups[1].Value) } |
                     ForEach-Object { $id=$_; $downloaded | Where-Object { $_.id -eq $id } }
             
@@ -157,7 +159,7 @@ Process {
     $iterations = Invoke-RestApi `
                     -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0" |
                     ForEach-Object value |
-                    Where-Object { $_.path -in $iterationPaths } 
+                    Where-Object { $_.path -in $iterationPaths }
 
     $daysOff = $iterations |
         ForEach-Object {
@@ -166,7 +168,7 @@ Process {
                 -Variables @{ iterationId = $_.Id }
         } |
         ForEach-Object teamMembers |
-        Where-Object { $_.daysOff.count -gt 0 } 
+        Where-Object { $_.daysOff.count -gt 0 }
         
     $team_daysOff = $iterations |
                         ForEach-Object {
@@ -175,9 +177,9 @@ Process {
                                 -Variables @{ iterationId = $_.Id }
                         } |
                         ForEach-Object daysOff |
-                        ForEach-Object { 
+                        ForEach-Object {
                             $d = $_.start
-                            $end = $_.end 
+                            $end = $_.end
                             while ($d -le $end) {
                                 $d.Date
                                 $d = $d.AddDays(1)
@@ -206,7 +208,7 @@ Process {
     "done" | Write-Host -ForegroundColor Green
 
     Write-Host "Createing report.."
-    $downloaded | 
+    $downloaded |
         Where-Object { $_.fields.'System.WorkItemType' -ne 'Epic' } |
         ForEach-Object {
             $ret = $null
@@ -250,7 +252,7 @@ Process {
             }
 
             $ret
-        } | 
+        } |
         Where-Object { $_.Start -ne $null } |
         Where-Object { $_.workitem.fields.'System.WorkItemType' -eq 'Task' } |
         ForEach-Object {
