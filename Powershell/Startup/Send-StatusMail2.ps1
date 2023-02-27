@@ -55,6 +55,7 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 Process {
+    if ($PSBoundParameters.Debug) { $ErrorActionPreference = 'Break' }
     $Tag = $PSBoundParameters['Tag']
 
     $start_date = $Start
@@ -62,6 +63,18 @@ Process {
 
     New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
     New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1" -ErrorAction SilentlyContinue
+
+    Write-Host "Getting holidays from https://rocom.tau-work-together.de/"
+    $tauWorkTogether = 0..($start_date-$end_date).TotalDays |
+                        ForEach-Object { $start_date.AddDays($_) } |
+                        Group-Object {"$($_.Year)-$($_.Month)"} |
+                        ForEach-Object { $_.Group[0] } |
+                        ForEach-Object { Get-TauWorkTogetherHolidays -Month $_.Month -Year $_.Year }
+    $tauWorkTogether.holidays |
+        Where-Object { $_.event -eq $false -or ($_.event -eq $true -and $_.title -EQ "Wolfgang Puchinger") } |
+        ForEach-Object Start |
+        ConvertTo-Json -Compress |
+        Write-Host -ForegroundColor Green
 
     Write-Host "Downloading parents.."
     if ($Workitem.Count -gt 0) {
@@ -154,7 +167,8 @@ Process {
     "done" | Write-Host -ForegroundColor Green
     
 
-    Write-Host "Getting days off.."
+    $activity = "Gettting days off"
+    Write-Progress -Activity $activity -PercentComplete 1
     $iterationPaths = $downloaded.fields.'System.IterationPath' + $downloaded.revisions.fields.'System.IterationPath'
     $iterations = Invoke-RestApi `
                     -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0" |
@@ -186,28 +200,30 @@ Process {
                             }
                         }
     
-    $tauWorkTogether = 0..($start_date-$end_date).TotalDays |
-                        ForEach-Object { $start_date.AddDays($_) } |
-                        Group-Object {"$($_.Year)-$($_.Month)"} |
-                        ForEach-Object { $_.Group[0] } |
-                        ForEach-Object { Get-TauWorkTogetherHolidays -Month $_.Month -Year $_.Year }
     
     $team_daysOff += $tauWorkTogether.holidays | Where-Object event -EQ $false
     
     $teamMembers = $downloaded.fields.'System.AssignedTo' | Group-Object { $_.id } | ForEach-Object { $_.Group[0] }
-    $daysOff += $tauWorkTogether.holidays |
-        Where-Object event -EQ $true |
-        Where-Object title -in $teamMembers.displayName |
-        ForEach-Object {
-            $i=$_
-            [pscustomobject] @{
-                teamMember=$teamMembers | Where-Object displayName -eq $i.title
-                daysOff = @{start=$i.start;end=$i.start}
-            }
-        }
+    $daysOff = $daysOff | ForEach-Object `
+                            -Process {$_} `
+                            -End {
+                                    $tauWorkTogether.holidays |
+                                    Where-Object event -EQ $true |
+                                    Where-Object title -in $teamMembers.displayName |
+                                    ForEach-Object {
+                                        $i=$_
+                                        [pscustomobject] @{
+                                            teamMember=$teamMembers | Where-Object displayName -eq $i.title
+                                            daysOff = [pscustomobject]@{start=$i.start;end=$i.start}
+                                        }
+                                    }
+                            }
+    Write-Progress -Activity $activity -Completed
+    Write-Host "$activity.." -NoNewline
     "done" | Write-Host -ForegroundColor Green
 
-    Write-Host "Createing report.."
+    $activity = "Createing report.."
+    Write-Progress -Activity $activity -PercentComplete 1
     $downloaded |
         Where-Object { $_.fields.'System.WorkItemType' -ne 'Epic' } |
         ForEach-Object {
@@ -271,10 +287,12 @@ Process {
                     
                     if ($dayOff.Count -eq 0 -and $date -notin $team_daysOff) {
                         [pscustomobject]@{
-                            Datum = $date
-                            Oberpunkt = $downloaded | Where-Object id -EQ $w.fields.'System.Parent' | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
+                            Datum          = $date
+                            Activated      = $w.fields.'Microsoft.VSTS.Common.ActivatedDate'
+                            Closed         = $w.fields.'Microsoft.VSTS.Common.ClosedDate'
+                            Oberpunkt      = $downloaded | Where-Object id -EQ $w.fields.'System.Parent' | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
                             Arbeitsschritt = "$($w.fields.'System.Title') ($($w.fields.'System.WorkItemType') $($w.id))"
-                            Mitarbeiter = $w.fields.'System.AssignedTo'.displayName
+                            Mitarbeiter    = $w.fields.'System.AssignedTo'.displayName
                         }
                     }
                 }
@@ -282,12 +300,18 @@ Process {
                 $date = $date.AddDays(1)
             }
         } |
+        Group-Object Datum, Oberpunkt, Arbeitsschritt |
+        ForEach-Object { $_.Group[0] } |
         Sort-Object Datum, Oberpunkt, Arbeitsschritt |
         ConvertTo-Csv -Delimiter `t |
         Set-Clipboard
-    "data is copied to clipboard" | Write-Host -ForegroundColor Green
-    
-    Write-Host -ForegroundColor Magenta "## TODO: add days of from Get-TauWorkTogetherHolidays.ps1 ##"
+    Write-Progress -Activity $activity -Completed
+    Write-Host "$activity.." -NoNewline
+    "done" | Write-Host -ForegroundColor Green
 
+    "" | Write-Host -ForegroundColor Green
+    "data is copied to clipboard" | Write-Host -ForegroundColor Green
+    "" | Write-Host -ForegroundColor Green
+    
     "All done, exiting.." | Write-Host -ForegroundColor Green
 }

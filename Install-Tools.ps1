@@ -132,6 +132,12 @@ $commands = @(
     { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'PlugUpgrade|PlugInstall|PlugUpdate|q|q' }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
     { Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" -Name "Debugger" -Value 'wt -w 0 -p cmd nvim +bd' }
+    {
+        Set-ItemProperty `
+            -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `
+            -Name "Debugger" `
+            -Value "wt -w 0 -p cmd `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
+    }
 )
 
 

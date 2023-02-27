@@ -31,8 +31,8 @@ keymap("n", "<C-Right>", "<cmd>vertical resize +2<cr>", opts)
 -- Navigate buffers
 map("n", "<S-l>",  "<cmd>bnext<cr>",     "Next buffer")
 map("n", "<S-h>",  "<cmd>bprevious<cr>", "Prev buffer")
-map("n", "<C-b>c", "<cmd>bdelete<cr>",   "Close buffer")
-map("n", "<C-b>C", "<cmd>bdelete!<cr>",   "Close buffer!")
+map("n", "<C-b>c", "<cmd>bp<bar>sp<bar>bn<bar>bd<cr>", "Close buffer")
+map("n", "<C-b>C", "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer!")
 
 -- Move text up and down
 map("n", "<A-j>", "<cmd>m-2<cr>", "Move text one line up")
@@ -40,7 +40,9 @@ map("n", "<A-k>", "<cmd>m+1<cr>", "Move text one line down")
 
 -- some terminal keys
 keymap("t", "<ESC>", "<C-\\><C-n>",         opts)
-keymap("t", "<ESC>", "<C-\\><C-n>:bd!<CR>", opts)
+-- keymap("t", "<ESC>", "<cmd>bp<bar>sp<bar>bn<bar>bd!<CR>", opts)
+map("n", "<Leader>t", "<cmd>FloatermNew --autoclose=2 pwsh<cr>", "Open a floating pwsh -NoProfile")
+map("n", "<Leader>T", "<cmd>FloatermNew --autoclose=2 \"pwsh.exe\"<cr>", "Open a floating pwsh")
 
 -- Change working Directory
 map("n", "<Leader>cd", "<cmd>cd %:p:h<cr>", "Change working directory")

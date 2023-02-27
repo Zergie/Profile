@@ -18,10 +18,10 @@ Begin {
 }
 Process{
     $Items += [pscustomobject]@{
-                ID = $null        
+                ID = $null
                 Name = $null
                 Path = ($Path | Resolve-Path).ProviderPath
-              } | 
+              } |
               ForEach-Object {
                   $_.ID = [int]::Parse([System.IO.Path]::GetFileName([System.IO.Path]::GetDirectoryName($_.Path)))
                   $_.Name = [System.IO.Path]::GetFileName($_.Path)
@@ -44,8 +44,8 @@ End{
     }
 
     $indexes = @()
-    $attachments = $downloaded | 
-                    ForEach-Object { 
+    $attachments = $downloaded |
+                    ForEach-Object {
                         $w=$_
                         
                         $w.relations |
@@ -72,21 +72,24 @@ End{
     Write-Progress -Activity "Droping old attachments"
     $old_attachment = @()
     foreach ($item in $Items) {
-        $old_attachment += $attachments | 
-                            Where-Object workitem -eq $item.id | 
+        $old_attachment += $attachments |
+                            Where-Object workitem -eq $item.id |
                             Where-Object { $_.attributes.name -eq $item.name }
     }
     $old_attachment |
         Sort-Object -Descending Index |
         ForEach-Object {
-            Invoke-RestApi `
-                    -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=6.0" `
-                    -PatchBody @([ordered]@{
-                        "op" = "remove"
-                        "path" = "/relations/$($_.Index)"
-                    }) `
-                    -Variables @{ id = $_.workitem } | 
-                    Out-Null
+            try {
+                Invoke-RestApi `
+                        -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=6.0" `
+                        -PatchBody @([ordered]@{
+                            "op" = "remove"
+                            "path" = "/relations/$($_.Index)"
+                        }) `
+                        -Variables @{ id = $_.workitem } |
+                        Out-Null
+            } catch {
+            }
         }
     Write-Progress -Activity "Droping old attachments" -Completed
 
@@ -107,7 +110,7 @@ End{
                     "url" = $attachment.url
                     }
                 }) `
-            -Variables @{ id = $item.id } | 
+            -Variables @{ id = $item.id } |
             Out-Null
     }
     Write-Progress -Activity "Uploading new attachments" -Completed

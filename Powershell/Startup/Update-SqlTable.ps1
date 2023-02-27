@@ -1,39 +1,55 @@
 param(
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $ServerInstance,
 
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Username,
 
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Password,
 
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true)]
-    [string] 
+    [string]
     $Database,
 
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true)]
-    [string] 
+    [string]
     $Table,
 
-    [Parameter(ParameterSetName='Filter')]
-    [string]
-    $Filter,
-
-    [Parameter(ParameterSetName='Filter')]
-    [object]
-    $Value,
-
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory = $true,
                ValueFromPipeline = $true)]
     [pscustomobject]
-    $Data
+    $Data,
+
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    [string]
+    $Criteria,
+
+    # [Parameter(ParameterSetName='FilterParameterSet')]
+    [string]
+    $Filter,
+
+    # [Parameter(ParameterSetName='FilterParameterSet')]
+    [object]
+    $Value
 )
 Begin {
     $connection_string = @(
@@ -42,7 +58,7 @@ Begin {
             "User Id=$Username"
             "Password=$Password"
         ) | Join-String -Separator ";"
-    Write-Verbose "connecting to: $connection_string" 
+    Write-Verbose "connecting to: $connection_string"
     $connection = [System.Data.SqlClient.SqlConnection]::new($connection_string)
     $connection.Open()
 }
@@ -50,6 +66,7 @@ Process {
     if ($Data -is [Hashtable]) {
         $Data = [pscustomobject]$Data
     }
+    Write-Verbose "data: $($data | ConvertTo-Json -Compress)"
 
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `
@@ -60,7 +77,7 @@ Process {
     $Query = "UPDATE "
 
     if ($Table.Contains(".")) {
-        $Query += " $Table "   
+        $Query += " $Table "
     }
     else {
         $Query += " [$Table] "
@@ -71,6 +88,8 @@ Process {
 
     if ($PSBoundParameters.ContainsKey("Filter")) {
         $Query += " WHERE [$Filter] = @$Filter"
+    } elseif ($Criteria.Length -gt 0) {
+        $Query += " WHERE $Criteria"
     }
     
     Write-Verbose $Query
@@ -110,7 +129,7 @@ Process {
         }
     }
 
-    $command.Parameters | Select ParameterName, Value
+    #$command.Parameters | Select-Object ParameterName, Value
     $command.ExecuteNonQuery() | Out-Null
     $command.Dispose()
 }

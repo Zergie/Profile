@@ -39,7 +39,7 @@ process {
     if ($null -ne $Path) {
         $pathes += $Path | Get-ChildItem
     } elseif ($null -ne $InputObject) {
-        $pathes += $InputObject | Get-ChildItem
+        $pathes += $InputObject | Get-ChildItem -ErrorAction SilentlyContinue
         $pathes += @(
                         $InputObject.Working
                         $InputObject.Index

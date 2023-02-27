@@ -67,33 +67,33 @@ end {
         } else {
             [pscustomobject]@{month = $Month; year = $Year}
         }
-    } | 
+    } |
     Invoke-Expression
 
-    Start-Process -FilePath (Get-ChildItem C:\GIT\QuickAndDirty\bsc\CefSharpDownloader\ -Recurse -Filter CefSharpDownloader.exe | 
-                                    Sort-Object LastWriteTime | 
+    Start-Process -FilePath (Get-ChildItem C:\GIT\QuickAndDirty\bsc\CefSharpDownloader\ -Recurse -Filter CefSharpDownloader.exe |
+                                    Sort-Object LastWriteTime |
                                     Select-Object -Last 1 |
                                     ForEach-Object FullName)
     $cefDownloader = Get-Process CefSharpDownloader
-    try {    
+    try {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | ForEach-Object Content
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
 
         $response = [pscustomobject]@{ logout = $true }
         while ($response.logout -eq $true) {
             $response = $dates |
-                        ForEach-Object { 
+                        ForEach-Object {
                             Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body ("https://rocom.tau-work-together.de/api/main/holiday/holidaysview/dayGridMonth?" + "{`"date`":`"$($_.year)-$($_.month)-1`"}")
-                        } | 
-                        ForEach-Object { 
-                            $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json  
+                        } |
+                        ForEach-Object {
+                            $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json
                         }
 
             if ($response.logout -eq $true) {
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
-                Start-Sleep -Seconds 1
-                $pwd = Get-Content "$PSScriptRoot\..\secrets.json" | 
-                            ConvertFrom-Json | 
+                Start-Sleep -Seconds 2
+                $pwd = Get-Content "$PSScriptRoot\..\secrets.json" |
+                            ConvertFrom-Json |
                             ForEach-Object Get-TauWorkTogetherHolidays |
                             ForEach-Object Password
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
@@ -102,13 +102,13 @@ end {
                     pwd.value = '$pwd';
                     pwd.dispatchEvent(new Event('compositionend', { bubbles: true }));
                     document.querySelectorAll('button')[0].click();
-                    " | 
+                    " |
                     ForEach-Object Content
-                Start-Sleep -Seconds 1
+                Start-Sleep -Seconds 2
             }
         }
         
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content 
+        Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content
     }
     catch {
         $cefDownloader.Kill()
@@ -121,7 +121,7 @@ end {
             error=$response.error
             legend=$response.legend
             holidays=$response.holidays |
-                Where-Object { 
+                Where-Object {
                     $_.event -eq $false -or
                     $_.title -NotIn $rocom_service_employees
                 }
@@ -132,7 +132,7 @@ end {
             error=$response.error
             legend=$response.legend
             holidays=$response.holidays |
-                Where-Object { 
+                Where-Object {
                     $_.event -eq $false -or
                     $_.title -In $rocom_service_employees
                 }
@@ -149,7 +149,7 @@ end {
             ForEach-Object { [int]::Parse($_.start.SubString(8)) }
         
         $weekcolor = "`e[48;2;30;30;30m"
-        $columns = 1..$end | 
+        $columns = 1..$end |
             ForEach-Object {
                 [pscustomobject] @{
                     index = $_
@@ -158,7 +158,7 @@ end {
                     value = " "
                     holiday = $false
                     date = [datetime]::new($dates[0].year, $dates[0].month, 1).AddDays($_ - 1)
-                }   
+                }
             } |
             ForEach-Object {
                 if($_.index -in $holidays) {
@@ -167,7 +167,7 @@ end {
                     $_.holiday = $true
                 } elseif($_.date.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
                     $_.holiday = $true
-                } 
+                }
                 
                 if($_.date.DayOfWeek -eq [System.DayOfWeek]::Monday) {
                     if ($weekcolor -eq "`e[48;2;30;30;30m") {
@@ -195,12 +195,12 @@ end {
                 Add-Member -InputObject $_ -MemberType NoteProperty -Name "lines_2"    -Value ( $_.start + $_.date.Day.ToString().PadLeft(2, ' ').Substring(1,1) + $_.end )
                 Add-Member -InputObject $_ -MemberType NoteProperty -Name "lines_3"    -Value ( $_.start + "─" + $_.end )
 
-                Add-Member -InputObject $_ -MemberType ScriptProperty -Name "text"    -Value { 
+                Add-Member -InputObject $_ -MemberType ScriptProperty -Name "text"    -Value {
                     if ($this.holiday) {
                         ($this.start -replace "m",";38;2;60;60;60m" ) + "◆" + $this.end
                     } else {
                         $this.start + $this.value + $this.end
-                    } 
+                    }
                 }
 
                 $_
@@ -212,7 +212,7 @@ end {
         
 
         
-        Write-Host 
+        Write-Host
         Write-Host "$pad │ $($columns.lines_0 | Join-String -Separator '') │"
         Write-Host "$pad │ $($columns.lines_1 | Join-String -Separator '') │"
         Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
@@ -226,23 +226,23 @@ end {
                                 Where-Object { $_.title -eq $employee } |
                                 ForEach-Object start
 
-            $days = $columns | 
-                        ForEach-Object { $_.value = if($_.dateString -in $days_off) {"◆"} else {" "}; $_.text } | 
+            $days = $columns |
+                        ForEach-Object { $_.value = if($_.dateString -in $days_off) {"◆"} else {" "}; $_.text } |
                         Join-String -Separator ''
             
             $text = "$($employee.PadRight($longest_title.Length)) │ $days │"
-            Write-Host $text 
+            Write-Host $text
         }
 
         if ($employees.Count -gt 5) {
             Write-Host "$pad ├─$($columns.lines_3 | Join-String -Separator '')─┤"
             Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
             Write-Host "$pad │ $($columns.lines_1 | Join-String -Separator '') │"
-        } else 
+        } else
         {
             Write-Host "$pad └─$($columns.lines_3 | Join-String -Separator '')─┘"
         }
-        Write-Host 
+        Write-Host
 
         $employees = $response.holidays |
             Where-Object { $_.event -eq $false } |

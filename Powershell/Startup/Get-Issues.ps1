@@ -175,7 +175,7 @@ process {
 
         if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
             if ($pdfs.Length -gt 0) {
-                . ${New-Attachments} -Path $pdfs
+                $pdfs | . ${New-Attachments}
             }
         }
 
@@ -184,18 +184,19 @@ process {
 
         $workitems |
             ForEach-Object {
-                $patches[$_.Id] += [ordered]@{
-                        op    = "add"
-                        path  = "/fields/Microsoft.VSTS.Common.Priority"
-                        value = $_.fields.'System.Description' |
-                                Select-String -Pattern "Priorität: [^\d]+(\d+)" |
-                                ForEach-Object { $_.Matches.Groups[1].Value }
-
-                    }
+               # $patches[$_.Id] += [ordered]@{
+               #         op    = "add"
+               #         path  = "/fields/Microsoft.VSTS.Common.Priority"
+               #         value = $_.fields.'System.Description' |
+               #                 Select-String -Pattern "Priorität: [^\d]+(\d+)" |
+               #                 ForEach-Object { $_.Matches.Groups[1].Value }
+               #     }
                 $patches[$_.Id] += [ordered]@{
                         op    = "replace"
                         path  = "/fields/System.Title"
-                        value = $_.fields.'System.Title' -replace 'Korrektur (auf|aus) Aufgabe (ID )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3'
+                        value = $_.fields.'System.Title' `
+                                    -replace 'Korrektur (auf|aus) Aufgabe (ID )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
+                                    -replace '[.!]\s*$', ''
                     }
                 $patches[$_.Id] += [ordered]@{
                         op    = "replace"
@@ -220,6 +221,18 @@ process {
                                 path  = "/fields/System.Title"
                                 from  = "null"
                                 value = "Implementierung und Test"
+                            },
+                            [ordered]@{
+                                op    = "add"
+                                path  = "/fields/System.IterationPath"
+                                from  = "null"
+                                value = $_.fields.'System.IterationPath'
+                            },
+                            [ordered]@{
+                                op    = "add"
+                                path  = "/fields/System.AssignedTo"
+                                from  = "null"
+                                value = $_.fields.'System.AssignedTo'
                             })
                     $patches[$_.Id] += [ordered]@{
                             op    = "add"
@@ -232,7 +245,7 @@ process {
                 }
             }
         
-        $patches.Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne "" }
+        $patches.Clone().Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne $null }
 
         $patches.GetEnumerator() |
             Where-Object { $_.Value.Length -gt 0 } |

@@ -63,6 +63,8 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
     Set-Alias gh      "C:\Program Files\GitHub CLI\gh.exe"
+    Set-Alias nf      "$PSScriptRoot\Startup\New-FeatureBranch.ps1"
+    Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"
@@ -177,8 +179,9 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     }
 }
 
-Set-PSReadLineOption -ViModeIndicator Script -ViModeChangeHandler $Function:OnViModeChange
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
 Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
+Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
 Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
+Set-PSReadLineKeyHandler -Chord "F8" -Function AcceptNextSuggestionWord

@@ -33,6 +33,9 @@ call plug#begin('~/AppData/Local/nvim/plugged')
 
     " mermaid diagram
     Plug 'mracos/mermaid.vim'
+
+    " floating terminal for compling
+    Plug 'voldikss/vim-floaterm'
 call plug#end()
 
 lua require 'user.opt'
