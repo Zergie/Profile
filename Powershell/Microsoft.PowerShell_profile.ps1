@@ -65,6 +65,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Set-Alias gh      "C:\Program Files\GitHub CLI\gh.exe"
     Set-Alias nf      "$PSScriptRoot\Startup\New-FeatureBranch.ps1"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
+    Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
 
     # set alias to my scripts
     $dockerScript = "D:\Daten\docker.ps1"

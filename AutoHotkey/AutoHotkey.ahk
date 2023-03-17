@@ -38,36 +38,36 @@ return
 ; Send {left}
 ; return
 
-#IfWinActive
-^1::
-Send, {CtrlUp}
-ClipSave := Clipboard
-SendInput %ClipSave%
-return
+; #IfWinActive
+; ^1::
+; Send, {CtrlUp}
+; ClipSave := Clipboard
+; SendInput %ClipSave%
+; return
 
-^2::
-Send, ^c
-
-Gui, New
-Gui, Add, Button, gradioSelected w150, Fehlerbehebung Tau-Office
-Gui, Add, Button, gradioSelected w150, Weiterentwicklung Tau-Office
-Gui, Add, Button, gradioSelected w150, Hotlineunterstützung
-Gui, Add, Button, gradioSelected w150, Konzeption Tau-Office
-Gui, Show, w170
-return
-
-radioSelected:
-Gui, Submit, NoHide
-sText = * %A_GuiControl%
-Gui, Destroy
-
-Send, {CtrlUp}{F2}
-if StrLen(Clipboard) > 5 {
-    Send, {AltDown}{Enter}{AltUp}
-}
-Send, %sText%
-Send, {Delete}{Enter}
-return
+; ^2::
+; Send, ^c
+;
+; Gui, New
+; Gui, Add, Button, gradioSelected w150, Fehlerbehebung Tau-Office
+; Gui, Add, Button, gradioSelected w150, Weiterentwicklung Tau-Office
+; Gui, Add, Button, gradioSelected w150, Hotlineunterstützung
+; Gui, Add, Button, gradioSelected w150, Konzeption Tau-Office
+; Gui, Show, w170
+; return
+;
+; radioSelected:
+; Gui, Submit, NoHide
+; sText = * %A_GuiControl%
+; Gui, Destroy
+;
+; Send, {CtrlUp}{F2}
+; if StrLen(Clipboard) > 5 {
+;     Send, {AltDown}{Enter}{AltUp}
+; }
+; Send, %sText%
+; Send, {Delete}{Enter}
+; return
 
 ^+v::
 ClipSave := Clipboard

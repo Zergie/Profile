@@ -39,7 +39,7 @@ $tools = @(
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
     [pscustomobject]@{name="discord"}
-    [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates";pin=$true}
+    [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates"}
     [pscustomobject]@{name="gimp"}
     [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="git-status-cache-posh-client"}
@@ -65,6 +65,7 @@ $tools = @(
     [pscustomobject]@{name="wireshark"}
     [pscustomobject]@{name="wsl2"}
     [pscustomobject]@{name="ripgrep"}
+    [pscustomobject]@{name="controlmymonitor"}
 )
 
 $npm = @(
@@ -84,8 +85,8 @@ $github = @(
                       folder="$PSScriptRoot\neovim\lsp_server\lua-language-server"}
     [pscustomobject]@{repo="m1guelpf/auto-commit";                  file="auto-commit-win-*.exe"
                       folder="$PSScriptRoot\auto-commit"}
-    [pscustomobject]@{repo="JochenBaier/fastwindowswitcher";        file="FastWindowSwitcher-*.zip"
-                      folder="$PSScriptRoot/fastwindowswitcher"}
+    [pscustomobject]@{repo="max-niederman/ttyper";                  file="ttyper-x86_64-*-windows-*.zip"
+                      folder="$PSScriptRoot/ttyper"}
 )
 
 $patches = @(
@@ -131,12 +132,11 @@ $commands = @(
     { Remove-Item -Force -Recurse "$PSScriptRoot\neovim\lsp_server\omnisharp\de" -ErrorAction SilentlyContinue }
     { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'PlugUpgrade|PlugInstall|PlugUpdate|q|q' }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
-    { Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" -Name "Debugger" -Value 'wt -w 0 -p cmd nvim +bd' }
     {
         Set-ItemProperty `
             -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `
             -Name "Debugger" `
-            -Value "wt -w 0 -p cmd `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
+            -Value "wt -w 0 sp cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
     }
 )
 

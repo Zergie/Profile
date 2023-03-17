@@ -21,9 +21,16 @@ process {
     }
 
     foreach ($db in $Database) {
+        Write-Host -ForegroundColor Cyan "docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
         docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
+
+        Write-Host -ForegroundColor Cyan "docker cp `"$((Get-Location).Path)\$db.bak`" mssql:/tmp/$db.bak"
         docker cp "$((Get-Location).Path)\$db.bak" mssql:/tmp/$db.bak
+
+        Write-Host -ForegroundColor Cyan "RESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE"
         Invoke-Sqlcmd -Database master -Query "RESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE" -Verbose
+
+        Write-Host -ForegroundColor Cyan "docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
         docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
     }
 }

@@ -46,7 +46,10 @@ param (
                 ValueFromPipeline=$false,
                 ValueFromPipelineByPropertyName=$false)]
         [switch]
-        $FormatNice
+        $FormatNice,
+
+        [switch]
+        $KeepBrowser
 )
 begin {
     $rocom_service_employees = @(
@@ -92,14 +95,14 @@ end {
             if ($response.logout -eq $true) {
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
                 Start-Sleep -Seconds 2
-                $pwd = Get-Content "$PSScriptRoot\..\secrets.json" |
-                            ConvertFrom-Json |
-                            ForEach-Object Get-TauWorkTogetherHolidays |
-                            ForEach-Object Password
+                $password = Get-Content "$PSScriptRoot\..\secrets.json" |
+                                ConvertFrom-Json |
+                                ForEach-Object Get-TauWorkTogetherHolidays |
+                                ForEach-Object Password
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
                     var pwd = document.querySelectorAll('input[type=password]')[0];
                     pwd.dispatchEvent(new Event('compositionstart', { bubbles: true }));
-                    pwd.value = '$pwd';
+                    pwd.value = '$password';
                     pwd.dispatchEvent(new Event('compositionend', { bubbles: true }));
                     document.querySelectorAll('button')[0].click();
                     " |
@@ -108,7 +111,9 @@ end {
             }
         }
         
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content
+        if ($KeepBrowser) {
+            Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content
+        }
     }
     catch {
         $cefDownloader.Kill()

@@ -106,7 +106,7 @@ end {
                 $warning = "ignored"
             }
             default {
-                throw "$($file.Extension) is not implemented"
+                Write-Host "$($file.Extension) is not implemented" -ForegroundColor Red
             }
         }
 

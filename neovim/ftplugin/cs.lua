@@ -6,6 +6,6 @@ vim.opt_local.makeprg     = "dotnet build /v:q /nologo /property:GenerateFullPat
 vim.opt_local.errorformat = "%#%f(%l\\,%c):%m"
 
 local opts = { noremap = true, silent = true }
-vim.api.nvim_buf_set_keymap(0, "n", "<Leader>mk", ":make<bar>:copen<cr>", opts)
-vim.api.nvim_buf_set_keymap(0, "n", "<Leader>ms", ":wa!<bar>:mks!<cr>", opts)
+-- vim.api.nvim_buf_set_keymap(0, "n", "<Leader>mk", ":make<bar>:copen<cr>", opts)
+-- vim.api.nvim_buf_set_keymap(0, "n", "<Leader>ms", ":wa!<bar>:mks!<cr>", opts)
 -- vim.api.nvim_buf_set_keymap(0, "n", "<F5>", ":wa!<bar>!dotnet run<cr>", opts)

@@ -4,26 +4,8 @@
     "actions": 
     [
         {
-            "command": 
-            {
-                "action": "switchToTab",
-                "index": 8
-            },
-            "keys": "win+ctrl+alt+9"
-        },
-        {
-            "command": 
-            {
-                "action": "switchToTab",
-                "index": 5
-            },
-            "keys": "win+ctrl+alt+6"
-        },
-        {
-            "command": 
-            {
-                "action": "splitPane"
-            }
+            "command": "find",
+            "keys": "win+ctrl+alt+comma"
         },
         {
             "command": 
@@ -36,10 +18,70 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 1
+                "action": "splitPane",
+                "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe",
+                "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
+                "split": "auto"
             },
-            "keys": "win+ctrl+alt+2"
+            "keys": "f3"
+        },
+        {
+            "command": 
+            {
+                "action": "switchToTab",
+                "index": 8
+            },
+            "keys": "win+ctrl+alt+9"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe -l german",
+                "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
+                "split": "auto"
+            },
+            "keys": "f4"
+        },
+        {
+            "command": "markMode",
+            "keys": "win+ctrl+alt+period"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "commandline": "C:\\tools\\neovim\\nvim-win64\\bin\\nvim.exe",
+                "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "split": "auto"
+            },
+            "keys": "f22"
+        },
+        {
+            "command": "paste",
+            "keys": "win+ctrl+alt+m"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane"
+            }
+        },
+        {
+            "command": 
+            {
+                "action": "switchToTab",
+                "index": 6
+            },
+            "keys": "win+ctrl+alt+7"
+        },
+        {
+            "command": 
+            {
+                "action": "switchToTab",
+                "index": 5
+            },
+            "keys": "win+ctrl+alt+6"
         },
         {
             "command": 
@@ -51,18 +93,26 @@
         {
             "command": 
             {
+                "action": "switchToTab",
+                "index": 1
+            },
+            "keys": "win+ctrl+alt+2"
+        },
+        {
+            "command": 
+            {
                 "action": "adjustFontSize",
-                "delta": -1
+                "delta": -1.0
             },
             "keys": "win+ctrl+alt+minus"
         },
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 6
+                "action": "findMatch",
+                "direction": "next"
             },
-            "keys": "win+ctrl+alt+7"
+            "keys": "win+ctrl+alt+y"
         },
         {
             "command": 
@@ -91,9 +141,17 @@
             "command": 
             {
                 "action": "adjustFontSize",
-                "delta": 1
+                "delta": 1.0
             },
             "keys": "win+ctrl+alt+plus"
+        },
+        {
+            "command": 
+            {
+                "action": "findMatch",
+                "direction": "prev"
+            },
+            "keys": "win+ctrl+alt+l"
         },
         {
             "command": 
@@ -108,7 +166,8 @@
             {
                 "action": "copy",
                 "singleLine": false
-            }
+            },
+            "keys": "win+ctrl+alt+g"
         },
         {
             "command": 
@@ -159,6 +218,10 @@
                 "direction": "right"
             },
             "keys": "win+ctrl+alt+i"
+        },
+        {
+            "command": "expandSelectionToWord",
+            "keys": "win+ctrl+alt+h"
         },
         {
             "command": "unbound",
@@ -326,15 +389,7 @@
         },
         {
             "command": "unbound",
-            "keys": "alt+left"
-        },
-        {
-            "command": "unbound",
             "keys": "alt+up"
-        },
-        {
-            "command": "unbound",
-            "keys": "alt+right"
         },
         {
             "command": "unbound",
@@ -357,12 +412,68 @@
             "keys": "win+ctrl+alt+a"
         },
         {
-            "command": "paste",
+            "command": "unbound",
+            "keys": "ctrl+shift+t"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+1"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+2"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+3"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+4"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+5"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+6"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+7"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+8"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+9"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+shift+n"
+        },
+        {
+            "command": "unbound",
             "keys": "shift+insert"
         },
         {
-            "command": "paste",
-            "keys": "win+ctrl+alt+m"
+            "command": "unbound",
+            "keys": "f24"
+        },
+        {
+            "command": "unbound",
+            "keys": "win+ctrl+alt+f"
+        },
+        {
+            "command": "unbound",
+            "keys": "ctrl+\u0003"
+        },
+        {
+            "command": "unbound",
+            "keys": "f21"
         },
         {
             "command": 
@@ -392,12 +503,16 @@
             "keys": "win+ctrl+alt+enter"
         },
         {
+            "command": "toggleFocusMode",
+            "keys": "f11"
+        },
+        {
             "command": 
             {
                 "action": "moveFocus",
                 "direction": "nextInOrder"
             },
-            "keys": "win+ctrl+alt+y"
+            "keys": "alt+right"
         },
         {
             "command": 
@@ -405,14 +520,7 @@
                 "action": "moveFocus",
                 "direction": "previousInOrder"
             },
-            "keys": "win+ctrl+alt+l"
-        },
-        {
-            "command": "markMode"
-        },
-        {
-            "command": "find",
-            "keys": "win+ctrl+alt+f"
+            "keys": "alt+left"
         },
         {
             "command": 
@@ -433,6 +541,8 @@
         }
     ],
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "language": "en-US",
+    "launchMode": "maximized",
     "profiles": 
     {
         "defaults": 
@@ -440,7 +550,7 @@
             "font": 
             {
                 "face": "MesloLGS NFM",
-                "size": 10
+                "size": 10.0
             },
             "padding": "5, 5, 5, 5"
         },
@@ -450,7 +560,7 @@
                 "background": "#202020",
                 "backgroundImage": "ms-appdata:///Local/rocom-service2.png",
                 "backgroundImageAlignment": "bottomRight",
-                "backgroundImageOpacity": 0.14999999999999999,
+                "backgroundImageOpacity": 0.15,
                 "backgroundImageStretchMode": "none",
                 "commandline": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
                 "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
@@ -462,7 +572,7 @@
                 "background": "#202020",
                 "backgroundImage": "ms-appdata:///Local/rocom-service2.png",
                 "backgroundImageAlignment": "bottomRight",
-                "backgroundImageOpacity": 0.14999999999999999,
+                "backgroundImageOpacity": 0.15,
                 "backgroundImageStretchMode": "none",
                 "commandline": "C:\\Users\\Puchinger.ROCOM.000\\Desktop\\tools\\V1\\getch.bat",
                 "guid": "{0d707173-48f0-45de-894f-0846a5b58a71}",
@@ -474,6 +584,17 @@
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
                 "name": "cmd"
+            },
+            {
+                "background": "#202020",
+                "font": 
+                {
+                    "face": "MesloLGS NFM",
+                    "size": 18.0
+                },
+                "guid": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
+                "hidden": false,
+                "name": "cmd (big)"
             },
             {
                 "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
@@ -727,5 +848,6 @@
             "yellow": "#808000"
         }
     ],
-    "showTerminalTitleInTitlebar": false
+    "showTerminalTitleInTitlebar": false,
+    "themes": []
 }

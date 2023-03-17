@@ -15,11 +15,11 @@ param(
     $Password,
 
     [Parameter(Mandatory)]
-    [string] 
+    [string]
     $Database,
 
     [Parameter(Mandatory)]
-    [string] 
+    [string]
     $Table,
 
     [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -33,7 +33,7 @@ Begin {
             "User Id=$Username"
             "Password=$Password"
         ) | Join-String -Separator ";"
-    Write-Verbose "connecting to: $connection_string" 
+    Write-Verbose "connecting to: $connection_string"
     $connection = [System.Data.SqlClient.SqlConnection]::new($connection_string)
     $connection.Open()
 }
@@ -42,6 +42,7 @@ Process {
         $Data = [pscustomobject]$Data
     }
 
+    $Table = $Table.TrimStart("[").TrimEnd("]")
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `
                     -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
@@ -51,7 +52,7 @@ Process {
     $Query = "INSERT INTO"
 
     if ($Table.Contains(".")) {
-        $Query += " $Table "   
+        $Query += " $Table "
     }
     else {
         $Query += " [$Table] "

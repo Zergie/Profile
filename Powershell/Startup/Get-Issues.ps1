@@ -28,6 +28,24 @@ param (
     [switch]
     $ToDo,
 
+    [Parameter(Mandatory=$true,
+               Position=0,
+               ParameterSetName="StartParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [DateTime]
+    $Start,
+
+    [Parameter(Mandatory=$true,
+               Position=0,
+               ParameterSetName="StartParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [DateTime]
+    $End,
+
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
@@ -142,10 +160,15 @@ process {
                     ForEach-Object children |
                     Where-Object name -EQ $Query |
                     ForEach-Object wiql
+            } elseif ($null -ne $Start) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
+                                                   " AND [System.ChangedDate] >= '$($Start.ToString("o"))'" +
+                                                   " AND [System.ChangedDate] <= '$($End.ToString("o"))'"
             } else {
-                throw "State '$State' is not implemented!"
+                throw "Not implemented!"
             }
         
+        Write-Debug $wiql
         $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
                 -Body @{
@@ -221,18 +244,20 @@ process {
                                 path  = "/fields/System.Title"
                                 from  = "null"
                                 value = "Implementierung und Test"
-                            },
+                            }
                             [ordered]@{
                                 op    = "add"
                                 path  = "/fields/System.IterationPath"
                                 from  = "null"
                                 value = $_.fields.'System.IterationPath'
-                            },
-                            [ordered]@{
-                                op    = "add"
-                                path  = "/fields/System.AssignedTo"
-                                from  = "null"
-                                value = $_.fields.'System.AssignedTo'
+                            }
+                            if ($null -ne $_.fields.'System.AssignedTo') {
+                                [ordered]@{
+                                    op    = "add"
+                                    path  = "/fields/System.AssignedTo"
+                                    from  = "null"
+                                    value = $_.fields.'System.AssignedTo'
+                                }
                             })
                     $patches[$_.Id] += [ordered]@{
                             op    = "add"

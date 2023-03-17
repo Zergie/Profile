@@ -10,23 +10,24 @@ param (
     $Workitem,
 
     [Parameter(Mandatory=$true,
-               Position=0,
+               ParameterSetName="AllParameterSetName",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$true)]
-    [DateTime]
-    $Start,
+    [switch]
+    $All,
 
     [Parameter(Mandatory=$true,
                Position=1,
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$true)]
-    [DateTime]
-    $End
+    [ValidateSet(1,2,3,4,5,6,7,8,9,10,11,12)]
+    [int]
+    $Month
 )
 DynamicParam {
     $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
 
-    #region dynamic parameter 'Flags'
+    #region dynamic parameter 'Tag'
     $ParameterName = 'Tag'
 
     # Create the collection of attributes
@@ -52,17 +53,49 @@ DynamicParam {
     $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
     #endregion
 
+    #region dynamic parameter 'Year'
+    $ParameterName = 'Year'
+
+    # Create the collection of attributes
+    $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+    # Create and set the parameters attributes
+    $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.Position = 0
+    $AttributeCollection.Add($ParameterAttribute)
+
+    # Generate and set the ValidateSet
+    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+        (Get-Date).Year - 1
+        (Get-Date).Year
+        (Get-Date).Year + 1
+    ))
+    $AttributeCollection.Add($ValidateSetAttribute)
+    
+    # Create and return the dynamic parameter
+    $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+    #endregion
+
     return $RuntimeParameterDictionary
 }
 Process {
     if ($PSBoundParameters.Debug) { $ErrorActionPreference = 'Break' }
     $Tag = $PSBoundParameters['Tag']
+    $Year = $PSBoundParameters['Year']
 
-    $start_date = $Start
-    $end_date   = $End
+    $start_date = [datetime]::new($Year, $Month, 1)
+    $end_date   = $start_date.AddMonths(1).AddDays(-1)
 
+    New-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues.ps1" -ErrorAction SilentlyContinue
     New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
     New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1" -ErrorAction SilentlyContinue
+
+    if ($All) {
+        $Workitem = Get-Issues -Start $start_date -End ($end_date.AddDays(14)) |
+                        ForEach-Object Id
+    }
 
     Write-Host "Getting holidays from https://rocom.tau-work-together.de/"
     $tauWorkTogether = 0..($start_date-$end_date).TotalDays |

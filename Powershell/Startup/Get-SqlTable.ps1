@@ -60,7 +60,7 @@
             $Query += "FROM $Table "
         }
         else {
-            $Query += "FROM [$Table] "
+            $Query += "FROM [$($Table.TrimStart("[").TrimEnd("]"))] "
         }
 
         if ($PSBoundParameters.ContainsKey("Filter")) {

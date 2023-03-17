@@ -20,7 +20,10 @@ param (
                HelpMessage="Path to one or more locations.")]
     [ValidateNotNullOrEmpty()]
     [PSCustomObject[]]
-    $InputObject
+    $InputObject,
+
+    [switch]
+    $NoGitAdd
 )
 begin {
     $OldPSDefaultParameterValues = $PSDefaultParameterValues.Clone()
@@ -159,5 +162,9 @@ end {
         } else {
             $PSDefaultParameterValues.Remove($key)
         }
+    }
+
+    if (!$NoGitAdd) {
+        git add -p .
     }
 }

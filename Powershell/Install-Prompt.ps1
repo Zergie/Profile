@@ -61,7 +61,7 @@ $GitPromptSettings.DefaultPromptSuffix.Text = (".ab`nx└ " `
                                                     -replace '(a)', "`e[38;2;$fg3`e[48;2;$bg3 `$1 `e[38;2;$bg3`e[48;2;$bg4" `
                                                     -replace '(b)', "`e[38;2;$fg4`e[48;2;$bg4`$1`e[0m`e[38;2;$bg4" `
                                                     -replace 'x'  , "`e[0m"
-                                                ).Replace('a', { $((Get-Date).ToString("HH:mm")) }
+                                                ).Replace('a', { $((Get-Date).ToString("ddd HH:mm")) }
                                                 ).Replace('b', { $(
                                                         try {
                                                             (Get-History)[-1].Duration |
@@ -83,3 +83,6 @@ $GitPromptSettings.BranchAheadStatusSymbol.Text          = ""
 $GitPromptSettings.BranchBehindStatusSymbol.Text         = ""
 $GitPromptSettings.BranchIdenticalStatusSymbol.Text      = ""
 $GitPromptSettings.BranchGoneStatusSymbol.Text           = ""
+
+# ContinuationPrompt
+Set-PSReadLineOption -ContinuationPrompt "  "
