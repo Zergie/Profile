@@ -1,36 +1,36 @@
 [cmdletbinding()]
 param (
-#        [Parameter(Mandatory=$true,
-#                   Position=1,
-#                   ParameterSetName="DefaultParameterSet",
-#                   ValueFromPipeline=$true,
-#                   ValueFromPipelineByPropertyName=$true)]
-#        [int[]]
-#        $Days,
-#
-#        [Parameter(Mandatory=$true,
-#                   Position=2,
-#                   ParameterSetName="DefaultParameterSet",
-#                   ValueFromPipeline=$true,
-#                   ValueFromPipelineByPropertyName=$true)]
-#        [int]
-#        $Month,
-#
-#        [Parameter(Mandatory=$true,
-#                   Position=3,
-#                   ParameterSetName="DefaultParameterSet",
-#                   ValueFromPipeline=$true,
-#                   ValueFromPipelineByPropertyName=$true)]
-#        [int]
-#        $Year,
-#
-#        [Parameter(Mandatory=$true,
-#                   Position=4,
-#                   ParameterSetName="DefaultParameterSet",
-#                   ValueFromPipeline=$true,
-#                   ValueFromPipelineByPropertyName=$true)]
-#        [string]
-#        $Path
+        [Parameter(Mandatory=$true,
+                   Position=1,
+                   ParameterSetName="DefaultParameterSet",
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int[]]
+        $Days,
+
+        [Parameter(Mandatory=$true,
+                   Position=2,
+                   ParameterSetName="DefaultParameterSet",
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int]
+        $Month,
+
+        [Parameter(Mandatory=$true,
+                   Position=3,
+                   ParameterSetName="DefaultParameterSet",
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int]
+        $Year,
+
+        [Parameter(Mandatory=$false,
+                   Position=4,
+                   ParameterSetName="DefaultParameterSet",
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [string]
+        $Path = "D:\Dokumente\Tätigkeitsnachweis.xlsx"
 )
 begin {
     function Add-Day {
@@ -52,7 +52,7 @@ begin {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de/worktime/month/$Month/$Year/21" | Out-Null
         Start-Sleep -Milliseconds 500
 
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "document.querySelectorAll('a.btn')[0].click()"
+        Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "document.querySelectorAll('a.btn')[0].click()" | Out-Null
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
             var input = document.querySelectorAll('input.form-control.datepicker')[0];
@@ -70,10 +70,9 @@ begin {
 process {
 }
 end {
-    $Days  = @(1,2,3,4,5,6)
-    $Month = 3
-    $Year  = 2023
-    $Path  = 'D:\Dokumente\Tätigkeitsnachweis.xlsx'
+#    $Days  = @(01,02,03,06,07,08,09,10,13,14,15,16,17,20,21,22,23,24)
+#    $Month = 3
+#    $Year  = 2023
 
     # get worktimes from 'Tätigkeitsnachweis'
     $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 2 |
@@ -112,7 +111,41 @@ end {
         $WorkTimes |
             Where-Object { $_.date.Day -in $Days } |
             ForEach-Object {
-                throw "not implemented"
+                Write-Host "add workhours ($($_.start.ToString("HH:mm")) - $($_.end.ToString("HH:mm"))) for ($($_.date))"
+                Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de/worktime/day/$($_.date.Day)/$($_.date.Month)/$($_.date.Year)/21" | Out-Null
+
+#                Start-Sleep -Milliseconds 500
+#                Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+#                for (var i=0;i<5;i++) {
+#                    Array.from(document.querySelectorAll('td')).find(el => el.firstChild.textContent.indexOf(' - ') >= 0).click()
+#                    Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Löschen').click()
+#                }
+#                " | Out-Null
+
+                Start-Sleep -Milliseconds 500
+                Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
+                                  -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | ForEach-Object Content
+
+                Start-Sleep -Milliseconds 500
+                Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                    var startTime = document.querySelectorAll('input[type=time]')[0]
+                    startTime.value = '$($_.start.ToString("HH:mm"))';
+                    startTime.dispatchEvent(new Event('change', { bubbles: true }));
+                    startTime.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    var endTime = document.querySelectorAll('input[type=time]')[1]
+                    endTime.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+                    endTime.value = '$($_.end.ToString("HH:mm"))';
+                    endTime.dispatchEvent(new Event('change', { bubbles: true }));
+                    endTime.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    var workType = document.querySelectorAll('select.form-control')[1];
+                    Array.from(workType.options).find(el => el.textContent === 'Standard mit Pause').selected = true
+                    workType.dispatchEvent(new Event('change', { bubbles: true }));
+                    workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+
+                    Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Speichern').click()
+                " | Out-Null
             }
 
         # close browser

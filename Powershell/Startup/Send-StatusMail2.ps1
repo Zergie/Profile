@@ -16,6 +16,13 @@ param (
     [switch]
     $All,
 
+    [Parameter(Mandatory=$false,
+               ParameterSetName="AllParameterSetName",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$true)]
+    [int[]]
+    $Exclude,
+
     [Parameter(Mandatory=$true,
                Position=1,
                ValueFromPipeline=$true,
@@ -94,6 +101,7 @@ Process {
 
     if ($All) {
         $Workitem = Get-Issues -Start $start_date -End ($end_date.AddDays(14)) |
+                        Where-Object Id -NotIn $Exclude |
                         ForEach-Object Id
     }
 

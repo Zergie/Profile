@@ -219,6 +219,7 @@ process {
                         path  = "/fields/System.Title"
                         value = $_.fields.'System.Title' `
                                     -replace 'Korrektur (auf|aus) Aufgabe (ID )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
+                                    -replace 'Korrektur (auf|aus) (\d+)', 'Erweiterung von #$2' `
                                     -replace '[.!]\s*$', ''
                     }
                 $patches[$_.Id] += [ordered]@{
