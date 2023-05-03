@@ -10,7 +10,6 @@ param (
                ParameterSetName="InspectParameterSetName")]
     [switch]
     $Inspect
-
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()

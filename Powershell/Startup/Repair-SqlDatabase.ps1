@@ -19,8 +19,8 @@ $logwatcher = Start-Job {
     Get-Content -Path $logfile -Encoding utf8 -Wait
 }
 
-Invoke-Sqlcmd -Database $department -Query "INSERT INTO zr_aktion (id) VALUES (358)" -ErrorAction SilentlyContinue
-Invoke-Sqlcmd -Database $department -Query "UPDATE zr_aktion SET aktiv=1 WHERE id=358"
+# Invoke-Sqlcmd -Database $department -Query "INSERT INTO zr_aktion (id) VALUES (358)" -ErrorAction SilentlyContinue
+# Invoke-Sqlcmd -Database $department -Query "UPDATE zr_aktion SET aktiv=1 WHERE id=358"
 
 $verb = if ($Update) { "--update" } else { "--repair" }
 . "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" $verb $department --ini "X:\INI\$($main).ini"

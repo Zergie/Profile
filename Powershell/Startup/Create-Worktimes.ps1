@@ -1,5 +1,16 @@
 [CmdletBinding()]
 param(
+    [Parameter()]
+    [string]
+    $Start,
+
+    [Parameter()]
+    [string]
+    $End,
+
+    [Parameter()]
+    [switch]
+    $NoHeader
 )
 Begin {
     function rnd() {
@@ -12,19 +23,23 @@ Begin {
     }
 }
 Process {
-    $Year = [datetime]::Now.Year
+    $Year   = [datetime]::Now.Year
+    $Begin  = if ($Start.Length -gt 0) { [datetime]::Parse($Start) } else { $null }
+    $Finish = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
 
     $lookup = [pscustomobject]@{
-        "Mo" = [pscustomobject]@{start="08:30";end="17:15";var=@(-0,1.5,-0.5,1.5)}
-        "Di" = [pscustomobject]@{start="08:30";end="17:15";var=@(-1,1,-0.5,1.5)}
-        "Mi" = [pscustomobject]@{start="08:30";end="17:15";var=@(-1,1,-0.5,1.5)}
-        "Do" = [pscustomobject]@{start="08:30";end="17:15";var=@(-1,1,-0.5,1.5)}
-        "Fr" = [pscustomobject]@{start="08:30";end="16:00";var=@(-1,1,-0.5,1)}
+        "Mo" = [pscustomobject]@{start="07:00";end="17:45";var=@(-0,1.5,-0.5,1.5)}
+        "Di" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
+        "Mi" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
+        "Do" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
+        "Fr" = [pscustomobject]@{start="08:00";end="16:30";var=@(-1,1,-0.5,1)}
     }
 
     1..356 |
         ForEach-Object {[datetime]::new($Year,1,1).AddDays($_-1)} |
         Where-Object {$_.ToString("ddd") -notin "Sa","So"} |
+        Where-Object { if ($null -eq $Begin)  { $true } else { $_ -ge $Begin  } } |
+        Where-Object { if ($null -eq $Finish) { $true } else { $_ -le $Finish } } |
         ForEach-Object {
             $preset = $lookup.($_.ToString("ddd"))
             [pscustomobject]@{
@@ -36,6 +51,10 @@ Process {
         } |
         ConvertTo-Csv -Delimiter `t |
         Set-Clipboard
+
+        if ($NoHeader) {
+            Get-Clipboard | Select-Object -Skip 1 | Set-Clipboard
+        }
             
     "data is copied to clipboard" | Write-Host -ForegroundColor Green
 }

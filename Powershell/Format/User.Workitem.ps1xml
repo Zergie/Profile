@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<?xml-model href="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd"?>
+
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>User.Workitem</Name>
+            <ViewSelectedBy>
+                <TypeName>User.Workitem</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>id</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>rev</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>System.State</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>System.Title</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>System.AssignedTo</Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>id</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>rev</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+$workitem = $_
+switch ($workitem.fields.'System.State') {
+    "ToDo"  { "`e[47m$($workitem.fields.'System.State')`e[0m" }
+    "Doing" { "`e[90m$($workitem.fields.'System.State')`e[0m" }
+    "Done"  { "`e[32m$($workitem.fields.'System.State')`e[0m" }
+    default { $workitem.fields.'System.State' }
+}
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>$_.fields.'System.Title'</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>$_.fields.'System.AssignedTo'.DisplayName</ScriptBlock>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>

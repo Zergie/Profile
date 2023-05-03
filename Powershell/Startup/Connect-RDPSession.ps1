@@ -20,7 +20,7 @@ Param
 
     [Parameter(ValueFromPipelineByPropertyName=$true)]
     [string]
-    $Name = "test",
+    $Name,
 
     [Parameter(ValueFromPipelineByPropertyName=$true)]
     [string]
@@ -129,6 +129,18 @@ Process {
         $Username=$json.Username
         $Password=$json.Password
         $Gateway=$json.Gateway
+    }
+    if ($Name.Length -eq 0) {
+        $Name = [string]::new((
+                $Type.ToCharArray() |
+                Where-Object { $_ -notin [System.IO.Path]::GetInvalidFileNameChars()}
+            ))
+    }
+    if ($Name.Length -eq 0) {
+        $Name = [string]::new((
+                $Address.ToCharArray() |
+                Where-Object { $_ -notin [System.IO.Path]::GetInvalidFileNameChars()}
+            ))
     }
 
     if ($DoNotConnect) {

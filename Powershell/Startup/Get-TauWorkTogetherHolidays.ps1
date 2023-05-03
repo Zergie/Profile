@@ -49,12 +49,14 @@ param (
         $FormatNice,
 
         [switch]
+        $Wait,
+
+        [switch]
         $KeepBrowser
 )
 begin {
     $rocom_service_employees = @(
         "Wolfgang Puchinger"
-        "Michel Gierich"
     )
 }
 process {
@@ -111,7 +113,7 @@ end {
             }
         }
         
-        if ($KeepBrowser) {
+        if (! $KeepBrowser) {
             Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content
         }
     }
@@ -151,7 +153,7 @@ end {
 
         $holidays = $response.holidays |
             Where-Object { $_.event -eq $false } |
-            ForEach-Object { [int]::Parse($_.start.SubString(8)) }
+            ForEach-Object { $_.start }
         
         $weekcolor = "`e[48;2;30;30;30m"
         $columns = 1..$end |
@@ -166,7 +168,7 @@ end {
                 }
             } |
             ForEach-Object {
-                if($_.index -in $holidays) {
+                if($_.date.ToString("yyyy-MM-dd") -in $holidays) {
                     $_.holiday = $true
                 } elseif($_.date.DayOfWeek -eq [System.DayOfWeek]::Saturday) {
                     $_.holiday = $true
@@ -258,5 +260,11 @@ end {
 
     } else {
         $response
+    }
+
+    if ($Wait) {
+        Write-Host "Press ANY KEY to exit."
+        $host.UI.RawUI.ReadKey() | Out-Null
+        $host.UI.RawUI.ReadKey() | Out-Null
     }
 }

@@ -88,7 +88,6 @@ begin {
                 [pscustomobject]@{ id= 40; name= "AdminTool" }
                 [pscustomobject]@{ id= 35; name= "TauOffice MDE" }
                 [pscustomobject]@{ id= 46; name= "TauOffice Basisstatistik" }
-                [pscustomobject]@{ id= 48; name= "TauOffice Strukturcheck" }
                 [pscustomobject]@{ id= 47; name= "TauOffice Updater" }
             )
         }
@@ -109,13 +108,13 @@ begin {
             $running_pipelines
         )
         
-        Write-Host 
+        Write-Host
         Write-Host "waiting for pipelines to finish .."
         
         while ($running_pipelines.Count -gt 0) {
             Start-Sleep -Seconds 10
 
-            $running_pipelines = $running_pipelines | 
+            $running_pipelines = $running_pipelines |
                 ForEach-Object {
                     try {
                         $run = Invoke-RestApi `
@@ -131,9 +130,9 @@ begin {
                             $duration = $duration.Hours, $duration.Minutes, $duration.Seconds | ForEach-Object { $_.ToString("00") } | Join-String -Separator ":"
                             
                             $color = if ($run.result -eq "Succeeded") { "Green" } else { "Red" }
-                            Write-Host "$($run.pipeline.name) $($run.result) ($($run.name) / ran $duration)" -ForegroundColor $color 
+                            Write-Host "$($run.pipeline.name) $($run.result) ($($run.name) / ran $duration)" -ForegroundColor $color
                         }
-                        default { 
+                        default {
                             $run
                         }
                     }
@@ -142,7 +141,7 @@ begin {
     }
 }
 process {
-    Write-Host 
+    Write-Host
     Write-Host "getting running pipelines .."
     $running_pipelines = @{result=@()}
     Invoke-RestApi `
@@ -191,7 +190,7 @@ process {
                                                     self= @{
                                                         refName= "refs/heads/$b"
                                                     }
-                                                } 
+                                                }
                                             }
                                         }
             }

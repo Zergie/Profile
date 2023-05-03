@@ -78,13 +78,14 @@ Process {
 * {
     font-family: sans-serif;
 }
+h1 {
+    padding-top: 1em;
+    font-size: 1em;
+}
 table {
     border-collapse: collapse;
-    margin: 25px 0;
     min-width: 400px;
     text-align: left;
-}
-tr {
 }
 td, th {
     padding: 6px 15px;
@@ -109,27 +110,31 @@ code {
 Der $($sprint.Name) findet statt vom $($sprintStart) bis zum $($sprintFinish).</p>
 <p>Hier ist auch ein direkter Link zum Sprint in DevOps: <a href='https://dev.azure.com/rocom-service/TauOffice/_sprints/taskboard/TauOffice%20Team/TauOffice/$($sprint.Name)'>$($sprint.Name)</a></p>
 
-<p>Arbeitsaufgaben:<br><table>
-$( $workitems | ForEach-Object {[pscustomobject]@{
-        Id    = "<a href='https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/$($_.Id)'>$($_.Id)</a>"
-        Title = $_.fields.'System.Title'
-        Tags  = ($_.fields.'System.Tags' -split ';') |
-                    ForEach-Object { $_.Trim() } |
-                    Where-Object Length -GT 0 |
-                    ForEach-Object { "<code>$_</code>" } |
-                    Join-String
-    }} |
-    ForEach-Object -Begin   {
-                     "<thead><tr><th>Id</th><th>Title</th><th>Tags</th></tr></thead>"
-                     "<tbody>"
-                 } -Process {
-                     "<tr><td>$($_.Id)</td><td>$($_.Title)</td><td>$($_.Tags)</td></tr>"
-                 } -End {
-                     "</tbody>"
-                 }
+<p><h1>Arbeitsaufgaben:</h1><table>
+$(
+    $odd = $false
+    $workitems |
+        ForEach-Object {[pscustomobject]@{
+            Id    = "<a href='https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/$($_.Id)'>$($_.Id)</a>"
+            Title = $_.fields.'System.Title'
+            Tags  = ($_.fields.'System.Tags' -split ';') |
+                        ForEach-Object { $_.Trim() } |
+                        Where-Object Length -GT 0 |
+                        ForEach-Object { "<code>$_</code>" } |
+                        Join-String
+        }} |
+        ForEach-Object -Begin   {
+            "<thead style='background: #4b8af7' ><tr><th>Id</th><th>Title</th><th>Tags</th></tr></thead>"
+            "<tbody>"
+        } -Process {
+            $odd = (! $odd)
+            "<tr style='background: $(if ($odd) { "#ffffff" } else { "#e7effe" })'><td>$($_.Id)</td><td>$($_.Title)</td><td>$($_.Tags)</td></tr>"
+        } -End {
+            "</tbody>"
+        }
 )</table></p>
 
-<p>Arbeitstage:<br><table>
+<p><h1>Arbeitstage:</h1><table>
 $(
     $start    = $sprint.attributes.startDate.AddDays(-3)
     $end      = $sprint.attributes.finishDate.AddDays(4)
@@ -168,8 +173,9 @@ $(
         Where-Object date -GE $sprint.attributes.startDate |
         Where-Object date -LE $sprint.attributes.finishDate
     if ($null -ne $spintHolidays) {
-        "<p>Feiertage:<br>"
-        $spintHolidays | ForEach-Object { "$($_.date.ToString("dd.MM.yyyy")) - $($_.holiday)<br>" }
+        "<h1>Feiertage:</h1>"
+        "<p style='font-size: 0.8em; padding-left: 1em; padding-bottom: 2em'>"
+        $spintHolidays | ForEach-Object { "    $($_.date.ToString("dd.MM.yyyy")) - $($_.holiday)<br>" }
         "</p>"
     }
 )</p>

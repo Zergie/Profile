@@ -327,13 +327,18 @@ Process {
                                 Where-Object { $_.daysOff.start -le $date -and $_.daysOff.end -ge $date }
                     
                     if ($dayOff.Count -eq 0 -and $date -notin $team_daysOff) {
+                        $parent = $downloaded | Where-Object id -EQ $w.fields.'System.Parent'
                         [pscustomobject]@{
                             Datum          = $date
                             Activated      = $w.fields.'Microsoft.VSTS.Common.ActivatedDate'
                             Closed         = $w.fields.'Microsoft.VSTS.Common.ClosedDate'
-                            Oberpunkt      = $downloaded | Where-Object id -EQ $w.fields.'System.Parent' | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
+                            CompletedWork  = $w.fields.'Microsoft.VSTS.Scheduling.CompletedWork'
+                            Oberpunkt      = $parent | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
                             Arbeitsschritt = "$($w.fields.'System.Title') ($($w.fields.'System.WorkItemType') $($w.id))"
-                            Mitarbeiter    = $w.fields.'System.AssignedTo'.displayName
+                            # Mitarbeiter    = switch ($w.fields.'System.AssignedTo'.displayName) {
+                            #                     "Wolfgang Puchinger" { "PU" }
+                            #                     default { $w.fields.'System.AssignedTo'.displayName }
+                            #                  }
                         }
                     }
                 }

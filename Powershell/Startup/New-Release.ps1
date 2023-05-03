@@ -5,7 +5,11 @@ param(
                ValueFromPipelineByPropertyName=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
-    $Date = (Get-Date).ToString("yyyy-MM-dd")
+    $Date = (Get-Date).ToString("yyyy-MM-dd"),
+
+    [Parameter()]
+    [switch]
+    $Reset
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -46,9 +50,68 @@ begin {
     Write-Debug "Quartal: $Quartal"
 }
 process {
+    if ($Reset) {
+        $commands = @(
+            "git checkout master"
+            "git push -d origin release/2023-04-21"
+            "git branch -D release/2023-04-21"
+            "git reset --hard origin/master"
+        )
+
+        Write-Host
+        Write-Host "You are about to execute following commands:"
+        $commands | ForEach-Object { Write-Host "`t$_" }
+        Write-Host
+        Read-Host "Press ENTER to continue, ctrl-c to cancel."
+        $commands |
+            ForEach-Object {
+                Write-Host -ForegroundColor Cyan $_
+                Invoke-Expression $_
+            }
+        exit
+    }
+
+    if ((Get-GitStatus).Branch -ne "master") {
+        Write-Host -ForegroundColor Cyan "git checkout master"
+        git checkout master
+    }
+
+    Write-Host -ForegroundColor Cyan "Adding dbms patches"
+    $highest = Get-ChildItem struktur\ |
+        Where-Object Name -Match "^(main|department)_\d{3}[a-z]\d{3}\.xml" |
+        ForEach-Object {
+            [pscustomobject]@{
+                Database = $_.Name -replace "^([a-z]+)_\d{3}[a-z]\d{3}.xml","`$1"
+                Year     = $_.Name -replace "^[a-z]+_(\d{3})[a-z]\d{3}.xml","`$1"
+                Revision = $_.Name -replace "^[a-z]+_\d{3}([a-z])\d{3}.xml","`$1"
+                Number   = $_.Name -replace "^[a-z]+_\d{3}[a-z](\d{3}).xml","`$1"
+            }
+        } |
+        Where-Object Year -eq $Year |
+        Sort-Object Year, Revision |
+        Select-Object -Last 0
+
+    "main","department" |
+        ForEach-Object {
+            $revision = if ($null -eq $highest) { 'a' } else { [char](([int]($highest.Revision.ToCharArray()[-1]))+1) }
+            $path = "struktur\${_}_${Year}${Revision}000.xml"
+
+            @(
+                "<?xml version='0.0' encoding='utf-8'?>"
+                "<?xml-model href='../dbms/schema/schema-patch.xsd'?>"
+                "<schema-patch version='0.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
+                "</schema-patch>"
+            ) | Set-Content -Path $path -Encoding utf8
+
+            git add $path
+        }
+
+    Write-Host -ForegroundColor Cyan "git commit"
+    git commit -m "added new dbms patch versions"
+
     if ((Get-GitStatus).Branch -ne $Branch) {
-        Write-Debug "Branch is not $Branch"
-        git checkout -b $Branch
+        Write-Host -ForegroundColor Cyan "git checkout -B $Branch origin/master"
+        git checkout -b $Branch origin/master
         git push --set-upstream origin $Branch
     }
 
@@ -89,38 +152,17 @@ process {
                 Set-Content $file -Encoding utf8
         }
 
-    Write-Host -ForegroundColor Cyan "Adding dbms patches"
-    $highest = Get-ChildItem struktur\ |
-        Where-Object Name -Match "^(main|department)_\d{4}[a-z]\d{3}\.xml" |
-        ForEach-Object {
-            [pscustomobject]@{
-                Database = $_.Name -replace "^([a-z]+)_\d{4}[a-z]\d{3}.xml","`$1"
-                Year     = $_.Name -replace "^[a-z]+_(\d{4})[a-z]\d{3}.xml","`$1"
-                Revision = $_.Name -replace "^[a-z]+_\d{4}([a-z])\d{3}.xml","`$1"
-                Number   = $_.Name -replace "^[a-z]+_\d{4}[a-z](\d{3}).xml","`$1"
-            }
-        } |
-        Where-Object Year -eq $Year |
-        Sort-Object Year, Revision |
-        Select-Object -Last 1
-
-    "main","department" |
-        ForEach-Object {
-            $revision = if ($null -eq $highest) { 'a' } else { [char](([int]($highest.Revision.ToCharArray()[0]))+1) }
-            $path = "struktur\${_}_${Year}${Revision}001.xml"
-
-            @(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<?xml-model href='../dbms/schema/schema-patch.xsd'?>"
-                "<schema-patch version='1.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
-                "</schema-patch>"
-            ) | Set-Content -Path $path -Encoding utf8
-
-            git add $path
-        }
-
-
-    Write-Host -ForegroundColor Cyan "Committing to repo"
+    Write-Host -ForegroundColor Cyan "git add *.yml"
     git add *.yml
+
+    Write-Host -ForegroundColor Cyan "git commit"
+    git commit -m "Release $Name"
+
+    Write-Host
+    Write-Host  "==========================================================================="
+    Write-Host  " Please review changes in `e[36m$Branch`e[0m and push them to origin."
+    Write-Host  " Please also review changes in `e[36mmaster`e[0m and push them to origin."
+    Write-Host  "==========================================================================="
+    Write-Host
 }
 end {}

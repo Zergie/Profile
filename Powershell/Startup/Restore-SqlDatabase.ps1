@@ -7,6 +7,13 @@ param(
     $Database
 )
 begin {
+    $dockerScript = "D:\Daten\docker.ps1"
+    $credentials =  Get-Content -raw $dockerScript |
+                        Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |
+                        ForEach-Object Matches |
+                        Select-Object -Last 1 |
+                        ForEach-Object { $_.Groups[1].Value } |
+                        Invoke-Expression
 }
 process {
     foreach ($db in $Database) {
@@ -21,17 +28,25 @@ process {
     }
 
     foreach ($db in $Database) {
-        Write-Host -ForegroundColor Cyan "docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
-        docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
+        if (! $credentials.IsInstalledOnHost) {
+            Write-Host -ForegroundColor Cyan "`ndocker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
+            docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
 
-        Write-Host -ForegroundColor Cyan "docker cp `"$((Get-Location).Path)\$db.bak`" mssql:/tmp/$db.bak"
-        docker cp "$((Get-Location).Path)\$db.bak" mssql:/tmp/$db.bak
+            Write-Host -ForegroundColor Cyan "`ndocker cp `"$((Get-Location).Path)\$db.bak`" mssql:/tmp/$db.bak"
+            docker cp "$((Get-Location).Path)\$db.bak" mssql:/tmp/$db.bak
 
-        Write-Host -ForegroundColor Cyan "RESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE"
-        Invoke-Sqlcmd -Database master -Query "RESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE" -Verbose
+            Write-Host -ForegroundColor Cyan "`nRESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE"
+            Invoke-Sqlcmd -Database master -Query "RESTORE DATABASE [$db] FROM DISK='/tmp/$db.bak' WITH REPLACE" -Verbose
 
-        Write-Host -ForegroundColor Cyan "docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
-        docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
+            Write-Host -ForegroundColor Cyan "`ndocker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
+            docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
+        } else {
+            Write-Host -ForegroundColor Cyan "`nCopy-Item `"$((Get-Location).Path)\$db.bak`" C:\temp\db.bak"
+            Copy-Item "$((Get-Location).Path)\$db.bak" C:\temp\db.bak
+
+            Write-Host -ForegroundColor Cyan "`nRESTORE DATABASE [$db] FROM DISK='C:\temp\db.bak' WITH REPLACE"
+            Invoke-Sqlcmd -Database master -Query "RESTORE DATABASE [$db] FROM DISK='C:\temp\db.bak' WITH REPLACE" -Verbose
+        }
     }
 }
 end {}

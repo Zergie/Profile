@@ -10,52 +10,111 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         Write-Host -ForegroundColor DarkGray "ConsoleHost_history : $(($_.Length / 1Mb).ToString("0.00")) Mb"
     }
 
+    # initialize environment variables
+    Write-Progress "Initialize environment variables"
+    $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
+    $env:OPENAI_API_KEY = $secrets.'Invoke-AutoCommit'.token
+
     # initialize veracrypt
+    Write-Progress "Initialize veracrypt"
     if (-not (Test-Path D:\)) {
         $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
 
         if ((Test-Path $veracypt_exe)) {
-            $name = "Encrypted"
-            $drive = "D:"
-        
-            Write-Host "mounting drive '$name'.." -ForegroundColor Yellow
-            $pass = Read-Host 'What is your password?' -AsSecureString
-        
-            & $veracypt_exe /d d /q /s | Out-Null
-            & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $((New-Object PSCredential "user",$pass).GetNetworkCredential().Password)
-        
-            while (-not (Test-Path $drive)) { Start-Sleep 1 }
-            $rename = New-Object -ComObject Shell.Application
-            $rename.NameSpace("$drive\").Self.Name = "$name"
+#            Start-Job -ArgumentList "Encrypted", "D:", $secrets.VeraCrypt.Password {
+#                param($name, $drive, $pass)
+                $name  = "Encrypted"
+                $drive = "D:"
+                $pass  = $secrets.VeraCrypt.Password
+
+                & $veracypt_exe /d d /q /s | Out-Null
+                & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
+            
+                while (-not (Test-Path $drive)) { Start-Sleep 1 }
+                $rename = New-Object -ComObject Shell.Application
+                $rename.NameSpace("$drive\").Self.Name = "$name"
+#            } | Out-Null
         }
     }
 
-    # initialize colors
-    $PSStyle.FileInfo.Directory = $PSStyle.Foreground.BrightBlue
-
-    # initialize environment variables
-    $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json).'Invoke-AutoCommit'
-    $env:OPENAI_API_KEY = $secrets.token
     Remove-Variable secrets
 
+    # show network info
+    Write-Progress "Show network adapter"
+    Start-Job {
+        $adapter = Get-NetAdapter -Physical
+
+        if (($adapter | Where-Object Name -EQ "WLAN 2").Status -ne "up") {
+            netsh wlan disconnect interface="WLAN" | Out-Null
+            netsh wlan connect name=wrt-home interface="WLAN 2" | Out-Null
+            Start-Sleep -Seconds 2
+            $adapter = Get-NetAdapter -Physical
+        }
+
+        $adapter | ForEach-Object {
+            [pscustomobject] @{
+                Type  = 'WLAN'
+                Name  = $_.Name
+                Text  = $_.Status
+                Color = if ($_.Status -eq "Disconnected") {
+                            "`e[31m"
+                        } elseif ($_.Status -eq "Up") {
+                            "`e[32m"
+                        }
+            }
+        } |
+        ConvertTo-Json
+    } | Out-Null
+
+    # show devops agent status
+    Write-Progress "Show devops agent status"
+    Start-Job {
+        param([string] $script_path)
+        . "$using:PSScriptRoot/Startup/Invoke-RestApi.ps1" `
+            -Endpoint "GET https://dev.azure.com/{organization}/_apis/distributedtask/pools/{poolId}/agents?api-version=7.0" `
+            -Variables @{poolid=1}|
+            ForEach-Object value |
+            ForEach-Object {
+                [pscustomobject]@{
+                    Type  = 'DevOps Agents'
+                    Text  = $_.Name
+                    Color = if ($_.Status -eq "offline") {
+                                "`e[31m"
+                            } elseif ($_.Status -eq "online") {
+                                "`e[32m"
+                            }
+                }
+            } |
+            ConvertTo-Json
+    } | Out-Null
+
+    # initialize colors
+    Write-Progress "Initialize colors"
+    $PSStyle.FileInfo.Directory = $PSStyle.Foreground.BrightBlue
+
     # initialize prompt
+    Write-Progress "Initialize prompt"
     . "$PSScriptRoot\Install-Prompt.ps1"
 
+    # Creating Enter-* scripts
+    Write-Progress "Creating Enter-* scripts"
     Get-ChildItem $PSScriptRoot -Filter Enter-*.ps1 |
     ForEach-Object {
         Invoke-Expression "function $($_.BaseName) { & `"$($pwsh.Path)`" -noe -NoLogo -File `"$($_.FullName)`" }"
     }
 
     # load scripts
+    Write-Progress "Load scripts"
     @(
         Get-ChildItem "$PSScriptRoot\Startup\*.ps1"
     ) |
         Where-Object Name -NE "Invoke-RestApi.ps1" |
         ForEach-Object {
-            New-Alias -Name $_.BaseName -Value $_.FullName
+            New-Alias -Name $_.BaseName -Value $_.FullName -ErrorAction SilentlyContinue
         }
 
     # set alias to my programs
+    Write-Progress "Set alias to my programs"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
@@ -68,21 +127,23 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
 
     # set alias to my scripts
+    Write-Progress "Set alias to my scripts"
     $dockerScript = "D:\Daten\docker.ps1"
     if ((Test-Path $dockerScript)) {
-        New-Alias d $dockerScript # todo: remove alias
-        New-Alias gt Get-SqlTable
-        New-Alias rt Remove-SqlTable
-        New-Alias gf Get-SqlField
-        New-Alias gd Get-SqlDatabases
-        New-Alias sd Set-SqlDatabase
-        New-Alias gr Get-Random
-        New-Alias ut Update-SqlTable
-        New-Alias it Import-SqlTable
-        New-Alias s Get-string
+        Set-Alias d $dockerScript # todo: remove alias
+        Set-Alias gt Get-SqlTable
+        Set-Alias rt Remove-SqlTable
+        Set-Alias gf Get-SqlField
+        Set-Alias gd Get-SqlDatabases
+        Set-Alias sd Set-SqlDatabase
+        Set-Alias gr Get-Random
+        Set-Alias ut Update-SqlTable
+        Set-Alias it Import-SqlTable
+        Set-Alias s Get-string
 
         # start mssql container
-        Start-Job -ArgumentList $credentials,$dockerScript -ScriptBlock {
+        Write-Progress "Start mssql container"
+        Start-Job -Name "mssql" -ArgumentList $credentials,$dockerScript -ScriptBlock {
             param ([Hashtable] $credentials, [string] $dockerScript)
         
             function Test-SqlServerConnection {
@@ -120,6 +181,7 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         } | Out-Null
 
         # set argument completer
+        Write-Progress "Set argument completer"
         "Database","DatabaseName" |
             ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
                 param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
@@ -149,7 +211,12 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
 
-        $credentials = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:credentials = (@\{[^}]+})").Matches.Groups[1].Value
+        $credentials =  Get-Content -raw $dockerScript |
+                            Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |
+                            ForEach-Object Matches |
+                            Select-Object -Last 1 |
+                            ForEach-Object { $_.Groups[1].Value } |
+                            Invoke-Expression
         $PSDefaultParameterValues = @{
             "*:Encoding" = 1252
             "*:Database" = "master"
@@ -175,14 +242,74 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     }
 
     # set new location
+    Write-Progress "Set new location"
     if ((Get-Location).Path -eq $env:USERPROFILE -and (Test-Path "C:\GIT")) {
         Set-Location C:\GIT
     }
 }
 
+Write-Progress "Configure PSReadLine"
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
 Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
 Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
 Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
 Set-PSReadLineKeyHandler -Chord "F8" -Function AcceptNextSuggestionWord
+
+# finish jobs
+Write-Progress "Finish job"
+$variables = [pscustomobject] @{}
+Get-Job |
+    Where-Object Name -NE "mssql" |
+    ForEach-Object {
+        Wait-Job $_ | Out-Null
+        Receive-Job $_ |
+            ConvertFrom-Json |
+            Group-Object Type |
+            ForEach-Object {
+                Add-Member -InputObject $variables -NotePropertyName $_.Name -NotePropertyValue $_.Group
+            }
+        Stop-Job $_
+        Remove-Job $_
+    }
+#	─	━	│	┃	┄	┅	┆	┇	┈	┉	┊	┋	┌	┍	┎	┏
+#	┐	┑	┒	┓	└	┕	┖	┗	┘	┙	┚	┛	├	┝	┞	┟
+#	┠	┡	┢	┣	┤	┥	┦	┧	┨	┩	┪	┫	┬	┭	┮	┯
+#	┰	┱	┲	┳	┴	┵	┶	┷	┸	┹	┺	┻	┼	┽	┾	┿
+#	╀	╁	╂	╃	╄	╅	╆	╇	╈	╉	╊	╋	╌	╍	╎	╏
+#	═	║	╒	╓	╔	╕	╖	╗	╘	╙	╚	╛	╜	╝	╞	╟
+#	╠	╡	╢	╣	╤	╥	╦	╧	╨	╩	╪	╫	╬	╭	╮	╯
+#	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
+$template = "
+╔════════════════════════╤══════════════════════════╗
+║                        ┃ DevOps Agents :          ║
+║ WLAN   : {0}           ┃ {2}                      ║
+║ WLAN 2 : {1}           ┃ {3}                      ║
+║                        ┃ {4}                      ║
+╚════════════════════════╧══════════════════════════╝
+"
+
+$index = 0
+@(
+    ($variables.'WLAN' | Where-Object Name -EQ 'WLAN')
+    ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 2')
+    ($variables.'DevOps Agents' | Select-Object -First 1)
+    ($variables.'DevOps Agents' | Select-Object -Skip 1 -First 1)
+    ($variables.'DevOps Agents' | Select-Object -Skip 2 -First 1)
+)| ForEach-Object {
+    $text = if ($null -eq $_.Text) { $_ } else { $_.Text }
+    $color = $_.Color
+
+    if ($text.Length -lt 3) {
+        ($text.Length)..2 | ForEach-Object { $template = $template.Replace("{$index}", "{$index}`e[0m `e[0m") }
+    }
+    4..($text.Length) | ForEach-Object { $template = $template.Replace("{$index} ", "{$index}") }
+    $template = $template.Replace("{$index}", "$color$text`e[0m")
+    $index++
+}
+0..9 | ForEach-Object { $template = $template.Replace("{$_}", "   ") }
+$template = $template.Trim()
+
+#$variables | ConvertTo-Json | Write-Host
+Write-Host $template
+Remove-Variable template, index

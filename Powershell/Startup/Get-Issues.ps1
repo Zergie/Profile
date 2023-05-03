@@ -2,7 +2,6 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$true,
-               Position=0,
                ParameterSetName="IdParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -11,7 +10,6 @@ param (
     $Id,
 
     [Parameter(Mandatory=$true,
-               Position=0,
                ParameterSetName="NewParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -20,7 +18,14 @@ param (
     $New,
 
     [Parameter(Mandatory=$true,
-               Position=0,
+               ParameterSetName="BranchesParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [switch]
+    $Branches,
+
+    [Parameter(Mandatory=$true,
                ParameterSetName="TodoParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -29,7 +34,6 @@ param (
     $ToDo,
 
     [Parameter(Mandatory=$true,
-               Position=0,
                ParameterSetName="StartParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -38,7 +42,6 @@ param (
     $Start,
 
     [Parameter(Mandatory=$true,
-               Position=0,
                ParameterSetName="StartParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -50,7 +53,14 @@ param (
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
     [switch]
-    $Update
+    $Update,
+
+
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $Online
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -58,7 +68,6 @@ DynamicParam {
     # param Iteration
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $true
     $ParameterAttribute.ParameterSetName = "IterationParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
@@ -78,7 +87,6 @@ DynamicParam {
     # param Query
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $true
     $ParameterAttribute.ParameterSetName = "QueryParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
@@ -104,6 +112,10 @@ begin {
     ${New-Attachments} = "$PSScriptRoot\New-Attachments.ps1"
     ${ConvertTo-Pdf}   = "$PSScriptRoot\ConvertTo-Pdf.ps1"
     $PSDefaultParameterValues["ForEach-Object:WhatIf"] = $false
+
+    if ($null -eq (Get-FormatData -TypeName 'User.WorkItem')) {
+        Update-FormatData -PrependPath "$PSScriptRoot\..\Format\User.WorkItem.ps1xml"
+    }
 }
 process {
     $IterationName = $PSBoundParameters['Iteration']
@@ -153,6 +165,13 @@ process {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
                                                    " AND [System.State] = 'To Do'" +
                                                    " AND [System.TeamProject] = 'TauOffice'"
+            } elseif ($Branches) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.Id] IN ($(
+                    git branch |
+                            Select-String -pattern "users/.*/(\d+)" |
+                            ForEach-Object{ $_.Matches.Groups[1].Value } |
+                            Join-String -Separator ","
+                    ))"
             } elseif ($null -ne $Query) {
                 . ${Invoke-RestApi} `
                     -Endpoint 'GET https://dev.azure.com/{organization}/{project}/_apis/wit/queries?$depth=1&$expand=wiql&api-version=7.0' |
@@ -189,12 +208,18 @@ process {
         }
     }
 
-    $workitems = $downloaded | Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" }
+    $workitems = $downloaded |
+        Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" } |
+        ForEach-Object {
+            $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
+            $_
+        }
 
     if ($Update) {
         $workitems |
             . ${Get-Attachments} -Filter ".(docx)$" |
-            . ${ConvertTo-Pdf} -OutVariable pdfs
+            . ${ConvertTo-Pdf} -OutVariable pdfs |
+            Out-Null
 
         if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
             if ($pdfs.Length -gt 0) {
@@ -207,28 +232,47 @@ process {
 
         $workitems |
             ForEach-Object {
-               # $patches[$_.Id] += [ordered]@{
-               #         op    = "add"
-               #         path  = "/fields/Microsoft.VSTS.Common.Priority"
-               #         value = $_.fields.'System.Description' |
-               #                 Select-String -Pattern "Priorität: [^\d]+(\d+)" |
-               #                 ForEach-Object { $_.Matches.Groups[1].Value }
-               #     }
+                $patches[$_.Id] += @(
+                                        $_.fields.'System.Description' | Select-String "ID:?(\d{3,5})" -AllMatches
+                                        $_.fields.'System.Title' | Select-String "DevOpsID:\s*(\d+)\s*"
+                                        $_.fields.'System.Title' | Select-String "^ID:\s*(\d+)\s*"
+
+                                ) |
+                                ForEach-Object Matches |
+                                ForEach-Object {$_.Groups[1].Value} |
+                                Group-Object |
+                                ForEach-Object {[int]$_.name} |
+                                Where-Object { $_ -notin ($_.relations.url | ForEach-Object { [int]($_ -split '/' | Select-Object -last 1)}) } |
+                                ForEach-Object {
+                                    [ordered]@{
+                                        op    = "add"
+                                        path  = "/relations/-"
+                                        value = [ordered]@{
+                                            rel = "System.LinkTypes.Related"
+                                            url = "https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_apis/wit/workItems/$_"
+                                            }
+                                    }
+                                }
+
                 $patches[$_.Id] += [ordered]@{
                         op    = "replace"
                         path  = "/fields/System.Title"
                         value = $_.fields.'System.Title' `
-                                    -replace 'Korrektur (auf|aus) Aufgabe (ID )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
+                                    -replace 'Korrektur (auf|aus) Aufgabe (ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
                                     -replace 'Korrektur (auf|aus) (\d+)', 'Erweiterung von #$2' `
+                                    -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
+                                    -replace '(Aufgabe siehe Word),?\s*', '' `
                                     -replace '[.!]\s*$', ''
                     }
+
                 $patches[$_.Id] += [ordered]@{
                         op    = "replace"
                         path  = "/fields/System.Description"
                         value = $_.fields.'System.Description' `
-                                    -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)'`
+                                    -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)' `
                                            , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
-                                                          data-vss-mention="version:1.0">#$1</a>'
+                                                          data-vss-mention="version:1.0">#$1</a>' `
+                                    -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
                     }
 
                 $tasks = $_.relations |
@@ -269,6 +313,7 @@ process {
                                 }
                         }
                 }
+
             }
         
         $patches.Clone().Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne $null }
@@ -282,23 +327,24 @@ process {
                         -Variables @{ id = $_.Key } `
                         -PatchBody $_.Value
                 }
+            } |
+            ForEach-Object {
+                $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
+                $_
             }
+
+        $pdfs |
+            ForEach-Object Directory |
+            Remove-Item -Force -Recurse
             
     } else {
+        $workitems
+    }
+
+    if ($Online) {
         $workitems |
-            ForEach-Object {
-                [pscustomobject]@{
-                    id=             $_.id
-                    rev=            $_.rev
-                    "System.State"= $_.fields.'System.State'
-                    "System.Title"= $_.fields.'System.Title'
-                    "System.AssignedTo"=
-                                    $_.fields.'System.AssignedTo'.DisplayName
-                    "fields"=       $_.fields
-                    "relations"=    $_.relations
-                    "url"=          $_.url
-                }
-            }
+            ForEach-Object { $_.url.Replace("/_apis/wit/workItems/", "/_workitems/edit/") } |
+            ForEach-Object { Start-Process $_ }
     }
 }
 end {

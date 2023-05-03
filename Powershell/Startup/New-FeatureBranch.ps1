@@ -10,7 +10,11 @@ param (
         ParameterSetName="ForceNameParameterSet",
         ValueFromRemainingArguments=$true)]
     [string[]]
-    $ForceName
+    $ForceName,
+
+    [Parameter()]
+    [switch]
+    $BaseOnThisBranch
 )
 dynamicparam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -35,7 +39,7 @@ dynamicparam {
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
                 -Body @{
                     ids= $ids
-                    fields= @( 
+                    fields= @(
                         "System.Id"
                         "System.Title"
                      )
@@ -62,7 +66,7 @@ begin {
         }
 }
 process {
-    $Name = if ($null -ne $ForceName) { $ForceName } 
+    $Name = if ($null -ne $ForceName) { $ForceName }
             elseif ($null -ne $WorkitemId) { $WorkitemId }
             else { $PSBoundParameters['Name'] }
             
@@ -72,16 +76,18 @@ process {
     $branch = "users/$username/$issue"
     Write-Host -ForegroundColor Cyan "New branch will be $branch"
     
-    git checkout master 
-    if ($LASTEXITCODE -ne 0) {
-        git checkout main
+    if (! $BaseOnThisBranch) {
+        git checkout master
+        if ($LASTEXITCODE -ne 0) {
+            git checkout main
+        }
     }
 
     @(
         "git pull"
         "git checkout -b $branch"
         "git push --set-upstream origin $branch"
-    ) | 
+    ) |
         ForEach-Object {
             $cmd = $_
             Write-Host -ForegroundColor Cyan $cmd
