@@ -16,6 +16,14 @@ param (
         $rocomservice,
 
         [Parameter(Mandatory=$true,
+                Position=0,
+                ParameterSetName="AllParameterSet",
+                ValueFromPipeline=$false,
+                ValueFromPipelineByPropertyName=$false)]
+        [switch]
+        $All,
+
+        [Parameter(Mandatory=$true,
                    Position=1,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline=$true,
@@ -45,6 +53,10 @@ param (
                 ParameterSetName="DefaultParameterSet",
                 ValueFromPipeline=$false,
                 ValueFromPipelineByPropertyName=$false)]
+        [Parameter(Mandatory=$false,
+                ParameterSetName="AllParameterSet",
+                ValueFromPipeline=$false,
+                ValueFromPipelineByPropertyName=$false)]
         [switch]
         $FormatNice,
 
@@ -63,7 +75,7 @@ process {
 }
 end {
     $dates = {
-        if ($rocom -or $rocomservice) {
+        if ($rocom -or $rocomservice -or $All) {
             $dat = (Get-Date)
             $dat = $dat.AddDays(-$dat.Day + 1)
             [pscustomobject]@{month = $dat.Month; year = $dat.Year}
@@ -75,10 +87,12 @@ end {
     } |
     Invoke-Expression
 
-    Start-Process -FilePath (Get-ChildItem C:\GIT\QuickAndDirty\bsc\CefSharpDownloader\ -Recurse -Filter CefSharpDownloader.exe |
-                                    Sort-Object LastWriteTime |
-                                    Select-Object -Last 1 |
-                                    ForEach-Object FullName)
+    Start-Process `
+        -WindowStyle Minimized `
+        -FilePath (Get-ChildItem C:\GIT\QuickAndDirty\bsc\CefSharpDownloader\ -Recurse -Filter CefSharpDownloader.exe |
+                        Sort-Object LastWriteTime |
+                        Select-Object -Last 1 |
+                        ForEach-Object FullName)
     $cefDownloader = Get-Process CefSharpDownloader
     try {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | ForEach-Object Content
@@ -144,7 +158,15 @@ end {
                     $_.title -In $rocom_service_employees
                 }
         }
+    } elseif ($All) {
+        $response = [pscustomobject]@{
+            status=$response.status
+            error=$response.error
+            legend=$response.legend
+            holidays=$response.holidays
+        }
     }
+
 
     if ($FormatNice) {
         $end = [datetime]::new($dates[0].year, $dates[0].month, 1)
@@ -227,6 +249,7 @@ end {
         
         $employees = $response.holidays | Where-Object { $_.event -eq $true } | Group-Object title | ForEach-Object Name
 
+        $line_no = 0
         foreach ($employee in $employees) {
             $days_off = @()
             $days_off += $response.holidays |
@@ -237,8 +260,19 @@ end {
                         ForEach-Object { $_.value = if($_.dateString -in $days_off) {"◆"} else {" "}; $_.text } |
                         Join-String -Separator ''
             
-            $text = "$($employee.PadRight($longest_title.Length)) │ $days │"
+            $c1 = if ($employee -in $rocom_service_employees) { "rgb(121,135,184)" } else { "rgb(190,95,118)" }
+            $c2 = if ($employee -in $rocom_service_employees) { "rgb(171,178,211)" } else { "rgb(218,155,167)" }
+            $color = if ($line_no % 2 -eq 0) {$c1} else {$c2}
+            $color = "`e[38;2;$(
+                        $color |
+                            Select-String "\d+" -AllMatches |
+                            ForEach-Object { $_.Matches.Value } |
+                            Join-String -Separator ";"
+                        )m"
+
+            $text = "${color}$($employee.PadRight($longest_title.Length)) │ $($days.Replace("`e[0m", $color)) │`e[0m"
             Write-Host $text
+            $line_no += 1
         }
 
         if ($employees.Count -gt 5) {

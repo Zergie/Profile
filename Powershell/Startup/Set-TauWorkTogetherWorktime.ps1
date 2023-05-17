@@ -1,12 +1,12 @@
 [cmdletbinding()]
 param (
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory=$false,
                    Position=1,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true)]
         [int[]]
-        $Days,
+        $Days = @(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31),
 
         [Parameter(Mandatory=$true,
                    Position=2,
@@ -70,10 +70,6 @@ begin {
 process {
 }
 end {
-#    $Days  = @(01,02,03,06,07,08,09,10,13,14,15,16,17,20,21,22,23,24)
-#    $Month = 3
-#    $Year  = 2023
-
     # get worktimes from 'Tätigkeitsnachweis'
     $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 2 |
                     Where-Object { $_.date.Month -eq $Month }
@@ -83,7 +79,7 @@ end {
 
     # open browser
     Write-Host "open new browser .."
-    . "$PSScriptRoot/Get-TauWorkTogetherHolidays.ps1" -Year $Year -Month $Month | Out-Null # reuse login logic
+    . "$PSScriptRoot/Get-TauWorkTogetherHolidays.ps1" -Year $Year -Month $Month -KeepBrowser # reuse login logic
     $cefDownloader = Get-Process CefSharpDownloader
 
     try {

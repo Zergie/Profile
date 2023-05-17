@@ -1,3 +1,25 @@
+-- [[ Setting options ]]
+-- See `:help vim.o`
+
+vim.wo.number = true -- Make line numbers default
+
+vim.o.mouse = '' -- Disable mouse mode
+
+vim.o.breakindent = true -- Enable break indent
+
+vim.o.undofile = true -- Save undo history
+
+vim.o.ignorecase = true -- Case insensitive searching UNLESS /C or capital in search
+vim.o.smartcase = true
+
+vim.o.updatetime = 250 -- Decrease update time
+vim.wo.signcolumn = 'yes'
+
+-- Set colorscheme
+vim.o.termguicolors = true
+vim.cmd [[colorscheme onedark]]
+
+
 vim.opt.number         = true     -- Line numbers
 vim.opt.relativenumber = true     -- Relative line numbers for better navigation
 vim.opt.colorcolumn    = '100'    -- Mark column to remember me keeping lines short
@@ -7,6 +29,7 @@ vim.opt.shiftwidth     = 4        -- Change the number of space characters inser
 vim.opt.expandtab      = true     -- Converts tabs to spaces
 vim.opt.smartindent    = true     --
 vim.g.mapleader        = ' '      -- remap leader to space
+vim.g.maplocalleader   = ' '      --
 vim.opt.wildmenu       = true     -- Display all matching files when we tab complete
 vim.opt.signcolumn     = 'yes'    -- Display errors/warnings from lsp in front of the line number
 vim.opt.pumheight      = 15       -- Makes popup menu smaller

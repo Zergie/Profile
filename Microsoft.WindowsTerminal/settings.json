@@ -61,7 +61,7 @@
             "command":
             {
                 "action": "splitPane",
-                "commandline": "pwsh -NoProfile -File C:\\GIT\\Profile\\Powershell\\Startup\\Get-TauWorkTogetherHolidays.ps1 -rocom -FormatNice -Wait",
+                "commandline": "pwsh -NoProfile -File C:\\GIT\\Profile\\Powershell\\Startup\\Get-TauWorkTogetherHolidays.ps1 -All -FormatNice -Wait",
                 "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
                 "split": "auto"
             },

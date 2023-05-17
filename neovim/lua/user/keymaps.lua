@@ -16,6 +16,22 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 -- Remap space
 keymap("", "<Space>", "<nop>", opts)
 
+-- Remap for dealing with word wrap
+keymap('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+keymap('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- [[ Highlight on yank ]]
+-- See `:help vim.highlight.on_yank()`
+local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
+vim.api.nvim_create_autocmd('TextYankPost', {
+  callback = function()
+    vim.highlight.on_yank()
+  end,
+  group = highlight_group,
+  pattern = '*',
+})
+
+
 -- Better window navigation
 keymap("n", "<C-h>", "<C-w>h", opts)
 keymap("n", "<C-j>", "<C-w>j", opts)
@@ -61,16 +77,48 @@ keymap("n", "<F10>", [[
 ]], opts)
 
 -- Telescope
-telescope = require('telescope.builtin')
-map("n", "<Leader>s", telescope.current_buffer_fuzzy_find, "current_buffer_fuzzy_find [Telescope]")
-map("n", "<Leader>o", telescope.find_files,                "find_files [Telescope]")
-map("n", "<Leader>g", telescope.live_grep,                 "live_grep [Telescope]")
---map("n", "<Leader>t", telescope.builtin,                 "builtin [Telescope]")
-map("n", "<Leader>m", telescope.marks,                     "marks [Telescope]")
-map("n", "<Leader>b", telescope.buffers,                   "buffers [Telescope]")
-map("n", "<Leader>r", telescope.resume,                    "resume [Telescope]")
-map("n", "gw",        telescope.grep_string,               "grep_string [Telescope]")
-map("n", "<Leader>L", telescope.oldfiles,                  "old files [Telescope]")
+local telescope = require('telescope.builtin')
+local minimal_theme = require('telescope.themes').get_dropdown {
+    winblend  = 10,
+    previewer = false,
+    layout_config = {
+      width = 0.5,
+    },
+}
+local cursor_theme = require('telescope.themes').get_cursor {
+    winblend  = 10,
+    previewer = true,
+    layout_config = {
+      height = 0.5,
+      width  = 0.8,
+    },
+}
+local cursor_minimal_theme = require('telescope.themes').get_cursor {
+    winblend  = 20,
+    previewer = false,
+    layout_config = {
+      height = 0.25,
+      -- width  = 0.8,
+    },
+}
+
+map('n', '<leader>/',       function() telescope.current_buffer_fuzzy_find(minimal_theme) end, '[/] Fuzzily search in current buffer]' )
+map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,                   '[ ] Find existing buffers')
+map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,                '[S]earch [F]iles' )
+map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,                  '[S]earch in old files')
+map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_theme) end,      'Spell Suggest')
+
+--map("n",               "<Leader>s",       telescope.current_buffer_fuzzy_find, "current_buffer_fuzzy_find [Telescope]")
+--map("n",               "<Leader>o",       telescope.find_files,                "find_files [Telescope]")
+--map("n",               "<Leader>g",       telescope.live_grep,                 "live_grep [Telescope]")
+map("n", "<Leader>sb", telescope.builtin,                 "builtin [Telescope]")
+map("n", "<Leader>sm", telescope.marks,       "[S]earch [M]arks")
+map("n", "<Leader>r",  telescope.resume,      "resume [Telescope]")
+map('n', '<leader>sh', telescope.help_tags,   '[S]earch [H]elp' )
+--map('n', '<leader>sw', telescope.grep_string, '[S]earch current [W]ord' )
+map('n', '<leader>sw', function() telescope.grep_string(cursor_theme) end, '[S]earch current [W]ord' )
+map('n', '<leader>sg', telescope.live_grep,   '[S]earch by [G]rep' )
+map('n', '<leader>sd', telescope.diagnostics, '[S]earch [D]iagnostics' )
 
 -- LSP
 map("n", "<Leader>e",  vim.diagnostic.open_float,                                               "Open diagnostics [LSP]")

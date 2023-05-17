@@ -75,14 +75,6 @@ $npm = @(
 )
 
 $github = @(
-    [pscustomobject]@{repo="PowerShell/PowerShellEditorServices";   file="PowerShellEditorServices.zip"
-                      folder="$PSScriptRoot\neovim\lsp_server\PowershellEditorServices"}
-    [pscustomobject]@{repo="redhat-developer/vscode-xml";           file="lemminx-win32.zip"
-                      folder="$PSScriptRoot\neovim\lsp_server\lemminx"}
-    [pscustomobject]@{repo="OmniSharp/omnisharp-roslyn";            file="omnisharp-win-x64-net6.0.zip"
-                      folder="$PSScriptRoot\neovim\lsp_server\omnisharp"}
-    [pscustomobject]@{repo="sumneko/lua-language-server";           file="lua-language-server-*-win32-x64.zip"
-                      folder="$PSScriptRoot\neovim\lsp_server\lua-language-server"}
     [pscustomobject]@{repo="m1guelpf/auto-commit";                  file="auto-commit-win-*.exe"
                       folder="$PSScriptRoot\auto-commit"}
     [pscustomobject]@{repo="max-niederman/ttyper";                  file="ttyper-x86_64-*-windows-*.zip"
@@ -129,9 +121,10 @@ $junctions = @(
 
 $commands = @(
     { . "$env:ProgramData\chocolatey\bin\bat.exe" cache --build                             }
-    { Remove-Item -Force -Recurse "$PSScriptRoot\neovim\lsp_server\omnisharp\de" -ErrorAction SilentlyContinue }
-    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'PlugUpgrade|PlugInstall|PlugUpdate|q|q' }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
+    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").install()' }
+    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").clean()' }
+    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").update()' }
     {
         Set-ItemProperty `
             -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `

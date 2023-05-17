@@ -21,19 +21,16 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
         $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
 
         if ((Test-Path $veracypt_exe)) {
-#            Start-Job -ArgumentList "Encrypted", "D:", $secrets.VeraCrypt.Password {
-#                param($name, $drive, $pass)
-                $name  = "Encrypted"
-                $drive = "D:"
-                $pass  = $secrets.VeraCrypt.Password
+            $name  = "Encrypted"
+            $drive = "D:"
+            $pass  = $secrets.VeraCrypt.Password
 
-                & $veracypt_exe /d d /q /s | Out-Null
-                & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
-            
-                while (-not (Test-Path $drive)) { Start-Sleep 1 }
-                $rename = New-Object -ComObject Shell.Application
-                $rename.NameSpace("$drive\").Self.Name = "$name"
-#            } | Out-Null
+            & $veracypt_exe /d d /q /s | Out-Null
+            & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
+        
+            while (-not (Test-Path $drive)) { Start-Sleep 1 }
+            $rename = New-Object -ComObject Shell.Application
+            $rename.NameSpace("$drive\").Self.Name = "$name"
         }
     }
 
@@ -44,26 +41,36 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Start-Job {
         $adapter = Get-NetAdapter -Physical
 
-        if (($adapter | Where-Object Name -EQ "WLAN 2").Status -ne "up") {
+        if (($adapter | Where-Object Name -EQ "WLAN 2").Status -eq "Disconnected") {
             netsh wlan disconnect interface="WLAN" | Out-Null
             netsh wlan connect name=wrt-home interface="WLAN 2" | Out-Null
             Start-Sleep -Seconds 2
             $adapter = Get-NetAdapter -Physical
         }
 
-        $adapter | ForEach-Object {
-            [pscustomobject] @{
-                Type  = 'WLAN'
-                Name  = $_.Name
-                Text  = $_.Status
-                Color = if ($_.Status -eq "Disconnected") {
-                            "`e[31m"
-                        } elseif ($_.Status -eq "Up") {
-                            "`e[32m"
-                        }
-            }
-        } |
-        ConvertTo-Json
+        $adapter |
+            ForEach-Object `
+                -Process {
+                    [pscustomobject] @{
+                        Type  = 'WLAN'
+                        Name  = $_.Name
+                        Text  = $_.Status
+                        Color = if ($_.Status -eq "Disconnected") {
+                                    "`e[31m"
+                                } elseif ($_.Status -eq "Up") {
+                                    "`e[32m"
+                                }
+                    }
+                } `
+                -End {
+                    [pscustomobject]@{
+                        Type  = 'WLAN'
+                        Name  = 'WLAN 2'
+                        Text  = ''
+                        Color = "`e[31m"
+                    }
+                } |
+            ConvertTo-Json
     } | Out-Null
 
     # show devops agent status
@@ -292,7 +299,7 @@ $template = "
 $index = 0
 @(
     ($variables.'WLAN' | Where-Object Name -EQ 'WLAN')
-    ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 2')
+    ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 2' | Select-Object -First 1)
     ($variables.'DevOps Agents' | Select-Object -First 1)
     ($variables.'DevOps Agents' | Select-Object -Skip 1 -First 1)
     ($variables.'DevOps Agents' | Select-Object -Skip 2 -First 1)
