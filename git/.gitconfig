@@ -30,9 +30,11 @@
 [interactive]
 	singlekey = true
 [alias]
-    auto-commit = "!\
-        c:/GIT/Profile/auto-commit/auto-commit-win-x86_64.exe --review --quiet; \
-    "
+	auto-commit = "!\
+		MESSAGE=`git log -1 --format=%s`; \
+		git commit -m \"$MESSAGE\"; \
+		git slog -1; \
+	"
     
 	# logs
 	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
