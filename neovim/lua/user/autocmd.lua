@@ -22,6 +22,12 @@ nvim_create_autocmd({"VimLeave"}, {
     command = "set guicursor=a:ver100"
 })
 
+-- cps file extensions
+nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+    pattern = {"*.cps"},
+    command = "set filetype=javascript"
+})
+
 -- vba file extensions
 nvim_create_autocmd({"BufRead", "BufNewFile"}, {
     pattern = {"*.ACM","*.ACR","*.ACF"},

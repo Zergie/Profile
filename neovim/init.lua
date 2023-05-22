@@ -38,18 +38,6 @@ require('packer').startup(function(use)
     },
   }
 
-  --  use { -- Highlight, edit, and navigate code
-  --    'nvim-treesitter/nvim-treesitter',
-  --    run = function()
-  --      pcall(require('nvim-treesitter.install').update { with_sync = true })
-  --    end,
-  --  }
-
-  -- use { -- Additional text objects via treesitter
-  --   'nvim-treesitter/nvim-treesitter-textobjects',
-  --   after = 'nvim-treesitter',
-  -- }
-
   -- Git related plugins
   use 'tpope/vim-fugitive'
   use 'tpope/vim-rhubarb'
