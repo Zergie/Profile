@@ -26,6 +26,13 @@ require('packer').startup(function(use)
     },
   }
 
+  use { -- Snippets
+    'L3MON4D3/LuaSnip',
+    requires = {
+      "honza/vim-snippets",
+    },
+  }
+
   use { -- Autocompletion
     'hrsh7th/nvim-cmp',
     requires = {
@@ -59,14 +66,11 @@ require('packer').startup(function(use)
   -- Fuzzy Finder (files, lsp, etc)
   use { 'nvim-telescope/telescope.nvim', branch = '0.1.x', requires = { 'nvim-lua/plenary.nvim' } }
 
-  -- Fuzzy Finder Algorithm which requires local dependencies to be built. Only load if `make` is available
-  use { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make', cond = vim.fn.executable 'make' == 1 }
-
   -- Add custom plugins to packer from ~/.config/nvim/lua/custom/plugins.lua
-  local has_plugins, plugins = pcall(require, 'custom.plugins')
-  if has_plugins then
-    plugins(use)
-  end
+  -- local has_plugins, plugins = pcall(require, 'custom.plugins')
+  -- if has_plugins then
+  --   plugins(use)
+  -- end
 
   if is_bootstrap then
     require('packer').sync()
@@ -113,6 +117,15 @@ require('lualine').setup {
     component_separators = '|',
     section_separators = '',
   },
+  sections = {
+    lualine_a = {'mode'},
+    lualine_b = {'branch', 'diff', 'diagnostics'},
+    -- lualine_b = {'diagnostics'},
+    lualine_c = {'filename'},
+    lualine_x = {'searchcount', 'selectioncount', 'encoding', 'fileformat', 'filetype'},
+    lualine_y = {'progress'},
+    lualine_z = {'location'}
+  },
 }
 
 -- Enable Comment.nvim
@@ -125,17 +138,6 @@ require('indent_blankline').setup {
   show_trailing_blankline_indent = false,
 }
 
--- Gitsigns
--- See `:help gitsigns.txt`
--- require('gitsigns').setup {
---   signs = {
---     add = { text = '+' },
---     change = { text = '~' },
---     delete = { text = '_' },
---     topdelete = { text = '‾' },
---     changedelete = { text = '~' },
---   },
--- }
 
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
@@ -204,30 +206,21 @@ end
 --  Add any additional override configuration in the following tables. They will be passed to
 --  the `settings` field of the server config. You must look up that documentation yourself.
 local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- rust_analyzer = {},
-  -- tsserver = {},
-
   lua_ls = {
     Lua = {
       workspace = { checkThirdParty = false },
       telemetry = { enable = false },
     },
   },
-
   pyright = {},
-
   lemminx = {
       filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
       cmd       = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
   },
-
   omnisharp = {
     -- Enables support for reading code style, naming convention and analyzer
     -- settings from .editorconfig.
     enable_editorconfig_support = true,
-
     -- If true, MSBuild project system will only load projects for files that
     -- were opened in the editor. This setting is useful for big C# codebases
     -- and allows for faster initialization of code navigation features only
@@ -235,14 +228,11 @@ local servers = {
     -- setting enabled OmniSharp may load fewer projects and may thus display
     -- incomplete reference lists for symbols.
     enable_ms_build_load_projects_on_demand = false,
-
     -- Enables support for roslyn analyzers, code fixes and rulesets.
     enable_roslyn_analyzers = true,
-
     -- Specifies whether 'using' directives should be grouped and sorted during
     -- document formatting.
     organize_imports_on_format = false,
-
     -- Enables support for showing unimported types and unimported extension
     -- methods in completion lists. When committed, the appropriate using
     -- directive will be added at the top of the current file. This option can
@@ -250,16 +240,13 @@ local servers = {
     -- particularly for the first few completion sessions after opening a
     -- solution.
     enable_import_completion = false,
-
     -- Specifies whether to include preview versions of the .NET SDK when
     -- determining which version to use for project loading.
     sdk_include_prereleases = true,
-
     -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
     -- true
     analyze_open_documents_only = false,
   },
-
   powershell_es = {},
 }
 
@@ -293,6 +280,10 @@ mason_lspconfig.setup_handlers {
 -- Turn on lsp status information
 require('fidget').setup()
 
+-- luasnip setup
+require("luasnip.loaders.from_snipmate").lazy_load()
+require("luasnip.loaders.from_snipmate").lazy_load({ paths = { "./snippets" } })
+
 -- nvim-cmp setup
 local cmp = require 'cmp'
 local luasnip = require 'luasnip'
@@ -311,24 +302,8 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
-    ['<C-n>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-    ['<C-p>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
+    ['<C-n>'] = cmp.mapping(function(fallback) luasnip.jump(1) end, { 'i', 's'}),
+    ['<C-p>'] = cmp.mapping(function(fallback) luasnip.jump(-1) end, { 'i', 's'}),
   },
   sources = {
     { name = 'nvim_lsp' },

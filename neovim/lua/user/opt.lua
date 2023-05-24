@@ -1,24 +1,18 @@
 -- [[ Setting options ]]
 -- See `:help vim.o`
 
-vim.wo.number = true -- Make line numbers default
-
-vim.o.mouse = '' -- Disable mouse mode
-
-vim.o.breakindent = true -- Enable break indent
-
-vim.o.undofile = true -- Save undo history
-
-vim.o.ignorecase = true -- Case insensitive searching UNLESS /C or capital in search
-vim.o.smartcase = true
-
-vim.o.updatetime = 250 -- Decrease update time
+vim.wo.number = true              -- Make line numbers default
+vim.o.mouse = ''                  -- Disable mouse mode
+vim.o.breakindent = true          -- Enable break indent
+vim.o.undofile = true             -- Save undo history
+vim.o.ignorecase = true           -- Case insensitive searching UNLESS /C or capital in search
+vim.o.smartcase = true            
+vim.o.updatetime = 250            -- Decrease update time
 vim.wo.signcolumn = 'yes'
 
 -- Set colorscheme
 vim.o.termguicolors = true
-vim.cmd [[colorscheme onedark]]
-
+vim.cmd.colorscheme('onedark')
 
 vim.opt.number         = true     -- Line numbers
 vim.opt.relativenumber = true     -- Relative line numbers for better navigation

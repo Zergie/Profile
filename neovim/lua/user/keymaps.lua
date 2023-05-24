@@ -113,7 +113,7 @@ map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_th
 --map("n",               "<Leader>g",       telescope.live_grep,                 "live_grep [Telescope]")
 map("n", "<Leader>sb", telescope.builtin,                 "builtin [Telescope]")
 map("n", "<Leader>sm", telescope.marks,       "[S]earch [M]arks")
-map("n", "<Leader>r",  telescope.resume,      "resume [Telescope]")
+map("n", "<Leader>sr",  telescope.resume,      "[S]earch [R]esume")
 map('n', '<leader>sh', telescope.help_tags,   '[S]earch [H]elp' )
 --map('n', '<leader>sw', telescope.grep_string, '[S]earch current [W]ord' )
 map('n', '<leader>sw', function() telescope.grep_string(cursor_theme) end, '[S]earch current [W]ord' )
