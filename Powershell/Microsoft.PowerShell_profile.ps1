@@ -41,9 +41,14 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
     Start-Job {
         $adapter = Get-NetAdapter -Physical
 
-        if (($adapter | Where-Object Name -EQ "WLAN 2").Status -eq "Disconnected") {
+        $name = "WLAN 2"
+        if (($adapter | Where-Object Name -EQ "WLAN 3").Status -eq "Disconnected") {
+            $name = "WLAN 3"
+        }
+
+        if (($adapter | Where-Object Name -EQ $name).Status -eq "Disconnected") {
             netsh wlan disconnect interface="WLAN" | Out-Null
-            netsh wlan connect name=wrt-home interface="WLAN 2" | Out-Null
+            netsh wlan connect name=wrt-home interface=$name | Out-Null
             Start-Sleep -Seconds 2
             $adapter = Get-NetAdapter -Physical
         }
@@ -66,8 +71,14 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
                     [pscustomobject]@{
                         Type  = 'WLAN'
                         Name  = 'WLAN 2'
-                        Text  = ''
-                        Color = "`e[31m"
+                        Text  = 'Not Attached'
+                        Color = "`e[90m"
+                    }
+                    [pscustomobject]@{
+                        Type  = 'WLAN'
+                        Name  = 'WLAN 3'
+                        Text  = 'Not Attached'
+                        Color = "`e[90m"
                     }
                 } |
             ConvertTo-Json
@@ -290,9 +301,9 @@ Get-Job |
 $template = "
 ╔════════════════════════╤══════════════════════════╗
 ║                        ┃ DevOps Agents :          ║
-║ WLAN   : {0}           ┃ {2}                      ║
-║ WLAN 2 : {1}           ┃ {3}                      ║
-║                        ┃ {4}                      ║
+║ WLAN   : {0}           ┃ {3}                      ║
+║ WLAN 2 : {1}           ┃ {4}                      ║
+║ WLAN 3 : {2}           ┃ {5}                      ║
 ╚════════════════════════╧══════════════════════════╝
 "
 
@@ -300,6 +311,7 @@ $index = 0
 @(
     ($variables.'WLAN' | Where-Object Name -EQ 'WLAN')
     ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 2' | Select-Object -First 1)
+    ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 3' | Select-Object -First 1)
     ($variables.'DevOps Agents' | Select-Object -First 1)
     ($variables.'DevOps Agents' | Select-Object -Skip 1 -First 1)
     ($variables.'DevOps Agents' | Select-Object -Skip 2 -First 1)

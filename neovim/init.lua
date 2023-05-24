@@ -40,8 +40,9 @@ require('packer').startup(function(use)
       'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
       'hrsh7th/nvim-cmp',
-      'L3MON4D3/LuaSnip',
       'saadparwaiz1/cmp_luasnip',
+      'L3MON4D3/LuaSnip',
+      'uga-rosa/cmp-dictionary',
     },
   }
 
@@ -122,7 +123,7 @@ require('lualine').setup {
     lualine_b = {'branch', 'diff', 'diagnostics'},
     -- lualine_b = {'diagnostics'},
     lualine_c = {'filename'},
-    lualine_x = {'searchcount', 'selectioncount', 'encoding', 'fileformat', 'filetype'},
+    lualine_x = {'encoding', 'fileformat', 'filetype'},
     lualine_y = {'progress'},
     lualine_z = {'location'}
   },
@@ -205,77 +206,80 @@ end
 --
 --  Add any additional override configuration in the following tables. They will be passed to
 --  the `settings` field of the server config. You must look up that documentation yourself.
-local servers = {
-  lua_ls = {
-    Lua = {
-      workspace = { checkThirdParty = false },
-      telemetry = { enable = false },
+
+if vim.loop.os_uname().sysname ~= 'Linux' then
+  local servers = {
+    lua_ls = {
+      Lua = {
+        workspace = { checkThirdParty = false },
+        telemetry = { enable = false },
+      },
     },
-  },
-  pyright = {},
-  lemminx = {
-      filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
-      cmd       = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
-  },
-  omnisharp = {
-    -- Enables support for reading code style, naming convention and analyzer
-    -- settings from .editorconfig.
-    enable_editorconfig_support = true,
-    -- If true, MSBuild project system will only load projects for files that
-    -- were opened in the editor. This setting is useful for big C# codebases
-    -- and allows for faster initialization of code navigation features only
-    -- for projects that are relevant to code that is being edited. With this
-    -- setting enabled OmniSharp may load fewer projects and may thus display
-    -- incomplete reference lists for symbols.
-    enable_ms_build_load_projects_on_demand = false,
-    -- Enables support for roslyn analyzers, code fixes and rulesets.
-    enable_roslyn_analyzers = true,
-    -- Specifies whether 'using' directives should be grouped and sorted during
-    -- document formatting.
-    organize_imports_on_format = false,
-    -- Enables support for showing unimported types and unimported extension
-    -- methods in completion lists. When committed, the appropriate using
-    -- directive will be added at the top of the current file. This option can
-    -- have a negative impact on initial completion responsiveness,
-    -- particularly for the first few completion sessions after opening a
-    -- solution.
-    enable_import_completion = false,
-    -- Specifies whether to include preview versions of the .NET SDK when
-    -- determining which version to use for project loading.
-    sdk_include_prereleases = true,
-    -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
-    -- true
-    analyze_open_documents_only = false,
-  },
-  powershell_es = {},
-}
+    pyright = {},
+    lemminx = {
+        filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
+    --     cmd       = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
+    },
+    omnisharp = {
+      -- Enables support for reading code style, naming convention and analyzer
+      -- settings from .editorconfig.
+      enable_editorconfig_support = true,
+      -- If true, MSBuild project system will only load projects for files that
+      -- were opened in the editor. This setting is useful for big C# codebases
+      -- and allows for faster initialization of code navigation features only
+      -- for projects that are relevant to code that is being edited. With this
+      -- setting enabled OmniSharp may load fewer projects and may thus display
+      -- incomplete reference lists for symbols.
+      enable_ms_build_load_projects_on_demand = false,
+      -- Enables support for roslyn analyzers, code fixes and rulesets.
+      enable_roslyn_analyzers = true,
+      -- Specifies whether 'using' directives should be grouped and sorted during
+      -- document formatting.
+      organize_imports_on_format = false,
+      -- Enables support for showing unimported types and unimported extension
+      -- methods in completion lists. When committed, the appropriate using
+      -- directive will be added at the top of the current file. This option can
+      -- have a negative impact on initial completion responsiveness,
+      -- particularly for the first few completion sessions after opening a
+      -- solution.
+      enable_import_completion = false,
+      -- Specifies whether to include preview versions of the .NET SDK when
+      -- determining which version to use for project loading.
+      sdk_include_prereleases = true,
+      -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
+      -- true
+      analyze_open_documents_only = false,
+    },
+    powershell_es = {},
+  }
 
--- Setup neovim lua configuration
-require('neodev').setup()
---
--- nvim-cmp supports additional completion capabilities, so broadcast that to servers
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
+  -- Setup neovim lua configuration
+  require('neodev').setup()
+  --
+  -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
--- Setup mason so it can manage external tooling
-require('mason').setup()
+  -- Setup mason so it can manage external tooling
+  require('mason').setup()
 
--- Ensure the servers above are installed
-local mason_lspconfig = require 'mason-lspconfig'
+  -- Ensure the servers above are installed
+  local mason_lspconfig = require 'mason-lspconfig'
 
-mason_lspconfig.setup {
-  ensure_installed = vim.tbl_keys(servers),
-}
+  mason_lspconfig.setup {
+    ensure_installed = vim.tbl_keys(servers),
+  }
 
-mason_lspconfig.setup_handlers {
-  function(server_name)
-    require('lspconfig')[server_name].setup {
-      capabilities = capabilities,
-      on_attach = on_attach,
-      settings = servers[server_name],
-    }
-  end,
-}
+  mason_lspconfig.setup_handlers {
+    function(server_name)
+      require('lspconfig')[server_name].setup {
+        capabilities = capabilities,
+        on_attach = on_attach,
+        settings = servers[server_name],
+      }
+    end,
+  }
+end
 
 -- Turn on lsp status information
 require('fidget').setup()
@@ -284,9 +288,47 @@ require('fidget').setup()
 require("luasnip.loaders.from_snipmate").lazy_load()
 require("luasnip.loaders.from_snipmate").lazy_load({ paths = { "./snippets" } })
 
+-- dictionary setup
+local dict = require("cmp_dictionary")
+dict.setup({
+  -- The following are default values.
+  exact = 2,
+  first_case_insensitive = true,
+  document = false,
+  document_command = "wn %s -over",
+  async = false,
+  sqlite = false,
+  max_items = -1,
+  capacity = 5,
+  debug = false,
+})
+if vim.loop.os_uname().sysname == 'Linux' then
+  dict.switcher({
+    filetype = {
+      gitcommit = "~/.config/nvim/spell/en_us.dict",
+    },
+    filepath = {
+    },
+    spelllang = {
+      en_us = "~/.config/nvim/spell/en_us.dict",
+    },
+  })
+else
+  dict.switcher({
+    filetype = {
+      gitcommit = "C:/GIT/Profile/neovim/spell/en_us.dict",
+    },
+    filepath = {
+    },
+    spelllang = {
+      en_us = "C:/GIT/Profile/neovim/spell/en_us.dict",
+    },
+  })
+end
+
 -- nvim-cmp setup
-local cmp = require 'cmp'
-local luasnip = require 'luasnip'
+local cmp = require('cmp')
+local luasnip = require('luasnip')
 
 cmp.setup {
   snippet = {
@@ -302,13 +344,36 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
-    ['<C-n>'] = cmp.mapping(function(fallback) luasnip.jump(1) end, { 'i', 's'}),
-    ['<C-p>'] = cmp.mapping(function(fallback) luasnip.jump(-1) end, { 'i', 's'}),
+    ['<C-n>'] = cmp.mapping(function() luasnip.jump(1) end, { 'i', 's'}),
+    ['<C-p>'] = cmp.mapping(function() luasnip.jump(-1) end, { 'i', 's'}),
+  },
+  formatting = {
+    format = function(entry, vim_item)
+      if entry.source.name == 'dictionary' then
+        vim_item.kind = 'Dictionary'
+      elseif entry.source.name == 'luasnip' then
+        if string.find(vim_item.word, ':fg') then
+          vim_item.kind = 'ForegroundColor'
+          vim_item.kind_hl_group = 'RedrawDebugNormal'
+        elseif string.find(vim_item.word, ':bg') then
+          vim_item.kind = 'BackgroundColor'
+          vim_item.kind_hl_group = 'RedrawDebugRecompose'
+        end
+      end
+      vim_item.dup = ({
+        buffer = 0,
+        dictionary = 0,
+      })[entry.source.name] or 0
+      vim_item.color = 'red'
+
+      return vim_item
+    end
   },
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
-    { name = 'buffer' },
+    { name = 'buffer', max_items = 10 },
     { name = 'path' },
+    { name = 'dictionary', keyword_length = 2, max_items = 10, },
   },
 }

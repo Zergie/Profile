@@ -6,7 +6,7 @@ vim.o.mouse = ''                  -- Disable mouse mode
 vim.o.breakindent = true          -- Enable break indent
 vim.o.undofile = true             -- Save undo history
 vim.o.ignorecase = true           -- Case insensitive searching UNLESS /C or capital in search
-vim.o.smartcase = true            
+vim.o.smartcase = true
 vim.o.updatetime = 250            -- Decrease update time
 vim.wo.signcolumn = 'yes'
 
@@ -38,7 +38,8 @@ vim.g.netrw_preview = 1
 vim.g.netrw_winsize = 30
 
 -- language settings
-vim.opt.spelllang = 'en_us'
+vim.opt.spell = false
+vim.opt.spelllang = { 'en_us' }
 vim.opt.langmenu  = 'en_US'
 vim.api.nvim_exec('language en_US', true)
 
