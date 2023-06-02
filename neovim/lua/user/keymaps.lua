@@ -56,7 +56,6 @@ map("n", "<A-k>", "<cmd>m+1<cr>", "Move text one line down")
 
 -- some terminal keys
 keymap("t", "<ESC>", "<C-\\><C-n>",         opts)
--- keymap("t", "<ESC>", "<cmd>bp<bar>sp<bar>bn<bar>bd!<CR>", opts)
 map("n", "<Leader>t", "<cmd>FloatermNew --autoclose=2 pwsh<cr>", "Open a floating pwsh -NoProfile")
 map("n", "<Leader>T", "<cmd>FloatermNew --autoclose=2 \"pwsh.exe\"<cr>", "Open a floating pwsh")
 
@@ -102,23 +101,39 @@ local cursor_minimal_theme = require('telescope.themes').get_cursor {
     },
 }
 
-map('n', '<leader>/',       function() telescope.current_buffer_fuzzy_find(minimal_theme) end, '[/] Fuzzily search in current buffer]' )
-map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,                   '[ ] Find existing buffers')
-map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,                '[S]earch [F]iles' )
-map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,                  '[S]earch in old files')
-map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_theme) end,      'Spell Suggest')
+-- map('n', '<leader>/',       function() telescope.current_buffer_fuzzy_find(minimal_theme) end, '[/] Fuzzily search in current buffer]' )
+map('n', '<leader>/',       telescope.current_buffer_fuzzy_find,                          '[/] Fuzzily search in current buffer]' )
+map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,              '[ ] Find existing buffers')
+map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,           '[S]earch [F]iles' )
+map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,             '[S]earch in old files')
+map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_theme) end, 'Spell Suggest')
 
---map("n",               "<Leader>s",       telescope.current_buffer_fuzzy_find, "current_buffer_fuzzy_find [Telescope]")
---map("n",               "<Leader>o",       telescope.find_files,                "find_files [Telescope]")
---map("n",               "<Leader>g",       telescope.live_grep,                 "live_grep [Telescope]")
-map("n", "<Leader>sb", telescope.builtin,                 "builtin [Telescope]")
-map("n", "<Leader>sm", telescope.marks,       "[S]earch [M]arks")
-map("n", "<Leader>sr",  telescope.resume,      "[S]earch [R]esume")
-map('n', '<leader>sh', telescope.help_tags,   '[S]earch [H]elp' )
---map('n', '<leader>sw', telescope.grep_string, '[S]earch current [W]ord' )
+map("n", "<Leader>sb", telescope.builtin,                                  "builtin [Telescope]")
+map("n", "<Leader>sm", telescope.marks,                                    "[S]earch [M]arks")
+map("n", "<Leader>sr", telescope.resume,                                   "[S]earch [R]esume")
+map('n', '<leader>sh', telescope.help_tags,                                '[S]earch [H]elp' )
 map('n', '<leader>sw', function() telescope.grep_string(cursor_theme) end, '[S]earch current [W]ord' )
-map('n', '<leader>sg', telescope.live_grep,   '[S]earch by [G]rep' )
-map('n', '<leader>sd', telescope.diagnostics, '[S]earch [D]iagnostics' )
+map('n', '<leader>sg', telescope.live_grep,                                '[S]earch by [G]rep' )
+map('n', '<leader>sd', telescope.diagnostics,                              '[S]earch [D]iagnostics' )
+-- TauOffice specific
+map('n', '<leader>sW', function()
+telescope.grep_string(require('telescope.themes').get_cursor{
+  cwd = '/git/TauOffice/DBMS/schema',
+  search_dirs = { 'schema.xml', },
+  winblend  = 10,
+  previewer = true,
+  layout_config = {
+    height = 0.5,
+    width  = 0.8,
+  },
+})
+end, '[S]earch current [W]ord in database' )
+map('n', '<leader>sG', function()
+  telescope.live_grep{
+    cwd = '/git/TauOffice/DBMS/schema',
+    search_dirs = { 'schema.xml', },
+  }
+end,                                '[S]earch by [G]rep in database' )
 
 -- LSP
 map("n", "<Leader>e",  vim.diagnostic.open_float,                                               "Open diagnostics [LSP]")

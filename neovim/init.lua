@@ -23,6 +23,9 @@ require('packer').startup(function(use)
 
       -- Additional lua configuration, makes nvim stuff amazing
       'folke/neodev.nvim',
+      
+      -- A Neovim Lua plugin providing access to the SchemaStore catalog.
+      'b0o/schemastore.nvim',
     },
   }
 
@@ -158,7 +161,7 @@ pcall(require('telescope').load_extension, 'fzf')
 
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
+local on_attach = function(client, bufnr)
   -- NOTE: Remember that lua is a real programming language, and as such it is possible
   -- to define small helper and utility functions so you don't have to repeat yourself
   -- many times.
@@ -171,6 +174,83 @@ local on_attach = function(_, bufnr)
     end
 
     vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
+  end
+
+  if client.name == "omnisharp" then
+    client.server_capabilities.semanticTokensProvider = {
+      full = vim.empty_dict(),
+      legend = {
+        tokenModifiers = { "static_symbol" },
+        tokenTypes = {
+          "comment",
+          "excluded_code",
+          "identifier",
+          "keyword",
+          "keyword_control",
+          "number",
+          "operator",
+          "operator_overloaded",
+          "preprocessor_keyword",
+          "string",
+          "whitespace",
+          "text",
+          "static_symbol",
+          "preprocessor_text",
+          "punctuation",
+          "string_verbatim",
+          "string_escape_character",
+          "class_name",
+          "delegate_name",
+          "enum_name",
+          "interface_name",
+          "module_name",
+          "struct_name",
+          "type_parameter_name",
+          "field_name",
+          "enum_member_name",
+          "constant_name",
+          "local_name",
+          "parameter_name",
+          "method_name",
+          "extension_method_name",
+          "property_name",
+          "event_name",
+          "namespace_name",
+          "label_name",
+          "xml_doc_comment_attribute_name",
+          "xml_doc_comment_attribute_quotes",
+          "xml_doc_comment_attribute_value",
+          "xml_doc_comment_cdata_section",
+          "xml_doc_comment_comment",
+          "xml_doc_comment_delimiter",
+          "xml_doc_comment_entity_reference",
+          "xml_doc_comment_name",
+          "xml_doc_comment_processing_instruction",
+          "xml_doc_comment_text",
+          "xml_literal_attribute_name",
+          "xml_literal_attribute_quotes",
+          "xml_literal_attribute_value",
+          "xml_literal_cdata_section",
+          "xml_literal_comment",
+          "xml_literal_delimiter",
+          "xml_literal_embedded_expression",
+          "xml_literal_entity_reference",
+          "xml_literal_name",
+          "xml_literal_processing_instruction",
+          "xml_literal_text",
+          "regex_comment",
+          "regex_character_class",
+          "regex_anchor",
+          "regex_quantifier",
+          "regex_grouping",
+          "regex_alternation",
+          "regex_text",
+          "regex_self_escaped_character",
+          "regex_other_escape",
+        },
+      },
+      range = true,
+    }
   end
 
   nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
@@ -214,6 +294,10 @@ if vim.loop.os_uname().sysname ~= 'Linux' then
         workspace = { checkThirdParty = false },
         telemetry = { enable = false },
       },
+    },
+    jsonls = {
+      schemas = require('schemastore').json.schemas(),
+      validate = { enable = true },
     },
     pyright = {},
     lemminx = {
@@ -310,7 +394,6 @@ if vim.loop.os_uname().sysname == 'Linux' then
     filepath = {
     },
     spelllang = {
-      en_us = "~/.config/nvim/spell/en_us.dict",
     },
   })
 else
@@ -321,7 +404,6 @@ else
     filepath = {
     },
     spelllang = {
-      en_us = "C:/GIT/Profile/neovim/spell/en_us.dict",
     },
   })
 end
@@ -351,14 +433,6 @@ cmp.setup {
     format = function(entry, vim_item)
       if entry.source.name == 'dictionary' then
         vim_item.kind = 'Dictionary'
-      elseif entry.source.name == 'luasnip' then
-        if string.find(vim_item.word, ':fg') then
-          vim_item.kind = 'ForegroundColor'
-          vim_item.kind_hl_group = 'RedrawDebugNormal'
-        elseif string.find(vim_item.word, ':bg') then
-          vim_item.kind = 'BackgroundColor'
-          vim_item.kind_hl_group = 'RedrawDebugRecompose'
-        end
       end
       vim_item.dup = ({
         buffer = 0,

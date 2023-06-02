@@ -207,7 +207,7 @@ end {
                     $_.start = $weekcolor
                 }
                 
-                if ($_.date -ge [datetime]::new($dates[1].year, $dates[1].month, 1)) {
+                if ($_.date -ge [datetime]::new($dates[0].year, $dates[0].month, 1)) {
                     $_.start = $_.start -replace ";30m", ";45m" -replace ";20m", ";35m"
                 }
 

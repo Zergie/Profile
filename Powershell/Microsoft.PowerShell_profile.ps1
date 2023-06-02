@@ -70,6 +70,12 @@ if ($pwsh.Commandline.EndsWith(".exe`"")) {
                 -End {
                     [pscustomobject]@{
                         Type  = 'WLAN'
+                        Name  = 'WLAN'
+                        Text  = 'Not Attached'
+                        Color = "`e[90m"
+                    }
+                    [pscustomobject]@{
+                        Type  = 'WLAN'
                         Name  = 'WLAN 2'
                         Text  = 'Not Attached'
                         Color = "`e[90m"

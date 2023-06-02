@@ -120,7 +120,7 @@ end {
 
                 Start-Sleep -Milliseconds 500
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
-                                  -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | ForEach-Object Content
+                                  -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | Out-Null
 
                 Start-Sleep -Milliseconds 500
                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "

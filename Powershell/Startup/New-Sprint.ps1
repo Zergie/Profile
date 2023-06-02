@@ -1,4 +1,4 @@
-
+[cmdletbinding()]
 #Requires -PSEdition Core
 param (
     # Specifies a path to one or more locations.
@@ -21,7 +21,7 @@ Process {
                         Where-Object displayName -NotLike "*rocom-service*" |
                         Add-Member -PassThru -MemberType ScriptProperty -Name "holidays" -Value { $global:holidays | Where-Object title -eq $this.displayName | ForEach-Object { [datetime]$_.start } }
 
-    $last_sprint = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0' |   
+    $last_sprint = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0' |
                         ForEach-Object value |
                         Select-Object -Last 1 |
                         Add-Member -PassThru -MemberType ScriptProperty -Name "number" -Value { [int](($this.Name | Select-String -Pattern "[0-9]+$").Matches.Value) }
@@ -56,14 +56,31 @@ Process {
                         ForEach-Object {
                             Invoke-RestMethod https://feiertage-api.de/api/?jahr=$_ |
                                 ForEach-Object { $_.BY } |
-                                ForEach-Object{ $data=$_; $data | Get-Member -Type NoteProperty | ForEach-Object { $data.$($_.Name) } }
+                                ForEach-Object {
+                                    $data = $_
+                                    $data |
+                                        Get-Member -Type NoteProperty |
+                                        ForEach-Object {
+                                            $i = $data.$($_.Name)
+                                            [pscustomobject]@{
+                                                name = $_.Name
+                                                datum = [datetime]::Parse($i.datum)
+                                                hinweis = $i.hinweis
+                                            }
+                                        }
+                                }
                         } |
                         Where-Object hinweis -NotLike "* nur im Stadtgebiet Augsburg *" |
-                        ForEach-Object { [datetime]::Parse($_.datum) } | 
-                        Where-Object { $_ -ge $new_sprint.attributes.startDate -and $_ -le $new_sprint.attributes.finishDate } |
+                        Where-Object datum -GE $new_sprint.attributes.startDate -and datum -LE $new_sprint.attributes.finishDate |
+                        ForEach-Object `
+                            -Begin { Write-Host "holidays:" } `
+                            -Process {
+                                $_ | Format-Table
+                                $_.datum
+                            } |
                         ForEach-Object `
                             -Begin   { $last = $null} `
-                            -Process { 
+                            -Process {
                                 if ($null -eq $last)  {
                                     $last = @{start=$_ ; end=$_}
                                 } elseif ($last.end -eq $_.AddDays(-1)) {
@@ -89,11 +106,11 @@ Process {
 
     foreach ($member in $team) {
         $holidays = @()
-        $holidays += $member.holidays | 
+        $holidays += $member.holidays |
                         Where-Object { $_ -ge $new_sprint.attributes.startDate -and $_ -le $new_sprint.attributes.finishDate } |
                         ForEach-Object `
                             -Begin   { $last = $null} `
-                            -Process { 
+                            -Process {
                                 if ($null -eq $last)  {
                                     $last = @{start=$_ ; end=$_}
                                 } elseif ($last.end -eq $_.AddDays(-1)) {
@@ -107,14 +124,14 @@ Process {
 
         Invoke-RestApi `
             -Endpoint 'PATCH https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations/{iterationId}/capacities/{teamMemberId}?api-version=6.0' `
-            -Variables @{ 
+            -Variables @{
                 iterationId= $new_sprint.id
                 teamMemberId= $member.id
              } `
              -Body @{
                 daysOff= $holidays
-                activities= @(@{ 
-                    capacityPerDay= 5 
+                activities= @(@{
+                    capacityPerDay= 5
                 })
              }
     }

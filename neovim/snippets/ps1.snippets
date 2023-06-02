@@ -1,5 +1,45 @@
-# Snippets for Visual Basic for Application
+# Snippets for Powershell
 # Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
+
+snippet pscustomobject
+	[pscustomobject]@{
+		${1:name} = ${2:value}
+	}
+
+snippet cmdletbinding
+	[cmdletbinding()]
+	param(
+	)
+
+snippet param
+		[Parameter(Mandatory=$$true,
+				   ParameterSetName="${2:name}ParameterSet",
+				   ValueFromPipeline=$$true,
+				   ValueFromPipelineByPropertyName=$$false)]
+		[ValidateNotNullOrEmpty()]
+		[${1:type}]
+		${2:name},
+	
+snippet dynamicparam
+	dynamicparam {
+		$$RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+
+		# param ${1:param}
+		$$AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+		$$ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+		$$ParameterAttribute.Mandatory = $$true
+		$$ParameterAttribute.ParameterSetName = "${1:param}ParameterSet"
+		$$AttributeCollection.Add($$ParameterAttribute)
+
+		$$ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+			${2:values}
+		))
+		$$AttributeCollection.Add($$ValidateSetAttribute)
+		$$RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("${1:param}", [string], $$AttributeCollection)
+		$$RuntimeParameterDictionary.Add($$RuntimeParameter.Name, $$RuntimeParameter)
+
+		return $$RuntimeParameterDictionary
+	}
 
 # ansi colors
 snippet Black:fg
