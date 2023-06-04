@@ -10,10 +10,6 @@ vim.o.smartcase = true
 vim.o.updatetime = 250            -- Decrease update time
 vim.wo.signcolumn = 'yes'
 
--- Set colorscheme
-vim.o.termguicolors = true
-vim.cmd.colorscheme('onedark')
-
 vim.opt.number         = true     -- Line numbers
 vim.opt.relativenumber = true     -- Relative line numbers for better navigation
 vim.opt.colorcolumn    = '100'    -- Mark column to remember me keeping lines short
