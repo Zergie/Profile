@@ -36,6 +36,24 @@ require("lazy").setup({
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
 
+  { -- File Explorer For Neovim Written In Lua
+    'nvim-tree/nvim-tree.lua',
+    config = function ()
+      -- disable netrw at the very start of your init.lua
+      vim.g.loaded_netrw = 1
+      vim.g.loaded_netrwPlugin = 1
+
+      -- set termguicolors to enable highlight groups
+      vim.opt.termguicolors = true
+
+      -- empty setup using defaults
+      require("nvim-tree").setup()
+
+
+      vim.keymap.set('n', '<Leader>x', '<cmd>NvimTreeOpen<cr>', { noremap = true, silent = true, desc = "File Explorer" })
+    end
+  },
+
   { -- Fancier statusline
     'nvim-lualine/lualine.nvim',
     config = function()

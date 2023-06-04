@@ -10,7 +10,7 @@ local opts    = { noremap = true, silent = true }
 
 -- Shorten function name
 local keymap = vim.keymap.set
-local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc} ) end
+local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc } ) end
 --local mapbuf = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc, buffer = 0} ) end
 
 -- Remap space
@@ -66,7 +66,7 @@ map("n", "<Leader>cd", "<cmd>cd %:p:h<cr>", "Change working directory")
 map("n", "ZS", "<cmd>w<cr>", "Save file")
 
 -- open file explorer
-map("n", "<Leader>x", "<cmd>Ex<cr>",  "File Explorer")
+-- map("n", "<Leader>x", "<cmd>Ex<cr>",  "File Explorer")
 -- map("n", "<Leader>es", "<cmd>Sex<cr>", "File Explorer (split)")
 -- map("n", "<Leader>el", "<cmd>Lex<cr>", "File Explorer (Lex)")
 
