@@ -31,7 +31,7 @@
 	singlekey = true
 [alias]
 	auto-commit = "!\
-		MESSAGE=`git log -1 --format=%s`; \
+		MESSAGE=`git --no-pager log --format=%s | uniq -c | sort -nr | head -1 | cut -d' ' -f8-`; \
 		git commit -m \"$MESSAGE\"; \
 		git slog -1; \
 	"
