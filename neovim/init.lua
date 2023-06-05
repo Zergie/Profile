@@ -33,8 +33,23 @@ require("lazy").setup({
   },
 
   -- Git related plugins
-  'tpope/vim-fugitive',
-  'tpope/vim-rhubarb',
+  {
+    'tpope/vim-fugitive',
+    dependencies = {
+      'tpope/vim-rhubarb',
+    },
+    config = function ()
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+      end
+
+      map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log [Fugitive]")
+      map("n", "[q",        "<cmd>cprev<cr>",       "Prev qf item")
+      map("n", "]q",        "<cmd>cnext<cr>",       "Next qf item")
+      map("n", "[Q",        "<cmd>cfirst<cr>",      "First qf item")
+      map("n", "]Q",        "<cmd>clast<cr>",       "Last qf item")
+    end
+  },
 
   { -- File Explorer For Neovim Written In Lua
     'nvim-tree/nvim-tree.lua',
@@ -49,8 +64,7 @@ require("lazy").setup({
       -- empty setup using defaults
       require("nvim-tree").setup()
 
-
-      vim.keymap.set('n', '<Leader>x', '<cmd>NvimTreeOpen<cr>', { noremap = true, silent = true, desc = "File Explorer" })
+      vim.keymap.set('n', '<Leader>x', '<cmd>NvimTreeToggle<cr>', { noremap = true, silent = true, desc = "File Explorer" })
     end
   },
 
@@ -78,7 +92,29 @@ require("lazy").setup({
     end
   },
 
-  'phaazon/hop.nvim', -- extended vim motions
+  { -- extended vim motions
+    'phaazon/hop.nvim',
+    config = function()
+      local map = function (lhs, rhs, desc)
+        vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc })
+      end
+      local hop = require("hop")
+      local hint = require("hop.hint")
+      local directions = hint.HintDirection
+
+      hop.setup()
+      map("<Leader>f", function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, "Hop forward find")
+      map("<Leader>F", function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, "Hop backward find")
+      map("<Leader>t", function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, "Hop forward till")
+      map("<Leader>T", function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
+      map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
+      map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
+      map("s",         function () hop.hint_char2{ } end, "Hop 2chars forward")
+      map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
+      map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
+      map("s",         function () hop.hint_char2{ } end, "Hop 2chars forward")
+    end,
+  },
 
   { -- inline key help
     'folke/which-key.nvim',
@@ -94,7 +130,16 @@ require("lazy").setup({
     end
   },
 
-  'junegunn/vim-easy-align', -- allows align e.g. vipga=
+  { -- allows align e.g. vipga=
+    'junegunn/vim-easy-align',
+    config = function ()
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. "[EasyAlign]" })
+      end
+      map("x", "ga", "<Plug>(EasyAlign)", "Align")
+      map("n", "ga", "<Plug>(EasyAlign)", "Align")
+    end
+  },
 
   'mracos/mermaid.vim', -- mermaid diagram
 

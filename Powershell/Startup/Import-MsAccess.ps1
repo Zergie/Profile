@@ -26,7 +26,11 @@ param(
 
     [Parameter()]
     [switch]
-    $Edit
+    $Edit,
+
+    [Parameter()]
+    [switch]
+    $Compile
 )
 begin {
     $pathes = @()
@@ -113,6 +117,11 @@ end {
         Write-Host " $warning" -ForegroundColor Yellow
     }
 
+    if ($Compile) {
+        $script.AppendLine("DoCmd.RunCommand(126)") | Out-Null
+        $script.AppendLine("stdout.Write `"Application.IsCompiled = `"") | Out-Null
+        $script.AppendLine("stdout.Write Application.IsCompiled") | Out-Null
+    }
     $script = $script.ToString()
     Set-Content -Path "$($env:TEMP)\script.vbs" -Value $script
     
@@ -133,5 +142,6 @@ end {
             Remove-Item "$($file.FullName).old"
         }
     }
+
 }
 

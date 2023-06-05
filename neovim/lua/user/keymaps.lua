@@ -115,6 +115,7 @@ map('n', '<leader>sh', telescope.help_tags,                                '[S]e
 map('n', '<leader>sw', function() telescope.grep_string(cursor_theme) end, '[S]earch current [W]ord' )
 map('n', '<leader>sg', telescope.live_grep,                                '[S]earch by [G]rep' )
 map('n', '<leader>sd', telescope.diagnostics,                              '[S]earch [D]iagnostics' )
+--
 -- TauOffice specific
 map('n', '<leader>sW', function()
 telescope.grep_string(require('telescope.themes').get_cursor{
@@ -152,35 +153,3 @@ map("n", "<Leader>D",  vim.lsp.buf.type_definition,                             
 map("n", "<Leader>rn", vim.lsp.buf.rename,                                                      "Rename [LSP]")
 map("n", "<Leader>ca", vim.lsp.buf.code_action,                                                 "Code action [LSP]")
 map("n", "gr",         vim.lsp.buf.references,                                                  "References [LSP]")
-
--- Hop
-local hop = require("hop")
-hop.setup()
--- local directions = require("hop.hint").HintDirection
--- vim.keymap.set("", "<Leader>f", function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, opts)
--- vim.keymap.set("", "<Leader>F", function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, opts)
--- vim.keymap.set("", "<Leader>t", function() hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, opts)
--- vim.keymap.set("", "<Leader>T", function() hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, opts)
-map("n", "<Leader>w", "<cmd>HopWordAC<cr>",  "Hop word forward [Hop]")
-map("n", "<Leader>W", "<cmd>HopWordBC<cr>",  "Hop word backward [Hop]")
-map("n", "<Leader>j", "<cmd>HopLineAC<cr>",  "Hop word forward [Hop]")
-map("n", "<Leader>k", "<cmd>HopLineBC<cr>",  "Hop word backward [Hop]")
-map("n", "s",         "<cmd>HopChar2AC<cr>", "Hop 2chars forward [Hop]")
-map("n", "S",         "<cmd>HopChar2BC<cr>", "Hop 2chars backward [Hop]")
-map("v", "<Leader>w", "<cmd>HopWordAC<cr>",  "Hop word forward [Hop]")
-map("v", "<Leader>W", "<cmd>HopWordBC<cr>",  "Hop word backward [Hop]")
-map("v", "<Leader>j", "<cmd>HopLineAC<cr>",  "Hop word forward [Hop]")
-map("v", "<Leader>k", "<cmd>HopLineBC<cr>",  "Hop word backward [Hop]")
-map("v", "s",         "<cmd>HopChar2AC<cr>", "Hop 2chars forward [Hop]")
-map("v", "S",         "<cmd>HopChar2BC<cr>", "Hop 2chars backward [Hop]")
-
--- Easy Align
-map("x", "ga", "<Plug>(EasyAlign)", "Align [EasyAlign]")
-map("n", "ga", "<Plug>(EasyAlign)", "Align [EasyAlign]")
-
--- Fugitive
-map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log [Fugitive]")
-map("n", "[q",        "<cmd>cprev<cr>",       "Prev qf item")
-map("n", "]q",        "<cmd>cnext<cr>",       "Next qf item")
-map("n", "[Q",        "<cmd>cfirst<cr>",      "First qf item")
-map("n", "]Q",        "<cmd>clast<cr>",       "Last qf item")
