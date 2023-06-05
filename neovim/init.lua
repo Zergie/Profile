@@ -143,7 +143,22 @@ require("lazy").setup({
 
   'mracos/mermaid.vim', -- mermaid diagram
 
-  'voldikss/vim-floaterm', -- floating terminal for compling
+  { -- floating terminal for compling
+    -- 'voldikss/vim-floaterm',
+    'numToStr/FTerm.nvim',
+    config = function ()
+      local fterm = require('FTerm')
+      fterm.setup{
+        cmd = "pwsh",
+      }
+
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+      end
+      map("n", "<C-k>", fterm.toggle, "Toggle Terminal")
+      map("t", "<C-k>", fterm.toggle, "Toggle Terminal")
+    end
+  },
 
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
