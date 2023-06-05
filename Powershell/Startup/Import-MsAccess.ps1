@@ -117,11 +117,6 @@ end {
         Write-Host " $warning" -ForegroundColor Yellow
     }
 
-    if ($Compile) {
-        $script.AppendLine("DoCmd.RunCommand(126)") | Out-Null
-        $script.AppendLine("stdout.Write `"Application.IsCompiled = `"") | Out-Null
-        $script.AppendLine("stdout.Write Application.IsCompiled") | Out-Null
-    }
     $script = $script.ToString()
     Set-Content -Path "$($env:TEMP)\script.vbs" -Value $script
     
@@ -136,12 +131,108 @@ end {
     cscript.exe "$($env:TEMP)\script.vbs" //nologo
     Remove-Item "$($env:TEMP)\script.vbs"
 
+    if ($Compile) {
+        $wshell = New-Object -ComObject wscript.shell;
+
+        $wshell.AppActivate("Microsoft Visual Basic for Applications") | Out-Null
+        $wshell.SendKeys("%")
+        $wshell.SendKeys("{RIGHT}{RIGHT}{RIGHT}{RIGHT}{DOWN}")
+        $wshell.SendKeys("{ENTER}")
+        while (-not $wshell.AppActivate("Microsoft Visual Basic for Applications")) { Start-Sleep .25 }
+
+        $message = Start-Job {
+            Add-Type '
+                using System;
+                using System.Runtime.InteropServices;
+                using System.Collections.Generic;
+                using System.Text;
+
+                public class winapi
+                {
+                    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+                    public static extern int GetWindowText(IntPtr hwnd,StringBuilder lpString, int cch);
+
+                    [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+                    public static extern IntPtr GetForegroundWindow();
+
+                    [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+                    public static extern Int32 GetWindowThreadProcessId(IntPtr hWnd,out Int32 lpdwProcessId);
+
+                    [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+                    public static extern Int32 GetWindowTextLength(IntPtr hWnd);
+
+                    [DllImport("user32")]
+                    [return: MarshalAs(UnmanagedType.Bool)]
+                    public static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr i);
+                    public static List<IntPtr> GetChildWindows(IntPtr parent)
+                    {
+                    List<IntPtr> result = new List<IntPtr>();
+                    GCHandle listHandle = GCHandle.Alloc(result);
+                    try
+                    {
+                        EnumWindowProc childProc = new EnumWindowProc(EnumWindow);
+                        EnumChildWindows(parent, childProc,GCHandle.ToIntPtr(listHandle));
+                    }
+                    finally
+                    {
+                        if (listHandle.IsAllocated)
+                            listHandle.Free();
+                    }
+                    return result;
+                }
+                    private static bool EnumWindow(IntPtr handle, IntPtr pointer)
+                {
+                    GCHandle gch = GCHandle.FromIntPtr(pointer);
+                    List<IntPtr> list = gch.Target as List<IntPtr>;
+                    if (list == null)
+                    {
+                        throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
+                    }
+                    list.Add(handle);
+                    //  You can modify this to check to see if you want to cancel the operation, then return a null here
+                    return true;
+                }
+                    public delegate bool EnumWindowProc(IntPtr hWnd, IntPtr parameter);
+                }
+            '
+            
+            foreach ($hwnd in ([winapi]::GetChildWindows([winapi]::GetForegroundWindow()))) {
+                $len = [winapi]::GetWindowTextLength($hwnd)
+                if($len -gt 0){
+                    $sb = [System.Text.StringBuilder]::new($len + 1)
+                    [winapi]::GetWindowText($hwnd,$sb,$sb.Capacity) | Out-Null
+                    $sb.tostring()
+                }
+            }
+        } | Wait-Job | Receive-Job
+
+        if ($message[0] -eq "Ok") {
+            $message = ($message | Select-Object -Skip 2) -replace '\r?\n',' '
+            # $wshell.SendKeys("{ENTER}")
+            # $wshell.SendKeys('%{TAB}')
+
+            $name = ((Get-Process -Name MSACCESS).MainWindowTitle | Select-String "\[([^](]+)").Matches.Groups[1].Value.Trim()
+            $file = switch -Regex ($name) {
+                "^Form_"   { $name.SubString(5) + ".ACF" }
+                "^Report_" { $name.SubString(7) + ".ACR" }
+                default    { $name + ".ACM" }
+            }
+
+            Write-Host "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+            Write-Host "`e[38;5;238m       │`e[0m File: ${file}"
+            Write-Host "`e[38;5;238m───────┼─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+            Write-Host "`e[38;5;238m       │`e[0m`e[31m $message`e[0m"
+            Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+        } else {
+            $wshell.SendKeys('%{TAB}')
+        }
+    }
+
     if ($ShowDiff) {
         foreach ($file in $pathes) {
             git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
             Remove-Item "$($file.FullName).old"
         }
     }
-
 }
 
