@@ -71,7 +71,7 @@ map("n", "ZS", "<cmd>w<cr>", "Save file")
 -- map("n", "<Leader>el", "<cmd>Lex<cr>", "File Explorer (Lex)")
 
 -- Syntax info
-keymap("n", "<F10>", [[
+keymap("n", "<F13>", [[
 :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<cr>
 ]], opts)
 
@@ -134,22 +134,5 @@ map('n', '<leader>sG', function()
     cwd = '/git/TauOffice/DBMS/schema',
     search_dirs = { 'schema.xml', },
   }
-end,                                '[S]earch by [G]rep in database' )
+end, '[S]earch by [G]rep in database' )
 
--- LSP
-map("n", "<Leader>e",  vim.diagnostic.open_float,                                               "Open diagnostics [LSP]")
-map("n", "[d",         vim.diagnostic.goto_prev,                                                "Prev diagnostics [LSP]")
-map("n", "]d",         vim.diagnostic.goto_next,                                                "Next diagnostics [LSP]")
-map("n", "<Leader>q",  vim.diagnostic.setloclist,                                               "setloclist [LSP]")
-map("n", "gD",         vim.lsp.buf.declaration,                                                 "Goto declaration [LSP]")
-map("n", "gd",         vim.lsp.buf.definition,                                                  "Goto definition [LSP]")
-map("n", "K",          vim.lsp.buf.hover,                                                       "Hover [LSP]")
-map("n", "gi",         vim.lsp.buf.implementation,                                              "Goto implementation [LSP]")
-map("n", "gk",         vim.lsp.buf.signature_help,                                              "Signature help [LSP]")
-map("n", "<Leader>aa", vim.lsp.buf.add_workspace_folder,                                        "add_workspace_folder [LSP]")
-map("n", "<Leader>ar", vim.lsp.buf.remove_workspace_folder,                                     "remove_workspace_folder [LSP]")
-map("n", "<Leader>al", function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, "list_workspace_folders [LSP]")
-map("n", "<Leader>D",  vim.lsp.buf.type_definition,                                             "type_definition [LSP]")
-map("n", "<Leader>rn", vim.lsp.buf.rename,                                                      "Rename [LSP]")
-map("n", "<Leader>ca", vim.lsp.buf.code_action,                                                 "Code action [LSP]")
-map("n", "gr",         vim.lsp.buf.references,                                                  "References [LSP]")

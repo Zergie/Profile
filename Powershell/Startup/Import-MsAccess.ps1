@@ -110,7 +110,7 @@ end {
                 $warning = "ignored"
             }
             default {
-                Write-Host "$($file.Extension) is not implemented" -ForegroundColor Red
+                Write-Host " $($file.Extension) is not implemented" -ForegroundColor Red -NoNewline
             }
         }
 
@@ -132,6 +132,7 @@ end {
     Remove-Item "$($env:TEMP)\script.vbs"
 
     if ($Compile) {
+        Write-Host "Compiling.."
         $wshell = New-Object -ComObject wscript.shell;
 
         $wshell.AppActivate("Microsoft Visual Basic for Applications") | Out-Null

@@ -191,6 +191,7 @@ if ($Inspect) {
             $result.database = ".\" + [System.IO.Path]::GetRelativePath((Get-Location).path, $result.database)
             $result
         } catch {
+            Write-Host -ForegroundColor Red "result: $result"
             Write-Host -ForegroundColor Red $text
             throw
         }

@@ -21,15 +21,18 @@ syn keyword Boolean True False
 
 syn keyword Keyword LIKE AND OR NOT
 
+" Important things
+syn keyword RedrawDebugRecompose PRIO1
+
 " Headers
-syn match Comment "^==.\+$"
-syn match Comment "^--.\+$"
+syn match Comment "^==.\+$" contains=RedrawDebugRecompose
+syn match Comment "^--.\+$" contains=RedrawDebugRecompose
 
 " Function calls
 syn match Identifier "\zs\w\+\ze("
 
 " Placeholder
-syn region TSConstMacro start=+{+ end=+}+ 
+syn region TSConstMacro start=+{+ end=+}+
 
 " Numbers
 syn match Number "\<\d\+\>"
