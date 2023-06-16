@@ -2,6 +2,7 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$true,
+               Position=0,
                ParameterSetName="IdParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -22,6 +23,7 @@ param (
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
+    [Alias('b')]
     [switch]
     $Branches,
 
@@ -52,6 +54,7 @@ param (
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
+    [Alias('u')]
     [switch]
     $Update,
 
@@ -59,8 +62,16 @@ param (
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
+    [Alias('o')]
     [switch]
-    $Online
+    $Online,
+
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [Alias('p')]
+    [switch]
+    $Pdf
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -345,6 +356,14 @@ process {
         $workitems |
             ForEach-Object { $_.url.Replace("/_apis/wit/workItems/", "/_workitems/edit/") } |
             ForEach-Object { Start-Process $_ }
+    }
+
+    if ($Pdf) {
+        Push-Location $env:TEMP
+        $workitems |
+            ForEach-Object { . "$PSScriptRoot/Get-Attachments.ps1" -Id $_.Id -Filter "^.+\.pdf$" } |
+            ForEach-Object { Start-Process $_ }
+        Pop-Location
     }
 }
 end {

@@ -40,10 +40,10 @@ require("lazy").setup({
     },
     config = function ()
       local map = function (mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Fugitive]" })
       end
 
-      map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log [Fugitive]")
+      map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log")
       map("n", "[q",        "<cmd>cprev<cr>",       "Prev qf item")
       map("n", "]q",        "<cmd>cnext<cr>",       "Next qf item")
       map("n", "[Q",        "<cmd>cfirst<cr>",      "First qf item")
@@ -54,6 +54,10 @@ require("lazy").setup({
   { -- File Explorer For Neovim Written In Lua
     'nvim-tree/nvim-tree.lua',
     config = function ()
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [NvTree]" })
+      end
+
       -- disable netrw at the very start of your init.lua
       vim.g.loaded_netrw = 1
       vim.g.loaded_netrwPlugin = 1
@@ -64,7 +68,8 @@ require("lazy").setup({
       -- empty setup using defaults
       require("nvim-tree").setup()
 
-      vim.keymap.set('n', '<Leader>x', '<cmd>NvimTreeToggle<cr>', { noremap = true, silent = true, desc = "File Explorer" })
+      local api = require("nvim-tree.api")
+      map('n', '<Leader>x', function () api.tree.toggle({find_file=true, update_root=true}) end, "File Explorer")
     end
   },
 
@@ -96,7 +101,7 @@ require("lazy").setup({
     'phaazon/hop.nvim',
     config = function()
       local map = function (lhs, rhs, desc)
-        vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc })
+        vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Hop]" })
       end
       local hop = require("hop")
       local hint = require("hop.hint")
@@ -134,7 +139,7 @@ require("lazy").setup({
     'junegunn/vim-easy-align',
     config = function ()
       local map = function (mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. "[EasyAlign]" })
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [EasyAlign]" })
       end
       map("x", "ga", "<Plug>(EasyAlign)", "Align")
       map("n", "ga", "<Plug>(EasyAlign)", "Align")
@@ -153,7 +158,7 @@ require("lazy").setup({
       }
 
       local map = function (mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [FTerm]" })
       end
       map("n", "<Leader>n", fterm.toggle, "Toggle Terminal")
       map("t", "<Leader>n", fterm.toggle, "Toggle Terminal")
@@ -169,6 +174,7 @@ require("lazy").setup({
     config = function ()
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
+        path_display = { "truncate" },
         defaults = {
           mappings = {
             i = {
@@ -184,6 +190,162 @@ require("lazy").setup({
 
     
       require('user.telescope')
+      local telescope = require('telescope.builtin')
+      local themes = require('telescope.themes')
+      local minimal_theme = themes.get_dropdown {
+          winblend  = 10,
+          previewer = false,
+          layout_config = {
+            width = 0.5,
+          },
+      }
+      local cursor_theme = themes.get_cursor {
+          winblend  = 10,
+          previewer = true,
+          layout_config = {
+            height = 0.5,
+            width  = 0.8,
+          },
+      }
+      local cursor_minimal_theme = themes.get_cursor {
+          winblend  = 20,
+          previewer = false,
+          layout_config = {
+            height = 0.25,
+          },
+      }
+
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+      end
+
+      -- map('n', '<leader>/',       function() telescope.current_buffer_fuzzy_find(minimal_theme) end, '[/] Fuzzily search in current buffer]' )
+      map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,              'Find existing buffers')
+      map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,           '[S]earch [F]iles' )
+      map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,             '[S]earch in old files')
+      map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_theme) end, 'Spell Suggest')
+      map('n', '<leader>/',       telescope.current_buffer_fuzzy_find,                          'Search in current buffer' )
+      map("n", "<Leader>sb",      telescope.builtin,                                            "[S]earch [B]uiltin")
+      map("n", "<Leader>sm",      telescope.marks,                                              "[S]earch [M]arks")
+      map("n", "<Leader>sr",      telescope.resume,                                             "[S]earch [R]esume")
+      map('n', '<leader>sh',      telescope.help_tags,                                          '[S]earch [H]elp' )
+      map('n', '<leader>sw',      function() telescope.grep_string(themes.get_dropdown()) end,  '[S]earch current [W]ord' )
+      map('n', '<leader>sg',      telescope.live_grep,                                          '[S]earch by [G]rep' )
+      map('n', '<leader>sd',      telescope.diagnostics,                                        '[S]earch [D]iagnostics' )
+
+      -- TauOffice specific
+      local search = function (pattern)
+          telescope.grep_string(themes.get_dropdown {
+              path_display = { "truncate" },
+              search = pattern,
+              use_regex = true,
+              encoding = 'latin1',
+          })
+      end
+      local searchInBuffer = function (pattern)
+          vim.cmd("w")
+          telescope.grep_string(themes.get_dropdown {
+              path_display = { "truncate" },
+              cwd = vim.fn.expand('%:p:h'),
+              search_dirs = { vim.fn.expand('%:p'), },
+              search = pattern,
+              use_regex = true,
+              encoding = 'latin1',
+          })
+      end
+
+      map('n', '<leader>sW', function()
+        telescope.grep_string(themes.get_dropdown {
+          cwd = '/git/TauOffice/DBMS/schema',
+          search_dirs = { 'schema.xml', },
+          winblend  = 10,
+          previewer = true,
+          layout_config = {
+            height = 0.5,
+            width  = 0.8,
+          },
+        })
+      end, '[S]earch current [W]ord in database' )
+      map('n', '<leader>sG', function()
+        telescope.live_grep{
+          cwd = '/git/TauOffice/DBMS/schema',
+          search_dirs = { 'schema.xml', },
+        }
+      end, '[S]earch by [G]rep in database' )
+
+      map("n", "<Leader>se", function ()
+          searchInBuffer('^(|Private |Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
+      end, "[S]earch Definitins")
+      map("n", "<Leader>si", function ()
+          search('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
+      end, "[S]earch Definitins")
+      map("n", "<Leader>sE", function ()
+          searchInBuffer('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
+      end,  "[S]earch Public Definitins")
+      map("n", "go", function ()
+        vim.cmd("/CodeBehindForm")
+        vim.cmd("noh")
+      end, "Go to start of code")
+
+      local run_commands = function (commands)
+          local fterm = require('FTerm')
+          fterm.run("")
+          for _, cmd in ipairs(commands) do fterm.run(cmd) end
+      end
+
+      local save = function()
+          local buffers = ""
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+              if vim.api.nvim_buf_get_option(buf, 'modified') then
+                  buffers = buffers .. '"' .. vim.uri_from_bufnr(buf) .. '"'
+              end
+          end
+          print(vim.inspect(buffers))
+
+          vim.cmd("wa")
+          local cmd_table = {
+              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+                  "Import-Msaccess -Path " .. buffers .. " -Compile",
+              },
+          }
+
+          if not (buffers == nil or buffers == "") then
+              run_commands(cmd_table[vim.fn.getcwd()] or {""})
+          end
+      end
+      map("n", "<Leader>ms", save,  "Save project")
+
+      local build = function ()
+          vim.cmd("wa")
+          local cmd_table = {
+              ["C:\\GIT\\TauOffice\\Admintool"] = {
+                  "./make.ps1",
+              },
+              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+                  -- "sudo ./make.ps1 -dev",
+                  "Import-Msaccess -Compile",
+              },
+          }
+          run_commands(cmd_table[vim.fn.getcwd()] or {"sudo ./make.ps1"})
+      end
+      map("n", "<Leader>mk", build,  "Build project")
+
+      local run = function ()
+          build()
+          local cmd_table = {
+              ["C:\\GIT\\TauOffice\\Admintool"] = {
+                  "Stop-Process -ProcessName AdminTool.App -ErrorAction SilentlyContinue",
+                  ". 'C:/Program Files (x86)/Tau-Office/Admintool/AdminTool.App.exe'",
+                  "Watch-Log Admintool.log -Exit",
+              },
+              ["C:\\GIT\\)TauOffice\\tau-office\\source"] = {
+                  "../bin/tau-offce.mde",
+                  "Watch-Log TauError.log -Exit",
+              },
+          }
+          run_commands(cmd_table[vim.fn.getcwd()] or {})
+      end
+      map("n", "<Leader>mr", run,  "Run project")
     end
   },
 

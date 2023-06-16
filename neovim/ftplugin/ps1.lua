@@ -2,6 +2,9 @@
 --     Language: Windows PowerShell
 --   Maintainer: Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
--- run script with F5
-local opts = { noremap = true, silent = true }
-vim.api.nvim_buf_set_keymap(0, "n", "<F5>", ":wa<bar>:term pwsh -NoProfile -File %:p<cr>", opts)
+local map = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc} ) end
+
+map("n", "<Leader>mr", function ()
+    vim.cmd("wa")
+    require('FTerm').run("; . '" .. vim.fn.expand("%:p") .. "'")
+end,  "Run Script")

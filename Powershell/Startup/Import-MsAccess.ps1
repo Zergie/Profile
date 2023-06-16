@@ -41,7 +41,9 @@ process {
     }
 
     if ($null -ne $Path) {
-        $pathes += $Path | Get-ChildItem
+        $pathes += $Path |
+            ForEach-Object { if ($_.StartsWith("file://")) { $_.Substring(8) } else { $_ }} |
+            Get-ChildItem
     } elseif ($null -ne $InputObject) {
         $pathes += $InputObject | Get-ChildItem -ErrorAction SilentlyContinue
         $pathes += @(

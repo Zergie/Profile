@@ -1,6 +1,22 @@
 # Snippets for Visual Basic for Application
 # Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
+snippet fail
+	Stop '#TO_BUILD FAIL
+
+snippet do
+	Do Until rs.EOF
+		${1:Action}
+		rs.MoveNext
+	Loop
+	rs.Close
+
+snippet set_rs
+	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}")
+
+snippet set_rs_ro
+	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}", dbOpenForwardOnly, dbReadOnly)
+
 # vba If .. Then
 snippet if
 	If ${1:Condition} Then
