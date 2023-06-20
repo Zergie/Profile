@@ -18,6 +18,14 @@
         {
             "command": 
             {
+                "action": "switchToTab",
+                "index": 8
+            },
+            "keys": "win+ctrl+alt+9"
+        },
+        {
+            "command": 
+            {
                 "action": "multipleActions",
                 "actions": 
                 [
@@ -32,14 +40,6 @@
                 ]
             },
             "name": "Restart pane"
-        },
-        {
-            "command": 
-            {
-                "action": "switchToTab",
-                "index": 8
-            },
-            "keys": "win+ctrl+alt+9"
         },
         {
             "command": 
@@ -610,7 +610,7 @@
             "font": 
             {
                 "face": "MesloLGS NFM",
-                "size": 10.0
+                "size": 12.0
             },
             "padding": "5, 5, 5, 5",
             "useAtlasEngine": true
@@ -955,5 +955,6 @@
                 "useMica": false
             }
         }
-    ]
+    ],
+    "windowingBehavior": "useAnyExisting"
 }

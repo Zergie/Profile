@@ -10,7 +10,7 @@
 	ignorecase = false
 	pager = less --raw-control-chars
 	autocrlf = true
-	editor = C:/GIT/Profile/git/editor.sh
+	editor = C:/tools/neovim/nvim-win64/bin/nvim.exe
 [diff]
 	tool = bc
 [difftool "bc"]

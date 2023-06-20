@@ -21,8 +21,23 @@ begin {
 }
 process {
     $Path = (Resolve-Path $Path).ProviderPath
+    $path_pdf = "$([System.IO.Path]::GetDirectoryName($Path))\$([System.IO.Path]::GetFileNameWithoutExtension($Path)).pdf"
+
+    switch ([System.IO.Path]::GetExtension($Path))
+    {
+        ".sql" {
+            Get-Content $Path |
+             c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=sql|set number!|set relativenumber!" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+            $Path = "C:\temp\temp.html"
+        }
+        ".article" {
+            Get-Content $Path |
+                c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=article|set number!|set relativenumber!" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+            $Path = "C:\temp\temp.html"
+        }
+    }
+
     if ([System.IO.Path]::GetExtension($Path) -ne ".pdf") {
-        $path_pdf = "$([System.IO.Path]::GetDirectoryName($Path))\$([System.IO.Path]::GetFileNameWithoutExtension($Path)).pdf"
         Remove-Item $path_pdf -Force -ErrorAction SilentlyContinue
 
         $document = $word.Documents.Open("$Path")
