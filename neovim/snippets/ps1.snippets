@@ -1,6 +1,11 @@
 # Snippets for Powershell
 # Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
+snippet req_core
+	#Requires -PSEdition Core
+snippet req_admin
+	#Requires -RunAsAdministrator
+
 snippet pscustomobject
 	[pscustomobject]@{
 		${1:name} = ${2:value}

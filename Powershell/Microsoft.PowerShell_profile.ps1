@@ -192,6 +192,7 @@ Start-Action "Set alias to my programs"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
+    function nvr { python C:/Python311/Lib/site-packages/nvr/nvr.py -cc "lua require('FTerm').close()" $args }
 Complete-Action
 
 # set alias to my scripts
@@ -273,10 +274,10 @@ if ((Test-Path $dockerScript)) {
         
         "ColumnName","Fields","Sort","Filter" |
             ForEach-Object { Register-ArgumentCompleter -CommandName @(
-                "$PSScriptRoot\Startup\Get-SqlTable.ps1"
-                "$PSScriptRoot\Startup\Update-SqlTable.ps1"
-                "$PSScriptRoot\Startup\Remove-SqlTable.ps1"
-                "$PSScriptRoot\Startup\Read-SqlTableData.ps1"
+                "Get-SqlTable.ps1"
+                "Update-SqlTable.ps1"
+                "Remove-SqlTable.ps1"
+                "Read-SqlTableData.ps1"
             ) -ParameterName $_ -ScriptBlock {
                 param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
                     if ( $fakeBoundParameter.Contains("DatabaseName")) { $fakeBoundParameter.Database = $fakeBoundParameter.DatabaseName }
@@ -322,6 +323,12 @@ if ((Test-Path $dockerScript)) {
 Start-Action "Set new location"
     if ((Get-Location).Path -eq $env:USERPROFILE -and (Test-Path "C:\GIT")) {
         Set-Location C:\GIT
+    }
+Complete-Action
+
+Start-Action "Set GIT_EDITOR"
+    if ($pwsh.parent.parent.name -eq 'nvim') {
+        $env:GIT_EDITOR='python C:/Python311/Lib/site-packages/nvr/nvr.py -cc "lua require(''FTerm'').close()" --remote-wait'
     }
 Complete-Action
 

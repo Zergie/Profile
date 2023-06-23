@@ -124,15 +124,13 @@ $junctions = @(
 $commands = @(
     { . "$env:ProgramData\chocolatey\bin\bat.exe" cache --build                             }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
-    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").install()' }
-    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").clean()' }
-    { . "C:/tools/neovim/nvim-win64/bin/nvim.exe" +'lua require("packer").update()' }
     {
         Set-ItemProperty `
             -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `
             -Name "Debugger" `
             -Value "wt -w 0 sp cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
     }
+    { pip3 install neovim-remote }
 )
 
 

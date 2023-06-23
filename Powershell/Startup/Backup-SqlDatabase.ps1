@@ -26,20 +26,20 @@ process {
     }
 
     foreach ($db in $Database) {
-        exec "USE $db"
+        exec "USE [$db]"
         $mdf = (exec "SELECT name FROM sys.database_files WHERE type_desc = 'ROWS'").name
         $log = (exec "SELECT name FROM sys.database_files WHERE type_desc = 'LOG'").name
         exec "USE master"
 
-        exec "ALTER DATABASE $db SET RECOVERY SIMPLE" | Out-Null
-        exec "DBCC SHRINKDATABASE ($db, 0)" | Out-Null
+        exec "ALTER DATABASE [$db] SET RECOVERY SIMPLE" | Out-Null
+        exec "DBCC SHRINKDATABASE ([$db], 0)" | Out-Null
         exec "DBCC SHRINKFILE ([$mdf], 0)" | Out-Null
         exec "DBCC SHRINKFILE ([$log], 0)" | Out-Null
 
         #exec "USE master"
-        exec "ALTER DATABASE $db SET RECOVERY FULL" | Out-Null
-        exec "ALTER DATABASE $db MODIFY FILE (Name=$mdf, MAXSIZE=Unlimited)" | Out-Null
-        exec "ALTER DATABASE $db MODIFY FILE (Name=$log, MAXSIZE=Unlimited)" | Out-Null
+        exec "ALTER DATABASE [$db] SET RECOVERY FULL" | Out-Null
+        exec "ALTER DATABASE [$db] MODIFY FILE (Name=$mdf, MAXSIZE=Unlimited)" | Out-Null
+        exec "ALTER DATABASE [$db] MODIFY FILE (Name=$log, MAXSIZE=Unlimited)" | Out-Null
 
         if (! $credentials.IsInstalledOnHost) {
             Write-Host -ForegroundColor Cyan "`ndocker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
