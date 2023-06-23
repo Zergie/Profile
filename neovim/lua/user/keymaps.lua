@@ -50,11 +50,12 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 
 -- Better window navigation
-keymap("n", "<C-h>", "<C-w>h", opts)
-keymap("n", "<C-j>", "<C-w>j", opts)
-keymap("n", "<C-k>", "<C-w>k", opts)
-keymap("n", "<C-l>", "<C-w>l", opts)
-keymap("n", "<C-w><C-w>", "<cmd>close<cr>", opts)
+keymap("n", "<C-h>",      "<C-w>h",               opts)
+keymap("n", "<C-j>",      "<C-w>j",               opts)
+keymap("n", "<C-k>",      "<C-w>k",               opts)
+keymap("n", "<C-l>",      "<C-w>l",               opts)
+keymap("n", "<C-w><C-w>", "<cmd>w<bar>close<cr>", opts, "Save and Close window")
+keymap("n", "<C-w>c",     "<cmd>close!<cr>",      opts, "Save and Close window")
 
 -- Resize with arrows
 keymap("n", "<C-Up>",    "<cmd>resize -2<cr>",          opts)
@@ -63,11 +64,10 @@ keymap("n", "<C-Left>",  "<cmd>vertical resize -2<cr>", opts)
 keymap("n", "<C-Right>", "<cmd>vertical resize +2<cr>", opts)
 
 -- Navigate buffers
-map("n", "<S-l>",      "<cmd>bnext<cr>",                    "Next buffer")
-map("n", "<S-h>",      "<cmd>bprevious<cr>",                "Prev buffer")
-map("n", "<C-b><C-b>", "<cmd>bp<bar>sp<bar>bn<bar>bd<cr>",  "Close buffer")
-map("n", "<C-b>c",     "<cmd>bp<bar>sp<bar>bn<bar>bd<cr>",  "Close buffer")
-map("n", "<C-b>C",     "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer!")
+map("n", "<S-l>",      "<cmd>bn<cr>",                       "Next buffer")
+map("n", "<S-h>",      "<cmd>bp<cr>",                       "Prev buffer")
+map("n", "<C-b><C-b>", "<cmd>w<bar>bd<cr>",                 "Save and Close buffer")
+map("n", "<C-b>c",     "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer")
 
 -- Move text up and down
 map("n", "<A-j>", "<cmd>m-2<cr>", "Move text one line up")
