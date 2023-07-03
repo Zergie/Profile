@@ -95,17 +95,25 @@ end {
                         ForEach-Object FullName)
     $cefDownloader = Get-Process CefSharpDownloader
     try {
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888 | ForEach-Object Content
+        Invoke-WebRequest -Method Post -Uri http://localhost:8888 | Out-Null
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
 
         $response = [pscustomobject]@{ logout = $true }
         while ($response.logout -eq $true) {
             $response = $dates |
                         ForEach-Object {
-                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body ("https://rocom.tau-work-together.de/api/main/holiday/holidaysview/dayGridMonth?" + "{`"date`":`"$($_.year)-$($_.month)-1`"}")
+                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
+                                "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
+                                "{date: `"$($_.year)-$($_.month)-1`"}"
+                            ) | Join-String -Separator "?")
                         } |
                         ForEach-Object {
-                            $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json
+                            try {
+                                $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json
+                            } catch {
+                                Write-Host -ForegroundColor Yellow $_.Content
+                                throw
+                            }
                         }
 
             if ($response.logout -eq $true) {
@@ -128,7 +136,7 @@ end {
         }
         
         if (! $KeepBrowser) {
-            Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | ForEach-Object Content
+            Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | Out-Null
         }
     }
     catch {

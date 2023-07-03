@@ -297,7 +297,7 @@ require("lazy").setup({
           local buffers = ""
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
               if vim.api.nvim_buf_get_option(buf, 'modified') then
-                  buffers = buffers .. '"' .. vim.uri_from_bufnr(buf) .. '"'
+                  buffers = buffers .. ' "' .. vim.uri_from_bufnr(buf) .. '"'
               end
           end
           print(vim.inspect(buffers))

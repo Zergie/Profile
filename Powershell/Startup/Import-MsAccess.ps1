@@ -137,7 +137,8 @@ end {
         Write-Host "Compiling.."
         $wshell = New-Object -ComObject wscript.shell;
 
-        $wshell.AppActivate("Microsoft Visual Basic for Applications") | Out-Null
+        $wshell.AppActivate((Get-Process MSACCESS).MainWindowTitle) | Out-Null
+        $wshell.SendKeys("%{f11}")
         $wshell.SendKeys("%")
         $wshell.SendKeys("{RIGHT}{RIGHT}{RIGHT}{RIGHT}{DOWN}")
         $wshell.SendKeys("{ENTER}")

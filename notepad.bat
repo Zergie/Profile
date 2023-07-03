@@ -1,6 +1,3 @@
-@Echo off
-
-Echo %*
 Set file=%*
 call Set file=%%file:*%1=%%
 Echo %file%

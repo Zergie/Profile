@@ -192,7 +192,6 @@ Start-Action "Set alias to my programs"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
-    function nvr { python C:/Python311/Lib/site-packages/nvr/nvr.py -cc "lua require('FTerm').close()" $args }
 Complete-Action
 
 # set alias to my scripts

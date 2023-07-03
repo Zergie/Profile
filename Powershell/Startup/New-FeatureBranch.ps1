@@ -87,6 +87,7 @@ process {
         "git pull"
         "git checkout -b $branch"
         "git push --set-upstream origin $branch"
+        "Get-Issues -Id $issue -Pdf"
     ) |
         ForEach-Object {
             $cmd = $_

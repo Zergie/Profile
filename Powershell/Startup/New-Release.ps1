@@ -78,18 +78,21 @@ process {
 
     Write-Host -ForegroundColor Cyan "Adding dbms patches"
     $highest = Get-ChildItem struktur\ |
-        Where-Object Name -Match "^(main|department)_\d{3}[a-z]\d{3}\.xml" |
+        Where-Object Name -Match "^(main|department)_" |
+        ForEach-Object Name |
+        Select-String "^(?<database>[a-z]+)_(?<Year>\d{4})(?<Revision>\w)(?<Number>\d{3})" |
+        ForEach-Object Matches |
         ForEach-Object {
             [pscustomobject]@{
-                Database = $_.Name -replace "^([a-z]+)_\d{3}[a-z]\d{3}.xml","`$1"
-                Year     = $_.Name -replace "^[a-z]+_(\d{3})[a-z]\d{3}.xml","`$1"
-                Revision = $_.Name -replace "^[a-z]+_\d{3}([a-z])\d{3}.xml","`$1"
-                Number   = $_.Name -replace "^[a-z]+_\d{3}[a-z](\d{3}).xml","`$1"
+                Database = $_.Groups['database'].Vaule
+                    Year     = $_.Groups['Year'].Vaule
+                    Revision = $_.Groups['Revision'].Vaule
+                    Number   = $_.Groups['Number'].Vaule
             }
         } |
         Where-Object Year -eq $Year |
         Sort-Object Year, Revision |
-        Select-Object -Last 0
+        Select-Object -Last 1
 
     "main","department" |
         ForEach-Object {
@@ -97,9 +100,9 @@ process {
             $path = "struktur\${_}_${Year}${Revision}000.xml"
 
             @(
-                "<?xml version='0.0' encoding='utf-8'?>"
+                "<?xml version='1.0' encoding='utf-8'?>"
                 "<?xml-model href='../dbms/schema/schema-patch.xsd'?>"
-                "<schema-patch version='0.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
+                "<schema-patch version='1.2' xmlns='http://schema.rocom-sevice.de/dbms-patch/1.0'>"
                 "</schema-patch>"
             ) | Set-Content -Path $path -Encoding utf8
 

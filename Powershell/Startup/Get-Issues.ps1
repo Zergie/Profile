@@ -58,6 +58,12 @@ param (
     [switch]
     $Update,
 
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [Alias('a')]
+    [switch]
+    $Assign,
 
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
@@ -273,7 +279,8 @@ process {
                                     -replace 'Korrektur (auf|aus) (\d+)', 'Erweiterung von #$2' `
                                     -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                     -replace '(Aufgabe siehe Word),?\s*', '' `
-                                    -replace '[.!]\s*$', ''
+                                    -replace '[.!]\s*$', '' `
+                                    -replace ' Fehler$', ' Weiterentwicklung'
                     }
 
                 $patches[$_.Id] += [ordered]@{
@@ -285,6 +292,15 @@ process {
                                                           data-vss-mention="version:1.0">#$1</a>' `
                                     -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
                     }
+
+                if ($Assign) {
+                    $patches[$_.Id] += [ordered]@{
+                            op    = "replace"
+                            path  = "/fields/System.AssignedTo"
+                            from  = "null"
+                            value = (Get-LocalUser -Name $env:USERNAME).FullName
+                    }
+                }
 
                 $tasks = $_.relations |
                             Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
@@ -361,7 +377,13 @@ process {
     if ($Pdf) {
         Push-Location $env:TEMP
         $workitems |
-            ForEach-Object { . "$PSScriptRoot/Get-Attachments.ps1" -Id $_.Id -Filter "^.+\.pdf$" } |
+            ForEach-Object {
+                $file = . "$PSScriptRoot/Get-Attachments.ps1" -Id $_.Id -Filter "^.+\.pdf$"
+                if ($null -eq $file) {
+                    Write-Warning "Issue $($_.Id) has no pdf attached."
+                }
+                $file
+            } |
             ForEach-Object { Start-Process $_ }
         Pop-Location
     }

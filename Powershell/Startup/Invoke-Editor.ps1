@@ -51,10 +51,10 @@ process {
      
     if ($PSBoundParameters['Debug']) {
         Write-Host -ForegroundColor Cyan  "== PsBoundParameters =="
-        $PSBoundParameters | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan 
+        $PSBoundParameters | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
 
         Write-Host -ForegroundColor Cyan  "== args =="
-        $args | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan 
+        $args | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
     }
 
     if ($PSBoundParameters['Debug']) {
@@ -62,8 +62,8 @@ process {
     } elseif ($Input.Length -gt 0) {
         $Input | . $Editor $args
     } else {
-        . $Editor $args
+        Invoke-Expression ". $Editor $args"
     }
 }
-end {        
+end {
 }
