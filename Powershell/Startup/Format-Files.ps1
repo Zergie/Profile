@@ -142,6 +142,16 @@ end {
                     Set-Content $item -Encoding 1250
                 }
 
+                  "^(.cs)" {
+                      Get-Content $item |
+                      ForEach-Object {
+                          $_.TrimEnd()
+                      } |
+                      Out-String |
+                      ForEach-Object { $_.TrimEnd() } |
+                      Set-Content $item
+                  }
+
                 default {
                 }
             }

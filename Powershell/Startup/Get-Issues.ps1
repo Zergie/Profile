@@ -15,6 +15,7 @@ param (
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
+    [Alias('n')]
     [switch]
     $New,
 
@@ -32,6 +33,7 @@ param (
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
+    [Alias('t')]
     [switch]
     $ToDo,
 
@@ -119,7 +121,25 @@ DynamicParam {
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Query", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
+    # linux style aliases
+    'ntb'.ToCharArray() |
+    ForEach-Object {
+    @(
+        "${_}a", "${_}p", "${_}u", "${_}o"
+        "${_}ap", "${_}ua", "${_}ao", "${_}up", "${_}po", "${_}uo"
+        "${_}uap", "${_}apo", "${_}uao", "${_}upo"
+        "${_}uapo"
+    )} |
+    ForEach-Object {
+        $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+        $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+        # $ParameterAttribute.Mandatory = $true
+        $ParameterAttribute.ParameterSetName = "${_}ParameterSet"
+        $AttributeCollection.Add($ParameterAttribute)
 
+        $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new($_, [switch], $AttributeCollection)
+        $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
+    }
 
     return $RuntimeParameterDictionary
 }
@@ -130,8 +150,23 @@ begin {
     ${ConvertTo-Pdf}   = "$PSScriptRoot\ConvertTo-Pdf.ps1"
     $PSDefaultParameterValues["ForEach-Object:WhatIf"] = $false
 
-    if ($null -eq (Get-FormatData -TypeName 'User.WorkItem')) {
-        Update-FormatData -PrependPath "$PSScriptRoot\..\Format\User.WorkItem.ps1xml"
+    foreach ($alias in $PSBoundParameters.Keys | Where-Object { [Char]::IsLower($_[0]) }) {
+        foreach ($parameter in $PSCmdlet.MyInvocation.MyCommand.Parameters.Values |
+                                   Where-Object {$_.Aliases[0].Length -eq 1}
+                                   ) {
+            if ($parameter.Aliases[0] -in $alias.ToCharArray()) {
+                Write-Host -ForegroundColor Yellow "using -$($parameter.Name)"
+                Set-Variable -Name $parameter.Name -Value $true
+            }
+        }
+    }
+    # Get-Variable |? Name -in $PSCmdlet.MyInvocation.MyCommand.Parameters.Values.Name
+
+    @("User.WorkItem", "User.WorkItemPdf") |
+    ForEach-Object {
+        if ($null -eq (Get-FormatData -TypeName $_)) {
+            Update-FormatData -PrependPath "$PSScriptRoot\..\Format\${_}.ps1xml"
+        }
     }
 }
 process {
@@ -232,15 +267,32 @@ process {
             $_
         }
 
-    if ($Update) {
+    if ($Pdf) {
+        Push-Location $env:TEMP
         $workitems |
-            . ${Get-Attachments} -Filter ".(docx)$" |
-            . ${ConvertTo-Pdf} -OutVariable pdfs |
-            Out-Null
+            ForEach-Object {
+                $file = . "$PSScriptRoot/Get-Attachments.ps1" -Id $_.Id -Filter "^.+\.pdf$"
 
-        if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
-            if ($pdfs.Length -gt 0) {
-                $pdfs | . ${New-Attachments}
+                Add-Member -InputObject $_ -NotePropertyName 'HasPdf' -NotePropertyValue ($null -ne $file)
+                $_.PSObject.TypeNames.Insert(0, 'User.WorkItemPdf')
+
+                $file
+            } |
+            ForEach-Object { Start-Process $_ }
+        Pop-Location
+    }
+
+    if ($Update -or $Assign) {
+        if ($Update) {
+            $workitems |
+                . ${Get-Attachments} -Filter ".(docx)$" |
+                . ${ConvertTo-Pdf} -OutVariable pdfs |
+                Out-Null
+
+            if ($PSCmdlet.ShouldProcess($workitems.Id, "New-Attachments")) {
+                if ($pdfs.Length -gt 0) {
+                    $pdfs | . ${New-Attachments}
+                }
             }
         }
 
@@ -249,50 +301,89 @@ process {
 
         $workitems |
             ForEach-Object {
-                $patches[$_.Id] += @(
+                if ($Update) {
+                    $patches[$_.Id] += @(
                                         $_.fields.'System.Description' | Select-String "ID:?(\d{3,5})" -AllMatches
                                         $_.fields.'System.Title' | Select-String "DevOpsID:\s*(\d+)\s*"
                                         $_.fields.'System.Title' | Select-String "^ID:\s*(\d+)\s*"
+                        ) |
+                        ForEach-Object Matches |
+                        ForEach-Object {$_.Groups[1].Value} |
+                        Group-Object |
+                        ForEach-Object {[int]$_.name} |
+                        Where-Object { $_ -notin ($_.relations.url | ForEach-Object { [int]($_ -split '/' | Select-Object -last 1)}) } |
+                        ForEach-Object {
+                            [ordered]@{
+                                op    = "add"
+                                path  = "/relations/-"
+                                value = [ordered]@{
+                                    rel = "System.LinkTypes.Related"
+                                    url = "https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_apis/wit/workItems/$_"
+                                    }
+                            }
+                        }
 
-                                ) |
-                                ForEach-Object Matches |
-                                ForEach-Object {$_.Groups[1].Value} |
-                                Group-Object |
-                                ForEach-Object {[int]$_.name} |
-                                Where-Object { $_ -notin ($_.relations.url | ForEach-Object { [int]($_ -split '/' | Select-Object -last 1)}) } |
-                                ForEach-Object {
+                    $patches[$_.Id] += [ordered]@{
+                            op    = "replace"
+                            path  = "/fields/System.Title"
+                            value = $_.fields.'System.Title' `
+                                        -replace 'Korrektur (auf|aus) Aufgabe (ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
+                                        -replace 'Korrektur (auf|aus) (\d+)', 'Erweiterung von #$2' `
+                                        -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
+                                        -replace '(Aufgabe siehe Word),?\s*', '' `
+                                        -replace '[.!]\s*$', '' `
+                                        -replace ' Fehler$', ' Weiterentwicklung'
+                    }
+
+                    $patches[$_.Id] += [ordered]@{
+                            op    = "replace"
+                            path  = "/fields/System.Description"
+                            value = $_.fields.'System.Description' `
+                                        -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)' `
+                                               , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
+                                                              data-vss-mention="version:1.0">#$1</a>' `
+                                        -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
+                    }
+
+                    $tasks = $_.relations |
+                                Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
+                                Measure-Object |
+                                ForEach-Object Count
+
+                    if ($tasks -eq 0) {
+                        $task = . ${Invoke-RestApi} `
+                            -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/`${type}?api-version=7.0" `
+                            -Variables @{ type = "task" } `
+                            -PatchBody @([ordered]@{
+                                    op    = "add"
+                                    path  = "/fields/System.Title"
+                                    from  = "null"
+                                    value = "Implementierung und Test"
+                                }
+                                [ordered]@{
+                                    op    = "add"
+                                    path  = "/fields/System.IterationPath"
+                                    from  = "null"
+                                    value = $_.fields.'System.IterationPath'
+                                }
+                                if ($null -ne $_.fields.'System.AssignedTo') {
                                     [ordered]@{
                                         op    = "add"
-                                        path  = "/relations/-"
-                                        value = [ordered]@{
-                                            rel = "System.LinkTypes.Related"
-                                            url = "https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_apis/wit/workItems/$_"
-                                            }
+                                        path  = "/fields/System.AssignedTo"
+                                        from  = "null"
+                                        value = $_.fields.'System.AssignedTo'
                                     }
+                                })
+                        $patches[$_.Id] += [ordered]@{
+                                op    = "add"
+                                path  = "/relations/-"
+                                value = [ordered]@{
+                                    rel = "System.LinkTypes.Hierarchy-Forward"
+                                    url = $task.url
                                 }
-
-                $patches[$_.Id] += [ordered]@{
-                        op    = "replace"
-                        path  = "/fields/System.Title"
-                        value = $_.fields.'System.Title' `
-                                    -replace 'Korrektur (auf|aus) Aufgabe (ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$3' `
-                                    -replace 'Korrektur (auf|aus) (\d+)', 'Erweiterung von #$2' `
-                                    -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
-                                    -replace '(Aufgabe siehe Word),?\s*', '' `
-                                    -replace '[.!]\s*$', '' `
-                                    -replace ' Fehler$', ' Weiterentwicklung'
+                        }
                     }
-
-                $patches[$_.Id] += [ordered]@{
-                        op    = "replace"
-                        path  = "/fields/System.Description"
-                        value = $_.fields.'System.Description' `
-                                    -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)' `
-                                           , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
-                                                          data-vss-mention="version:1.0">#$1</a>' `
-                                    -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
-                    }
-
+                }
                 if ($Assign) {
                     $patches[$_.Id] += [ordered]@{
                             op    = "replace"
@@ -301,46 +392,6 @@ process {
                             value = (Get-LocalUser -Name $env:USERNAME).FullName
                     }
                 }
-
-                $tasks = $_.relations |
-                            Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
-                            Measure-Object |
-                            ForEach-Object Count
-
-                if ($tasks -eq 0) {
-                    $task = . ${Invoke-RestApi} `
-                        -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/`${type}?api-version=7.0" `
-                        -Variables @{ type = "task" } `
-                        -PatchBody @([ordered]@{
-                                op    = "add"
-                                path  = "/fields/System.Title"
-                                from  = "null"
-                                value = "Implementierung und Test"
-                            }
-                            [ordered]@{
-                                op    = "add"
-                                path  = "/fields/System.IterationPath"
-                                from  = "null"
-                                value = $_.fields.'System.IterationPath'
-                            }
-                            if ($null -ne $_.fields.'System.AssignedTo') {
-                                [ordered]@{
-                                    op    = "add"
-                                    path  = "/fields/System.AssignedTo"
-                                    from  = "null"
-                                    value = $_.fields.'System.AssignedTo'
-                                }
-                            })
-                    $patches[$_.Id] += [ordered]@{
-                            op    = "add"
-                            path  = "/relations/-"
-                            value = [ordered]@{
-                                rel = "System.LinkTypes.Hierarchy-Forward"
-                                url = $task.url
-                                }
-                        }
-                }
-
             }
         
         $patches.Clone().Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne $null }
@@ -350,7 +401,7 @@ process {
             ForEach-Object {
                 if ($PSCmdlet.ShouldProcess($_.Key, "apply patch: $($_.Value | ConvertTo-Json -Compress)")) {
                     . ${Invoke-RestApi} `
-                         -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
+                        -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.0" `
                         -Variables @{ id = $_.Key } `
                         -PatchBody $_.Value
                 }
@@ -360,10 +411,11 @@ process {
                 $_
             }
 
-        $pdfs |
-            ForEach-Object Directory |
-            Remove-Item -Force -Recurse
-            
+        if ($Update) {
+            $pdfs |
+                ForEach-Object Directory |
+                Remove-Item -Force -Recurse
+        }
     } else {
         $workitems
     }
@@ -372,20 +424,6 @@ process {
         $workitems |
             ForEach-Object { $_.url.Replace("/_apis/wit/workItems/", "/_workitems/edit/") } |
             ForEach-Object { Start-Process $_ }
-    }
-
-    if ($Pdf) {
-        Push-Location $env:TEMP
-        $workitems |
-            ForEach-Object {
-                $file = . "$PSScriptRoot/Get-Attachments.ps1" -Id $_.Id -Filter "^.+\.pdf$"
-                if ($null -eq $file) {
-                    Write-Warning "Issue $($_.Id) has no pdf attached."
-                }
-                $file
-            } |
-            ForEach-Object { Start-Process $_ }
-        Pop-Location
     }
 }
 end {

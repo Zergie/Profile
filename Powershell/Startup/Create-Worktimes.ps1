@@ -28,11 +28,11 @@ Process {
     $Finish = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
 
     $lookup = [pscustomobject]@{
-        "Mo" = [pscustomobject]@{start="07:00";end="17:45";var=@(-0,1.5,-0.5,1.5)}
-        "Di" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
-        "Mi" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
-        "Do" = [pscustomobject]@{start="08:00";end="17:45";var=@(-1,1,-0.5,1.5)}
-        "Fr" = [pscustomobject]@{start="08:00";end="16:30";var=@(-1,1,-0.5,1)}
+        "Mo" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.5, -0.2,1.0)}
+        "Di" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
+        "Mi" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
+        "Do" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
+        "Fr" = [pscustomobject]@{start="07:30";end="15:00";var=@(-0.5,2.0, -0.2,1.0)}
     }
 
     1..356 |

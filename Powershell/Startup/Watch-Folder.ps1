@@ -19,7 +19,7 @@ Write-Host "Watching folder '$Path'"
 while (1) {
     Get-ChildItem -Path $Path -Filter $Filter |
         ForEach-Object {
-            bat $_
+            bat --paging=never $_
             Remove-Item $_
         }
     Start-Sleep -Seconds $Seconds

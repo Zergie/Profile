@@ -160,8 +160,8 @@ require("lazy").setup({
       local map = function (mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [FTerm]" })
       end
-      map("n", "<Leader>n", fterm.toggle, "Toggle Terminal")
-      map("t", "<Leader>n", fterm.toggle, "Toggle Terminal")
+      map("n", "<Leader>n",  fterm.toggle, "Toggle Terminal")
+      map("t", "<ESC><ESC>", fterm.toggle, "Toggle Terminal")
     end
   },
 
@@ -273,24 +273,26 @@ require("lazy").setup({
         }
       end, '[S]earch by [G]rep in database' )
 
-      map("n", "<Leader>se", function ()
+      map("n", "<Leader>ds", function ()
           searchInBuffer('^(|Private |Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
-      end, "[S]earch Definitins")
-      map("n", "<Leader>si", function ()
+      end, "[D]ocument symbols")
+      map("n", "<Leader>dp", function ()
+          searchInBuffer('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
+      end,  "[D]ocument public symbols")
+      map("n", "<Leader>se", function ()
           search('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
       end, "[S]earch Definitins")
-      map("n", "<Leader>sE", function ()
-          searchInBuffer('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
-      end,  "[S]earch Public Definitins")
       map("n", "go", function ()
         vim.cmd("/CodeBehindForm")
+        vim.cmd("exe 'normal! zt'")
         vim.cmd("noh")
       end, "Go to start of code")
 
       local run_commands = function (commands)
           local fterm = require('FTerm')
-          fterm.run("")
+          fterm.run(";pushd " .. vim.fn.getcwd())
           for _, cmd in ipairs(commands) do fterm.run(cmd) end
+          fterm.run(";popd")
       end
 
       local save = function()
@@ -322,8 +324,7 @@ require("lazy").setup({
                   "./make.ps1",
               },
               ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-                  -- "sudo ./make.ps1 -dev",
-                  "Import-Msaccess -Compile",
+                  "sudo ../make.ps1 -dev",
               },
           }
           run_commands(cmd_table[vim.fn.getcwd()] or {"sudo ./make.ps1"})
@@ -331,16 +332,15 @@ require("lazy").setup({
       map("n", "<Leader>mk", build,  "Build project")
 
       local run = function ()
-          build()
           local cmd_table = {
               ["C:\\GIT\\TauOffice\\Admintool"] = {
                   "Stop-Process -ProcessName AdminTool.App -ErrorAction SilentlyContinue",
                   ". 'C:/Program Files (x86)/Tau-Office/Admintool/AdminTool.App.exe'",
                   "Watch-Log Admintool.log -Exit",
               },
-              ["C:\\GIT\\)TauOffice\\tau-office\\source"] = {
-                  "../bin/tau-offce.mde",
-                  "Watch-Log TauError.log -Exit",
+              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+                  "ii ../bin/tau-office.mdb",
+                  "sleep 5;Watch-Log TauError.log -Exit",
               },
           }
           run_commands(cmd_table[vim.fn.getcwd()] or {})

@@ -4,7 +4,12 @@
 
 local map = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc} ) end
 
-map("n", "<Leader>mr", function ()
+map("n", "<Leader>mk", function ()
     vim.cmd("wa")
     require('FTerm').run("; . '" .. vim.fn.expand("%:p") .. "'")
-end,  "Run Script")
+end,  "Run script")
+
+map("n", "<Leader>mr", function ()
+    vim.cmd("wa")
+    require('FTerm').run("; r")
+end,  "Repeat last command")
