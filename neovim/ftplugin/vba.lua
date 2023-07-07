@@ -3,3 +3,4 @@
 --   Maintainer:	Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
 vim.opt_local.spell = false
+vim.o.commentstring = "'%s"

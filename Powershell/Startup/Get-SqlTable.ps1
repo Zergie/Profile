@@ -4,12 +4,15 @@
         [string]
         $Database,
 
+        [Parameter(Position=0)]
         [string]
         $Table,
 
+        [Parameter(Position=1)]
         [string[]]
         $Fields,
 
+        [Parameter(Position=2)]
         [int]
         $First,
 
@@ -19,11 +22,11 @@
         [switch]
         $Descending,
 
-        [Parameter(ParameterSetName='FilterParameterSet')]
+        [Parameter(Position=2, ParameterSetName='FilterParameterSet')]
         [string]
         $Filter,
 
-        [Parameter(ParameterSetName='FilterParameterSet')]
+        [Parameter(Position=3, ParameterSetName='FilterParameterSet')]
         [object]
         $Value,
 

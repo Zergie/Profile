@@ -15,7 +15,7 @@ param (
 )
 begin {
 }
-process {    
+process {
     $cmd = ". 'C:\ProgramData\chocolatey\bin\choco.exe' $Command $Arguments"
     $i=0
     Write-Debug $cmd
@@ -26,7 +26,7 @@ process {
             ForEach-Object {
                 if (!$found_begin) {
                     $_
-                } elseif ($_ -like "*|*") { 
+                } elseif ($_ -like "*|*") {
                     if (($i % 2) -eq 1) {
                         $c = "`e[38;5;8m"
                     } else {
@@ -34,17 +34,17 @@ process {
                     }
 
                     $line = $c + ($_ -replace "\|","`e[0m|$c") + "`e[0m"
-                    $line | 
+                    $line |
                         ConvertFrom-Csv -Delimiter "|" -Header "package name".PadRight(32),"current version","available version","pinned?" |
-                        ForEach-Object { 
+                        ForEach-Object {
                             if ($_.'pinned?' -like "*true*") {
                                 $_.("package name".PadRight(32)) += "📍"
                             }
                             $_
                         }
                 }
-                else { 
-                    $_ 
+                else {
+                    $_
                 }
 
                 if ($_.StartsWith(' Output is package name')) {
@@ -55,7 +55,7 @@ process {
         $end_found = $false
         Invoke-Expression $cmd |
             ForEach-Object {
-                if ($i -lt 1) { 
+                if ($i -lt 1) {
                     $_ | Write-Host -ForegroundColor Green
                 } elseif ($end_found) {
                     $_
@@ -75,17 +75,19 @@ process {
     } elseif ($Command -eq "pin" -and $Arguments.Length -eq 0) {
         Invoke-Expression $cmd |
             ForEach-Object {
-                if ($i -lt 1) { 
+                if ($i -lt 1) {
                     $_ | Write-Host -ForegroundColor Green
                 } else {
                     $_ | ConvertFrom-Csv -Delimiter "|" -Header "package name".PadRight(32),"version"
                 }
                 $i++
             }
+    } elseif ($Command -eq "" -and $Arguments.Length -eq 0) {
+        Invoke-Expression "$cmd -?"
     } else {
         Invoke-Expression $cmd
     }
 }
-end {        
+end {
 }
 

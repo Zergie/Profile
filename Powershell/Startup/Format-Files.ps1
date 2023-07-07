@@ -65,7 +65,7 @@ end {
     } else {
         Write-Progress -Status "Generating patches" -PercentComplete 1
         git difftool --tool=patch
-        
+
         foreach ($item in $pathes) {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
@@ -76,7 +76,7 @@ end {
                     $settings = [System.Xml.XmlWriterSettings]::new()
                     $settings.Encoding = [System.Text.Encoding]::UTF8
                     $settings.Indent = $true
-            
+
                     $writer = [System.Xml.XmlWriter]::Create($item.FullName, $settings)
                     $xml.Save($writer)
                     $writer.Close()
@@ -90,11 +90,11 @@ end {
                         & "C:\Program Files\Git\usr\bin\patch.exe" "$item" "$item.patch" | Out-Null
                         & "C:\Program Files\Git\usr\bin\unix2dos.exe" "$item" | Out-Null
                     } | Wait-Job | Remove-Job
-                    
+
                     $lineno = 0
                     $content = Get-Content $item -Encoding 1250 |
                                 ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }
-                    
+
                     $content |
                     ForEach-Object {
                         $line = $_
@@ -108,7 +108,7 @@ end {
                             $error_regex = "todo"
                             $error_msg = "todos should not be commited to production!"
                         }
-                        
+
                         if ($null -ne $error_msg) {
                             Write-Host "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
                             Write-Host "`e[38;5;238m       │`e[0m File: .\$([System.IO.Path]::GetRelativePath((Get-Location).Path, $item.FullName))"
@@ -142,7 +142,7 @@ end {
                     Set-Content $item -Encoding 1250
                 }
 
-                  "^(.cs)" {
+                "^(.cs|.ps1)$" {
                       Get-Content $item |
                       ForEach-Object {
                           $_.TrimEnd()
@@ -150,12 +150,12 @@ end {
                       Out-String |
                       ForEach-Object { $_.TrimEnd() } |
                       Set-Content $item
-                  }
+                }
 
                 default {
                 }
             }
-            
+
             $index += 1
         }
 
