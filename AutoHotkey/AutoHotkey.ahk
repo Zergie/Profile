@@ -11,6 +11,19 @@ SetBatchLines -1
 ;^1:: Send {CtrlUp}%A_Hour%:%A_Min%{Enter}
 ;return
 
+;
+; volume control with <LWIN> & mouse wheel
+;
+LWin & WheelUp::
+SoundSet, +4
+Send, {Blind} {Volume_Up}
+return
+
+LWin & WheelDown::
+SoundSet, -4
+Send {Blind} {Volume_Down}
+return
+
 SetTitleMatchMode 2
 #IfWinActive ahk_class FWinForm131072
 ^1::SendInput puchinger{tab}wolfgang{enter}
@@ -76,54 +89,9 @@ Send ^v
 return
 
 
-;
-; volume control with <LWIN> & mouse wheel
-;
-LWin & WheelUp::
-SoundSet, +4
-Send, {Blind} {Volume_Up}
-return
-
-LWin & WheelDown::
-SoundSet, -4
-Send {Blind} {Volume_Down}
-return
-
 
 #Include %A_LineFile%\..\Minimal.ahk
 
-#IfWinNotActive ahk_exe WindowsTerminal.exe
-;
-; shortcuts
-;
-::;i::
-Suspend, On
-InputBox, a
-
-sText = #%a%
-sLink = https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/%a%
-
-IfWinActive, ahk_exe Teams.exe
-{
-    ClipSave := ClipboardAll
-
-    WinClip.SetHTML("<a href='" sLink "'>" sText "</a>")
-    Send, ^v
-    Sleep, 200
-    
-    clipboard := ClipSave
-}
-
-IfWinActive, ahk_exe OUTLOOK.EXE
-{
-     olApp := ComObjActive("Outlook.Application")
-     ;olApp.ActiveInspector.CurrentItem.BodyFormat := 2
-     objSel := olApp.ActiveInspector.WordEditor.Application.Selection
-     objLink := olApp.ActiveInspector.WordEditor.Hyperlinks.Add(objSel.range, sLink, "", "", sText, "")
-     objLink.Range.Font.Name := "Arial"
- }
-Suspend, Off
-return
 
 ::;ii::
 suspend On

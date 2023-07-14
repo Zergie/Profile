@@ -238,7 +238,7 @@ process {
             } else {
                 throw "Not implemented!"
             }
-        
+
         Write-Debug $wiql
         $missing_ids = . ${Invoke-RestApi} `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=5.1" `
@@ -248,7 +248,7 @@ process {
                 ForEach-Object workItems |
                 ForEach-Object id
     }
-                  
+
     while ($missing_ids.Count -gt 0) {
         while ($missing_ids.Count -gt 0) {
             $items = . ${Invoke-RestApi} `
@@ -366,7 +366,14 @@ process {
                                     from  = "null"
                                     value = $_.fields.'System.IterationPath'
                                 }
-                                if ($null -ne $_.fields.'System.AssignedTo') {
+                                if ($Assign) {
+                                    [ordered]@{
+                                        op    = "add"
+                                        path  = "/fields/System.AssignedTo"
+                                        from  = "null"
+                                        value = (Get-LocalUser -Name $env:USERNAME).FullName
+                                    }
+                                } elseif ($null -ne $_.fields.'System.AssignedTo') {
                                     [ordered]@{
                                         op    = "add"
                                         path  = "/fields/System.AssignedTo"
@@ -393,7 +400,7 @@ process {
                     }
                 }
             }
-        
+
         $patches.Clone().Keys | ForEach-Object { $patches[$_] = $patches[$_] | Where-Object value -ne $null }
 
         $patches.GetEnumerator() |

@@ -346,6 +346,11 @@ require("lazy").setup({
           run_commands(cmd_table[vim.fn.getcwd()] or {})
       end
       map("n", "<Leader>mr", run,  "Run project")
+
+      map("n", "<Leader>mm", function ()
+          vim.cmd("wa")
+          require('FTerm').run("; r")
+      end,  "Repeat last command")
     end
   },
 

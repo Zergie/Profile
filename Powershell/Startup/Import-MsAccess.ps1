@@ -108,7 +108,7 @@ end {
                 $script.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
                 $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
-            ".xml" {
+            ".xml", ".pfx" {
                 $warning = "ignored"
             }
             default {
@@ -121,7 +121,7 @@ end {
 
     $script = $script.ToString()
     Set-Content -Path "$($env:TEMP)\script.vbs" -Value $script
-    
+
     $line = 0
     $script -split "`n" |
         ForEach-Object `
@@ -129,7 +129,7 @@ end {
             -Process { $line++; $line.ToString().PadRight(3) + $_ } `
             -End     { "== end vba script ==" } |
         Write-Debug
-    
+
     cscript.exe "$($env:TEMP)\script.vbs" //nologo
     Remove-Item "$($env:TEMP)\script.vbs"
 
@@ -199,7 +199,7 @@ end {
                     public delegate bool EnumWindowProc(IntPtr hWnd, IntPtr parameter);
                 }
             '
-            
+
             foreach ($hwnd in ([winapi]::GetChildWindows([winapi]::GetForegroundWindow()))) {
                 $len = [winapi]::GetWindowTextLength($hwnd)
                 if($len -gt 0){
@@ -239,4 +239,3 @@ end {
         }
     }
 }
-

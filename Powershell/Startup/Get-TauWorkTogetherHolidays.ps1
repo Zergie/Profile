@@ -94,6 +94,7 @@ end {
                         Select-Object -Last 1 |
                         ForEach-Object FullName)
     $cefDownloader = Get-Process CefSharpDownloader
+    $cefDownloader.WaitForInputIdle() | Out-Null
     try {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | Out-Null
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de" | Out-Null
@@ -102,16 +103,24 @@ end {
         while ($response.logout -eq $true) {
             $response = $dates |
                         ForEach-Object {
-                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
-                                "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
-                                "{date: `"$($_.year)-$($_.month)-1`"}"
-                            ) | Join-String -Separator "?")
+                            try {
+                                Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
+                                    "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
+                                    "{date: `"$($_.year)-$($_.month)-1`"}"
+                                ) | Join-String -Separator "?")
+                            } catch {
+                                Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
+                                    "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
+                                    "{date: `"$($_.year)-$($_.month)-1`"}"
+                                ) | Join-String -Separator "?")
+                            }
                         } |
                         ForEach-Object {
                             try {
+                                $content = $_.Content
                                 $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json
                             } catch {
-                                Write-Host -ForegroundColor Yellow $_.Content
+                                Write-Host -ForegroundColor Yellow $content
                                 throw
                             }
                         }
@@ -134,7 +143,7 @@ end {
                 Start-Sleep -Seconds 2
             }
         }
-        
+
         if (! $KeepBrowser) {
             Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | Out-Null
         }
@@ -143,7 +152,7 @@ end {
         $cefDownloader.Kill()
         throw
     }
-    
+
     if ($rocom) {
         $response = [pscustomobject]@{
             status=$response.status
@@ -184,7 +193,7 @@ end {
         $holidays = $response.holidays |
             Where-Object { $_.event -eq $false } |
             ForEach-Object { $_.start }
-        
+
         $weekcolor = "`e[48;2;30;30;30m"
         $columns = 1..$end |
             ForEach-Object {
@@ -205,7 +214,7 @@ end {
                 } elseif($_.date.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
                     $_.holiday = $true
                 }
-                
+
                 if($_.date.DayOfWeek -eq [System.DayOfWeek]::Monday) {
                     if ($weekcolor -eq "`e[48;2;30;30;30m") {
                         $weekcolor = "`e[48;2;20;20;20m"
@@ -214,7 +223,7 @@ end {
                     }
                     $_.start = $weekcolor
                 }
-                
+
                 if ($_.date -ge [datetime]::new($dates[0].year, $dates[0].month, 1)) {
                     $_.start = $_.start -replace ";30m", ";45m" -replace ";20m", ";35m"
                 }
@@ -246,15 +255,15 @@ end {
         $longest_title = $response.holidays.title | Sort-Object { $_.Length } | Select-Object -Last 1
         $pad = [string]::new(" ", $longest_title.Length)
 
-        
 
-        
+
+
         Write-Host
         Write-Host "$pad │ $($columns.lines_0 | Join-String -Separator '') │"
         Write-Host "$pad │ $($columns.lines_1 | Join-String -Separator '') │"
         Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
         Write-Host "$pad ├─$($columns.lines_3 | Join-String -Separator '')─┤"
-        
+
         $employees = $response.holidays | Where-Object { $_.event -eq $true } | Group-Object title | ForEach-Object Name
 
         $line_no = 0
@@ -267,7 +276,7 @@ end {
             $days = $columns |
                         ForEach-Object { $_.value = if($_.dateString -in $days_off) {"◆"} else {" "}; $_.text } |
                         Join-String -Separator ''
-            
+
             $c1 = if ($employee -in $rocom_service_employees) { "rgb(121,135,184)" } else { "rgb(190,95,118)" }
             $c2 = if ($employee -in $rocom_service_employees) { "rgb(171,178,211)" } else { "rgb(218,155,167)" }
             $color = if ($line_no % 2 -eq 0) {$c1} else {$c2}

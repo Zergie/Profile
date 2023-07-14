@@ -57,7 +57,7 @@ Start-Action "Initialize veracrypt"
 
             & $veracypt_exe /d d /q /s | Out-Null
             & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
-        
+
             while (-not (Test-Path $drive)) { Start-Sleep 1 }
             $rename = New-Object -ComObject Shell.Application
             $rename.NameSpace("$drive\").Self.Name = "$name"
@@ -126,10 +126,10 @@ Start-Action "Show devops agent status"
     Start-Job {
         param([pscustomobject] $oldProfiler, [pscustomobject] $oldVariables)
 
-        if (((Get-Date) - $oldProfiler.start).TotalHours -lt 12 `
-            -and $null -ne $oldProfiler.variables.'DevOps Agents') {
-            $oldProfiler.variables.'DevOps Agents' | ConvertTo-Json
-        } else {
+        # if (((Get-Date) - $oldProfiler.start).TotalHours -lt 12 `
+        #     -and $null -ne $oldProfiler.variables.'DevOps Agents') {
+        #     $oldProfiler.variables.'DevOps Agents' | ConvertTo-Json
+        # } else {
             . "$using:PSScriptRoot/Startup/Invoke-RestApi.ps1" `
                 -Endpoint "GET https://dev.azure.com/{organization}/_apis/distributedtask/pools/{poolId}/agents?api-version=7.0" `
                 -Variables @{poolid=1} |
@@ -146,7 +146,7 @@ Start-Action "Show devops agent status"
                     }
                 } |
                 ConvertTo-Json
-        }
+        # }
     } -ArgumentList $profiler.last, $profiler.variables | Out-Null
 Complete-Action
 
@@ -209,13 +209,13 @@ if ((Test-Path $dockerScript)) {
         Set-Alias it "$PSScriptRoot\Startup\Import-SqlTable.ps1"
         Set-Alias s  "$PSScriptRoot\Startup\Get-Utring.ps1"
     Complete-Action
-    
+
 
     # start mssql container
     Start-Action "Start mssql container"
         Start-Job -Name "mssql" -ArgumentList $credentials,$dockerScript -ScriptBlock {
             param ([Hashtable] $credentials, [string] $dockerScript)
-        
+
             function Test-SqlServerConnection {
                 $requestCallback = $state = $null
                 $socket = $credentials.ServerInstance -Split ','
@@ -232,16 +232,16 @@ if ((Test-Path $dockerScript)) {
                 }
                 $connected = $client.Connected
                 $client.Close()
-        
+
                 return $connected
             }
-        
+
             if (Test-SqlServerConnection) {
                 Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
             } else {
                 Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'."
                 & $dockerScript -Start
-        
+
                 if (Test-SqlServerConnection) {
                     Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
                 } else {
@@ -260,7 +260,7 @@ if ((Test-Path $dockerScript)) {
                     ForEach-Object name |
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
-        
+
         "Table","TableName" |
             ForEach-Object { Register-ArgumentCompleter -ParameterName $_ -ScriptBlock {
                 param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
@@ -270,7 +270,7 @@ if ((Test-Path $dockerScript)) {
                     ForEach-Object { if ($_.name -like '* *') { "'$($_.name)'" } else { $_.name } } |
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
-        
+
         "ColumnName","Fields","Sort","Filter" |
             ForEach-Object { Register-ArgumentCompleter -CommandName @(
                 "Get-SqlTable.ps1"
@@ -303,10 +303,10 @@ if ((Test-Path $dockerScript)) {
 
             "Update-SqlTable.ps1:Username" = $credentials.Username
             "Update-SqlTable.ps1:Password" = $credentials.Password
-            
+
             "Import-SqlTable.ps1:Username" = $credentials.Username
             "Import-SqlTable.ps1:Password" = $credentials.Password
-            
+
             "Write-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
             "Write-SqlTableData.ps1:SchemaName" = "dbo"
             "Write-SqlTableData.ps1:DatabaseName" = "master"

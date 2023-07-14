@@ -4,7 +4,7 @@
 
 local map = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc} ) end
 
-map("n", "<Leader>mr", function ()
+map("n", "<Leader>mk", function ()
     vim.cmd("wa")
     require('FTerm').run([[;Invoke-SqlCmd -Query (Get-Content ']] .. vim.fn.expand("%:p") .. [[' | Join-String -Separator " `n")]])
 end,  "Run SQL")

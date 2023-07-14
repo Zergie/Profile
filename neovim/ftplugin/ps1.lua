@@ -8,8 +8,3 @@ map("n", "<Leader>mk", function ()
     vim.cmd("wa")
     require('FTerm').run("; . '" .. vim.fn.expand("%:p") .. "'")
 end,  "Run script")
-
-map("n", "<Leader>mr", function ()
-    vim.cmd("wa")
-    require('FTerm').run("; r")
-end,  "Repeat last command")
