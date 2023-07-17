@@ -70,7 +70,7 @@ end {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
             switch -regex ($item.Extension) {
-                "^(.ACT)$" {
+                "^\.(ACT)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
                     $settings = [System.Xml.XmlWriterSettings]::new()
@@ -83,7 +83,7 @@ end {
                     $writer.Dispose()
                 }
 
-                "^(.ACF|.ACR|.ACM)$" {
+                "^\.(ACF|ACR|ACM)$" {
                     git restore "$item"
                     Start-Job -ArgumentList $item.FullName {
                         param( [string] $item )
@@ -142,11 +142,17 @@ end {
                     Set-Content $item -Encoding 1250
                 }
 
-                "^(.cs|.ps1)$" {
+                "^\.(cs)$" {
                       Get-Content $item |
-                      ForEach-Object {
-                          $_.TrimEnd()
-                      } |
+                      ForEach-Object { $_.TrimEnd() } |
+                      Out-String |
+                      ForEach-Object { $_.TrimEnd() } |
+                      Set-Content $item -Encoding utf8BOM
+                }
+
+                "^\.(ps1)$" {
+                      Get-Content $item |
+                      ForEach-Object { $_.TrimEnd() } |
                       Out-String |
                       ForEach-Object { $_.TrimEnd() } |
                       Set-Content $item

@@ -79,36 +79,36 @@ end {
         Write-Host "Importing $($file.Name) .." -NoNewline
         $warning = ""
 
-        switch ($file.Extension) {
-            ".ACREF" {
+        switch -regex ($file.Extension) {
+            "^\.(ACREF)$" {
                 throw "$($file.Extension) is not (yet) implemented"
             }
-            ".ACQ" {
+            "^\.(ACQ)$" {
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   1, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 1, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
-            ".ACF" {
+            "^\.(ACF)$" {
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   2, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 2, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
-            ".ACR" {
+            "^\.(ACR)$" {
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   3, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 3, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
-            ".ACS" {
+            "^\.(ACS)$" {
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   4, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 4, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
-            ".ACM" {
+            "^\.(ACM)$" {
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   5, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 5, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
-            ".ACT" {
+            "^\.(ACT)$" {
                 if ($ShowDiff) { $script.AppendLine("application.ExportXml `"$($file.FullName).old`", 1") | Out-Null }
                 $script.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
                 $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
-            ".xml", ".pfx" {
+            "^\.(xml|pfx)$" {
                 $warning = "ignored"
             }
             default {

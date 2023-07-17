@@ -56,6 +56,12 @@ param (
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $BeginWork,
+
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
     [Alias('u')]
     [switch]
     $Update,
@@ -282,7 +288,7 @@ process {
         Pop-Location
     }
 
-    if ($Update -or $Assign) {
+    if ($Update -or $Assign -or $BeginWork) {
         if ($Update) {
             $workitems |
                 . ${Get-Attachments} -Filter ".(docx)$" |
@@ -301,6 +307,15 @@ process {
 
         $workitems |
             ForEach-Object {
+                if ($Update -or $BeginWork) {
+                    $subtasks = $_.relations |
+                                Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
+                                Add-Member -MemberType ScriptProperty `
+                                           -Name 'Id' `
+                                           -Value { [int]($this.url -split '/' | Select-Object -Last 1) } `
+                                           -PassThru
+                }
+
                 if ($Update) {
                     $patches[$_.Id] += @(
                                         $_.fields.'System.Description' | Select-String "ID:?(\d{3,5})" -AllMatches
@@ -345,12 +360,7 @@ process {
                                         -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
                     }
 
-                    $tasks = $_.relations |
-                                Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
-                                Measure-Object |
-                                ForEach-Object Count
-
-                    if ($tasks -eq 0) {
+                    if (($subtasks | Measure-Object).Count -eq 0) {
                         $task = . ${Invoke-RestApi} `
                             -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/`${type}?api-version=7.0" `
                             -Variables @{ type = "task" } `
@@ -392,11 +402,38 @@ process {
                     }
                 }
                 if ($Assign) {
-                    $patches[$_.Id] += [ordered]@{
-                            op    = "replace"
-                            path  = "/fields/System.AssignedTo"
-                            from  = "null"
-                            value = (Get-LocalUser -Name $env:USERNAME).FullName
+                    $patch = [ordered]@{
+                        op    = "replace"
+                        path  = "/fields/System.AssignedTo"
+                        from  = "null"
+                        value = (Get-LocalUser -Name $env:USERNAME).FullName
+                    }
+                    $patches[$_.Id] += $patch
+                    $subtasks |
+                        ForEach-Object {
+                            $patches.Add($_.Id, @())
+                            $patches[$_.Id] += $patch
+                        }
+                }
+                if ($BeginWork) {
+                    $patch= [ordered]@{
+                        op    = "replace"
+                        path  = "/fields/System.State"
+                        from  = "null"
+                        value = "Doing"
+                    }
+                    $patches[$_.Id] += $patch
+                    if (($subtasks | Measure-Object).Count -eq 1) {
+                        $subtasks |
+                            ForEach-Object {
+                                 $patches.Add($_.Id, @())
+                                 $patches[$_.Id] += [ordered]@{
+                                        op    = "replace"
+                                        path  = "/fields/System.State"
+                                        from  = "null"
+                                        value = "Doing"
+                                }
+                            }
                     }
                 }
             }

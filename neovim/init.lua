@@ -233,61 +233,6 @@ require("lazy").setup({
       map('n', '<leader>sg',      telescope.live_grep,                                          '[S]earch by [G]rep' )
       map('n', '<leader>sd',      telescope.diagnostics,                                        '[S]earch [D]iagnostics' )
 
-      -- TauOffice specific
-      local search = function (pattern)
-          telescope.grep_string(themes.get_dropdown {
-              path_display = { "truncate" },
-              search = pattern,
-              use_regex = true,
-              encoding = 'latin1',
-          })
-      end
-      local searchInBuffer = function (pattern)
-          vim.cmd("w")
-          telescope.grep_string(themes.get_dropdown {
-              path_display = { "truncate" },
-              cwd = vim.fn.expand('%:p:h'),
-              search_dirs = { vim.fn.expand('%:p'), },
-              search = pattern,
-              use_regex = true,
-              encoding = 'latin1',
-          })
-      end
-
-      map('n', '<leader>sW', function()
-        telescope.grep_string(themes.get_dropdown {
-          cwd = '/git/TauOffice/DBMS/schema',
-          search_dirs = { 'schema.xml', },
-          winblend  = 10,
-          previewer = true,
-          layout_config = {
-            height = 0.5,
-            width  = 0.8,
-          },
-        })
-      end, '[S]earch current [W]ord in database' )
-      map('n', '<leader>sG', function()
-        telescope.live_grep{
-          cwd = '/git/TauOffice/DBMS/schema',
-          search_dirs = { 'schema.xml', },
-        }
-      end, '[S]earch by [G]rep in database' )
-
-      map("n", "<Leader>ds", function ()
-          searchInBuffer('^(|Private |Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
-      end, "[D]ocument symbols")
-      map("n", "<Leader>dp", function ()
-          searchInBuffer('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
-      end,  "[D]ocument public symbols")
-      map("n", "<Leader>se", function ()
-          search('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)')
-      end, "[S]earch Definitins")
-      map("n", "go", function ()
-        vim.cmd("/CodeBehindForm")
-        vim.cmd("exe 'normal! zt'")
-        vim.cmd("noh")
-      end, "Go to start of code")
-
       local run_commands = function (commands)
           local fterm = require('FTerm')
           fterm.run(";pushd " .. vim.fn.getcwd())

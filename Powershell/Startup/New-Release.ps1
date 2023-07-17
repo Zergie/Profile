@@ -38,14 +38,14 @@ DynamicParam {
 }
 begin {
     $Name = $PSBoundParameters['Name']
-    
+
     $dat = [datetime]::Parse($Date)
     $Branch = "release/$($dat.Year.ToString('0000'))-$($dat.Month.ToString('00'))-$($dat.Day.ToString('00'))"
     Write-Debug "Branch: $Branch"
 
     $Year = $Name.SubString(0,4)
     Write-Debug "Year: $Year"
-    
+
     $Quartal = $Name.SubString(6,1)
     Write-Debug "Quartal: $Quartal"
 }
@@ -109,8 +109,28 @@ process {
             git add $path
         }
 
+    Write-Host -ForegroundColor Cyan "Updating copyright year"
+    Get-ChildItem -Recurse -Include "AssemblyInfo.cs" -PipelineVariable file |
+    ForEach-Object {
+        $file |
+            Get-Content -Encoding utf8 |
+            ForEach-Object {
+                if ($_ -match 'AssemblyCopyright\("') {
+                    $new_line = $_ -replace 'AssemblyCopyright\("([^"]+)"\)'`
+                        , "AssemblyCopyright(`"Copyright © rocom GmbH $((Get-Date).Year)`")"
+                    $new_line.TrimEnd()
+                } else {
+                    $_.TrimEnd()
+                }
+            } |
+            Out-String |
+            ForEach-Object { $_.TrimEnd() } |
+            Set-Content -Path $file -Encoding utf8
+    }
+
+
     Write-Host -ForegroundColor Cyan "git commit"
-    git commit -m "added new dbms patch versions"
+    git commit -m "added new dbms patch versions, updated copyright"
 
     if ((Get-GitStatus).Branch -ne $Branch) {
         Write-Host -ForegroundColor Cyan "git checkout -B $Branch origin/master"
@@ -133,7 +153,7 @@ process {
                                 Select-String -Pattern "#(.*) or (.*)" |
                                 Select-Object -First 1 |
                                 ForEach-Object { $_.Matches.Groups[1];$_.Matches.Groups[2] }
-                        
+
                         $value_master = $m[0].Value.Trim()
                         $value_release = $m[1].Value.Trim()
 

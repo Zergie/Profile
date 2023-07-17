@@ -28,11 +28,11 @@ Process {
     $Finish = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
 
     $lookup = [pscustomobject]@{
-        "Mo" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.5, -0.2,1.0)}
-        "Di" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
-        "Mi" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
-        "Do" = [pscustomobject]@{start="07:30";end="16:30";var=@(-0.5,2.0, -0.2,1.0)}
-        "Fr" = [pscustomobject]@{start="07:30";end="15:00";var=@(-0.5,2.0, -0.2,1.0)}
+        "Mo" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.5, -0.2,1.0)}
+        "Di" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+        "Mi" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+        "Do" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+        "Fr" = [pscustomobject]@{start="08:30";end="15:00";var=@(-0.5,2.0, -0.2,1.0)}
     }
 
     1..356 |
@@ -55,7 +55,6 @@ Process {
         if ($NoHeader) {
             Get-Clipboard | Select-Object -Skip 1 | Set-Clipboard
         }
-            
+
     "data is copied to clipboard" | Write-Host -ForegroundColor Green
 }
-

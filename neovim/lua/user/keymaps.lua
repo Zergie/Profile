@@ -14,21 +14,13 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 --local mapbuf = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc, buffer = 0} ) end
 
 -- Workspaces
-map("n", "<Leader>wP", function ()
-    vim.cmd("cd C:|cd /GIT/Profile/")
-end,  "Workspace Profile")
-map("n", "<Leader>wt", function ()
-    vim.cmd("cd C:|cd /GIT/TauOffice/tau-office/source/")
-end,  "Workspace tau-office")
-map("n", "<Leader>wp", function ()
-    vim.cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")
-end,  "Workspace tau-office-plugins")
-map("n", "<Leader>wa", function ()
-    vim.cmd("cd C:|cd /GIT/TauOffice/Admintool/")
-end,  "Workspace Admintool")
-map("n", "<Leader>wx", function ()
-    vim.cmd("cd C:|cd /GIT/TauOffice/struktur")
-end,  "Workspace struktur")
+local cmd = vim.cmd
+map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                       end, "Workspace Profile")
+map("n", "<Leader>ca", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")           end, "Workspace Admintool")
+map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/") end, "Workspace tau-office-controls")
+map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")  end, "Workspace tau-office-plugins")
+map("n", "<Leader>ct", function () cmd("cd C:|cd /GIT/TauOffice/tau-office/source/")   end, "Workspace tau-office")
+map("n", "<Leader>cx", function () cmd("cd C:|cd /GIT/TauOffice/struktur")             end, "Workspace struktur")
 
 -- Remap space
 keymap("", "<Space>", "<nop>", opts)
