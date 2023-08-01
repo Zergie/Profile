@@ -136,6 +136,7 @@ DynamicParam {
         "${_}uap", "${_}apo", "${_}uao", "${_}upo"
         "${_}uapo"
     )} |
+    ForEach-Object { $_.Trim() } |
     ForEach-Object {
         $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
         $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
@@ -267,7 +268,7 @@ process {
     }
 
     $workitems = $downloaded |
-        Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" } |
+        Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" -or $null -ne $Id } |
         ForEach-Object {
             $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
             $_
@@ -313,6 +314,7 @@ process {
                                 Add-Member -MemberType ScriptProperty `
                                            -Name 'Id' `
                                            -Value { [int]($this.url -split '/' | Select-Object -Last 1) } `
+                                           -Force `
                                            -PassThru
                 }
 
@@ -357,7 +359,10 @@ process {
                                         -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)' `
                                                , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
                                                               data-vss-mention="version:1.0">#$1</a>' `
-                                        -replace "<p>&nbsp; </p>`n", '' # replace artefacts when copied from Mail
+                                        -replace "<p>&nbsp; </p>`n", '' `
+                                        -replace 'Beheben in ', 'Umsetzen in ' `
+                                        -replace 'Beheben bis ', 'Umsetzen bis ' `
+                                        -replace '(Hallo) Wolfgang', '$1'
                     }
 
                     if (($subtasks | Measure-Object).Count -eq 0) {

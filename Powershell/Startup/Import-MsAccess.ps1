@@ -139,6 +139,7 @@ end {
 
         $wshell.AppActivate((Get-Process MSACCESS).MainWindowTitle) | Out-Null
         $wshell.SendKeys("%{f11}")
+        while (-not $wshell.AppActivate("Microsoft Visual Basic for Applications")) { Start-Sleep .25 }
         $wshell.SendKeys("%")
         $wshell.SendKeys("{RIGHT}{RIGHT}{RIGHT}{RIGHT}{DOWN}")
         $wshell.SendKeys("{ENTER}")
@@ -213,7 +214,7 @@ end {
         if ($message[0] -eq "Ok") {
             $message = ($message | Select-Object -Skip 2) -replace '\r?\n',' '
             # $wshell.SendKeys("{ENTER}")
-            # $wshell.SendKeys('%{TAB}')
+            # $wshell.AppActivate($host.UI.RawUI.WindowTitle)
 
             $name = ((Get-Process -Name MSACCESS).MainWindowTitle | Select-String "\[([^](]+)").Matches.Groups[1].Value.Trim()
             $file = switch -Regex ($name) {
@@ -228,7 +229,7 @@ end {
             Write-Host "`e[38;5;238m       │`e[0m`e[31m $message`e[0m"
             Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
         } else {
-            $wshell.SendKeys('%{TAB}')
+            $wshell.AppActivate((Get-Process WindowsTerminal).MainWindowTitle) | Out-Null
         }
     }
 

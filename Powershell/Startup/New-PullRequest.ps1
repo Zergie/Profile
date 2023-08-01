@@ -15,13 +15,15 @@ Process {
     }
 
     $lastMessage = git log -1 --pretty=%B
-    if  (($lastMessage|Join-String -Separator ' ') -notlike '*Related work items:*') {
+    if (($lastMessage|Join-String -Separator ' ') -notlike '*Related work items:*') {
         $workitem = $sourceRef | Select-String -Pattern "\d+$" | ForEach-Object { $_.Matches.Value }
-        @(
-            $lastMessage
-            "Related work items: #$workitem"
-        ) | Out-String -OutVariable message
-        git commit --amend -m $message
+        if ($workitem.Length -gt 0) {
+            @(
+                $lastMessage
+                "Related work items: #$workitem"
+            ) | Out-String -OutVariable message
+            git commit --amend -m $message
+        }
         git push -f
     }
 

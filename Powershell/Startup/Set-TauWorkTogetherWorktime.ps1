@@ -111,47 +111,42 @@ end {
                                                 ForEach-Object Day
                                          )
                 } |
-                ForEach-Object { Add-Day $_ $Month $Year }
-
-            # add workhours to workday
-            $WorkTimes |
-                Where-Object { $_.date.Day -in $Days } |
                 ForEach-Object {
-                    Write-Host "add workhours ($($_.start.ToString("HH:mm")) - $($_.end.ToString("HH:mm"))) for ($($_.date))"
-                    Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de/worktime/day/$($_.date.Day)/$($_.date.Month)/$($_.date.Year)/21" | Out-Null
+                    $Day = $_
+                    $date = [datetime]::new($Year, $Month, $Day)
 
-#                Start-Sleep -Milliseconds 500
-#                Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
-#                for (var i=0;i<5;i++) {
-#                    Array.from(document.querySelectorAll('td')).find(el => el.firstChild.textContent.indexOf(' - ') >= 0).click()
-#                    Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Löschen').click()
-#                }
-#                " | Out-Null
+                    Add-Day $Day $Month $Year
 
-                    Start-Sleep -Milliseconds 500
-                    Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
-                                      -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | Out-Null
+                    $WorkTimes |
+                        Where-Object { $_.date -eq $date } |
+                        ForEach-Object {
+                            Write-Host "add workhours ($($_.start.ToString("HH:mm")) - $($_.end.ToString("HH:mm")))"
 
-                    Start-Sleep -Milliseconds 500
-                    Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
-                        var startTime = document.querySelectorAll('input[type=time]')[0]
-                        startTime.value = '$($_.start.ToString("HH:mm"))';
-                        startTime.dispatchEvent(new Event('change', { bubbles: true }));
-                        startTime.dispatchEvent(new Event('input', { bubbles: true }));
+                            Start-Sleep -Milliseconds 500
+                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
+                                              -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | Out-Null
 
-                        var endTime = document.querySelectorAll('input[type=time]')[1]
-                        endTime.dispatchEvent(new Event('compositionstart', { bubbles: true }));
-                        endTime.value = '$($_.end.ToString("HH:mm"))';
-                        endTime.dispatchEvent(new Event('change', { bubbles: true }));
-                        endTime.dispatchEvent(new Event('input', { bubbles: true }));
+                            Start-Sleep -Milliseconds 500
+                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                                var startTime = document.querySelectorAll('input[type=time]')[0]
+                                startTime.value = '$($_.start.ToString("HH:mm"))';
+                                startTime.dispatchEvent(new Event('change', { bubbles: true }));
+                                startTime.dispatchEvent(new Event('input', { bubbles: true }));
 
-                        var workType = document.querySelectorAll('select.form-control')[1];
-                        Array.from(workType.options).find(el => el.textContent === 'Standard mit Pause').selected = true
-                        workType.dispatchEvent(new Event('change', { bubbles: true }));
-                        workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+                                var endTime = document.querySelectorAll('input[type=time]')[1]
+                                endTime.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+                                endTime.value = '$($_.end.ToString("HH:mm"))';
+                                endTime.dispatchEvent(new Event('change', { bubbles: true }));
+                                endTime.dispatchEvent(new Event('input', { bubbles: true }));
 
-                        Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Speichern').click()
-                    " | Out-Null
+                                var workType = document.querySelectorAll('select.form-control')[1];
+                                Array.from(workType.options).find(el => el.textContent === 'Standard').selected = true
+                                workType.dispatchEvent(new Event('change', { bubbles: true }));
+                                workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+
+                                Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Speichern').click()
+                            " | Out-Null
+                        }
                 }
         }
 
@@ -175,8 +170,16 @@ end {
                     $date     = [datetime]::Parse($_.DATUM)
 
                     $startEnd = $_.ARBEIT.Split("-")
-                    $start    = [datetime]::Parse($startEnd[0])
-                    $end      = [datetime]::Parse($startEnd[1])
+                    if ($startEnd[0].Trim() -eq "00:00") {
+                        $start    = [datetime]::Parse("05:00")
+                        $end      = [datetime]::Parse($startEnd[1])
+                        # $worktime = $_.ARBEITSZEIT.Split(":")
+                        # $start    = $end - [timespan]::new($worktime[0], $worktime[1], 0)
+                    } else {
+                        $start    = [datetime]::Parse($startEnd[0])
+                        $end      = [datetime]::Parse($startEnd[1])
+                    }
+
                     $a        = (($start - [datetime]::Parse("05:00")).TotalHours * 4)
                     $b        = (($end - $start).TotalHours * 4)
                     $timeline = "$(" " * $a)$("█" * $b)".PadRight(61)

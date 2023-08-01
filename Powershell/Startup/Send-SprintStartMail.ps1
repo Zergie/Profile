@@ -4,13 +4,13 @@ param(
     [switch]
     $ExportHtml,
 
-    [string]
-    $Recipient = "to_tester@rocom.de"
+    [string[]]
+    $Recipient = @("to_tester@rocom.de", "jriedl@rocom.de")
 )
 Process {
     if ($null -eq $PSBoundParameters.ErrorAction) { $ErrorActionPreference = 'Stop' }
     New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
-    
+
     # get secrets
     $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
                         ConvertFrom-Json |
@@ -70,7 +70,9 @@ Process {
 
     # compose mail
     $mail         = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
-    $mail.To.Add($Recipient)
+    foreach ($item in $Recipient) {
+        $mail.To.Add($item)
+    }
     $mail.ReplyTo = "noreply@rocom.de"
     $mail.Subject = "$($sprint.Name) - $($sprintStart) bis $($sprintFinish)"
     $mail.Body    = @"

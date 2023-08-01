@@ -54,7 +54,7 @@ DynamicParam {
                             ForEach-Object name
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($collection)
     $AttributeCollection.Add($ValidateSetAttribute)
-    
+
     # Create and return the dynamic parameter
     $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
@@ -79,7 +79,7 @@ DynamicParam {
         (Get-Date).Year + 1
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
-    
+
     # Create and return the dynamic parameter
     $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
@@ -166,7 +166,7 @@ Process {
                     Select-String "/workItems/(?<id>\d+)$" |
                     ForEach-Object { [int]::Parse($_.Matches.Groups[1].Value) } |
                     ForEach-Object { $id=$_; $downloaded | Where-Object { $_.id -eq $id } }
-            
+
             Add-Member `
                 -InputObject $rel `
                 -NotePropertyName "workitem" `
@@ -195,7 +195,7 @@ Process {
                             -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{id}/revisions/{revisionNumber}?api-version=6.0" `
                             -Variables @{ id = $item.id; revisionNumber = $rev }
             $item.revisions += $workitem_revision
-            
+
             if ($workitem_revision.fields.'System.State' -in 'Done','To Do') {
                 if ($workitem_revision.fields.'System.ChangedDate' -lt $start_date) {
                     break
@@ -206,7 +206,7 @@ Process {
     Write-Progress -Activity $activity -Completed
     Write-Host "$activity.." -NoNewline
     "done" | Write-Host -ForegroundColor Green
-    
+
 
     $activity = "Gettting days off"
     Write-Progress -Activity $activity -PercentComplete 1
@@ -224,8 +224,9 @@ Process {
         } |
         ForEach-Object teamMembers |
         Where-Object { $_.daysOff.count -gt 0 }
-        
-    $team_daysOff = $iterations |
+
+    $team_daysOff = @()
+    $team_daysOff += $iterations |
                         ForEach-Object {
                             Invoke-RestApi `
                                 -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations/{iterationId}/teamdaysoff?api-version=6.0" `
@@ -240,10 +241,10 @@ Process {
                                 $d = $d.AddDays(1)
                             }
                         }
-    
-    
+
+
     $team_daysOff += $tauWorkTogether.holidays | Where-Object event -EQ $false
-    
+
     $teamMembers = $downloaded.fields.'System.AssignedTo' | Group-Object { $_.id } | ForEach-Object { $_.Group[0] }
     $daysOff = $daysOff | ForEach-Object `
                             -Process {$_} `
@@ -299,7 +300,7 @@ Process {
         ForEach-Object {
             Add-Member -InputObject $_ -NotePropertyName "Start" -NotePropertyValue $null
             Add-Member -InputObject $_ -NotePropertyName "End" -NotePropertyValue $null
-            
+
             if ($_.Doing -ne $null) {
                 $ret.Start = $_.Doing
                 $ret.End = $_.Done
@@ -325,7 +326,7 @@ Process {
                     $dayOff = $daysOff |
                                 Where-Object { $_.teamMember.Id -EQ $w.fields.'System.AssignedTo'.Id } |
                                 Where-Object { $_.daysOff.start -le $date -and $_.daysOff.end -ge $date }
-                    
+
                     if ($dayOff.Count -eq 0 -and $date -notin $team_daysOff) {
                         $parent = $downloaded | Where-Object id -EQ $w.fields.'System.Parent'
                         [pscustomobject]@{
@@ -358,6 +359,6 @@ Process {
     "" | Write-Host -ForegroundColor Green
     "data is copied to clipboard" | Write-Host -ForegroundColor Green
     "" | Write-Host -ForegroundColor Green
-    
+
     "All done, exiting.." | Write-Host -ForegroundColor Green
 }

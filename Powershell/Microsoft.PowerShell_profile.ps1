@@ -1,7 +1,7 @@
 $pwsh = Get-Process -PID $PID
 
 if ($(Get-ExecutionPolicy) -ne "ByPass") {
-    Start-Process $pwsh.Path -Verb RunAs "-Command","Set-ExecutionPolicy -ExecutionPolicy Bypass"
+    Start-Process $pwsh.Path -Verb RunAs "-NoProfile", "-Command","Set-ExecutionPolicy -ExecutionPolicy Bypass"
 }
 
 $profiler = [pscustomobject]@{
@@ -208,47 +208,6 @@ if ((Test-Path $dockerScript)) {
         Set-Alias ut "$PSScriptRoot\Startup\Update-SqlTable.ps1"
         Set-Alias it "$PSScriptRoot\Startup\Import-SqlTable.ps1"
         Set-Alias s  "$PSScriptRoot\Startup\Get-Utring.ps1"
-    Complete-Action
-
-
-    # start mssql container
-    Start-Action "Start mssql container"
-        Start-Job -Name "mssql" -ArgumentList $credentials,$dockerScript -ScriptBlock {
-            param ([Hashtable] $credentials, [string] $dockerScript)
-
-            function Test-SqlServerConnection {
-                $requestCallback = $state = $null
-                $socket = $credentials.ServerInstance -Split ','
-                $h = ($socket | Select-Object -First 1).ToString()
-                $p = ($socket | Select-Object -Skip 1 -First 1).ToString()
-                $client = New-Object System.Net.Sockets.TcpClient
-                $client.BeginConnect($h,$p,$requestCallback,$state) | Out-Null
-                foreach ($i in 0..99) {
-                    if ($client.Connected) {
-                        break
-                    } else {
-                        Start-Sleep -Milliseconds 1
-                    }
-                }
-                $connected = $client.Connected
-                $client.Close()
-
-                return $connected
-            }
-
-            if (Test-SqlServerConnection) {
-                Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
-            } else {
-                Write-Host "Starting SQL Server instance '$($credentials.ServerInstance)'."
-                & $dockerScript -Start
-
-                if (Test-SqlServerConnection) {
-                    Write-Host "Connected to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Green
-                } else {
-                    Write-Host "Could not connect to SQL Server instance '$($credentials.ServerInstance)'." -ForegroundColor Red
-                }
-            }
-        } | Out-Null
     Complete-Action
 
     # set argument completer
