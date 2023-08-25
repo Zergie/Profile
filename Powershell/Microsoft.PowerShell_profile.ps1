@@ -69,54 +69,51 @@ Complete-Action
 # show network info
 Start-Action "Show network adapter"
     Start-Job {
-        $adapter = Get-NetAdapter -Physical
+        $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
 
-        $name = "WLAN 2"
-        if (($adapter | Where-Object Name -EQ "WLAN 3").Status -eq "Disconnected") {
-            $name = "WLAN 3"
-        }
-
-        if (($adapter | Where-Object Name -EQ $name).Status -eq "Disconnected") {
-            netsh wlan disconnect interface="WLAN" | Out-Null
-            netsh wlan connect name=wrt-home interface=$name | Out-Null
-            Start-Sleep -Seconds 2
-            $adapter = Get-NetAdapter -Physical
-        }
+        $preferedAdapter = $adapter |
+            Sort-Object LinkSpeed |
+            Select-Object -First 1
 
         $adapter |
-            ForEach-Object `
-                -Process {
+            Where-Object Name -NotIn $preferedAdapter.Name |
+            Where-Object Status -NE "Disconnected" |
+            ForEach-Object {
+                Write-Host -NoNewline "$($_.Name)> "
+                netsh wlan disconnect interface="$($_.Name)" | Write-Host
+            }
+
+        if ($preferedAdapter.Status -ne "Up") {
+            Write-Host -NoNewline "$($preferedAdapter.Name)> "
+            netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
+
+            Start-Sleep -Seconds 2
+            $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
+        }
+
+        1..3 |
+            ForEach-Object {
+                $name = "WLAN$(if ($_ -ne 1) { " $_" })"
+                if ($name -in $adapter.Name) {
+                    $adapter | Where-Object Name -eq $name
+                } else {
                     [pscustomobject] @{
-                        Type  = 'WLAN'
-                        Name  = $_.Name
-                        Text  = $_.Status
-                        Color = if ($_.Status -eq "Disconnected") {
-                                    "`e[31m"
-                                } elseif ($_.Status -eq "Up") {
-                                    "`e[32m"
-                                }
+                        Name = $name
+                        Status = "Disconnected"
                     }
-                } `
-                -End {
-                    [pscustomobject]@{
-                        Type  = 'WLAN'
-                        Name  = 'WLAN'
-                        Text  = 'Not Attached'
-                        Color = "`e[90m"
-                    }
-                    [pscustomobject]@{
-                        Type  = 'WLAN'
-                        Name  = 'WLAN 2'
-                        Text  = 'Not Attached'
-                        Color = "`e[90m"
-                    }
-                    [pscustomobject]@{
-                        Type  = 'WLAN'
-                        Name  = 'WLAN 3'
-                        Text  = 'Not Attached'
-                        Color = "`e[90m"
-                    }
-                } |
+                }
+            } |
+            ForEach-Object {
+                [pscustomobject] @{
+                    Type   = 'WLAN'
+                    Name   = $_.Name
+                    Status = if ($_.Status -eq "Disconnected") {
+                               $false
+                           } elseif ($_.Status -eq "Up") {
+                               $true
+                           }
+                }
+            } |
             ConvertTo-Json
     } | Out-Null
 Complete-Action
@@ -136,13 +133,12 @@ Start-Action "Show devops agent status"
                 ForEach-Object value |
                 ForEach-Object {
                     [pscustomobject]@{
-                        Type  = 'DevOps Agents'
-                        Text  = $_.Name
-                        Color = if ($_.Status -eq "offline") {
-                                    "`e[31m"
-                                } elseif ($_.Status -eq "online") {
-                                    "`e[32m"
-                                }
+                        Type   = 'DevOps Agents'
+                        Status = if ($_.Status -eq "offline") {
+                                   $false
+                               } elseif ($_.Status -eq "online") {
+                                   $true
+                               }
                     }
                 } |
                 ConvertTo-Json
@@ -321,38 +317,36 @@ Start-Action "Finish job"
     # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
     $variables = [pscustomobject]$variables
     $template = "
-╔════════════════════════╤══════════════════════════╗
-║                        ┃ DevOps Agents :          ║
-║ WLAN   : {0}           ┃ {3}                      ║
-║ WLAN 2 : {1}           ┃ {4}                      ║
-║ WLAN 3 : {2}           ┃ {5}                      ║
-╚════════════════════════╧══════════════════════════╝
+╔═════════════════════╤═════════════════════════════╗
+║ WLAN : {0}          │ DevOps Agents : {1}         ║
+╚═════════════════════╧═════════════════════════════╝
 "
-
-    $index = 0
-    @(
-        ($variables.'WLAN' | Where-Object Name -EQ 'WLAN')
-        ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 2' | Select-Object -First 1)
-        ($variables.'WLAN' | Where-Object Name -EQ 'WLAN 3' | Select-Object -First 1)
-        ($variables.'DevOps Agents' | Select-Object -First 1)
-        ($variables.'DevOps Agents' | Select-Object -Skip 1 -First 1)
-        ($variables.'DevOps Agents' | Select-Object -Skip 2 -First 1)
-    )| ForEach-Object {
-        $text = if ($null -eq $_.Text) { $_ } else { $_.Text }
-        $color = $_.Color
-
-        if ($text.Length -lt 3) {
-            ($text.Length)..2 | ForEach-Object { $template = $template.Replace("{$index}", "{$index}`e[0m `e[0m") }
+    $placeholder = " # # # "
+    $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
+    $variables.'WLAN' |
+        Sort-Object Name |
+        ForEach-Object {
+            $index = $template.IndexOf("#")
+            $char = if ($_.Status) {'🟩'} else {'🟥'}
+            $template =$template.Remove($index, 2)
+            $template = $template.Insert($index, $char)
         }
-        4..($text.Length) | ForEach-Object { $template = $template.Replace("{$index} ", "{$index}") }
-        $template = $template.Replace("{$index}", "$color$text`e[0m")
-        $index++
-    }
-    0..9 | ForEach-Object { $template = $template.Replace("{$_}", "   ") }
-    $template = $template.Trim()
+    $template = $template.Replace("#", "🟥")
 
-    Write-Host $template
-    Remove-Variable template, index
+    $placeholder = " # # "
+    $template = $template.Replace("{1}".PadRight($placeholder.Length), $placeholder)
+    $variables.'DevOps Agents' |
+        Sort-Object Name |
+        ForEach-Object {
+            $index = $template.IndexOf("#")
+            $char = if ($_.Status) {'🟩'} else {'🟥'}
+            $template =$template.Remove($index, 2)
+            $template = $template.Insert($index, $char)
+        }
+    $template = $template.Replace("#", "🟥")
+
+    Write-Host $template.Trim()
+    Remove-Variable template, placeholder
 Complete-Action
 
 if ($profiler.current.Length -gt 0) {

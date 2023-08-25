@@ -1,21 +1,22 @@
 
     param(
         [Parameter(Mandatory)]
-        [string] 
+        [string]
         $Database,
 
-        [string] 
+        [Parameter(Mandatory, Position=0)]
+        [string]
         $Table,
 
         [ValidateSet("TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "CHARACTER_OCTET_LENGTH", "NUMERIC_PRECISION", "NUMERIC_PRECISION_RADIX", "NUMERIC_SCALE", "DATETIME_PRECISION", "CHARACTER_SET_CATALOG", "CHARACTER_SET_SCHEMA", "CHARACTER_SET_NAME", "COLLATION_CATALOG", "COLLATION_SCHEMA", "COLLATION_NAME", "DOMAIN_CATALOG", "DOMAIN_SCHEMA", "DOMAIN_NAME")]
-        [string[]] 
+        [string[]]
         $Sort,
 
-        [switch] 
+        [switch]
         $Descending,
 
         [ValidateSet("TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "CHARACTER_OCTET_LENGTH", "NUMERIC_PRECISION", "NUMERIC_PRECISION_RADIX", "NUMERIC_SCALE", "DATETIME_PRECISION", "CHARACTER_SET_CATALOG", "CHARACTER_SET_SCHEMA", "CHARACTER_SET_NAME", "COLLATION_CATALOG", "COLLATION_SCHEMA", "COLLATION_NAME", "DOMAIN_CATALOG", "DOMAIN_SCHEMA", "DOMAIN_NAME")]
-        [string[]] 
+        [string[]]
         $Fields
     )
 
@@ -43,4 +44,3 @@
 
     Write-Verbose $Query
     Invoke-Sqlcmd -Database $Database -Query $Query | ConvertTo-Csv | ConvertFrom-Csv
-

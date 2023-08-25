@@ -18,7 +18,7 @@ param(
     [string]
     $Database,
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, Position=0)]
     [string]
     $Table,
 
@@ -48,7 +48,7 @@ Process {
                     -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
 
 
-    
+
     $Query = "INSERT INTO"
 
     if ($Table.Contains(".")) {
@@ -72,7 +72,7 @@ Process {
                 $db_value = [System.DBNull]::Value
             } else {
                 $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
-                
+
                 if ($sql_data_type -eq "datetime") {
                     try {
                         $db_value = [Datetime]::ParseExact($p.Value, "MM/dd/yyyy HH:mm:ss", $null)
@@ -98,4 +98,3 @@ End {
     $connection.Close()
     $connection.Dispose()
 }
-

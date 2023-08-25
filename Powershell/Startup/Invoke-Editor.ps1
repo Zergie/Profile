@@ -60,9 +60,9 @@ process {
     if ($PSBoundParameters['Debug']) {
         Write-Host -ForegroundColor Cyan ". $Editor $args"
     } elseif ($Input.Length -gt 0) {
-        $Input | . $Editor $args
+        $Input | . "$Editor" $args
     } else {
-        Invoke-Expression ". $Editor $args"
+        Invoke-Expression ". `"$Editor`" $args"
     }
 }
 end {

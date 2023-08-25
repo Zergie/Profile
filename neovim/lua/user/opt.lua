@@ -9,6 +9,8 @@ vim.o.ignorecase = true           -- Case insensitive searching UNLESS /C or cap
 vim.o.smartcase = true
 vim.o.updatetime = 250            -- Decrease update time
 vim.wo.signcolumn = 'yes'
+vim.opt.autoread = true           -- When a file has been detected to have been changed outside of Vim and
+                                  -- it has not been changed inside of Vim, automatically read it again.
 
 vim.opt.number         = true     -- Line numbers
 vim.opt.relativenumber = true     -- Relative line numbers for better navigation

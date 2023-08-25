@@ -1,12 +1,20 @@
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
 On_attach = function(client, bufnr)
+  local nvim_create_autocmd = vim.api.nvim_create_autocmd
   local nmap = function(keys, func, desc)
     if desc then
       desc = 'LSP: ' .. desc
     end
 
     vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
+  end
+  local imap = function(keys, func, desc)
+    if desc then
+      desc = 'LSP: ' .. desc
+    end
+
+    vim.keymap.set('i', keys, func, { buffer = bufnr, desc = desc })
   end
 
   if client.name == "omnisharp" then
@@ -37,7 +45,20 @@ On_attach = function(client, bufnr)
 
   -- See `:help K` for why this keymap
   nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-  nmap('<leader>K>', vim.lsp.buf.signature_help, 'Signature Documentation')
+  nmap('<leader>K', vim.lsp.buf.signature_help, 'Signature Documentation')
+  imap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
+
+  vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(
+    vim.lsp.handlers.signature_help, {
+        silent = true,
+        focusable = false
+    }
+  )
+
+  nvim_create_autocmd({"CursorHoldI"}, {
+      pattern = "*.cs",
+      command = "lua vim.lsp.buf.signature_help()"
+  })
 
   -- Lesser used LSP functionality
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')

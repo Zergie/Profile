@@ -1,40 +1,40 @@
 param(
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $ServerInstance,
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Username,
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Password,
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [string]
     $Database,
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, Position=0)]
     [string]
     $Table,
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory = $true,
+    [Parameter(Mandatory,
                ValueFromPipeline = $true)]
     [pscustomobject]
     $Data,
@@ -73,7 +73,7 @@ Process {
                     -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
 
 
-    
+
     $Query = "UPDATE "
 
     if ($Table.Contains(".")) {
@@ -91,7 +91,7 @@ Process {
     } elseif ($Criteria.Length -gt 0) {
         $Query += " WHERE $Criteria"
     }
-    
+
     Write-Verbose $Query
 
     $command = $connection.CreateCommand()
@@ -104,7 +104,7 @@ Process {
                 $db_value = [System.DBNull]::Value
             } else {
                 $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
-                
+
                 if ($sql_data_type -eq "datetime") {
                     try {
                         $db_value = [Datetime]::ParseExact($p.Value, "MM/dd/yyyy HH:mm:ss", $null)
@@ -137,4 +137,3 @@ End {
     $connection.Close()
     $connection.Dispose()
 }
-

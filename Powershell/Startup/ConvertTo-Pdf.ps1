@@ -27,12 +27,12 @@ process {
     {
         ".sql" {
             Get-Content $Path |
-             c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=sql|set number!|set relativenumber!" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+             c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=sql|set number!|set relativenumber!|set background=light" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
             $Path = "C:\temp\temp.html"
         }
         ".article" {
             Get-Content $Path |
-                c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=article|set number!|set relativenumber!" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+                c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=article|set number!|set relativenumber!|set background=light" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
             $Path = "C:\temp\temp.html"
         }
     }
@@ -57,14 +57,17 @@ process {
                         0 ## wdExportDocumentContent
                     }
         }
-        $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
-            $null,     ## Binder
-            $document, ## Target
-            ([Object[]]($params.Values)), ## providedArgs
-            $null,  ## Modifiers
-            $null,  ## Culture
-            ([String[]]($params.Keys))  ## NamedParameters
-        ) | Out-Null
+        try {
+            $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
+                $null,     ## Binder
+                $document, ## Target
+                ([Object[]]($params.Values)), ## providedArgs
+                $null,  ## Modifiers
+                $null,  ## Culture
+                ([String[]]($params.Keys))  ## NamedParameters
+            ) | Out-Null
+        } catch {
+        }
 
         $document.Close($false) | Out-Null
 

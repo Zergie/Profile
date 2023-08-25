@@ -4,7 +4,7 @@
         [string]
         $Database,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         $Table,
 
         [Parameter(ParameterSetName='Filter')]
@@ -23,16 +23,15 @@
         }
 
         if ($Table.Contains(".")) {
-            $Query += " $Table "   
+            $Query += " $Table "
         }
         else {
             $Query += " [$Table] "
         }
 
         if ($PSBoundParameters.ContainsKey("Filter")) {
-            $Query += " WHERE $(Format-SqlFilterCriteria $Filter $Value)" 
+            $Query += " WHERE $(Format-SqlFilterCriteria $Filter $Value)"
         }
 
         Write-Verbose $Query
         Invoke-Sqlcmd -Database $Database -Query $Query
-

@@ -304,6 +304,8 @@ end {
 
         $employees = $response.holidays |
             Where-Object { $_.event -eq $false } |
+            Group-Object { "$($_.start): $($_.title)" } |
+            ForEach-Object { $_.Group | Select-Object -First 1 } |
             Sort-Object start |
             ForEach-Object {
                 Write-Host "$($_.start): $($_.title)"

@@ -52,7 +52,7 @@
 	# shortcuts
 	plog = log-pretty
 	slog = log-short
-	blog = long-branch
+	blog = log-branch
 
 	# branch management
 	clean-branches = "!\
