@@ -317,6 +317,7 @@ require("lazy").setup({
     end
   },
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'wilriker/gcode.vim', -- gcode syntax
 
 
   { -- LSP Configuration & Plugins
