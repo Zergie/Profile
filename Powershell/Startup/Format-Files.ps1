@@ -64,13 +64,18 @@ end {
         Write-Error "No path specified."
     } else {
         Write-Progress -Status "Generating patches" -PercentComplete 1
+        Push-Location "$(Get-GitDirectory)/.."
         git difftool --tool=patch
 
         foreach ($item in $pathes) {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
-            switch -regex ($item.Extension) {
-                "^\.(ACT|xml)$" {
+            switch -regex ($item.Name) {
+                "^schema\.xml$" {
+                    Write-Host "skipped: $($item.Name)"
+                    break
+                }
+                "\.(ACT|xml)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
                     $settings = [System.Xml.XmlWriterSettings]::new()
@@ -81,9 +86,10 @@ end {
                     $xml.Save($writer)
                     $writer.Close()
                     $writer.Dispose()
+                    break
                 }
 
-                "^\.(ACF|ACR|ACM)$" {
+                "\.(ACF|ACR|ACM)$" {
                     git restore "$item"
                     Start-Job -ArgumentList $item.FullName {
                         param( [string] $item )
@@ -140,22 +146,25 @@ end {
                     Out-String |
                     ForEach-Object { $_.Trim() + "`r`n" } |
                     Set-Content $item -Encoding 1250
+                    break
                 }
 
-                "^\.(cs)$" {
-                      Get-Content $item |
-                      ForEach-Object { $_.TrimEnd() } |
-                      Out-String |
-                      ForEach-Object { $_.TrimEnd() } |
-                      Set-Content $item -Encoding utf8BOM
+                "\.(cs)$" {
+                    Get-Content $item |
+                    ForEach-Object { $_.TrimEnd() } |
+                    Out-String |
+                    ForEach-Object { $_.TrimEnd() } |
+                    Set-Content $item -Encoding utf8BOM
+                    break
                 }
 
-                "^\.(ps1)$" {
-                      Get-Content $item |
-                      ForEach-Object { $_.TrimEnd() } |
-                      Out-String |
-                      ForEach-Object { $_.TrimEnd() } |
-                      Set-Content $item
+                "\.(ps1)$" {
+                    Get-Content $item |
+                    ForEach-Object { $_.TrimEnd() } |
+                    Out-String |
+                    ForEach-Object { $_.TrimEnd() } |
+                    Set-Content $item
+                    break
                 }
 
                 default {
@@ -170,6 +179,7 @@ end {
 
         Write-Progress -Completed
         Write-Host "$count files formatted"
+        Pop-Location
     }
 
     foreach ($key in @($PSDefaultParameterValues.Keys)) {
@@ -181,6 +191,8 @@ end {
     }
 
     if (!$NoGitAdd) {
+        Push-Location "$(Get-GitDirectory)/.."
         git add -p .
+        Pop-Location
     }
 }

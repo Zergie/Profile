@@ -15,12 +15,13 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 
 -- Workspaces
 local cmd = vim.cmd
-map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                       end, "Workspace Profile")
-map("n", "<Leader>ca", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")           end, "Workspace Admintool")
-map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/") end, "Workspace tau-office-controls")
-map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")  end, "Workspace tau-office-plugins")
-map("n", "<Leader>ct", function () cmd("cd C:|cd /GIT/TauOffice/tau-office/source/")   end, "Workspace tau-office")
-map("n", "<Leader>cx", function () cmd("cd C:|cd /GIT/TauOffice/struktur")             end, "Workspace struktur")
+map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                        end, "Workspace Profile")
+map("n", "<Leader>ca", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")            end, "Workspace Admintool")
+map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/")  end, "Workspace tau-office-controls")
+map("n", "<Leader>ci", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-installer/") end, "Workspace tau-office-installer")
+map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")   end, "Workspace tau-office-plugins")
+map("n", "<Leader>ct", function () cmd("cd C:|cd /GIT/TauOffice/tau-office/source/")    end, "Workspace tau-office")
+map("n", "<Leader>cx", function () cmd("cd C:|cd /GIT/TauOffice/struktur")              end, "Workspace struktur")
 
 -- Remap space
 keymap("", "<Space>", "<nop>", opts)
@@ -55,11 +56,12 @@ keymap("n", "<C-Down>",  "<cmd>resize +2<cr>",          opts)
 keymap("n", "<C-Left>",  "<cmd>vertical resize -2<cr>", opts)
 keymap("n", "<C-Right>", "<cmd>vertical resize +2<cr>", opts)
 
--- Navigate buffers
+-- Navigate
 map("n", "<S-l>",      "<cmd>bn<cr>",                       "Next buffer")
 map("n", "<S-h>",      "<cmd>bp<cr>",                       "Prev buffer")
 map("n", "<C-b><C-b>", "<cmd>w<bar>bd<cr>",                 "Save and Close buffer")
 map("n", "<C-b>c",     "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer")
+map("n", "gl",         "`.",                                "Goto last Change")
 
 -- Move text up and down
 map("n", "<A-j>", "<cmd>m-2<cr>", "Move text one line up")
