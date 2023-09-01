@@ -59,7 +59,7 @@ $tools = @(
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
     [pscustomobject]@{name="sql-server-management-studio"}
-    [pscustomobject]@{name="treesizefree"}
+    [pscustomobject]@{name="wiztree"}
     [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
     [pscustomobject]@{name="vscode"}
     [pscustomobject]@{name="wireshark"}
@@ -128,7 +128,8 @@ $commands = @(
         Set-ItemProperty `
             -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `
             -Name "Debugger" `
-            -Value "wt -w 0 sp cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
+            -Value "wt -w 0 new-tab cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
+            # -Value "wt -w 0 sp cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
     }
     { pip3 install neovim-remote }
 )
