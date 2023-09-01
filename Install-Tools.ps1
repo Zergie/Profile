@@ -27,15 +27,26 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 
+function Test-IsWorkstation { $env:USERNAME -eq "puchinger" }
+function Test-IsLaptop { (Get-Computerinfo -Property CsPCSystemType).CsPCSystemType -ne 3 }
+
 $modules = @(
     "posh-git"
 )
 
 $tools = @(
+    if (Test-IsWorkstation) {
+        [pscustomobject]@{name="microsoft-teams"}
+        [pscustomobject]@{name="phonerlite"}
+        [pscustomobject]@{name="sql-server-management-studio"}
+        [pscustomobject]@{name="filezilla"}
+    }
+    if (Test-IsLaptop) {
+        [pscustomobject]@{name="BatteryBar"}
+    }
     [pscustomobject]@{name="7zip"}
     [pscustomobject]@{name="autohotkey"}
     [pscustomobject]@{name="bat"}
-    [pscustomobject]@{name="BatteryBar"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
     [pscustomobject]@{name="discord"}
@@ -47,18 +58,14 @@ $tools = @(
     [pscustomobject]@{name="gsudo"}
     [pscustomobject]@{name="gh"}
     [pscustomobject]@{name="InkScape"}
-    [pscustomobject]@{name="microsoft-teams"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
     [pscustomobject]@{name="nodejs-lts" ;}
     [pscustomobject]@{name="nuget.commandline"}
-    [pscustomobject]@{name="obs-studio"}
-    [pscustomobject]@{name="phonerlite"}
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
-    [pscustomobject]@{name="sql-server-management-studio"}
     [pscustomobject]@{name="wiztree"}
     [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
     [pscustomobject]@{name="vscode"}
@@ -69,8 +76,10 @@ $tools = @(
 )
 
 $npm = @(
-    [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
-    [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
+    if (Test-IsWorkstation) {
+        [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
+        [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
+    }
 )
 
 $github = @(
@@ -91,7 +100,7 @@ $junctions = @(
 
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\Beyond Compare 4\BC4Key.txt"
                           destination = "$PSScriptRoot\Beyond Compare 4\BC4Key.txt"}
-                          
+
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\secrets.json"
                           destination = "$PSScriptRoot\Powershell\secrets.json"}
     }
@@ -199,7 +208,7 @@ function Install-Junction {
 
         $directory = [System.IO.Path]::GetDirectoryName($Destination)
         $filename = [System.IO.Path]::GetFileName($Destination)
-        
+
         if ((Test-Path $source -PathType Leaf)) {
             Push-Location $directory | Out-Null
             "New-Item -Type HardLink -Name `"$filename`" -Value `"$Source`"" |
@@ -248,6 +257,15 @@ if ($Install -in @('*', 'chocolatey')) {
     $choco_packages_without_version = $tools | Where-Object version -EQ $null | ForEach-Object name
     "choco install $choco_packages_without_version -y" |
             ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
+
+    Write-Host -ForegroundColor Cyan ""
+    Write-Host -ForegroundColor Cyan "chocolatey packages not in list:"
+    .\Powershell\Startup\Invoke-Chocolatey.ps1 -Command list |
+        Where-Object 'package name' -notin $tools.Name |
+        Where-Object 'package name' -NotLike KB* |
+        Where-Object 'package name' -NotLike dotnet* |
+        Where-Object 'package name' -NotLike netfx* |
+        Where-Object 'package name' -NotLike *.install
 }
 
 # npm
