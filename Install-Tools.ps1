@@ -36,28 +36,31 @@ $modules = @(
 
 $tools = @(
     if (Test-IsWorkstation) {
+        [pscustomobject]@{name="filezilla"}
+        [pscustomobject]@{name="keepass"}
         [pscustomobject]@{name="microsoft-teams"}
         [pscustomobject]@{name="phonerlite"}
         [pscustomobject]@{name="sql-server-management-studio"}
-        [pscustomobject]@{name="filezilla"}
+        [pscustomobject]@{name="zoom"}
     }
     if (Test-IsLaptop) {
         [pscustomobject]@{name="BatteryBar"}
     }
     [pscustomobject]@{name="7zip"}
+    [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="autohotkey"}
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
     [pscustomobject]@{name="discord"}
     [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates"}
+    [pscustomobject]@{name="gh"}
     [pscustomobject]@{name="gimp"}
     [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="git-status-cache-posh-client"}
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
-    [pscustomobject]@{name="gh"}
-    [pscustomobject]@{name="InkScape"}
+    [pscustomobject]@{name="infranview"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
@@ -66,13 +69,14 @@ $tools = @(
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
-    [pscustomobject]@{name="wiztree"}
+    [pscustomobject]@{name="python3"}
+    [pscustomobject]@{name="ripgrep"}
     [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
+    [pscustomobject]@{name="vlc"}
     [pscustomobject]@{name="vscode"}
     [pscustomobject]@{name="wireshark"}
+    [pscustomobject]@{name="wiztree"}
     [pscustomobject]@{name="wsl2"}
-    [pscustomobject]@{name="ripgrep"}
-    [pscustomobject]@{name="controlmymonitor"}
 )
 
 $npm = @(
@@ -263,6 +267,7 @@ if ($Install -in @('*', 'chocolatey')) {
     .\Powershell\Startup\Invoke-Chocolatey.ps1 -Command list |
         Where-Object 'package name' -notin $tools.Name |
         Where-Object 'package name' -NotLike KB* |
+        Where-Object 'package name' -NotLike chocolatey* |
         Where-Object 'package name' -NotLike dotnet* |
         Where-Object 'package name' -NotLike netfx* |
         Where-Object 'package name' -NotLike *.install
