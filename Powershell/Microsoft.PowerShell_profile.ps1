@@ -39,10 +39,12 @@ Start-Action "Getting history size"
     }
 Complete-Action
 
-# initialize environment variables
-Start-Action "Initialize environment variables"
+# initialize environment
+Start-Action "Initialize environment "
     $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
     $env:OPENAI_API_KEY = $secrets.'Invoke-AutoCommit'.token
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action
 
 # initialize veracrypt

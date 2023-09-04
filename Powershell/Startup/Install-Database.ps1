@@ -2,51 +2,38 @@
 Param(
 )
 dynamicparam {
-    $local_folder = "D:\Daten"
-    $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter docker_ftp.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
-    
-    if ($shouldUpdateJson) {
-        $ftp = Invoke-Expression (Get-Content -raw $dockerScript | Select-String -Pattern "\`$Global:ftp\s*=\s*(@\{[^}]+})").Matches.Groups[1].Value
-        
-        $folders = New-Object System.Collections.ArrayList
-        $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$($ftp.root)")
-        $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
-        $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
-        $FTPResponse = $FTPRequest.GetResponse()
-        $ResponseStream = $FTPResponse.GetResponseStream()
-        $StreamReader = New-Object System.IO.StreamReader $ResponseStream
-        ($StreamReader.ReadToEnd() -split "`n" ) |
-            Where-Object { -not $_.Contains(".") } |
-            Where-Object { $_ -gt "" } |
-            ForEach-Object { $_.Trim("`r", "`n") } |
-            ForEach-Object { $folders.Add($_) | Out-Null }
-        $StreamReader.close()
-        $ResponseStream.close()
-        $FTPResponse.Close()
-
-        $folders.Add($ftp.root2) | Out-Null
-        
-        $subfolders = New-Object System.Collections.ArrayList
-        $folders |
-            ForEach-Object {
-                $FTPRequest = [System.Net.FtpWebRequest]::Create("$($ftp.url)/$_")
-                $FTPRequest.Credentials = New-Object System.Net.NetworkCredential($ftp.user, $ftp.password)
-                $FTPRequest.Method = [System.Net.WebRequestMethods+Ftp]::ListDirectory
-                $FTPResponse = $FTPRequest.GetResponse()
-                $ResponseStream = $FTPResponse.GetResponseStream()
-                $StreamReader = New-Object System.IO.StreamReader $ResponseStream
-                ($StreamReader.ReadToEnd() -split "`n" ) |
-                    Where-Object { $_ -notlike "*.do*" } |
-                    Where-Object { $_ -gt "" } |
-                    ForEach-Object { $_.Trim("`r", "`n") } |
-                    ForEach-Object { $subfolders.Add("ftp://$_") | Out-Null }
-                $StreamReader.close()
-                $ResponseStream.close()
-                $FTPResponse.Close()
-            }
-        $subfolders | ConvertTo-Json | Out-File -Encoding UTF8 "$env:TEMP/docker_ftp.json"
+    $config = [pscustomobject]@{
+        host = 'u266601-sub2.your-storagebox.de'
+        user = 'u266601-sub2'
+        port = 23
+        local_folder = 'D:\Daten'
     }
-    
+    $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter databases.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
+
+    if ($shouldUpdateJson) {
+        @(
+            ssh "$($config.user)@$($config.host)" -p $($config.port) ls -R -T1 Testdatenbanken |
+                ForEach-Object {
+                    if ($_.EndsWith(":")) {
+                        $directory = $_.Trim(":").Substring("Testdatenbanken/".Length)
+                    } elseif ($null -eq $directory) {
+                    } else {
+                        "ssh://$directory/$_"
+                    }
+                } |
+                Where-Object { $_ -like '*.*' }
+
+            ssh "$($config.user)@$($config.host)" -p $($config.port) ls Installationsdatenbanken |
+                ForEach-Object {
+                        "ssh://Installationsdatenbanken/$_"
+                } |
+                Where-Object { $_ -notlike '*.*' }
+
+        ) |
+            ConvertTo-Json |
+            Out-File -Encoding UTF8 "$env:TEMP/databases.json"
+    }
+
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
 
     # param Path
@@ -58,15 +45,15 @@ dynamicparam {
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
         @(
-            Get-ChildItem -Directory "$local_folder" | Where-Object { Test-Path ("$_\*.bak") }
-            Get-ChildItem -File "$local_folder\*.zip"
-            Get-ChildItem -File "$local_folder\*.7z"
+            Get-ChildItem -Directory "$($config.local_folder)" | Where-Object (Test-Path ("$_\*.bak"))
+            Get-ChildItem -File "$($config.local_folder)\*.zip"
+            Get-ChildItem -File "$($config.local_folder)\*.7z"
         ) | ForEach-Object {
-            ".\" + $_.FullName.Substring("$local_folder\".Length)
-            "./" + $_.FullName.Substring("$local_folder\".Length)
+            ".\" + $_.FullName.Substring("$($config.local_folder)\".Length)
+            "./" + $_.FullName.Substring("$($config.local_folder)\".Length)
         }
 
-        Get-Content "$env:TEMP/docker_ftp.json" -Encoding UTF8 | ConvertFrom-Json
+        Get-Content "$env:TEMP/databases.json" -Encoding UTF8 | ConvertFrom-Json
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
 
@@ -91,8 +78,14 @@ process {
     $p = $PSBoundParameters.GetEnumerator() | ForEach-Object -Process { $result.Add($_.Key, $_.Value) } -End{ $result }
     $p.Remove("Path")
 
+    if (!$Path.StartsWith(".")) {
+        $p["SshUser"] = $config.user
+        $p["SshHost"] = $config.host
+        $p["SshPort"] = $config.port
+    }
+
     & $dockerScript -Install $Path @p
-        
+
     if ($null -ne $old) {
         Set-SqlDatabase $old
     }
