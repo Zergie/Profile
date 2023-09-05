@@ -1,4 +1,7 @@
 Powershell/Modules
-ttyper/*.exe
 neovim/plugin
 neovim/lazy-lock.json
+
+CQ-editor/
+ttyper/
+warpd/

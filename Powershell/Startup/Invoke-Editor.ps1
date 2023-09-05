@@ -48,13 +48,24 @@ process {
 
         $args += $path
     }
-     
+
     if ($PSBoundParameters['Debug']) {
         Write-Host -ForegroundColor Cyan  "== PsBoundParameters =="
         $PSBoundParameters | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
 
         Write-Host -ForegroundColor Cyan  "== args =="
         $args | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
+    }
+
+    $args = $args | ForEach-Object {
+        if ($_.Length -eq 0) {
+        } elseif ($_ -like '*"*') {
+            $_
+        } elseif ($_ -like '* *') {
+            "`"$_`""
+        } else {
+            $_
+        }
     }
 
     if ($PSBoundParameters['Debug']) {

@@ -91,6 +91,8 @@ $github = @(
                       folder="$PSScriptRoot\warpd"}
     [pscustomobject]@{repo="max-niederman/ttyper"; file="ttyper-x86_64-*-windows-*.zip"
                       folder="$PSScriptRoot/ttyper"}
+    [pscustomobject]@{repo="jdegenstein/jmwright-CQ-Editor"; file="CQ-editor-Windows.zip"
+                      folder="$PSScriptRoot/CQ-editor"}
 )
 
 $patches = @(
@@ -157,14 +159,8 @@ function Get-GithubRelease {
         [Parameter(ValueFromPipelineByPropertyName=$true)] [switch] $AllowPreRelease = $false
     )
     process {
-        if ($File.EndsWith(".zip")) {
-            Remove-Item $Folder -Force -Recurse -ErrorAction SilentlyContinue
-            New-Item -ItemType Directory -Path $Folder | Out-Null
-        } else {
-            Remove-Item "$Folder/$File" -Force -ErrorAction SilentlyContinue
-        }
-        New-Item -ItemType Directory -Path $Folder -ErrorAction SilentlyContinue | Out-Null
-        Push-Location $Folder
+        $version = (Get-Content "$Folder/info.json" -ErrorAction SilentlyContinue
+                        | ConvertFrom-Json).tag_name
 
         $releases = "https://api.github.com/repos/$Repo/releases"
 
@@ -173,22 +169,36 @@ function Get-GithubRelease {
         $tag = $release.tag_name
         Write-Host -ForegroundColor Cyan -NoNewline " $tag ..."
 
-        $File = ($release.assets | Where-Object Name -like $File)[0].name
-        if ($File.EndsWith(".zip")) {
-            $zip = "temp.zip"
-            $download = "https://github.com/$Repo/releases/download/$tag/$File"
-            Invoke-WebRequest $download -OutFile $zip
-
-            Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
-            Remove-Item $zip -Force
+        if ($tag -eq $version) {
+            Write-Host -ForegroundColor Cyan " already installed."
         } else {
-            $download = "https://github.com/$Repo/releases/download/$tag/$File"
-            Invoke-WebRequest $download -OutFile $File
+            if ($File.EndsWith(".zip")) {
+                Remove-Item $Folder -Force -Recurse -ErrorAction SilentlyContinue
+                New-Item -ItemType Directory -Path $Folder | Out-Null
+            } else {
+                Remove-Item "$Folder/$File" -Force -ErrorAction SilentlyContinue
+            }
+            New-Item -ItemType Directory -Path $Folder -ErrorAction SilentlyContinue | Out-Null
+            Push-Location $Folder
+
+            $File = ($release.assets | Where-Object Name -like $File)[0].name
+            if ($File.EndsWith(".zip")) {
+                $zip = "temp.zip"
+                $download = "https://github.com/$Repo/releases/download/$tag/$File"
+                Invoke-WebRequest $download -OutFile $zip
+
+                Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
+                Remove-Item $zip -Force
+            } else {
+                $download = "https://github.com/$Repo/releases/download/$tag/$File"
+                Invoke-WebRequest $download -OutFile $File
+            }
+
+            $release | ConvertTo-Json -Depth 9 | Out-File "$Folder/info.json"
+            Write-Host -ForegroundColor Cyan " completed."
+
+            Pop-Location
         }
-
-        Write-Host -ForegroundColor Cyan " completed."
-
-        Pop-Location
     }
 }
 
