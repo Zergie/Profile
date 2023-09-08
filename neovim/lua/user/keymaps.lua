@@ -70,6 +70,9 @@ map("n", "<S-h>",      "<cmd>bp<cr>",                       "Prev buffer")
 map("n", "<C-b><C-b>", "<cmd>w<bar>bd<cr>",                 "Save and Close buffer")
 map("n", "<C-b>c",     "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer")
 map("n", "gl",         "`.",                                "Goto last Change")
+map("n", "<M-Up>",     "4")
+map("n", "<M-Down>",   "4")
+
 
 -- Move text up and down
 map("n", "<A-j>", "<cmd>m-2<cr>", "Move text one line up")
