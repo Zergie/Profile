@@ -30,6 +30,14 @@ keymap("", "<Space>", "<nop>", opts)
 keymap('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 keymap('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
+-- Automatically closing braces
+keymap('i', '{', '{}<C-G>U<Left>')
+keymap('i', '(', '()<C-G>U<Left>')
+keymap('i', '[', '[]<C-G>U<Left>')
+keymap('i', '"', '""<C-G>U<Left>')
+keymap('i', "'", "''<C-G>U<Left>")
+keymap('i', '`', '``<C-G>U<Left>')
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })

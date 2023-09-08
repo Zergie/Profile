@@ -349,7 +349,8 @@ process {
                                         -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                         -replace '(Aufgabe siehe Word),?\s*', '' `
                                         -replace '[.!]\s*$', '' `
-                                        -replace ' Fehler$', ' Weiterentwicklung'
+                                        -replace ' Fehler$', ' Weiterentwicklung' `
+                                        -replace 'Zusatzschleife\b', 'Weiterentwicklung'
                     }
 
                     $patches[$_.Id] += [ordered]@{

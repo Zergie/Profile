@@ -48,7 +48,6 @@ dynamicparam {
                 ForEach-Object fields |
                 ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
                 Sort-Object
-        ""
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
 
