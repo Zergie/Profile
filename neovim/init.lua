@@ -22,7 +22,20 @@ require('user.lspconfig')
 
 
 require("lazy").setup({
-  { -- Theme inspired by Atom
+   -- Translator
+   {
+     'uga-rosa/translate.nvim',
+     config = function ()
+      local map = function (mode, lhs, rhs, desc)
+        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
+      end
+       map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
+       map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
+     end
+   },
+
+   -- Theme inspired by Atom
+   {
     'navarasu/onedark.nvim',
     lazy = false,    -- make sure we load this during startup if it is your main colorscheme
     priority = 1000, -- make sure to load this before all the other start plugins
@@ -114,14 +127,13 @@ require("lazy").setup({
       map("T",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
       map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
       map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
-      map("s",         function () hop.hint_char2{ } end, "Hop 2chars forward")
-      map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
       map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
-      map("s",         function () hop.hint_char2{ } end, "Hop 2chars forward")
+      map("s",         function () hop.hint_char1{ } end, "Hop 2chars forward")
     end,
   },
 
-  { -- inline key help
+  -- inline key help
+  {
     'folke/which-key.nvim',
     config = function ()
       require("which-key").setup {
@@ -135,7 +147,8 @@ require("lazy").setup({
     end
   },
 
-  { -- allows align e.g. vipga=
+  -- allows align e.g. vipga=
+  {
     'junegunn/vim-easy-align',
     config = function ()
       local map = function (mode, lhs, rhs, desc)
@@ -148,8 +161,8 @@ require("lazy").setup({
 
   'mracos/mermaid.vim', -- mermaid diagram
 
-  { -- floating terminal for compling
-    -- 'voldikss/vim-floaterm',
+  -- floating terminal for compling
+  {
     'numToStr/FTerm.nvim',
     config = function ()
       local fterm = require('FTerm')
@@ -165,7 +178,8 @@ require("lazy").setup({
     end
   },
 
-  { -- Fuzzy Finder (files, lsp, etc)
+  -- Fuzzy Finder (files, lsp, etc)
+  {
     'nvim-telescope/telescope.nvim',
     branch = '0.1.x',
     dependencies = {
@@ -300,7 +314,8 @@ require("lazy").setup({
   },
 
 
-  { -- Add indentation guides even on blank lines
+  -- Add indentation guides even on blank lines
+  {
   'lukas-reineke/indent-blankline.nvim',
     config = function ()
       -- See `:help indent_blankline.txt`
@@ -320,7 +335,8 @@ require("lazy").setup({
   'wilriker/gcode.vim', -- gcode syntax
 
 
-  { -- LSP Configuration & Plugins
+  -- LSP Configuration & Plugins
+  {
     'neovim/nvim-lspconfig',
     dependencies = {
       { -- Automatically install LSPs to stdpath for neovim
@@ -412,7 +428,8 @@ require("lazy").setup({
         end
       },
 
-      { -- Useful status updates for LSP
+      -- Useful status updates for LSP
+      {
         'j-hui/fidget.nvim',
         config = function ()
           require('fidget').setup()
@@ -424,7 +441,8 @@ require("lazy").setup({
     },
   },
 
-  { -- Autocompletion
+  -- Autocompletion
+  {
     'hrsh7th/nvim-cmp',
     event = "InsertEnter",
     dependencies = {
