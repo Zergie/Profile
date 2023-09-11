@@ -5,8 +5,9 @@ local cmd                 = vim.cmd
 nvim_create_autocmd({"BufWritePre"}, {
     pattern = "*",
     callback = function()
-        cmd [[ %s/\([^ ]\)\s*$/\1/ ]]
-        cmd [[ '' ]]
+        local save = vim.fn.winsaveview()
+        cmd [[ keepjumps keeppatterns silent! %s/\([^ ]\)\s*$/\1/e ]]
+        vim.fn.winrestview(save)
     end,
 })
 

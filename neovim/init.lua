@@ -202,7 +202,7 @@ require("lazy").setup({
       -- Enable telescope fzf native, if installed
       pcall(require('telescope').load_extension, 'fzf')
 
-    
+
       require('user.telescope')
       local telescope = require('telescope.builtin')
       local themes = require('telescope.themes')
@@ -539,6 +539,3 @@ require("lazy").setup({
 --
 --  Add any additional override configuration in the following tables. They will be passed to
 --  the `settings` field of the server config. You must look up that documentation yourself.
-
-
-
