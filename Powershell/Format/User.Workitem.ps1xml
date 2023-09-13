@@ -25,6 +25,9 @@
                     <TableColumnHeader>
                         <Label>System.AssignedTo</Label>
                     </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Effort</Label>
+                    </TableColumnHeader>
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -54,7 +57,9 @@ switch ($workitem.fields.'System.State') {
                             <TableColumnItem>
                                 <ScriptBlock>$_.fields.'System.AssignedTo'.DisplayName</ScriptBlock>
                             </TableColumnItem>
-
+                            <TableColumnItem>
+                                <ScriptBlock>$_.fields.'Microsoft.VSTS.Scheduling.Effort'</ScriptBlock>
+                            </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>
                 </TableRowEntries>

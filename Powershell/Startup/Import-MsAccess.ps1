@@ -66,6 +66,11 @@ end {
         vi $arguments
     }
 
+Get-Process msaccess |
+        Where-Object MainWindowHandle -eq 0 |
+        Stop-Process
+
+
     $script = [System.Text.StringBuilder]::new()
     $script.AppendLine() | Out-Null
     $script.AppendLine('dim stdout : set stdout = CreateObject("Scripting.FileSystemObject").GetStandardStream(1)') | Out-Null

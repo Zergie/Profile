@@ -60,7 +60,8 @@ process {
     $args = $args | ForEach-Object {
         if ($_.Length -eq 0) {
         } elseif ($_ -like '*"*') {
-            $_
+            "'$_'"
+            # $_
         } elseif ($_ -like '* *') {
             "`"$_`""
         } else {

@@ -154,7 +154,7 @@ end {
                     ForEach-Object { $_.TrimEnd() } |
                     Out-String |
                     ForEach-Object { $_.TrimEnd() } |
-                    Set-Content $item -Encoding utf8BOM
+                    Set-Content $item -Encoding utf8NoBOM
                     break
                 }
 

@@ -8,7 +8,10 @@ if ($nvim.Name -ne "nvim") {
         Editor="python"
         Arguments=@(
             "C:/Python311/Lib/site-packages/nvr/nvr.py"
-            "-cc `"lua require('FTerm').close()`"" # close terminal window
+
+            # close terminal window
+            "-cc"
+            "lua require('FTerm').close()"
         ) + $args
     }
 }

@@ -5,7 +5,7 @@ param
                Position = 1)]
     [Alias("PSPath")]
     [ValidateNotNullOrEmpty()]
-    [string]
+    [string[]]
     $Path,
 
 
@@ -17,11 +17,12 @@ param
 Write-Host "Watching folder '$Path'"
 
 while (1) {
-    Get-ChildItem -Path $Path -Filter $Filter |
-        ForEach-Object {
-            bat --paging=never $_
-            Remove-Item $_
-        }
-    Start-Sleep -Seconds $Seconds
+    foreach ($p in $Path) {
+        Get-ChildItem -Path $p -Filter $Filter -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                bat --paging=never $_
+                Remove-Item $_
+            }
+        Start-Sleep -Seconds $Seconds
+    }
 }
-

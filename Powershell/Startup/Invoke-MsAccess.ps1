@@ -19,6 +19,7 @@ DynamicParam {
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
+    # $ParameterAttribute.ParameterSetName = "ProcedureParameterSetName"
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
@@ -44,6 +45,7 @@ DynamicParam {
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
     $ParameterAttribute.Mandatory = $false
+    # $ParameterAttribute.ParameterSetName = "SetOptionenParameterSetName"
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(
@@ -60,7 +62,8 @@ DynamicParam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $false
+    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.ParameterSetName = "GetOptionenParameterSetName"
     $AttributeCollection.Add($ParameterAttribute)
 
     $AttributeCollection.Add($ValidateSetAttribute) # reuse from GetOptionen
@@ -84,7 +87,7 @@ function Invoke-VBScript {
     )
     $path = "$($env:TEMP)\script.vbs"
     Set-Content -Path "$path" -Value $script
-    
+
     $line = 0
     $script -split "`n" |
         ForEach-Object `
@@ -95,7 +98,7 @@ function Invoke-VBScript {
              } `
             -End     { "== end vba script ==" } |
         Write-Verbose
-    
+
     cscript.exe "$path" //nologo
     Remove-Item "$path"
 }
@@ -105,7 +108,7 @@ if ($Inspect) {
         Where-Object { $_.Matches.Groups[3].Value -eq $Procedure } |
         ForEach-Object {
             $match = $_
-            
+
             $procedure_match = Get-Content $match.Path |
                                     Select-Object -Skip ($match.LineNumber-1) |
                                     Out-String |
@@ -113,9 +116,9 @@ if ($Inspect) {
             $start = $match.LineNumber
             $count = ($procedure_match.Matches.Value -split "`r`n").Count
             $end =  $start - 1 + $count
-            
+
             [pscustomobject]@{path=$match.path;start=$start;count=$count;end=$end} | ConvertTo-Json | Write-Debug
-            
+
             bat $_.path --paging never --line-range $start`:$end
         }
 
@@ -135,7 +138,7 @@ if ($Inspect) {
                 -Process {
                     $text = if ($_ -is [System.Management.Automation.ScriptBlock]) { $_.ToString() }
                     else { $_ }
-                    
+
                     if ($text -is [String]) { "`"$( $text -replace '"','`"`"' )`"" }
                     else { $text.ToString() }
                 } |

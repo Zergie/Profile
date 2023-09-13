@@ -16,6 +16,10 @@ param (
     [Hashtable]
     $Body = $null,
 
+    [Parameter(ParameterSetName="Default")]
+    [string]
+    $OutFile = $null,
+
     [Parameter(Mandatory=$true, ParameterSetName="PatchBody")]
     [System.Collections.Specialized.OrderedDictionary[]]
     $PatchBody = $null,
@@ -60,6 +64,10 @@ process {
 
     if ($null -ne $Body) {
         $params.body = ($Body | ConvertTo-Json -Depth 32)
+    }
+
+    if ($null -ne $OutFile) {
+        $params.OutFile = $OutFile
     }
 
     if ($null -ne $RawBody) {

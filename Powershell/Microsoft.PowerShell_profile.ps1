@@ -292,9 +292,136 @@ Start-Action "Configure PSReadLine"
     Set-PSReadLineOption -PredictionSource History
     Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
     Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
-    Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
+    # Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
     Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
-    Set-PSReadLineKeyHandler -Chord "F8" -Function AcceptNextSuggestionWord
+    # Set-PSReadLineKeyHandler -Chord "F8" -Function AcceptNextSuggestionWord
+
+    Set-PSReadLineKeyHandler -Key "Alt+(" `
+                             -BriefDescription ParenthesizeSelection `
+                             -LongDescription "Put parenthesis around the selection or entire line and move the cursor to after the closing parenthesis" `
+                             -ScriptBlock {
+        param($key, $arg)
+
+        $selectionStart = $null
+        $selectionLength = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$selectionStart, [ref]$selectionLength)
+
+        $line = $null
+        $cursor = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+        if ($selectionStart -ne -1)
+        {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace($selectionStart, $selectionLength, '(' + $line.SubString($selectionStart, $selectionLength) + ')')
+            [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($selectionStart + $selectionLength + 2)
+        }
+        else
+        {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, '(' + $line.Trim() + ')')
+            [Microsoft.PowerShell.PSConsoleReadLine]::EndOfLine()
+        }
+    }
+
+    Set-PSReadLineKeyHandler -Key RightArrow `
+                             -BriefDescription ForwardCharAndAcceptNextSuggestionWord `
+                             -LongDescription "Move cursor one character to the right in the current editing line and accept the next word in suggestion when it's at the end of current editing line" `
+                             -ScriptBlock {
+        param($key, $arg)
+
+        $line = $null
+        $cursor = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+        if ($cursor -lt $line.Length) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::ForwardChar($key, $arg)
+        } else {
+            [Microsoft.PowerShell.PSConsoleReadLine]::AcceptNextSuggestionWord($key, $arg)
+        }
+    }
+
+    Set-PSReadLineKeyHandler -Key End `
+                             -BriefDescription EndOfLineAndAcceptSuggestion `
+                             -LongDescription "Move cursor to the end of the current editing line and accept the suggestion when it's at the end of current editing line" `
+                             -ScriptBlock {
+        param($key, $arg)
+
+        $line = $null
+        $cursor = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+        if ($cursor -lt $line.Length) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::EndOfLine($key, $arg)
+        } else {
+            [Microsoft.PowerShell.PSConsoleReadLine]::AcceptSuggestion($key, $arg)
+        }
+    }
+
+    Set-PSReadLineKeyHandler -Chord F9 `
+                             -BriefDescription CompleteWithScreenContent `
+                             -LongDescription "Find a completion based on the current screen content" `
+                             -ScriptBlock {
+        param($key, $arg)
+        $delimiter = " `"'([{}]):;."
+        $delimiter_regex = "[^ `r`n\.:;(\[{}\])]*"
+
+        $line   = [string] $null
+        $cursor = [int] $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+        $wordBegin       = (" " + $line).LastIndexOfAny($delimiter.ToCharArray(), $cursor)
+        $wordLength      = $cursor - $wordBegin
+
+        if ($wordLength -gt 0) {
+            $wordUnderCursor = $line.Substring($wordBegin, $wordLength)
+
+            $size   = $host.UI.RawUI.WindowSize
+            $rect   = [System.Management.Automation.Host.Rectangle]::new(0, 0, $size.Width, $size.Height)
+            $buffer = $host.UI.RawUI.GetBufferContents($rect)
+
+            $suggestions = $buffer.Character |
+                Join-String |
+                Select-String "\b$($wordUnderCursor)$delimiter_regex" -AllMatches |
+                ForEach-Object { $_.Matches.Value } |
+                Select-Object -SkipLast 1 |
+                Group-Object { $_.Trim().ToLower() } |
+                ForEach-Object { $_.Group[0] }
+            $count = ($suggestions | Measure-Object).Count
+
+            if ($count -eq 1) {
+                $suggestion = ($suggestions | Select-Object -First 1)
+            } else {
+                $shortest = $suggestions |
+                    Group-Object Length |
+                    Select-Object -First 1 |
+                    ForEach-Object { $_.Group[0] }
+
+                $suggestion = $null
+                foreach ($length in $wordLength .. ($shortest.Length)) {
+                    if ($length -gt 0) {
+                        $test = $shortest.Substring(0, $length)
+                        if (($suggestions | Where-Object {! $_.ToLower().StartsWith($test.ToLower()) } | Measure-Object).Count -eq 0)
+                        {
+                            $suggestion = $test
+                            $wordLength = $test.Length
+                        }
+                    }
+                }
+
+                Write-Host
+                $suggestions |
+                    ForEach-Object {
+                        Write-Host -BackgroundColor White -ForegroundColor Black $_.Substring(0, $wordLength) -NoNewline
+                        Write-Host $_.Substring($wordLength)
+                    }
+                [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+            }
+
+            if ($null -ne $suggestion) {
+                $newLine = "$($line.Substring(0, $wordBegin))$($suggestion)$($line.Substring($cursor))"
+                [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
+                [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($wordBegin + $suggestion.Length)
+            }
+        }
+    }
 Complete-Action
 
 # finish jobs

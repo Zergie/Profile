@@ -38,6 +38,15 @@ param (
     $ToDo,
 
     [Parameter(Mandatory=$true,
+               ParameterSetName="DoingParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [ValidateNotNullOrEmpty()]
+    [Alias('d')]
+    [switch]
+    $Doing,
+
+    [Parameter(Mandatory=$true,
                ParameterSetName="StartParameterSet",
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
@@ -224,6 +233,10 @@ process {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
                                                    " AND [System.State] = 'To Do'" +
                                                    " AND [System.TeamProject] = 'TauOffice'"
+            } elseif ($Doing) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
+                                                   " AND [System.State] = 'Doing'" +
+                                                   " AND [System.TeamProject] = 'TauOffice'"
             } elseif ($Branches) {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.Id] IN ($(
                     git branch |
@@ -366,7 +379,7 @@ process {
                                         -replace '(Hallo) Wolfgang', '$1'
                     }
 
-                    if (($subtasks | Measure-Object).Count -eq 0) {
+                    if ($Update -and ($subtasks | Measure-Object).Count -eq 0) {
                         $task = . ${Invoke-RestApi} `
                             -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/`${type}?api-version=7.0" `
                             -Variables @{ type = "task" } `
@@ -422,24 +435,26 @@ process {
                         }
                 }
                 if ($BeginWork) {
-                    $patch= [ordered]@{
-                        op    = "replace"
-                        path  = "/fields/System.State"
-                        from  = "null"
-                        value = "Doing"
-                    }
-                    $patches[$_.Id] += $patch
-                    if (($subtasks | Measure-Object).Count -eq 1) {
-                        $subtasks |
-                            ForEach-Object {
-                                 $patches.Add($_.Id, @())
-                                 $patches[$_.Id] += [ordered]@{
-                                        op    = "replace"
-                                        path  = "/fields/System.State"
-                                        from  = "null"
-                                        value = "Doing"
+                    If ($_.fields.'System.State' -ne 'Done') {
+                        $patch= [ordered]@{
+                            op    = "replace"
+                            path  = "/fields/System.State"
+                            from  = "null"
+                            value = "Doing"
+                        }
+                        $patches[$_.Id] += $patch
+                        if (($subtasks | Measure-Object).Count -eq 1) {
+                            $subtasks |
+                                ForEach-Object {
+                                     $patches.Add($_.Id, @())
+                                     $patches[$_.Id] += [ordered]@{
+                                            op    = "replace"
+                                            path  = "/fields/System.State"
+                                            from  = "null"
+                                            value = "Doing"
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
             }

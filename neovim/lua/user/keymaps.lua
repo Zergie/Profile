@@ -36,7 +36,6 @@ keymap('i', '(', '()<C-G>U<Left>')
 keymap('i', '[', '[]<C-G>U<Left>')
 keymap('i', '"', '""<C-G>U<Left>')
 keymap('i', "'", "''<C-G>U<Left>")
-keymap('i', '`', '``<C-G>U<Left>')
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
