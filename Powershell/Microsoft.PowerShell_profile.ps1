@@ -360,8 +360,8 @@ Start-Action "Configure PSReadLine"
                              -LongDescription "Find a completion based on the current screen content" `
                              -ScriptBlock {
         param($key, $arg)
-        $delimiter = " `"'([{}]):;."
-        $delimiter_regex = "[^ `r`n\.:;(\[{}\])]*"
+        $delimiter = " `"'([{}]):;.,><"
+        $delimiter_regex = "[^ `r`n\:;.,\>\<(\[{}\])]*"
 
         $line   = [string] $null
         $cursor = [int] $null
