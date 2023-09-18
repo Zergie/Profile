@@ -363,7 +363,7 @@ process {
                                         -replace '(Aufgabe siehe Word),?\s*', '' `
                                         -replace '[.!]\s*$', '' `
                                         -replace ' Fehler$', ' Weiterentwicklung' `
-                                        -replace 'Zusatzschleife\b', 'Weiterentwicklung'
+                                        -replace '(Zusatzschleife|Nachbesserung)\b', 'Weiterentwicklung'
                     }
 
                     $patches[$_.Id] += [ordered]@{

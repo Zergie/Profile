@@ -106,12 +106,12 @@ end {
                             try {
                                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
                                     "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
-                                    "{date: `"$($_.year)-$($_.month)-1`"}"
+                                    "{`"date`": `"$($_.year)-$($_.month)-1`"}"
                                 ) | Join-String -Separator "?")
                             } catch {
                                 Invoke-WebRequest -Method Post -Uri http://localhost:8888/post -Body (@(
                                     "https://rocom.tau-work-together.de/api/main/holiday/holidaysview/month"
-                                    "{date: `"$($_.year)-$($_.month)-1`"}"
+                                    "{`"date`": `"$($_.year)-$($_.month)-1`"}"
                                 ) | Join-String -Separator "?")
                             }
                         } |

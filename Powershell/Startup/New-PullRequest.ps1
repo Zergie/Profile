@@ -57,11 +57,19 @@ process {
                     ForEach-Object { $_.Matches.Groups[1].Value } |
                     Select-Object -First 1
 
-    $sourceRepositoryId = switch -Regex ((Get-Location).Path) {
-        "^C:\\GIT\\TauOffice\\DBMS($|\\.+)" { "9628cf99-3a38-48fd-b4af-ced93fd41111" }
-        "^C:\\GIT\\TauOffice($|\\.+)"       { "e4c9e36f-ccf2-4e31-aaa8-df56c116d3a5" }
-        default { "e4c9e36f-ccf2-4e31-aaa8-df56c116d3a5" }
-    }
+    $sourceRepositoryUrl = (git ls-remote --get-url origin).Trim()
+    $sourceRepositoryId = . "$PSScriptRoot\Invoke-RestApi.ps1" `
+        -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/git/repositories?api-version=7.0" |
+            ForEach-Object value |
+            Where-Object remoteUrl -EQ $sourceRepositoryUrl |
+            ForEach-Object id
+
+    # $sourceRepositoryId = switch -Regex ((Get-Location).Path) {
+    #     "^C:\\GIT\\TauOffice\\DBMS($|\\.+)" { "9628cf99-3a38-48fd-b4af-ced93fd41111" }
+    #     "^C:\\GIT\\TauOffice($|\\.+)"       { "e4c9e36f-ccf2-4e31-aaa8-df56c116d3a5" }
+    #     "^C:\\GIT\\TauServer($|\\.+)"       { "79497b7c-776d-4a4b-ab8c-848b132137b6" }
+    #     default { "e4c9e36f-ccf2-4e31-aaa8-df56c116d3a5" }
+    # }
 
     $lastMessage = git log -1 --pretty=%B
     if ($null -ne $Issues) {
