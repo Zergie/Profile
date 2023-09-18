@@ -308,7 +308,7 @@ require("lazy").setup({
 
       map("n", "<Leader>mm", function ()
           vim.cmd("wa")
-          require('FTerm').run("; r")
+          require('FTerm').run(";$history = Get-History; $history | Select-Object -Last 1 |% { Write-Host -ForegroundColor Cyan $_ ; Invoke-Expression $_ }; Clear-History; $history | Add-History")
       end,  "Repeat last command")
     end
   },
