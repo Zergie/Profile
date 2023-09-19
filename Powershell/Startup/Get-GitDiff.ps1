@@ -25,8 +25,13 @@ end {
         Out-Null
 
     $Index = [int]$Index[0]
-    $commitA = $Commits[$Index].Split(" - ")[0]
-    $commitB = $Commits[$Index + 1].Split(" - ")[0]
+    $commitA = $Commits[$Index + 1].Split(" - ")[0]
+    $commitB = $Commits[$Index].Split(" - ")[0]
+
+    # Write-Host
+    # Write-Host -ForegroundColor Cyan "left  > $($Commits[$Index + 1])"
+    # Write-Host -ForegroundColor Cyan "right > $($Commits[$Index])"
+    # Write-Host
 
     "git difftool $commitA $commitB -- $($Pathes | Join-String)" |
         ForEach-Object {

@@ -143,8 +143,7 @@ $commands = @(
         Set-ItemProperty `
             -Path "HKLM:\SOFTWARE\Microsoft\Windows nt\CurrentVersion\Image File Execution Options\notepad.exe" `
             -Name "Debugger" `
-            -Value "wt -w 0 new-tab cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
-            # -Value "wt -w 0 sp cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
+            -Value "wt -w 0 split-pane --horizontal --size 0.1 cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
     }
     { pip3 install neovim-remote }
 )
