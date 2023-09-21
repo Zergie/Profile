@@ -474,7 +474,8 @@ process {
             ForEach-Object {
                 $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
                 $_
-            }
+            } |
+            Sort-Object Id
 
         if ($Update) {
             $pdfs |

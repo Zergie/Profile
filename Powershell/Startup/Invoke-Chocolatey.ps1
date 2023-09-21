@@ -19,7 +19,7 @@ process {
     $cmd = ". 'C:\ProgramData\chocolatey\bin\choco.exe' $Command $Arguments"
     $i=0
     Write-Debug $cmd
-    
+
     if ($Command -eq "outdated") {
         $found_begin = $false
         Invoke-Expression $cmd |
@@ -84,10 +84,12 @@ process {
             }
     } elseif ($Command -eq "" -and $Arguments.Length -eq 0) {
         Invoke-Expression "$cmd -?"
+    } elseif ($Command -in "upgrade","install") {
+        $cmd = "sudo $($cmd.Substring(2))"
+        Invoke-Expression $cmd
     } else {
         Invoke-Expression $cmd
     }
 }
 end {
 }
-

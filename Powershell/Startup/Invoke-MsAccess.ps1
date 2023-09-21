@@ -32,6 +32,7 @@ DynamicParam {
             Select-String -Pattern "^(|Public )(Sub|Function) ([^(]+)" -Encoding 1252 |
             ForEach-Object { $_.Matches.Groups[3].Value }
         "Eval"
+        "Application.Quit"
         # "DynaLoader.Unload"
         # "DynaLoader.Load"
     ))
@@ -147,14 +148,17 @@ if ($Inspect) {
 
     $Command = switch -Regex ($Procedure) {
         "Eval" {
-            "application.Eval($( $Arguments.SubString(1) ))"
+            "Application.Eval($( $Arguments.SubString(1) ))"
+        }
+        "Application.Quit" {
+            "Application.Quit()"
         }
         "DynaLoader\.(un)?load" {
             # not working! Object not found: 'DynaLoader'
-            "application.Eval(`"$Procedure $( $Arguments.SubString(1) -replace '"','`"`"' )`")"
+            "Application.Eval(`"$Procedure $( $Arguments.SubString(1) -replace '"','`"`"' )`")"
         }
         default {
-            "application.Run(`"$Procedure`"$Arguments)"
+            "Application.Run(`"$Procedure`"$Arguments)"
         }
     }
 

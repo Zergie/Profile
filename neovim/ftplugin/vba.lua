@@ -33,20 +33,20 @@ local searchInBuffer = function (pattern, prompt)
 end
 
 map("n", "<Leader>ds", function ()
-    searchInBuffer('^(|Private |Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Document symbols')
+    searchInBuffer('^(|Private |Global |Public )(Enum|Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Document symbols')
 end, "[D]ocument [S]ymbols")
 
 map("n", "<Leader>dp", function ()
-    searchInBuffer('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Document public symbols')
+    searchInBuffer('^(|Global |Public )(Enum|Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Document public symbols')
 end,  "[D]ocument [P]ublic symbols")
 
 map("n", "<Leader>ws", function ()
-    search('^(|Global |Public )(Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Workspace symbols')
+    search('^(|Global |Public )(Enum|Sub|Function|Property Get|Property Set|Property Let) ([^(]+)', 'Workspace symbols')
 end, "[W]orkspace [S]ymbols")
 
 map("n", "<Leader>sd", function ()
     local wordUnderCursor = vim.fn.expand("<cword>")
-    search('^(|Global |Public |Private )(Sub|Function|Property Get|Property Set|Property Let) ' .. wordUnderCursor, 'Search in definitions (' .. wordUnderCursor .. ')')
+    search('^(|Global |Public |Private )(Enum|Sub|Function|Property Get|Property Set|Property Let) ' .. wordUnderCursor, 'Search in definitions (' .. wordUnderCursor .. ')')
 end, "[S]earch [D]efinition")
 
 map('n', '<leader>sW', function()
