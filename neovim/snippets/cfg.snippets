@@ -1,0 +1,24 @@
+# Snippets for Klipper cfg
+# Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
+
+snippet gcode_macro
+	[gcode_macro ${1:name}]
+	description: ${2:description}
+	gcode:
+		${3:gcode}
+
+snippet variable
+	variable_${1:name}: ${2:variable}
+
+snippet if
+	{% if ${1:Condition} %}
+	{% endif %}
+
+snippet else
+	{% else %}
+
+snippet elif
+	{% elif ${1:Condition} %}
+	
+snippet rename
+	rename_existing: G66${1:0000}

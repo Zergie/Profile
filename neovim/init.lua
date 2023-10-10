@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-field
 -- Install lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -117,8 +118,8 @@ require("lazy").setup({
         vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Hop]" })
       end
       local hop = require("hop")
-      local hint = require("hop.hint")
-      local directions = hint.HintDirection
+      -- local hint = require("hop.hint")
+      -- local directions = hint.HintDirection
 
       hop.setup()
       -- map("f",         function () hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, "Hop forward find")
@@ -213,14 +214,14 @@ require("lazy").setup({
             width = 0.5,
           },
       }
-      local cursor_theme = themes.get_cursor {
-          winblend  = 10,
-          previewer = true,
-          layout_config = {
-            height = 0.5,
-            width  = 0.8,
-          },
-      }
+      -- local cursor_theme = themes.get_cursor {
+      --     winblend  = 10,
+      --     previewer = true,
+      --     layout_config = {
+      --       height = 0.5,
+      --       width  = 0.8,
+      --     },
+      -- }
       local cursor_minimal_theme = themes.get_cursor {
           winblend  = 20,
           previewer = false,
@@ -319,7 +320,7 @@ require("lazy").setup({
   'lukas-reineke/indent-blankline.nvim',
     config = function ()
       -- See `:help indent_blankline.txt`
-      require('indent_blankline').setup {
+      require('ibl').setup {
         char = '┊',
         show_trailing_blankline_indent = false,
       }
@@ -399,6 +400,27 @@ require("lazy").setup({
                 analyze_open_documents_only = false,
               },
               powershell_es = {},
+              arduino_language_server = {
+                cmd = {
+                  'C:\\Users\\user\\AppData\\Local\\nvim-data\\mason\\bin\\arduino-language-server.cmd',
+
+                  '-cli',
+                  'C:\\Program Files\\Arduino CLI\\arduino-cli.exe',
+
+                  '-cli-config',
+                  'C:\\Users\\user\\AppData\\Local\\Arduino15\\arduino-cli.yaml',
+
+                  '-clangd',
+                  'C:\\Users\\user\\AppData\\Local\\nvim-data\\mason\\bin\\clangd.cmd',
+
+                  '-fqbn',
+                  'arduino:avr:nano',
+
+                  -- '-log',
+                  -- '-logpath',
+                  -- 'C:\\GIT\\mpcnc_post_processor\\handwheel\\firmware',
+                  }
+              },
             }
 
             -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
@@ -415,13 +437,24 @@ require("lazy").setup({
               ensure_installed = vim.tbl_keys(servers),
             }
 
+            local tableHasKey = function (table,key) return table[key] ~= nil end
+
             mason_lspconfig.setup_handlers {
-              function(server_name)
-                require('lspconfig')[server_name].setup {
-                  capabilities = capabilities,
-                  on_attach = On_attach,
-                  settings = servers[server_name],
-                }
+              function (server_name)
+                if tableHasKey(servers, server_name) and tableHasKey(servers[server_name], 'cmd') then
+                  require('lspconfig')[server_name].setup {
+                    cmd = servers[server_name]['cmd'],
+                    capabilities = capabilities,
+                    on_attach = On_attach,
+                    settings = servers[server_name],
+                  }
+                else
+                  require('lspconfig')[server_name].setup {
+                    capabilities = capabilities,
+                    on_attach = On_attach,
+                    settings = servers[server_name],
+                  }
+                end
               end,
             }
           end

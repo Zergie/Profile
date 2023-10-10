@@ -37,6 +37,10 @@ keymap('i', '[', '[]<C-G>U<Left>')
 keymap('i', '"', '""<C-G>U<Left>')
 keymap('i', "'", "''<C-G>U<Left>")
 
+-- Keymaps for select mode
+keymap('n', "<F9>", "*``gn<C-g>")
+keymap('i', "<F9>", "<C-o>gn<C-g>")
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })

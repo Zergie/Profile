@@ -56,7 +56,7 @@ On_attach = function(client, bufnr)
   )
 
   nvim_create_autocmd({"CursorHoldI"}, {
-      pattern = "*.cs,*.ps1,*.py",
+      pattern = "*.cs,*.ps1,*.py,*.ino",
       command = "lua vim.lsp.buf.signature_help()"
   })
 
