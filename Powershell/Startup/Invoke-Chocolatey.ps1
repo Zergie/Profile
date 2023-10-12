@@ -84,7 +84,7 @@ process {
             }
     } elseif ($Command -eq "" -and $Arguments.Length -eq 0) {
         Invoke-Expression "$cmd -?"
-    } elseif ($Command -in "upgrade","install") {
+    } elseif ($Command -in "upgrade","install","uninstall") {
         $cmd = "sudo $($cmd.Substring(2))"
         Invoke-Expression $cmd
     } else {

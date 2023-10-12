@@ -16,7 +16,7 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 -- Workspaces
 local cmd = vim.cmd
 map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                        end, "Workspace Profile")
-map("n", "<Leader>ca", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")            end, "Workspace Admintool")
+map("n", "<Leader>cA", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")            end, "Workspace Admintool")
 map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/")  end, "Workspace tau-office-controls")
 map("n", "<Leader>ci", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-installer/") end, "Workspace tau-office-installer")
 map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")   end, "Workspace tau-office-plugins")
@@ -30,12 +30,12 @@ keymap("", "<Space>", "<nop>", opts)
 keymap('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 keymap('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
--- Automatically closing braces
-keymap('i', '{', '{}<C-G>U<Left>')
-keymap('i', '(', '()<C-G>U<Left>')
-keymap('i', '[', '[]<C-G>U<Left>')
-keymap('i', '"', '""<C-G>U<Left>')
-keymap('i', "'", "''<C-G>U<Left>")
+-- -- Automatically closing braces
+-- keymap('i', '{}', '{}<C-G>U<Left>')
+-- keymap('i', '()', '()<C-G>U<Left>')
+-- keymap('i', '[]', '[]<C-G>U<Left>')
+-- keymap('i', '""', '""<C-G>U<Left>')
+-- keymap('i', "''", "''<C-G>U<Left>")
 
 -- Keymaps for select mode
 keymap('n', "<F9>", "*``gn<C-g>")
@@ -58,8 +58,8 @@ keymap("n", "<C-h>",      "<C-w>h",               opts)
 keymap("n", "<C-j>",      "<C-w>j",               opts)
 keymap("n", "<C-k>",      "<C-w>k",               opts)
 keymap("n", "<C-l>",      "<C-w>l",               opts)
-keymap("n", "<C-w><C-w>", "<cmd>w<bar>close<cr>", opts, "Save and Close window")
-keymap("n", "<C-w>c",     "<cmd>close!<cr>",      opts, "Save and Close window")
+map("n",    "<C-w><C-w>", "<cmd>w<bar>close<cr>", "Save and Close window")
+map("n",    "<C-w>c",     "<cmd>close!<cr>",      "Save and Close window")
 
 -- Resize with arrows
 keymap("n", "<C-Up>",    "<cmd>resize -2<cr>",          opts)

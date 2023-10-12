@@ -8,16 +8,49 @@
 	required = true
 [core]
 	ignorecase = false
-	pager = less --raw-control-chars
+	; pager = less --raw-control-chars
+	pager = delta --features decorations
 	autocrlf = true
-	; editor = python C:/Python311/Lib/site-packages/nvr/nvr.py -cc \"lua require('FTerm').close()\" --remote-wait
-	editor = C:/tools/neovim/nvim-win64/bin/nvim.exe
+	editor = python C:/Python311/Lib/site-packages/nvr/nvr.py \
+		--servername 127.0.0.1:6789 \
+		-cc \"lua require('FTerm').close()\" \
+		-cc \"silent !wt focus-tab -t 2\" \
+		-c \"au BufDelete <buffer> silent !wt focus-tab -t 0\" \
+		--remote-wait \
+
+		[delta]
+	features = decorations
+	true-color = always
+[delta "interactive"]
+	keep-plus-minus-markers = false
+[delta "decorations"]
+	commit-decoration-style = bold ul
+	commit-style = raw
+	dark = true
+	file-decoration-style = none
+	file-style = omit
+	hunk-header-decoration-style = "#022b45" ul
+	hunk-header-file-style = "#999999"
+	hunk-header-line-number-style = bold "#003300"
+	hunk-header-style = file line-number syntax
+	line-numbers = true
+	line-numbers-left-style = "#022b45"
+	line-numbers-minus-style = "#80002a"
+	line-numbers-plus-style = "#003300"
+	line-numbers-right-style = "#022b45"
+	line-numbers-zero-style = "#999999"
+	minus-emph-style = normal "#80002a"
+	minus-style = normal "#990011"
+	plus-emph-style = normal "#004400"
+	plus-style = normal "#004400"
+	syntax-theme = Visual Studio Dark+
+
 [diff]
 	tool = bc
 [difftool "bc"]
-    cmd = \"c:/Program Files/Beyond Compare 4/bcomp.exe\" "$LOCAL" "$REMOTE" //title1=remote //title2=local //expandall
+	cmd = \"c:/Program Files/Beyond Compare 4/bcomp.exe\" "$LOCAL" "$REMOTE" //title1=remote //title2=local //expandall
 [difftool "patch"]
-    cmd = \"C:/Program Files/Git/usr/bin/diff.exe\" "$LOCAL" "$REMOTE" --ignore-case --ignore-blank-lines --strip-trailing-cr > "$REMOTE.patch"
+	cmd = \"C:/Program Files/Git/usr/bin/diff.exe\" "$LOCAL" "$REMOTE" --ignore-case --ignore-blank-lines --strip-trailing-cr > "$REMOTE.patch"
 [difftool]
 	prompt = false
 [merge]
@@ -30,13 +63,14 @@
 	logOutputEncoding = utf-8
 [interactive]
 	singlekey = true
+	diffFilter = delta --color-only --features=\"interactive decorations\"
 [alias]
 	auto-commit = "!\
 		MESSAGE=`git --no-pager log --format=%s | uniq -c | sort -nr | head -1 | cut -d' ' -f7-`; \
 		git commit -m \"$MESSAGE\"; \
 		git slog -1; \
-	"
-    
+		"
+
 	# logs
 	log-pretty = log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit
 	log-short  = log-pretty -10
@@ -47,7 +81,7 @@
 		LAST_COMMON_COMMIT=`git rev-list $MAIN_BRANCH $BRANCH | tail -n1`; \
 		echo -e '\\E[38;5;14m'\"\\033[1mgit log-pretty $LAST_COMMON_COMMIT^1..HEAD\\033[0m\"; \
 		git log-pretty $LAST_COMMON_COMMIT^1..HEAD 2> /dev/null; \
-	"
+		"
 
 	# shortcuts
 	plog = log-pretty
@@ -68,11 +102,11 @@
 		echo 'Active branches are:' && \
 		git branch; \
 		git checkout -; \
-	"
+		"
 	resolve-merge-conflict = "!\
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
 		for file in $FILES; do \
-			PATH=$(echo ./$file); \
-			'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
+		PATH=$(echo ./$file); \
+		'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
 		done; \
-	"
+		"

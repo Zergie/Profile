@@ -52,6 +52,7 @@ $tools = @(
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
+    [pscustomobject]@{name="delta"}
     [pscustomobject]@{name="discord"}
     [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates"}
     [pscustomobject]@{name="gh"}
@@ -60,7 +61,7 @@ $tools = @(
     [pscustomobject]@{name="git-status-cache-posh-client"}
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
-    [pscustomobject]@{name="infranview"}
+    [pscustomobject]@{name="irfanview"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
@@ -69,7 +70,7 @@ $tools = @(
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
-    [pscustomobject]@{name="python3"}
+    [pscustomobject]@{name="python3";version="3.11";reason="neovim-remote does not work with python 3.12"}
     [pscustomobject]@{name="ripgrep"}
     [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
     [pscustomobject]@{name="vlc"}

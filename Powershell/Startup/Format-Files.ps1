@@ -51,6 +51,31 @@ process {
                     | Where-Object { Test-Path $_ -PathType Leaf }
                     | Get-ChildItem
     }
+
+    function Write-CodeError {
+        param (
+            [System.IO.FileInfo] $File,
+            [object[]] $Content,
+            [int]    $LineNumber,
+            [string] $KeywordRegex,
+            [string] $ErrorRegex,
+            [string] $ErrorMessage
+        )
+        Write-Host "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+        Write-Host "`e[38;5;238m       │`e[0m File: .\$([System.IO.Path]::GetRelativePath((Get-Location).Path, $File.FullName))"
+        Write-Host "`e[38;5;238m───────┼─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+        $Content |
+            Select-Object -Skip ($LineNumber-5) |
+            Select-Object -First 10 |
+            ForEach-Object { "$($_.number.ToString().PadRight(6)) `e[38;5;238m│`e[0m $($_.content)" } |
+            ForEach-Object { $_ -replace "('.*)","`e[38;2;89;139;78m`$1`e[0m" } |
+            ForEach-Object { $_ -replace "(`"[^`"]+`")","`e[38;2;200;132;88m`$1`e[0m" } |
+            ForEach-Object { $_ -replace "\b($KeywordRegex)\b","`e[38;2;86;160;223m`$1`e[0m" } |
+            ForEach-Object { $_ -replace "($ErrorRegex)(.*)","`e[48;5;1m`$1`e[0m`$2 `e[38;5;1m<- $ErrorMessage`e[0m" } |
+            Out-String |
+            Write-Host -NoNewline
+        Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+    }
 }
 end {
     $index = 0
@@ -103,33 +128,25 @@ end {
 
                     $content |
                     ForEach-Object {
+                        $keywords = "If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case"
                         $line = $_
-                        $error_msg = $null
-                        $error_regex = $null
 
                         if ($line.content -match "#TO_BUILD FAIL") {
-                            $error_regex = "'?\s*#TO_BUILD FAIL"
-                            $error_msg = "FAIL marker should not be commited to production!"
+                            Write-CodeError `
+                                -File $item `
+                                -Content $content `
+                                -LineNumber $line.number `
+                                -ErrorRegex "'?\s*#TO_BUILD FAIL" `
+                                -ErrorMessage "FAIL marker should not be commited to production!" `
+                                -KeywordRegex $keywords
                         } elseif ($line.content -match "\btodo\b") {
-                            $error_regex = "todo"
-                            $error_msg = "todos should not be commited to production!"
-                        }
-
-                        if ($null -ne $error_msg) {
-                            Write-Host "`e[38;5;238m───────┬─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
-                            Write-Host "`e[38;5;238m       │`e[0m File: .\$([System.IO.Path]::GetRelativePath((Get-Location).Path, $item.FullName))"
-                            Write-Host "`e[38;5;238m───────┼─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
-                            $content |
-                                Select-Object -Skip ($line.number-5) |
-                                Select-Object -First 10 |
-                                ForEach-Object { "$($_.number.ToString().PadRight(6)) `e[38;5;238m│`e[0m $($_.content)" } |
-                                ForEach-Object { $_ -replace "('.*)","`e[38;2;89;139;78m`$1`e[0m" } |
-                                ForEach-Object { $_ -replace "(`"[^`"]+`")","`e[38;2;200;132;88m`$1`e[0m" } |
-                                ForEach-Object { $_ -replace "\b(If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case)\b","`e[38;2;86;160;223m`$1`e[0m" } |
-                                ForEach-Object { $_ -replace "($error_regex)(.*)","`e[48;5;1m`$1`e[0m`$2 `e[38;5;1m<- $error_msg`e[0m" } |
-                                Out-String |
-                                Write-Host -NoNewline
-                            Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
+                            Write-CodeError `
+                                -File $item `
+                                -Content $content `
+                                -LineNumber $line.number `
+                                -ErrorRegex "todo" `
+                                -ErrorMessage "todos should not be commited to production!" `
+                                -KeywordRegex $keywords
                         }
 
                         $_.content
@@ -150,7 +167,27 @@ end {
                 }
 
                 "\.(cs)$" {
-                    Get-Content $item |
+                    $keywords = "namespace|using|public|private|class|static|const|readonly|for|foreach|if|uint|null|ref|out|&&|\|\|return|var|int|string|new|double"
+                    $lineno = 0
+                    $content = Get-Content $item -Encoding utf8 |
+                                ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }
+
+                    $content |
+                    ForEach-Object {
+                        $line = $_
+
+                        if ($line.content -match "\bDebugger\.Launch\b") {
+                            Write-CodeError `
+                                -File $item `
+                                -Content $content `
+                                -LineNumber $line.number `
+                                -ErrorRegex "\bDebugger\.Launch[^;]*;?" `
+                                -ErrorMessage "'Debugger.Launch' should not be commited to production!" `
+                                -KeywordRegex $keywords
+                        }
+
+                        $_.content
+                    } |
                     ForEach-Object { $_.TrimEnd() } |
                     Out-String |
                     ForEach-Object { $_.TrimEnd() } |

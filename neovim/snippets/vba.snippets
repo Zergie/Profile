@@ -11,49 +11,33 @@ snippet do
 	Loop
 	rs.Close
 
-snippet set_rs
+snippet setrs
 	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}")
-
-snippet set_rs_ro
+snippet setrsro
 	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}", dbOpenForwardOnly, dbReadOnly)
 
-# vba If .. Then
 snippet if
 	If ${1:Condition} Then
-		${2:Actions}
-	End If
-
-# vba If .. Then .. Else
-snippet ife
-	If ${1:Condition} Then
-		${2:Action}
+snippet else
 	Else
-		${3:ActionElse}
+snippet elseif
+	Else If ${1:Condition} Then
+snippet endif
 	End If
 	
-# vba #If .. Then
 snippet #if
 	#If ${1:Condition} Then
-		${2:Action}
-	#End If
-
-# vba #If .. Then .. Else
-snippet #ife
-	#If ${1:Condition} Then
-		${2:Action}
+snippet #else
 	#Else
-		${3:ActionElse}
+snippet #elseif
+	#Else If ${1:Condition} Then
+snippet #endif
 	#End If
 
-# vba Develop
 snippet #ifdev
 	#If Develop Then
 
-# vba #Else
-snippet #else
-	#Else
-
-# vba #End If
-snippet #endif
-	#End If
-	
+snippet form_close
+	Private Sub Form_Close()
+		${1:Action}
+	End Sub

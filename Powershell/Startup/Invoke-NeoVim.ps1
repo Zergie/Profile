@@ -6,6 +6,7 @@ $editorArgs = @{
     Editor="python"
     Arguments=@(
         "C:/Python311/Lib/site-packages/nvr/nvr.py"
+
         "--servername"
         "127.0.0.1:6789"
 

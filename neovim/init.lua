@@ -141,9 +141,8 @@ require("lazy").setup({
           plugins = {
               spelling = {
                   enabled = false,
-                  suggestions = 20,
-              }
-          }
+              },
+          },
       }
     end
   },
@@ -244,7 +243,7 @@ require("lazy").setup({
       map("n", "<Leader>sm",      telescope.marks,                                              "[S]earch [M]arks")
       map("n", "<Leader>sr",      telescope.resume,                                             "[S]earch [R]esume")
       map('n', '<leader>sh',      telescope.help_tags,                                          '[S]earch [H]elp' )
-      map('n', '<leader>sw',      function() telescope.grep_string(themes.get_dropdown()) end,  '[S]earch current [W]ord' )
+      map('n', '<leader>sw',      function() telescope.grep_string() end,                       '[S]earch current [W]ord' )
       map('n', '<leader>sg',      telescope.live_grep,                                          '[S]earch by [G]rep' )
       map('n', '<leader>sd',      telescope.diagnostics,                                        '[S]earch [D]iagnostics' )
 
