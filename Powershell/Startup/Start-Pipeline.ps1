@@ -1,4 +1,3 @@
-
 #Requires -PSEdition Core
 param(
     [Parameter(Mandatory=$false)]
@@ -62,7 +61,7 @@ begin {
     # param Branch
     if ($SetupsOnly) {
         $PSBoundParameters['Name'] = @("TauOffice Setup")
-        
+
         $Branch = @("master")
         $Branch += git branch --remote --list |
                     ForEach-Object { $_ -split '/' | Select-Object -Skip 1 | Join-String -Separator '/'  } |
@@ -107,10 +106,10 @@ begin {
             [object]
             $running_pipelines
         )
-        
+
         Write-Host
         Write-Host "waiting for pipelines to finish .."
-        
+
         while ($running_pipelines.Count -gt 0) {
             Start-Sleep -Seconds 10
 
@@ -128,7 +127,7 @@ begin {
                         "completed"  {
                             $duration = ($run.finishedDate - $run.createdDate)
                             $duration = $duration.Hours, $duration.Minutes, $duration.Seconds | ForEach-Object { $_.ToString("00") } | Join-String -Separator ":"
-                            
+
                             $color = if ($run.result -eq "Succeeded") { "Green" } else { "Red" }
                             Write-Host "$($run.pipeline.name) $($run.result) ($($run.name) / ran $duration)" -ForegroundColor $color
                         }
@@ -167,13 +166,13 @@ process {
             }
     }
     Start-WaitingForPipelineToFinish $running_pipelines
-    
+
 
     $stages = $Name | Get-Member -MemberType NoteProperty | ForEach-Object Name | Sort-Object
     foreach ($stage in $stages) {
         Write-Host
         Write-Host "== $stage of $($stages.count) =="
-        
+
         $running_pipelines = @()
         foreach ($pipeline in $Name.$stage) {
             foreach ($b in $Branch) {

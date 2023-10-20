@@ -1,5 +1,10 @@
 [cmdletbinding()]
 Param(
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $AsJob
 )
 dynamicparam {
     $config = [pscustomobject]@{
@@ -84,9 +89,17 @@ process {
         $p["SshPort"] = $config.port
     }
 
-    & $dockerScript -Install $Path @p
+    if ($AsJob) {
+        $p.Remove('AsJob')
+        Start-Job {
+            param($dockerScript, $Path, $p)
+            & $dockerScript -Install $Path @p
+        } -ArgumentList $dockerScript, $Path, $p
+    } else {
+        & $dockerScript -Install $Path @p
 
-    if ($null -ne $old) {
-        Set-SqlDatabase $old
+        if ($null -ne $old) {
+            Set-SqlDatabase $old
+        }
     }
 }

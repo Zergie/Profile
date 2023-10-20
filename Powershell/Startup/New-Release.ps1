@@ -84,10 +84,10 @@ process {
         ForEach-Object Matches |
         ForEach-Object {
             [pscustomobject]@{
-                Database = $_.Groups['database'].Vaule
-                    Year     = $_.Groups['Year'].Vaule
-                    Revision = $_.Groups['Revision'].Vaule
-                    Number   = $_.Groups['Number'].Vaule
+                Database = $_.Groups['database'].Value
+                Year     = $_.Groups['Year'].Value
+                Revision = $_.Groups['Revision'].Value
+                Number   = $_.Groups['Number'].Value
             }
         } |
         Where-Object Year -eq $Year |
@@ -172,6 +172,7 @@ process {
                     }
                 } |
                 Out-String |
+                ForEach-Object { $_.TrimEnd() } |
                 Set-Content $file -Encoding utf8
         }
 
@@ -180,6 +181,9 @@ process {
 
     Write-Host -ForegroundColor Cyan "git commit"
     git commit -m "Release $Name"
+
+    Write-Host -ForegroundColor Cyan "ssh mkdir CD/Tau-Office/Setup${Year}_Q${Quartal}"
+    ssh u266601-sub2@u266601-sub2.your-storagebox.de -p 23 mkdir CD/Tau-Office/Setup${Year}_Q${Quartal}
 
     Write-Host
     Write-Host  "==========================================================================="

@@ -319,9 +319,60 @@ require("lazy").setup({
   'lukas-reineke/indent-blankline.nvim',
     config = function ()
       -- See `:help indent_blankline.txt`
+      local fghighlight = {
+          "Fg0",
+          "Fg1",
+          "Fg2",
+          "Fg3",
+          "Fg4",
+          "Fg5",
+          "Fg6",
+      }
+      local bghighlight = {
+          "Bg0",
+          "Bg1",
+          "Bg2",
+          "Bg3",
+          "Bg4",
+          "Bg5",
+          "Bg6",
+      }
+
+      local hooks = require "ibl.hooks"
+      -- create the highlight groups in the highlight setup hook, so they are reset
+      -- every time the colorscheme changes
+      hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
+          vim.api.nvim_set_hl(0, "Fg0", { fg = "#4A3FD0" })
+          vim.api.nvim_set_hl(0, "Fg1", { fg = "#CE22B0" })
+          vim.api.nvim_set_hl(0, "Fg2", { fg = "#FF3E83" })
+          vim.api.nvim_set_hl(0, "Fg3", { fg = "#FF7F5C" })
+          vim.api.nvim_set_hl(0, "Fg4", { fg = "#FFBF4E" })
+          vim.api.nvim_set_hl(0, "Fg5", { fg = "#F9F871" })
+          vim.api.nvim_set_hl(0, "Fg6", { fg = "#56B6C2" })
+
+          vim.api.nvim_set_hl(0, "Bg0", { bg = "#E06C75" })
+          vim.api.nvim_set_hl(0, "Bg1", { bg = "#E5C07B" })
+          vim.api.nvim_set_hl(0, "Bg2", { bg = "#61AFEF" })
+          vim.api.nvim_set_hl(0, "Bg3", { bg = "#D19A66" })
+          vim.api.nvim_set_hl(0, "Bg4", { bg = "#98C379" })
+          vim.api.nvim_set_hl(0, "Bg5", { bg = "#C678DD" })
+          vim.api.nvim_set_hl(0, "Bg6", { bg = "#56B6C2" })
+      end)
+
       require('ibl').setup {
-        char = '┊',
-        show_trailing_blankline_indent = false,
+        indent = {
+          char = '|',
+          highlight = fghighlight,
+        },
+        -- whitespace = {
+        --   remove_blankline_trail = false,
+        --   highlight = bghighlight,
+        -- },
+        scope = {
+          enabled = true,
+          char = ' ',
+          highlight = bghighlight,
+        },
       }
     end
   },

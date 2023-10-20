@@ -16,7 +16,7 @@ $editorArgs = @{
 
         # focus editor
         "-cc"
-        "silent !wt focus-tab -t 2"
+        "silent !wt focus-tab -t 1"
     ) + $args
 }
 

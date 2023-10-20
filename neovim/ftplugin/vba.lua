@@ -78,5 +78,15 @@ map("n", "go", function ()
     vim.cmd("noh")
 end, "Go to start of code")
 
+map('n', 'gr', function()
+    local wordUnderCursor = vim.fn.expand("<cword>")
+    search("[( ]+" .. wordUnderCursor .. "[( ]", 'Search Reference (' .. wordUnderCursor .. ')')
+end, '[S]earch [R]eference' )
+
+map('n', 'gd', function()
+    local wordUnderCursor = vim.fn.expand("<cword>")
+    search("(Dim|Private|Public|Global|Enum|Sub|Function|Property Get|Property Set|Property Let)[ ]+" .. wordUnderCursor, 'Search Definition (' .. wordUnderCursor .. ')')
+end, '[S]earch [D]efinition' )
+
 vim.opt_local.spell = false
 vim.o.commentstring = "'%s"

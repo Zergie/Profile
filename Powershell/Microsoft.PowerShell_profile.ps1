@@ -1,8 +1,11 @@
 $pwsh = Get-Process -PID $PID
 
-if ($(Get-ExecutionPolicy) -ne "ByPass") {
+if ((Get-ExecutionPolicy) -ne "ByPass") {
     Start-Process $pwsh.Path -Verb RunAs "-NoProfile", "-Command","Set-ExecutionPolicy -ExecutionPolicy Bypass"
 }
+
+$firstUse = (Get-Process pwsh | Measure-Object).Count -eq 1 -or
+    ((Get-Date)- $pwsh.StartTime).TotalSeconds -gt 10
 
 $profiler = [pscustomobject]@{
     start     = Get-Date
@@ -11,6 +14,12 @@ $profiler = [pscustomobject]@{
     variables = [pscustomobject]@{}
     current   = [Hashtable]::new()
     last      = Get-Content $env:TEMP\Profile.json -ErrorAction SilentlyContinue | ConvertFrom-Json
+}
+
+if ((Get-Process pwsh | Measure-Object).Count -eq 1) {
+    . "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
+    wt new-tab
+    wt focus-tab -t 0
 }
 
 function Start-Action {
@@ -47,106 +56,108 @@ Start-Action "Initialize environment "
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action
 
-# initialize veracrypt
-Start-Action "Initialize veracrypt"
-    if (-not (Test-Path D:\)) {
-        $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
+if ($firstUse) {
+    # initialize veracrypt
+    Start-Action "Initialize veracrypt"
+        if (-not (Test-Path D:\)) {
+            $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
 
-        if ((Test-Path $veracypt_exe)) {
-            $name  = "Encrypted"
-            $drive = "D:"
-            $pass  = $secrets.VeraCrypt.Password
+            if ((Test-Path $veracypt_exe)) {
+                $name  = "Encrypted"
+                $drive = "D:"
+                $pass  = $secrets.VeraCrypt.Password
 
-            & $veracypt_exe /d d /q /s | Out-Null
-            & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
+                & $veracypt_exe /d d /q /s | Out-Null
+                & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
 
-            while (-not (Test-Path $drive)) { Start-Sleep 1 }
-            $rename = New-Object -ComObject Shell.Application
-            $rename.NameSpace("$drive\").Self.Name = "$name"
+                while (-not (Test-Path $drive)) { Start-Sleep 1 }
+                $rename = New-Object -ComObject Shell.Application
+                $rename.NameSpace("$drive\").Self.Name = "$name"
+            }
         }
-    }
-Remove-Variable secrets
-Complete-Action
+    Remove-Variable secrets
+    Complete-Action
 
-# show network info
-Start-Action "Show network adapter"
-    Start-Job {
-        $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
+    # show network info
+    Start-Action "Show network adapter"
+        Start-Job {
+            $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
 
-        $preferedAdapter = $adapter |
-            Sort-Object LinkSpeed |
-            Select-Object -First 1
+            $preferedAdapter = $adapter |
+                Sort-Object LinkSpeed |
+                Select-Object -First 1
 
-        $adapter |
-            Where-Object Name -NotIn $preferedAdapter.Name |
-            Where-Object Status -NE "Disconnected" |
-            ForEach-Object {
-                Write-Host -NoNewline "$($_.Name)> "
-                netsh wlan disconnect interface="$($_.Name)" | Write-Host
+            $adapter |
+                Where-Object Name -NotIn $preferedAdapter.Name |
+                Where-Object Status -NE "Disconnected" |
+                ForEach-Object {
+                    Write-Host -NoNewline "$($_.Name)> "
+                    netsh wlan disconnect interface="$($_.Name)" | Write-Host
+                }
+
+            if ($preferedAdapter.Status -ne "Up") {
+                Write-Host -NoNewline "$($preferedAdapter.Name)> "
+                netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
+
+                Start-Sleep -Seconds 2
+                $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
             }
 
-        if ($preferedAdapter.Status -ne "Up") {
-            Write-Host -NoNewline "$($preferedAdapter.Name)> "
-            netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
-
-            Start-Sleep -Seconds 2
-            $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
-        }
-
-        1..3 |
-            ForEach-Object {
-                $name = "WLAN$(if ($_ -ne 1) { " $_" })"
-                if ($name -in $adapter.Name) {
-                    $adapter | Where-Object Name -eq $name
-                } else {
-                    [pscustomobject] @{
-                        Name = $name
-                        Status = "Disconnected"
-                    }
-                }
-            } |
-            ForEach-Object {
-                [pscustomobject] @{
-                    Type   = 'WLAN'
-                    Name   = $_.Name
-                    Status = if ($_.Status -eq "Disconnected") {
-                               $false
-                           } elseif ($_.Status -eq "Up") {
-                               $true
-                           }
-                }
-            } |
-            ConvertTo-Json
-    } | Out-Null
-Complete-Action
-
-# show devops agent status
-Start-Action "Show devops agent status"
-    Start-Job {
-        param([pscustomobject] $oldProfiler, [pscustomobject] $oldVariables)
-
-        # if (((Get-Date) - $oldProfiler.start).TotalHours -lt 12 `
-        #     -and $null -ne $oldProfiler.variables.'DevOps Agents') {
-        #     $oldProfiler.variables.'DevOps Agents' | ConvertTo-Json
-        # } else {
-            . "$using:PSScriptRoot/Startup/Invoke-RestApi.ps1" `
-                -Endpoint "GET https://dev.azure.com/{organization}/_apis/distributedtask/pools/{poolId}/agents?api-version=7.0" `
-                -Variables @{poolid=1} |
-                ForEach-Object value |
+            1..3 |
                 ForEach-Object {
-                    [pscustomobject]@{
-                        Type   = 'DevOps Agents'
-                        Status = if ($_.Status -eq "offline") {
+                    $name = "WLAN$(if ($_ -ne 1) { " $_" })"
+                    if ($name -in $adapter.Name) {
+                        $adapter | Where-Object Name -eq $name
+                    } else {
+                        [pscustomobject] @{
+                            Name = $name
+                            Status = "Disconnected"
+                        }
+                    }
+                } |
+                ForEach-Object {
+                    [pscustomobject] @{
+                        Type   = 'WLAN'
+                        Name   = $_.Name
+                        Status = if ($_.Status -eq "Disconnected") {
                                    $false
-                               } elseif ($_.Status -eq "online") {
+                               } elseif ($_.Status -eq "Up") {
                                    $true
                                }
                     }
                 } |
                 ConvertTo-Json
-        # }
-    } -ArgumentList $profiler.last, $profiler.variables | Out-Null
-Complete-Action
+        } | Out-Null
+    Complete-Action
+
+    # show devops agent status
+    Start-Action "Show devops agent status"
+        Start-Job {
+            param([pscustomobject] $oldProfiler, [pscustomobject] $oldVariables)
+
+            # if (((Get-Date) - $oldProfiler.start).TotalHours -lt 12 `
+            #     -and $null -ne $oldProfiler.variables.'DevOps Agents') {
+            #     $oldProfiler.variables.'DevOps Agents' | ConvertTo-Json
+            # } else {
+                . "$using:PSScriptRoot/Startup/Invoke-RestApi.ps1" `
+                    -Endpoint "GET https://dev.azure.com/{organization}/_apis/distributedtask/pools/{poolId}/agents?api-version=7.0" `
+                    -Variables @{poolid=1} |
+                    ForEach-Object value |
+                    ForEach-Object {
+                        [pscustomobject]@{
+                            Type   = 'DevOps Agents'
+                            Status = if ($_.Status -eq "offline") {
+                                       $false
+                                   } elseif ($_.Status -eq "online") {
+                                       $true
+                                   }
+                        }
+                    } |
+                    ConvertTo-Json
+            # }
+        } -ArgumentList $profiler.last, $profiler.variables | Out-Null
+    Complete-Action
+}
 
 # initialize colors
 Start-Action "Initialize colors"
@@ -360,8 +371,8 @@ Start-Action "Configure PSReadLine"
                              -LongDescription "Find a completion based on the current screen content" `
                              -ScriptBlock {
         param($key, $arg)
-        $delimiter = " `"'([{}]):;.,><"
-        $delimiter_regex = "[^ `r`n\:;.,\>\<(\[{}\])]*"
+        $delimiter = " `"'([{}]):;.,><\/"
+        $delimiter_regex = "[^ `r`n\:;.,\>\<(\[{}\])\\/]*"
 
         $line   = [string] $null
         $cursor = [int] $null
@@ -424,59 +435,61 @@ Start-Action "Configure PSReadLine"
     }
 Complete-Action
 
-# finish jobs
-Start-Action "Finish job"
-    $variables = @{}
-    Get-Job |
-        Where-Object Name -NE "mssql" |
-        ForEach-Object {
-            Wait-Job $_ | Out-Null
-            Receive-Job $_ |
-                ConvertFrom-Json |
-                Group-Object Type |
-                ForEach-Object {
-                    $variables.Add($_.Name, $_.Group)
-                }
-            Stop-Job $_
-            Remove-Job $_
-        }
-    # ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
-    # ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
-    # ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
-    # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
-    $variables = [pscustomobject]$variables
-    $template = "
+if  ($firstUse) {
+    # finish jobs
+    Start-Action "Finish job"
+        $variables = @{}
+        Get-Job |
+            Where-Object Name -NE "mssql" |
+            ForEach-Object {
+                Wait-Job $_ | Out-Null
+                Receive-Job $_ |
+                    ConvertFrom-Json |
+                    Group-Object Type |
+                    ForEach-Object {
+                        $variables.Add($_.Name, $_.Group)
+                    }
+                Stop-Job $_
+                Remove-Job $_
+            }
+        # ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
+        # ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
+        # ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
+        # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
+        $variables = [pscustomobject]$variables
+        $template = "
 ╔═════════════════════╤═════════════════════════════╗
 ║ WLAN : {0}          │ DevOps Agents : {1}         ║
 ╚═════════════════════╧═════════════════════════════╝
 "
-    $placeholder = " # # # "
-    $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
-    $variables.'WLAN' |
-        Sort-Object Name |
-        ForEach-Object {
-            $index = $template.IndexOf("#")
-            $char = if ($_.Status) {'🟩'} else {'🟥'}
-            $template =$template.Remove($index, 2)
-            $template = $template.Insert($index, $char)
-        }
-    $template = $template.Replace("#", "🟥")
+        $placeholder = " # # # "
+        $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
+        $variables.'WLAN' |
+            Sort-Object Name |
+            ForEach-Object {
+                $index = $template.IndexOf("#")
+                $char = if ($_.Status) {'🟩'} else {'🟥'}
+                $template =$template.Remove($index, 2)
+                $template = $template.Insert($index, $char)
+            }
+        $template = $template.Replace("#", "🟥")
 
-    $placeholder = " # # "
-    $template = $template.Replace("{1}".PadRight($placeholder.Length), $placeholder)
-    $variables.'DevOps Agents' |
-        Sort-Object Name |
-        ForEach-Object {
-            $index = $template.IndexOf("#")
-            $char = if ($_.Status) {'🟩'} else {'🟥'}
-            $template =$template.Remove($index, 2)
-            $template = $template.Insert($index, $char)
-        }
-    $template = $template.Replace("#", "🟥")
+        $placeholder = " # # "
+        $template = $template.Replace("{1}".PadRight($placeholder.Length), $placeholder)
+        $variables.'DevOps Agents' |
+            Sort-Object Name |
+            ForEach-Object {
+                $index = $template.IndexOf("#")
+                $char = if ($_.Status) {'🟩'} else {'🟥'}
+                $template =$template.Remove($index, 2)
+                $template = $template.Insert($index, $char)
+            }
+        $template = $template.Replace("#", "🟥")
 
-    Write-Host $template.Trim()
-    Remove-Variable template, placeholder
-Complete-Action
+        Write-Host $template.Trim()
+        Remove-Variable template, placeholder
+    Complete-Action
+}
 
 if ($profiler.current.Length -gt 0) {
     $profiler.variables = $variables
@@ -485,4 +498,4 @@ if ($profiler.current.Length -gt 0) {
     $profiler.runtime = ((Get-Date) - $profiler.start).TotalSeconds
     $profiler | ConvertTo-Json -Depth 9 | Set-Content $env:TEMP\Profile.json
 }
-Remove-Variable profiler, variables
+Remove-Variable profiler, variables -ErrorAction SilentlyContinue

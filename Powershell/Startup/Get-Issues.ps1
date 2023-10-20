@@ -7,8 +7,8 @@ param (
                ValueFromPipeline=$true,
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
-    [int[]]
-    $Id,
+    [string[]]
+    $WorkitemId,
 
     [Parameter(Mandatory=$true,
                ParameterSetName="NewParameterSet",
@@ -136,26 +136,40 @@ DynamicParam {
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Query", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
-    # linux style aliases
-    'ntb'.ToCharArray() |
-    ForEach-Object {
-    @(
-        "${_}a", "${_}p", "${_}u", "${_}o"
-        "${_}ap", "${_}ua", "${_}ao", "${_}up", "${_}po", "${_}uo"
-        "${_}uap", "${_}apo", "${_}uao", "${_}upo"
-        "${_}uapo"
-    )} |
-    ForEach-Object { $_.Trim() } |
-    ForEach-Object {
-        $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
-        $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-        # $ParameterAttribute.Mandatory = $true
-        $ParameterAttribute.ParameterSetName = "${_}ParameterSet"
-        $AttributeCollection.Add($ParameterAttribute)
+    # param Name
+    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Position = 0
+    $ParameterAttribute.Mandatory = $false
+    $ParameterAttribute.ParameterSetName = "NameParameterSet"
+    $AttributeCollection.Add($ParameterAttribute)
 
-        $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new($_, [switch], $AttributeCollection)
-        $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
-    }
+    $ids = & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=6.0" `
+                -Body @{
+                    query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.TeamProject] = 'TauOffice'"
+                } |
+                ForEach-Object workItems |
+                ForEach-Object id
+    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+        & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
+                -Body @{
+                    ids= $ids
+                    fields= @(
+                        "System.Id"
+                        "System.Title"
+                     )
+                } |
+                ForEach-Object value |
+                ForEach-Object fields |
+                ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
+                Sort-Object
+    ))
+    $AttributeCollection.Add($ValidateSetAttribute)
+
+    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Name", [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
 
     return $RuntimeParameterDictionary
 }
@@ -166,18 +180,6 @@ begin {
     ${ConvertTo-Pdf}   = "$PSScriptRoot\ConvertTo-Pdf.ps1"
     $PSDefaultParameterValues["ForEach-Object:WhatIf"] = $false
 
-    foreach ($alias in $PSBoundParameters.Keys | Where-Object { [Char]::IsLower($_[0]) }) {
-        foreach ($parameter in $PSCmdlet.MyInvocation.MyCommand.Parameters.Values |
-                                   Where-Object {$_.Aliases[0].Length -eq 1}
-                                   ) {
-            if ($parameter.Aliases[0] -in $alias.ToCharArray()) {
-                Write-Host -ForegroundColor Yellow "using -$($parameter.Name)"
-                Set-Variable -Name $parameter.Name -Value $true
-            }
-        }
-    }
-    # Get-Variable |? Name -in $PSCmdlet.MyInvocation.MyCommand.Parameters.Values.Name
-
     @("User.WorkItem", "User.WorkItemPdf") |
     ForEach-Object {
         if ($null -eq (Get-FormatData -TypeName $_)) {
@@ -187,7 +189,8 @@ begin {
 }
 process {
     $IterationName = $PSBoundParameters['Iteration']
-    $Query = $PSBoundParameters['Query']
+    $Query         = $PSBoundParameters['Query']
+    $Name          = $PSBoundParameters['Name']
 
     $downloaded = @()
     if ($IterationName -eq "@Current Iteration") {
@@ -220,8 +223,12 @@ process {
                 ForEach-Object workItemRelations |
                 ForEach-Object target |
                 ForEach-Object id
-    } elseif ($null -ne $Id) {
-        $missing_ids = $Id
+    } elseif ($null -ne $Name) {
+        $missing_ids = $Name |
+            ForEach-Object { $_.Split("-")[0] }
+    } elseif ($null -ne $WorkitemId) {
+        $missing_ids = $WorkitemId |
+            ForEach-Object { if ($_.Contains("-")) { $_.Split("-")[0] } else { $_ } }
     } else {
         $wiql = if ($New) {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
@@ -374,8 +381,9 @@ process {
                                                , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
                                                               data-vss-mention="version:1.0">#$1</a>' `
                                         -replace "<p>&nbsp; </p>`n", '' `
-                                        -replace 'Beheben in ', 'Umsetzen in ' `
-                                        -replace 'Beheben bis ', 'Umsetzen bis ' `
+                                        -replace 'Beheben (in|bis) ', 'Umsetzen $1 ' `
+                                        -replace 'Fehler (siehe) ', 'Aufgabe $1 ' `
+                                        -replace 'Fehlerbeschreibung ', 'Aufgabenbeschreibung ' `
                                         -replace '(Hallo) Wolfgang', '$1'
                     }
 
