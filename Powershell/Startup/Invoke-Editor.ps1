@@ -23,7 +23,7 @@ param (
 begin {
 }
 process {
-    $args = @()
+    $argv = @()
 
     foreach ($path in $Arguments) {
         if ($path -eq "-Verbose") {
@@ -46,35 +46,43 @@ process {
             }
         }
 
-        $args += $path
+        $argv += $path
     }
 
     if ($PSBoundParameters['Debug']) {
         Write-Host -ForegroundColor Cyan  "== PsBoundParameters =="
         $PSBoundParameters | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
 
-        Write-Host -ForegroundColor Cyan  "== args =="
-        $args | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
+        Write-Host -ForegroundColor Cyan  "== argv =="
+        $argv | ConvertTo-Json -Depth 1 | Write-Host -ForegroundColor Cyan
     }
 
-    $args = $args | ForEach-Object {
-        if ($_.Length -eq 0) {
-        } elseif ($_ -like '*"*') {
-            "'$_'"
-            # $_
-        } elseif ($_ -like '* *') {
-            "`"$_`""
-        } else {
-            $_
+    $argv = $argv |
+        ForEach-Object {
+            if ($_.Contains("/") -and !$_.StartsWith(".") -and !$_.Contains(":")) {
+               ".\$($_.Replace("/", "\"))" # git status style paths
+            }
+            else {
+               $_
+            }
+        } |
+        ForEach-Object {
+            if ($_.Length -eq 0) {
+            } elseif ($_ -like '*"*') {
+                "'$_'"
+            } elseif ($_ -like '* *') {
+                "`"$_`""
+            } else {
+                $_
+            }
         }
-    }
 
     if ($PSBoundParameters['Debug']) {
-        Write-Host -ForegroundColor Cyan ". $Editor $args"
+        Write-Host -ForegroundColor Cyan ". $Editor $argv"
     } elseif ($Input.Length -gt 0) {
-        $Input | . "$Editor" $args
+        $Input | . "$Editor" $argv
     } else {
-        Invoke-Expression ". `"$Editor`" $args"
+        Invoke-Expression ". `"$Editor`" $argv"
     }
 }
 end {

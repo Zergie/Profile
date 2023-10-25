@@ -15,13 +15,6 @@ $profiler = [pscustomobject]@{
     current   = [Hashtable]::new()
     last      = Get-Content $env:TEMP\Profile.json -ErrorAction SilentlyContinue | ConvertFrom-Json
 }
-
-if ((Get-Process pwsh | Measure-Object).Count -eq 1) {
-    . "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
-    wt new-tab
-    wt focus-tab -t 0
-}
-
 function Start-Action {
     param (
         $Status
@@ -320,14 +313,49 @@ Start-Action "Configure PSReadLine"
         $line = $null
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-        if ($selectionStart -ne -1)
-        {
+        if ($selectionStart -ne -1) {
             [Microsoft.PowerShell.PSConsoleReadLine]::Replace($selectionStart, $selectionLength, '(' + $line.SubString($selectionStart, $selectionLength) + ')')
             [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($selectionStart + $selectionLength + 2)
+        } else {
+            $newLine = $line.SubString(0, $cursor).Trim()
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $cursor, '(' + $newLine + ')')
+            [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($cursor + 2)
         }
-        else
-        {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, '(' + $line.Trim() + ')')
+    }
+
+    Set-PSReadLineKeyHandler -Key "Alt+)" `
+                             -BriefDescription ParenthesizeSelection `
+                             -LongDescription "Remove parenthesis around the selection or entire line and move the cursor to after the closing parenthesis" `
+                             -ScriptBlock {
+        param($key, $arg)
+
+        $selectionStart = $null
+        $selectionLength = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$selectionStart, [ref]$selectionLength)
+
+        $line = $null
+        $cursor = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+        if ($selectionStart -ne -1) {
+            $newLine = $line.SubString($selectionStart, $selectionLength)
+            if ($newLine.StartsWith("(")) {
+                $newLine = $newLine.SubString(1)
+            }
+            if ($newLine.EndsWith(")")) {
+                $newLine = $newLine.SubString(0, $newLine.Length - 1)
+            }
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace($selectionStart, $selectionLength, $newLine)
+            [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($selectionStart + $newLine.Length)
+        } else {
+            $newLine = $line.Trim()
+            if ($newLine.StartsWith("(")) {
+                $newLine = $newLine.SubString(1)
+            }
+            if ($newLine.EndsWith(")")) {
+                $newLine = $newLine.SubString(0, $newLine.Length - 1)
+            }
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
             [Microsoft.PowerShell.PSConsoleReadLine]::EndOfLine()
         }
     }
@@ -371,8 +399,8 @@ Start-Action "Configure PSReadLine"
                              -LongDescription "Find a completion based on the current screen content" `
                              -ScriptBlock {
         param($key, $arg)
-        $delimiter = " `"'([{}]):;.,><\/"
-        $delimiter_regex = "[^ `r`n\:;.,\>\<(\[{}\])\\/]*"
+        $delimiter = " `"'([{}]):;,><\"
+        $delimiter_regex = "[^ `r`n\:;,\>\<(\[{}\])\\]*"
 
         $line   = [string] $null
         $cursor = [int] $null

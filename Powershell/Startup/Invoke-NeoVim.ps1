@@ -3,7 +3,7 @@ if ($null -eq (Get-Process -Name nvim -ErrorAction SilentlyContinue)) {
 }
 
 $editorArgs = @{
-    Editor="python"
+    Editor="C:/Python311/python.exe"
     Arguments=@(
         "C:/Python311/Lib/site-packages/nvr/nvr.py"
 

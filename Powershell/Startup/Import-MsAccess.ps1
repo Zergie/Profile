@@ -56,6 +56,10 @@ process {
                     | Get-ChildItem
     }
 
+    $pathes = $pathes |
+        Group-Object |
+        ForEach-Object { $_.Group[0] }
+
     Write-Debug "PSBoundParameters: $($PSBoundParameters | ConvertTo-Json)"
     Write-Debug "pathes: $($pathes.FullName | ConvertTo-Json)"
 }

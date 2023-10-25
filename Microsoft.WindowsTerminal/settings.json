@@ -4,6 +4,10 @@
     "actions":
     [
         {
+          "keys": "ctrl+backspace",
+          "command": { "action": "sendInput", "input": "\u0017" }
+        },
+        {
             "command": "find",
             "keys": "win+ctrl+alt+comma"
         },
