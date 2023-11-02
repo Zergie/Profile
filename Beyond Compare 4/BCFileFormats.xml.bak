@@ -344,9 +344,18 @@
 		<UseRes Value="True"/>
 	</TTextFormat>
 	<TTextFormat Value="&#2;XML">
+		<ConvertKind Value="convertXMLSort"/>
 		<CustomElementCaseSigs>
 			<Item>
 				<ElementStr Value="documentation"/>
+				<ValueBool Value="False"/>
+			</Item>
+			<Item>
+				<ElementStr Value="description"/>
+				<ValueBool Value="False"/>
+			</Item>
+			<Item>
+				<ElementStr Value="dbms_description"/>
 				<ValueBool Value="False"/>
 			</Item>
 		</CustomElementCaseSigs>
@@ -392,24 +401,18 @@
 				<Text Value="&lt;Aktiv>"/>
 				<StopText Value="&lt;/Aktiv>"/>
 			</_6>
-			<_7 Value="TBasicTextGrammarItem">
-				<ElementStr Value="Neues Element"/>
-				<CaseSensitive Value="False"/>
-				<IsRegExp Value="True"/>
-				<Text Value="&lt;to_build [^>]+>"/>
-			</_7>
-			<_8 Value="TDelimitedTextGrammarItem">
+			<_7 Value="TDelimitedTextGrammarItem">
 				<ElementStr Value="generated"/>
 				<CaseSensitive Value="False"/>
 				<Text Value=" generated=&quot;"/>
 				<StopText Value="&quot;"/>
-			</_8>
-			<_9 Value="TDelimitedTextGrammarItem">
-				<ElementStr Value="TO_BUILD Anweisung"/>
+			</_7>
+			<_8 Value="TBasicTextGrammarItem">
+				<ElementStr Value="dbms_description"/>
 				<CaseSensitive Value="False"/>
-				<Text Value="&lt;to_build "/>
-				<StopText Value="/>"/>
-			</_9>
+				<IsRegExp Value="True"/>
+				<Text Value="description='[^']+'|&lt;description>.+&lt;/description>"/>
+			</_8>
 		</Grammar>
 		<Mask Value="*.xml;*.xsd;*.xsl;*.act"/>
 		<UseRes Value="True"/>

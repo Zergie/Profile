@@ -85,6 +85,23 @@ end {
     # remove weekends only
     $Days = $Days | Where-Object { $_ -in $WorkTimes.date.Day }
 
+    # remove holidays
+    $data = (Invoke-RestMethod 'https://feiertage-api.de/api/?jahr=$Year').BY
+    $holidays = $data |
+        Get-Member -MemberType NoteProperty |
+        Where-Object Name -NotLike "Augsburger *" |
+        ForEach-Object Name |
+        ForEach-Object {
+            [pscustomobject]@{
+                name = $_
+                date = [datetime]::ParseExact($data.$_.datum, "yyyy-MM-dd", $null)
+            }
+        } |
+        Where-Object { $_.date.Month -eq $Month }
+
+    $Days = $Days | Where-Object { $_ -notin $holidays.date.Day }
+    Remove-Variable holidays, data
+
     # open browser
     Write-Host "open new browser .."
     . "$PSScriptRoot/Get-TauWorkTogetherHolidays.ps1" -Year $Year -Month $Month -KeepBrowser |
@@ -167,57 +184,60 @@ end {
                     Write-Host "$padding0├$("─" * 61)┤   "
                 } `
                 -Process {
-                    $date     = [datetime]::Parse($_.DATUM)
+                    $date = $null
+                    try { $date = [datetime]::Parse($_.DATUM) } catch {}
 
-                    $startEnd = $_.ARBEIT.Split("-")
-                    if ($startEnd[0].Trim() -eq "00:00") {
-                        $start    = [datetime]::Parse("05:00")
-                        $end      = [datetime]::Parse($startEnd[1])
-                        # $worktime = $_.ARBEITSZEIT.Split(":")
-                        # $start    = $end - [timespan]::new($worktime[0], $worktime[1], 0)
-                    } else {
-                        $start    = [datetime]::Parse($startEnd[0])
-                        $end      = [datetime]::Parse($startEnd[1])
-                    }
+                    if ($null -ne $date) {
+                        $startEnd = $_.ARBEIT.Split("-")
+                        if ($startEnd[0].Trim() -eq "00:00") {
+                            $start    = [datetime]::Parse("05:00")
+                            $end      = [datetime]::Parse($startEnd[1])
+                            # $worktime = $_.ARBEITSZEIT.Split(":")
+                            # $start    = $end - [timespan]::new($worktime[0], $worktime[1], 0)
+                        } else {
+                            $start    = [datetime]::Parse($startEnd[0])
+                            $end      = [datetime]::Parse($startEnd[1])
+                        }
 
-                    $a        = (($start - [datetime]::Parse("05:00")).TotalHours * 4)
-                    $b        = (($end - $start).TotalHours * 4)
-                    $timeline = "$(" " * $a)$("█" * $b)".PadRight(61)
+                        $a        = (($start - [datetime]::Parse("05:00")).TotalHours * 4)
+                        $b        = (($end - $start).TotalHours * 4)
+                        $timeline = "$(" " * $a)$("█" * $b)".PadRight(61)
 
-                    $worktime = ($end - $start).TotalHours
+                        $worktime = ($end - $start).TotalHours
 
-                    $c_DayOfWeek = if ($date.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
-                        "`e[31m"
-                    } elseif ($date.DayOfWeek -eq [System.DayOfWeek]::Saturday) {
-                        "`e[31m"
-                    } else {
-                        ""
-                    }
-                    $c_DayOfMonth = if ($null -eq $last) {
-                    } elseif ($date.DayOfWeek -eq [System.DayOfWeek]::Monday) {
-                    } elseif ($last.date.Day -ne $date.Day - 1) {
-                        "`e[31m"
-                    } else {
-                        ""
-                    }
-                    $c_WorkTime = if ($worktime -gt 12) {
-                        "`e[31m"
-                    } elseif ($worktime -lt 6) {
-                        "`e[31m"
-                    } else {
-                        ""
-                    }
+                        $c_DayOfWeek = if ($date.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
+                            "`e[31m"
+                        } elseif ($date.DayOfWeek -eq [System.DayOfWeek]::Saturday) {
+                            "`e[31m"
+                        } else {
+                            ""
+                        }
+                        $c_DayOfMonth = if ($null -eq $last) {
+                        } elseif ($date.DayOfWeek -eq [System.DayOfWeek]::Monday) {
+                        } elseif ($last.date.Day -ne $date.Day - 1) {
+                            "`e[31m"
+                        } else {
+                            ""
+                        }
+                        $c_WorkTime = if ($worktime -gt 12) {
+                            "`e[31m"
+                        } elseif ($worktime -lt 6) {
+                            "`e[31m"
+                        } else {
+                            ""
+                        }
 
-                    @(
-                        "$c_DayOfWeek$($date.ToString("ddd"))`e[0m $c_DayOfMonth$($date.ToString("dd."))`e[0m $($start.ToString("hh:mm"))"
-                        "$timeline"
-                        "$($end.ToString("HH:mm")) => $c_WorkTime$($worktime.ToString("0.0 h").PadLeft(6))`e[0m"
-                    ) |
-                        Join-String -Separator "│" |
-                        Write-Host
+                        @(
+                            "$c_DayOfWeek$($date.ToString("ddd"))`e[0m $c_DayOfMonth$($date.ToString("dd."))`e[0m $($start.ToString("hh:mm"))"
+                            "$timeline"
+                            "$($end.ToString("HH:mm")) => $c_WorkTime$($worktime.ToString("0.0 h").PadLeft(6))`e[0m"
+                        ) |
+                            Join-String -Separator "│" |
+                            Write-Host
 
-                    $last = [pscustomobject]@{
-                        date = $date
+                        $last = [pscustomobject]@{
+                            date = $date
+                        }
                     }
                 } `
                 -End     {

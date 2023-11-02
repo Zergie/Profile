@@ -58,10 +58,12 @@ process {
 
     $pathes = $pathes |
         Group-Object |
-        ForEach-Object { $_.Group[0] }
+        ForEach-Object { $_.Group[0] } |
+        Where-Object Extension -NE ".old"
 
     Write-Debug "PSBoundParameters: $($PSBoundParameters | ConvertTo-Json)"
     Write-Debug "pathes: $($pathes.FullName | ConvertTo-Json)"
+    $ShowDiff = $true
 }
 end {
     if ($Edit) {
@@ -244,7 +246,67 @@ Get-Process msaccess |
 
     if ($ShowDiff) {
         foreach ($file in $pathes) {
-            git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
+            $new = Get-Content $file
+            $old = Get-Content "$($file.FullName).old"
+            $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
+
+            $i = 0
+            $j = 0
+            $changes = 0
+            while ($j -lt $count) {
+                $new_lines = -1
+                $del_lines = -1
+
+                try {
+                    if ($old[$i] -eq $new[$j]) {
+                        $new_lines = 0
+                        $del_lines = 0
+                    } else {
+                        foreach ($d in 1..99) {
+                            if ($old[$i] -eq $new[$j+1]) {
+                                $new_lines = $d
+                                break;
+                            }
+                            if ($old[$i+1] -eq $new[$j]) {
+                                $del_lines = $d
+                                break;
+                            }
+                        }
+                    }
+                } catch {
+                }
+
+                while ($new_lines -gt 0) {
+                    Write-Host "${j}: " -NoNewline
+                    Write-Host -ForegroundColor Green $new[$j] -NoNewline
+                    Write-Host -ForegroundColor Magenta " (new line)"
+                    $changes += 1
+                    $new_lines -= 1
+                    $j += 1
+                }
+                while ($del_lines -gt 0) {
+                    Write-Host "${j}: " -NoNewline
+                    Write-Host -ForegroundColor Red $old[$i] -NoNewline
+                    Write-Host -ForegroundColor Magenta " (deleted line)"
+                    $changes += 1
+                    $del_lines -= 1
+                    $i += 1
+                }
+
+                if ($new_lines -eq -1 -and $del_lines -eq -1) {
+                    Write-Host "${j}: " -NoNewline
+                    Write-Host -ForegroundColor Red $old[$i] -NoNewline
+                    Write-Host -ForegroundColor Green $new[$j] -NoNewline
+                    Write-Host -ForegroundColor Magenta " (replace)"
+                    $changes += 1
+                }
+
+                $i += 1
+                $j += 1
+            }
+            Write-Host -ForegroundColor Magenta " $changes changes"
+
+            # git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
             Remove-Item "$($file.FullName).old"
         }
     }

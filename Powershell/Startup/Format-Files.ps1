@@ -167,7 +167,7 @@ end {
                 }
 
                 "\.(cs)$" {
-                    $keywords = "namespace|using|public|private|class|static|const|readonly|for|foreach|if|uint|null|ref|out|&&|\|\|return|var|int|string|new|double"
+                    $keywords = "namespace|using|public|private|protected|class|static|const|readonly|for|foreach|if|uint|null|ref|out|&&|\|\|return|var|int|string|new|double"
                     $lineno = 0
                     $content = Get-Content $item -Encoding utf8 |
                                 ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }

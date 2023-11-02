@@ -14,7 +14,7 @@
 	editor = C:/Python311/python.exe C:/Python311/Lib/site-packages/nvr/nvr.py \
 		--servername 127.0.0.1:6789 \
 		-cc \"lua require('FTerm').close()\" \
-		-cc \"silent !wt focus-tab -t 2\" \
+		-cc \"silent !wt focus-tab -t 1\" \
 		-c \"au BufDelete <buffer> silent !wt focus-tab -t 0\" \
 		--remote-wait \
 

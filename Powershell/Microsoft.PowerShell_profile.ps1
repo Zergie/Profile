@@ -44,7 +44,11 @@ Complete-Action
 # initialize environment
 Start-Action "Initialize environment "
     $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
-    $env:OPENAI_API_KEY = $secrets.'Invoke-AutoCommit'.token
+    $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
+    $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
+    $env:POWERSHELL_UPDATECHECK              = "OFF"
+    $env:PSModuleAnalysisCachePath           = 'NUL'
+    $env:PSDisableModuleAnalysisCacheCleanup = 1
     $OutputEncoding = [System.Text.Encoding]::UTF8
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action
@@ -194,6 +198,7 @@ Start-Action "Set alias to my programs"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
+    Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
 Complete-Action
 
 # set alias to my scripts
@@ -416,43 +421,12 @@ Start-Action "Configure PSReadLine"
             $rect   = [System.Management.Automation.Host.Rectangle]::new(0, 0, $size.Width, $size.Height)
             $buffer = $host.UI.RawUI.GetBufferContents($rect)
 
-            $suggestions = $buffer.Character |
+            $suggestion = $buffer.Character |
                 Join-String |
                 Select-String "\b$($wordUnderCursor)$delimiter_regex" -AllMatches |
                 ForEach-Object { $_.Matches.Value } |
                 Select-Object -SkipLast 1 |
-                Group-Object { $_.Trim().ToLower() } |
-                ForEach-Object { $_.Group[0] }
-            $count = ($suggestions | Measure-Object).Count
-
-            if ($count -eq 1) {
-                $suggestion = ($suggestions | Select-Object -First 1)
-            } else {
-                $shortest = $suggestions |
-                    Group-Object Length |
-                    Select-Object -First 1 |
-                    ForEach-Object { $_.Group[0] }
-
-                $suggestion = $null
-                foreach ($length in $wordLength .. ($shortest.Length)) {
-                    if ($length -gt 0) {
-                        $test = $shortest.Substring(0, $length)
-                        if (($suggestions | Where-Object {! $_.ToLower().StartsWith($test.ToLower()) } | Measure-Object).Count -eq 0)
-                        {
-                            $suggestion = $test
-                            $wordLength = $test.Length
-                        }
-                    }
-                }
-
-                Write-Host
-                $suggestions |
-                    ForEach-Object {
-                        Write-Host -BackgroundColor White -ForegroundColor Black $_.Substring(0, $wordLength) -NoNewline
-                        Write-Host $_.Substring($wordLength)
-                    }
-                [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
-            }
+                Select-Object -Last 1
 
             if ($null -ne $suggestion) {
                 $newLine = "$($line.Substring(0, $wordBegin))$($suggestion)$($line.Substring($cursor))"

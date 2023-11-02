@@ -73,6 +73,7 @@ Process {
     foreach ($item in $Recipient) {
         $mail.To.Add($item)
     }
+    $mail.Bcc.Add("wpuchinger@rocom-service.de")
     $mail.ReplyTo = "noreply@rocom.de"
     $mail.Subject = "$($sprint.Name) - $($sprintStart) bis $($sprintFinish)"
     $mail.Body    = @"
