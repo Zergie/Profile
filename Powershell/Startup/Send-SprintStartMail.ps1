@@ -113,8 +113,7 @@ code {
 Der $($sprint.Name) findet statt vom $($sprintStart) bis zum $($sprintFinish).</p>
 <p>Hier ist auch ein direkter Link zum Sprint in DevOps: <a href='https://dev.azure.com/rocom-service/TauOffice/_sprints/taskboard/TauOffice%20Team/TauOffice/$($sprint.Name)'>$($sprint.Name)</a></p>
 
-<p><h1>Arbeitsaufgaben:</h1><table>
-$(
+<p><h1>Arbeitsaufgaben:</h1><table>$(
     $odd = $false
     $workitems |
         ForEach-Object {[pscustomobject]@{
