@@ -23,17 +23,17 @@ require('user.lspconfig')
 
 
 require("lazy").setup({
-   -- Translator
-   {
-     'uga-rosa/translate.nvim',
-     config = function ()
-      local map = function (mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
-      end
-       map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
-       map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
-     end
-   },
+   -- -- Translator
+   -- {
+   --   'uga-rosa/translate.nvim',
+   --   config = function ()
+   --    local map = function (mode, lhs, rhs, desc)
+   --      vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
+   --    end
+   --     map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
+   --     map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
+   --   end
+   -- },
 
    -- Theme inspired by Atom
    {
@@ -537,8 +537,8 @@ require("lazy").setup({
       { -- Snippets
         'L3MON4D3/LuaSnip',
         config = function()
-          require("luasnip.loaders.from_snipmate").lazy_load()
           require("luasnip.loaders.from_snipmate").lazy_load({ paths = { "./snippets" } })
+          require("luasnip.loaders.from_snipmate").lazy_load()
         end,
         dependencies = {
           "honza/vim-snippets",
@@ -578,13 +578,35 @@ require("lazy").setup({
           end,
         },
         mapping = cmp.mapping.preset.insert {
-          ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-f>'] = cmp.mapping.scroll_docs(4),
-          ['<C-Space>'] = cmp.mapping.complete(),
-          ['<Tab>'] = cmp.mapping.confirm {
-            behavior = cmp.ConfirmBehavior.Replace,
-            select = true,
-          },
+          ["<C-u>"] = cmp.mapping.scroll_docs(-2),
+          ["<C-d>"] = cmp.mapping.scroll_docs(2),
+          ["<C-h>"] = cmp.mapping.complete({ reason = cmp.ContextReason.Manual }),
+          ["<C-e>"] = cmp.mapping.abort(),
+          ["<Tab>"] = cmp.mapping.confirm({
+            behavior = cmp.ConfirmBehavior.Insert,
+            select = true, -- use first result if none explicitly selected
+          }),
+          -- ["<Tab><Tab>"] = function (fallback)
+          --   if cmp.visible then
+          --     cmp.select_next_item()
+          --     cmp.select_next_item()
+          --     cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert })
+          --   else
+          --     fallback()
+          --   end
+          -- end,
+          -- ["<Tab><Tab><Tab>"] = function (fallback)
+          --   if cmp.visible then
+          --     cmp.select_next_item()
+          --     cmp.select_next_item()
+          --     cmp.select_next_item()
+          --     cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert })
+          --   else
+          --     fallback()
+          --   end
+          -- end,
+          -- ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
+          -- ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
           ['<C-n>'] = cmp.mapping(function() luasnip.jump(1) end, { 'i', 's'}),
           ['<C-p>'] = cmp.mapping(function() luasnip.jump(-1) end, { 'i', 's'}),
         },
@@ -603,13 +625,51 @@ require("lazy").setup({
           end
         },
         sources = {
-          { name = 'nvim_lsp' },
-          { name = 'luasnip' },
+          { name = 'luasnip', priority = 1 },
+          { name = 'nvim_lsp', priority = 2 },
+          { name = 'dictionary', keyword_length = 2, max_items = 10, priority = 3 },
           { name = 'buffer', max_items = 10 },
           { name = 'path' },
-          { name = 'dictionary', keyword_length = 2, max_items = 10, },
+          sorting = {
+            priority_weight = 1.0,
+            comparators = {
+              cmp.config.compare.locality,
+              cmp.config.compare.recently_used,
+              cmp.config.compare.score, -- based on :  score = score + ((#sources - (source_index - 1)) * sorting.priority_weight)
+              cmp.config.compare.offset,
+              cmp.config.compare.order,
+            },
+          },
+        },
+        performance = {
+          max_view_entries = 50,
+        },
+        window = {
+          completion = cmp.config.window.bordered(),
+          documentation = cmp.config.window.bordered(),
+        },
+        experimental = {
+          ghost_text = true,
         },
       }
+
+      -- -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
+      -- cmp.setup.cmdline({ '/', '?' }, {
+      --   mapping = cmp.mapping.preset.cmdline(),
+      --   sources = {
+      --     { name = 'buffer' }
+      --   }
+      -- })
+      --
+      -- -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+      -- cmp.setup.cmdline(':', {
+      --   mapping = cmp.mapping.preset.cmdline(),
+      --   sources = cmp.config.sources({
+      --     { name = 'path' }
+      --   }, {
+      --     { name = 'cmdline' }
+      --   })
+      -- })
     end
   },
 })

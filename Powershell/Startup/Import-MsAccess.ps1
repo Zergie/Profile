@@ -247,7 +247,7 @@ Get-Process msaccess |
     if ($ShowDiff) {
         foreach ($file in $pathes) {
             $new = Get-Content $file
-            $old = Get-Content "$($file.FullName).old"
+            $old = Get-Content "$($file.FullName).old" | ForEach-Object {$_} -End {""}
             $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
 
             $i = 0
@@ -263,11 +263,11 @@ Get-Process msaccess |
                         $del_lines = 0
                     } else {
                         foreach ($d in 1..99) {
-                            if ($old[$i] -eq $new[$j+1]) {
+                            if ($old[$i] -eq $new[$j+$d]) {
                                 $new_lines = $d
                                 break;
                             }
-                            if ($old[$i+1] -eq $new[$j]) {
+                            if ($old[$i+$d] -eq $new[$j]) {
                                 $del_lines = $d
                                 break;
                             }

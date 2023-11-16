@@ -80,25 +80,25 @@ if ($firstUse) {
         Start-Job {
             $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
 
-            $preferedAdapter = $adapter |
-                Sort-Object LinkSpeed |
-                Select-Object -First 1
-
-            $adapter |
-                Where-Object Name -NotIn $preferedAdapter.Name |
-                Where-Object Status -NE "Disconnected" |
-                ForEach-Object {
-                    Write-Host -NoNewline "$($_.Name)> "
-                    netsh wlan disconnect interface="$($_.Name)" | Write-Host
-                }
-
-            if ($preferedAdapter.Status -ne "Up") {
-                Write-Host -NoNewline "$($preferedAdapter.Name)> "
-                netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
-
-                Start-Sleep -Seconds 2
-                $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
-            }
+            # $preferedAdapter = $adapter |
+            #     Sort-Object LinkSpeed |
+            #     Select-Object -First 1
+            #
+            # $adapter |
+            #     Where-Object Name -NotIn $preferedAdapter.Name |
+            #     Where-Object Status -NE "Disconnected" |
+            #     ForEach-Object {
+            #         Write-Host -NoNewline "$($_.Name)> "
+            #         netsh wlan disconnect interface="$($_.Name)" | Write-Host
+            #     }
+            #
+            # if ($preferedAdapter.Status -ne "Up") {
+            #     Write-Host -NoNewline "$($preferedAdapter.Name)> "
+            #     netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
+            #
+            #     Start-Sleep -Seconds 2
+            #     $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
+            # }
 
             1..3 |
                 ForEach-Object {

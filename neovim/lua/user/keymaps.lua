@@ -17,6 +17,7 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 local cmd = vim.cmd
 map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                        end, "Workspace Profile")
 map("n", "<Leader>cA", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")            end, "Workspace Admintool")
+map("n", "<Leader>cS", function () cmd("cd C:|cd /GIT/TauServer/")                      end, "Workspace Tau-Server")
 map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/")  end, "Workspace tau-office-controls")
 map("n", "<Leader>ci", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-installer/") end, "Workspace tau-office-installer")
 map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")   end, "Workspace tau-office-plugins")

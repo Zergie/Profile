@@ -27,12 +27,14 @@ process {
     {
         ".sql" {
             Get-Content $Path |
-             c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=sql|set number!|set relativenumber!|set background=light" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+                c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=sql|set number!|set relativenumber!|set background=light" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+            Clear-Host
             $Path = "C:\temp\temp.html"
         }
         ".article" {
             Get-Content $Path |
                 c:/tools/neovim/nvim-win64/bin/nvim.exe - +"set syntax=article|set number!|set relativenumber!|set background=light" +"TOhtml" +"w! C:\temp\temp.html" +"qa!"
+            Clear-Host
             $Path = "C:\temp\temp.html"
         }
     }

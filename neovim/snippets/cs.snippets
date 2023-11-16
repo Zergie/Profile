@@ -1,6 +1,15 @@
 # Snippets for C#
 # Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
+snippet dictionary
+	Dictionary<${1:string}, ${2:value}>
+
+snippet fore
+	foreach (var ${1:item} in ${2})
+	{
+		${3}
+	}
+
 snippet debug
 	System.Diagnostics.Debugger.Launch();
 

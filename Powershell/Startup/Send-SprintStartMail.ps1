@@ -78,42 +78,92 @@ Process {
     $mail.Subject = "$($sprint.Name) - $($sprintStart) bis $($sprintFinish)"
     $mail.Body    = @"
 <style>
-* {
-    font-family: sans-serif;
+/* Allgemeine Schriftart für den gesamten Inhalt */
+body {
+    font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Stil für die Überschrift (h1) */
 h1 {
     padding-top: 1em;
-    font-size: 1em;
+    font-size: 1.5em; /* Erhöht die Schriftgröße */
 }
+
+/* Stil für die gesamte Tabelle */
 table {
     border-collapse: collapse;
     min-width: 400px;
     text-align: left;
 }
+
+/* Stil für Zellen (td und th) */
 td, th {
-    padding: 6px 15px;
+    padding: 6px 15px; /* Erhöht den Zellenabstand */
     text-align: left;
 }
+
+/* Stil für den Code-Block */
 code {
     color: white;
     background: #2c7acd;
     border-radius: 12px;
     padding: .2rem .5rem;
 }
-.d0, .d6 { color: lightgrey; }
-.sprint  { background: #2c7acd; }
-.holiday { background: red; }
-.weekend {
-    /* background: repeating-linear-gradient(45deg, #2c7acd, #2c7acd 10px, #ffffff00 10px, #ffffff00 18px); */
-    background: #2c7acd88;
+
+/* Stil für Datumsklassen */
+.d0, .d6 {
+    color: lightgrey; /* Ändert die Textfarbe für bestimmte Klassen */
 }
+
+/* Stil für Sprint-Klasse */
+.sprint {
+    background: #2c7acd; /* Hervorhebung des Hintergrunds für Sprint-Elemente */
+    color: white; /* Textfarbe für bessere Lesbarkeit auf blauem Hintergrund */
+}
+
+/* Stil für Urlaubs-Klasse */
+.holiday {
+    background: red; /* Hervorhebung des Hintergrunds für Urlaubs-Elemente */
+    color: white; /* Textfarbe für bessere Lesbarkeit auf rotem Hintergrund */
+}
+
+/* Stil für Wochenend-Klasse */
+.weekend {
+    background: #2c7acd88; /* Leicht transparenter blauer Hintergrund */
+    color: white; /* Textfarbe für bessere Lesbarkeit auf blauem Hintergrund */
+}
+
 </style>
 <p>Sehr geehrte Stakeholder,</p>
-<p>ich möchte euch über die Aufgaben des nächsten Sprints informieren.
-Der $($sprint.Name) findet statt vom $($sprintStart) bis zum $($sprintFinish).</p>
-<p>Hier ist auch ein direkter Link zum Sprint in DevOps: <a href='https://dev.azure.com/rocom-service/TauOffice/_sprints/taskboard/TauOffice%20Team/TauOffice/$($sprint.Name)'>$($sprint.Name)</a></p>
 
-<p><h1>Arbeitsaufgaben:</h1><table>$(
+<p>ich freue mich, euch über die geplanten Aktivitäten für den bevorstehenden Sprint zu informieren. Der $($sprint.Name) ist für den Zeitraum vom $($sprintStart) bis zum $($sprintFinish) geplant.</p>
+
+<p>Um euch den Zugang zu den detaillierten Informationen zu erleichtern, findet ihr hier einen direkten <a href='https://dev.azure.com/rocom-service/TauOffice/_sprints/taskboard/TauOffice%20Team/TauOffice/$($sprint.Name)'>Link zu $($sprint.Name)</a> in unserem DevOps-System. Dieser Link ermöglicht euch einen schnellen und unkomplizierten Zugriff auf alle relevanten Informationen und Ressourcen, die im Rahmen dieses Sprints von Bedeutung sind.</p>
+
+<p><h1>Arbeitsaufgaben</h1>
+<p>$(@(
+"Wir haben für euch eine klare Übersicht der geplanten Arbeitsaufgaben im Rahmen des Sprint in Tabellenform zusammengestellt."
+"Zur besseren Veranschaulichung und Planung eurer Aktivitäten im Sprint präsentieren wir eine Tabelle der geplanten Arbeitsaufgaben."
+"Um euch eine strukturierte Darstellung der geplanten Aufgaben zu bieten, haben wir eine Tabelle mit den Arbeitsaufgaben für den Sprint erstellt."
+"Im Sinne einer übersichtlichen Planung und Koordination eurer Aufgaben im Sprint stellen wir euch eine Tabelle der geplanten Arbeitsaufgaben zur Verfügung."
+"Die folgende Tabelle bietet eine detaillierte Übersicht über die Arbeitsaufgaben, die im Rahmen des Sprint erledigt werden müssen."
+"Wir haben eine tabellarische Übersicht der geplanten Arbeitsaufgaben für den Sprint vorbereitet, um eure Arbeit effizienter zu organisieren."
+"Um eure Planung zu erleichtern, haben wir eine Tabelle erstellt, die die geplanten Arbeitsaufgaben und zugehörige Details enthält."
+"Die nachfolgende Tabelle gibt euch einen klaren Überblick über die geplanten Arbeitsaufgaben im Sprint und unterstützt eure Planung."
+"Wir präsentieren euch eine übersichtliche Tabelle mit den geplanten Arbeitsaufgaben für den bevorstehenden Sprint."
+"Damit ihr eure Aufgaben im Sprint besser koordinieren könnt, haben wir eine Tabelle der geplanten Arbeitsaufgaben zusammengestellt."
+"Wir möchten euch die Planung und Umsetzung eurer Aufgaben im Sprint erleichtern und bieten dazu eine übersichtliche Tabelle an."
+"Zur effizienten Koordination eurer Aufgaben im Sprint findet ihr hier eine Tabelle der geplanten Arbeitsaufgaben."
+"Die folgende Tabelle enthält eine klare Aufschlüsselung der geplanten Arbeitsaufgaben für den Sprint."
+"Wir haben eine Tabelle erstellt, die euch eine strukturierte Übersicht über die geplanten Arbeitsaufgaben im Sprint bietet."
+"Zur besseren Planung und Koordination eurer Aufgaben im Sprint haben wir eine Tabelle der geplanten Arbeitsaufgaben erstellt."
+"Die nachfolgende Tabelle veranschaulicht die geplanten Arbeitsaufgaben und bietet euch eine nützliche Übersicht."
+"Um euch eine leicht verständliche Übersicht über die bevorstehenden Aufgaben zu bieten, haben wir eine Tabelle vorbereitet."
+"Wir haben für euch eine Tabelle zusammengestellt, die die geplanten Arbeitsaufgaben für den Sprint übersichtlich darstellt."
+"Die folgende Tabelle gibt euch eine klare Darstellung der geplanten Aufgaben im Rahmen des Sprint."
+"Zur effizienten Planung und Umsetzung der Aufgaben im Sprint findet ihr hier eine Tabelle mit den geplanten Arbeitsaufgaben."
+) | Get-Random)</p>
+<table>$(
     $odd = $false
     $workitems |
         ForEach-Object {[pscustomobject]@{
@@ -136,7 +186,31 @@ Der $($sprint.Name) findet statt vom $($sprintStart) bis zum $($sprintFinish).</
         }
 )</table></p>
 
-<p><h1>Arbeitstage:</h1><table>
+
+<p><h1>Arbeitstage</h1>
+<p>$(@(
+"Um euch einen besseren Überblick über die bevorstehenden Arbeitstage im Rahmen des Sprint zu verschaffen, haben wir ein Diagramm erstellt."
+"Wir möchten eure Planung für den Sprint vereinfachen und haben daher ein Diagramm der Arbeitstage für die nächsten beiden Wochen vorbereitet."
+"Zur Verbesserung eurer Zeitplanung im Sprint haben wir ein Diagramm erstellt, das die Arbeitstage der nächsten zwei Wochen anzeigt."
+"Ein nützliches Werkzeug für die bevorstehende Planung des Sprint: Unser Diagramm zeigt die Arbeitstage der nächsten zwei Wochen."
+"Wir stellen euch ein hilfreiches Diagramm zur Verfügung, das die Arbeitstage für den Sprint übersichtlich darstellt."
+"Um euch bei der Vorbereitung auf den Sprint zu unterstützen, präsentieren wir ein Diagramm, das die Arbeitstage in den nächsten beiden Wochen anzeigt."
+"Wir haben ein Diagramm entwickelt, das euch dabei helfen wird, die Arbeitstage für den bevorstehenden Sprint zu veranschaulichen."
+"Damit ihr den Überblick behaltet, haben wir ein Diagramm mit den Arbeitstagen für den Sprint erstellt."
+"Für eine bessere Planung eurer Aktivitäten im Sprint stellen wir euch ein Diagramm der Arbeitstage zur Verfügung."
+"Wir möchten eure Planung für den Sprint erleichtern und haben ein Diagramm mit den Arbeitstagen der nächsten beiden Wochen erstellt."
+"Wir haben für euch ein Diagramm vorbereitet, das die Arbeitstage im Rahmen des Sprint veranschaulicht."
+"Zur Verbesserung eurer Zeitplanung haben wir ein Diagramm erstellt, das die Arbeitstage für den bevorstehenden Sprint aufzeigt."
+"Wir möchten euch eine klare Übersicht über die Arbeitstage im Sprint verschaffen und haben dafür ein Diagramm erstellt."
+"Um euch bei der Planung zu unterstützen, haben wir ein Diagramm mit den Arbeitstagen für den bevorstehenden Sprint entwickelt."
+"Für eine übersichtlichere Zeitplanung im Sprint bieten wir ein Diagramm der Arbeitstage an."
+"Damit ihr eure Arbeitstage im Sprint besser organisieren könnt, haben wir ein Diagramm erstellt."
+"Wir präsentieren ein Diagramm, das die Arbeitstage für den bevorstehenden Sprint anschaulich darstellt."
+"Zur besseren Planung eurer Aktivitäten im Sprint haben wir ein Diagramm mit den Arbeitstagen erstellt."
+"Wir möchten euch eine visuelle Unterstützung für die Planung eurer Arbeitstage im Sprint bieten und haben dafür ein Diagramm vorbereitet."
+"Damit ihr die Arbeitstage im Sprint klar im Blick habt, stellen wir euch ein Diagramm zur Verfügung, das sie übersichtlich darstellt."
+) | Get-Random)</p>
+<table>
 $(
     $start    = $sprint.attributes.startDate.AddDays(-3)
     $end      = $sprint.attributes.finishDate.AddDays(4)
@@ -182,11 +256,13 @@ $(
     }
 )</p>
 
-<p>Diese Informationen sollen euch helfen, eure Arbeit vorzubereiten und alle Fragen, die ihr habt, schon vorab zu klären.</p>
+<p><h1> </h1>
+<p>Diese Informationen dienen dazu, euch bestmöglich auf eure bevorstehende Arbeit vorzubereiten und bereits im Voraus alle aufkommenden Fragen zu klären. Unsere Absicht ist es, euch alle notwendigen Details und Ressourcen zur Verfügung zu stellen, damit ihr eure Aufgaben erfolgreich bewältigen könnt.</p>
 
-<p>Ich möchte auch darauf hinweisen, dass ihr in DevOps weitere Details zu den Aufgaben einsehen könnt, wie z.B. die Beschreibung der Issues, den aktuellen Arbeitstand und das Burndown-Diagramm. DevOps ist unser zentrales Werkzeug, um den Fortschritt und die Details zu jedem Sprint zu verfolgen und zu überwachen. Bitte nutzt es, um einen umfassenden Überblick über den Sprint zu erhalten.</p>
+<p>Es ist wichtig zu betonen, dass ihr in unserem DevOps-System weitere umfassende Informationen zu den anstehenden Aufgaben finden könnt. Dazu gehören nicht nur die Beschreibungen der Issues, sondern auch der aktuelle Fortschrittsstatus sowie das Burndown-Diagramm. DevOps ist unser zentrales Werkzeug, mit dem wir den Fortschritt und die Einzelheiten jedes Sprints verfolgen und überwachen. Es bietet euch die Möglichkeit, einen ganzheitlichen Überblick über den aktuellen Sprint zu gewinnen.</p>
 
-<p>Falls es Probleme bei der Anmeldung gibt, wendet euch bitte an Wolfgang.</p>
+<p>Wir möchten euch ermutigen, DevOps aktiv zu nutzen, um eure Arbeit zu unterstützen und sicherzustellen, dass ihr stets über die neuesten Entwicklungen informiert seid. Solltet ihr Fragen zur Nutzung oder Schwierigkeiten beim Zugriff auf DevOps haben, zögert bitte nicht, euch an mich zu wenden. Ich werde euch gerne weiterhelfen und sicherstellen, dass ihr das System effizient nutzen könnt.</p>
+</p>
 
 <p>Beste Grüße<br>
 Wolfgang Puchinger<br>
