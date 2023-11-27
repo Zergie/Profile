@@ -29,27 +29,22 @@ process {
                 -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids}&`$expand=relations&api-version=6.0" `
                 -Variables @{ ids = $WorkItem } |
                 ForEach-Object value
-    
+
     $attachments = $item.relations |
                     Where-Object rel -EQ "AttachedFile" |
                     Where-Object { $_.attributes.name -match $Filter } |
                     Add-Member -Type ScriptProperty -Name Id -Value {$this.url.Split('/') | Select-Object -Last 1} -ErrorAction SilentlyContinue -PassThru
-    
+
     foreach ($attachment in $attachments) {
         New-Item "$folder" -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-        
-        if ($PSCmdlet.ShouldProcess($attachment.id, "Invoke-RestApi")) {
-            $bytes = [byte[]][char[]](
-                        . ${Invoke-RestApi} `
-                            -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/attachments/{id}?api-version=6.0" `
-                            -Variables @{ id = $attachment.id }
-                    )
-        }
-        
+
         $temp_file = "$folder\$($attachment.attributes.Name)"
-        if ($PSCmdlet.ShouldProcess($temp_file, "WriteAllBytes")) {
-            [System.IO.File]::WriteAllBytes($temp_file, $bytes)
-        Get-ChildItem $temp_file
+        if ($PSCmdlet.ShouldProcess($attachment.id, "Invoke-RestApi")) {
+            . ${Invoke-RestApi} `
+                -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/attachments/{id}?api-version=6.0" `
+                -Variables @{ id = $attachment.id } `
+                -OutFile $temp_file
+            Get-ChildItem $temp_file
         }
     }
 }

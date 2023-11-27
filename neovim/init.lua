@@ -23,6 +23,26 @@ require('user.lspconfig')
 
 
 require("lazy").setup({
+  {
+    "jackMort/ChatGPT.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("chatgpt").setup({ })
+    end,
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim"
+    }
+  },
+
+  {
+    'windwp/nvim-autopairs',
+    event = "InsertEnter",
+    opts = {} -- this is equalent to setup({}) function
+  },
+
+
    -- -- Translator
    -- {
    --   'uga-rosa/translate.nvim',
@@ -128,7 +148,6 @@ require("lazy").setup({
       -- map("T",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
       map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
       map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
-      map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
       map("s",         function () hop.hint_char1{ } end, "Hop 2chars forward")
     end,
   },
@@ -136,14 +155,46 @@ require("lazy").setup({
   -- inline key help
   {
     'folke/which-key.nvim',
+    event = "VeryLazy",
+    init = function()
+      vim.o.timeout = true
+      vim.o.timeoutlen = 300
+    end,
     config = function ()
-      require("which-key").setup {
+      local wk = require("which-key")
+
+      wk.setup {
           plugins = {
               spelling = {
                   enabled = false,
               },
           },
       }
+
+      wk.register({
+        p = {
+          name = "ChatGPT",
+          c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
+          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",     mode = { "n", "v" } },
+          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",        mode = { "n", "v" } },
+          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                 mode = { "n", "v" } },
+          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                  mode = { "n", "v" } },
+          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                 mode = { "n", "v" } },
+          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                 mode = { "n", "v" } },
+          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",             mode = { "n", "v" } },
+          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                 mode = { "n", "v" } },
+          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                  mode = { "n", "v" } },
+          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",              mode = { "n", "v" } },
+          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",              mode = { "n", "v" } },
+          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+        }}, { prefix = "<leader>" })
+
+      wk.register({
+        g = {
+          a = { "<Plug>(EasyAlign)", "Align [EasyAlign]", mode = { "n", "x" }},
+        }
+      })
+
     end
   },
 
@@ -151,11 +202,6 @@ require("lazy").setup({
   {
     'junegunn/vim-easy-align',
     config = function ()
-      local map = function (mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [EasyAlign]" })
-      end
-      map("x", "ga", "<Plug>(EasyAlign)", "Align")
-      map("n", "ga", "<Plug>(EasyAlign)", "Align")
     end
   },
 
@@ -233,7 +279,6 @@ require("lazy").setup({
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
       end
 
-      -- map('n', '<leader>/',       function() telescope.current_buffer_fuzzy_find(minimal_theme) end, '[/] Fuzzily search in current buffer]' )
       map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,              'Find existing buffers')
       map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,           '[S]earch [F]iles' )
       map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,             '[S]earch in old files')

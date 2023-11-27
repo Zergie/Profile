@@ -66,7 +66,7 @@ process {
         $params.body = ($Body | ConvertTo-Json -Depth 32)
     }
 
-    if ($null -ne $OutFile) {
+    if ($OutFile.Length -gt 0) {
         $params.OutFile = $OutFile
     }
 

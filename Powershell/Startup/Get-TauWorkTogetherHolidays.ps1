@@ -77,13 +77,13 @@ end {
     $dates = {
         if ($rocom -or $rocomservice -or $All) {
             $dat = (Get-Date)
-            $dat = $dat.AddDays(-$dat.Day + 1)
-            [pscustomobject]@{month = $dat.Month; year = $dat.Year}
-            $dat = $dat.AddMonths(1)
-            [pscustomobject]@{month = $dat.Month; year = $dat.Year}
         } else {
-            [pscustomobject]@{month = $Month; year = $Year}
+            $dat = [datetime]::new($Year, $Month, 1)
         }
+        $dat = $dat.AddDays(-$dat.Day + 1)
+        [pscustomobject]@{month = $dat.Month; year = $dat.Year}
+        $dat = $dat.AddMonths(1)
+        [pscustomobject]@{month = $dat.Month; year = $dat.Year}
     } |
     Invoke-Expression
 
@@ -175,7 +175,7 @@ end {
                     $_.title -In $rocom_service_employees
                 }
         }
-    } elseif ($All) {
+    } else {
         $response = [pscustomobject]@{
             status=$response.status
             error=$response.error
@@ -184,6 +184,25 @@ end {
         }
     }
 
+    # get holidays
+    $holidays = (Invoke-RestMethod "https://feiertage-api.de/api/?jahr=$((Get-Date).Year)").BY
+    $holidays = $holidays |
+                    Get-Member -Type NoteProperty |
+                    ForEach-Object{
+                        [pscustomobject]@{
+                            id     = $null
+                            title  = $_.name
+                            allDay = $true
+                            start  = ([datetime]$holidays.($_.name).datum).ToString("yyyy-MM-dd")
+                            backgroundColor = $null
+                            event = $false
+                        }
+                    } |
+                    Where-Object {
+                        $dat = [datetime]$_.start
+                        "$($dat.Year)-$($dat.Month)" -IN ($dates | ForEach-Object { "$($_.year)-$($_.month)" })
+                    }
+    $response.holidays += $holidays
 
     if ($FormatNice) {
         $end = [datetime]::new($dates[0].year, $dates[0].month, 1)

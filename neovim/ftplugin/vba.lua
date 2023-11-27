@@ -16,19 +16,21 @@ local search = function (pattern, prompt)
 	search = pattern,
 	use_regex = true,
 	encoding = 'latin1',
+	disable_coordinates = true,
     })
 end
 
 local searchInBuffer = function (pattern, prompt)
     vim.cmd("w")
     telescope.grep_string(themes.get_dropdown {
-	path_display = { "truncate" },
+	path_display = { "hidden" },
 	prompt_title = prompt,
 	cwd = vim.fn.expand('%:p:h'),
 	search_dirs = { vim.fn.expand('%:p'), },
 	search = pattern,
 	use_regex = true,
 	encoding = 'latin1',
+	disable_coordinates = true,
     })
 end
 

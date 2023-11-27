@@ -128,7 +128,7 @@ end {
 
                     $content |
                     ForEach-Object {
-                        $keywords = "If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case"
+                        $keywords = "If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Sub|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case"
                         $line = $_
 
                         if ($line.content -match "#TO_BUILD FAIL") {

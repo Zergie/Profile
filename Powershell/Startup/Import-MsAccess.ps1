@@ -86,6 +86,7 @@ Get-Process msaccess |
     $script.AppendLine() | Out-Null
 
     Write-Host
+    $ignored = $()
     foreach ($file in $pathes) {
         Write-Host "Importing $($file.Name) .." -NoNewline
         $warning = ""
@@ -120,6 +121,7 @@ Get-Process msaccess |
                 $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
             "^\.(xml|pfx)$" {
+                $ignored += $file
                 $warning = "ignored"
             }
             default {
@@ -245,7 +247,7 @@ Get-Process msaccess |
     }
 
     if ($ShowDiff) {
-        foreach ($file in $pathes) {
+        foreach ($file in $pathes | Where-Object { $_ -notin $ignored }) {
             $new = Get-Content $file
             $old = Get-Content "$($file.FullName).old" | ForEach-Object {$_} -End {""}
             $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
@@ -253,12 +255,23 @@ Get-Process msaccess |
             $i = 0
             $j = 0
             $changes = 0
+            $changesBehindForm = 0
+            $foundCodeBehindForm = [System.IO.Path]::GetExtension($file) -notin @(".ACF", ".ACR")
             while ($j -lt $count) {
                 $new_lines = -1
                 $del_lines = -1
 
                 try {
-                    if ($old[$i] -eq $new[$j]) {
+                    while ($old[$i].Trim() -eq "NoSaveCTIWhenDisabled =1") { $i += 1 }
+                    while ($new[$j].Trim() -eq "NoSaveCTIWhenDisabled =1") { $j += 1 }
+                } catch {
+                }
+
+                try {
+                    if ($old[$i].StartsWith("Checksum =") -and $new[$j].StartsWith("Checksum =")) {
+                        $new_lines = 0
+                        $del_lines = 0
+                    } elseif ($old[$i] -eq $new[$j]) {
                         $new_lines = 0
                         $del_lines = 0
                     } else {
@@ -281,14 +294,17 @@ Get-Process msaccess |
                     Write-Host -ForegroundColor Green $new[$j] -NoNewline
                     Write-Host -ForegroundColor Magenta " (new line)"
                     $changes += 1
+                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
                     $new_lines -= 1
                     $j += 1
+                    if (!$foundCodeBehindForm -and $new[$j] -eq "CodeBehindForm") { $foundCodeBehindForm = $true }
                 }
                 while ($del_lines -gt 0) {
                     Write-Host "${j}: " -NoNewline
                     Write-Host -ForegroundColor Red $old[$i] -NoNewline
                     Write-Host -ForegroundColor Magenta " (deleted line)"
                     $changes += 1
+                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
                     $del_lines -= 1
                     $i += 1
                 }
@@ -299,12 +315,14 @@ Get-Process msaccess |
                     Write-Host -ForegroundColor Green $new[$j] -NoNewline
                     Write-Host -ForegroundColor Magenta " (replace)"
                     $changes += 1
+                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
                 }
 
                 $i += 1
                 $j += 1
+                if (!$foundCodeBehindForm -and $new[$j] -eq "CodeBehindForm") { $foundCodeBehindForm = $true }
             }
-            Write-Host -ForegroundColor Magenta " $changes changes"
+            Write-Host -ForegroundColor Magenta "${file}: $changes changes ($changesBehindForm changes in VBA)"
 
             # git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
             Remove-Item "$($file.FullName).old"
