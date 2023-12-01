@@ -1,0 +1,21 @@
+{
+    "commit": {
+        "type": "chat",
+        "opts": {
+            "template": "Write a commit message for this git diff: {{input}}",
+            "strategy": "replace",
+            "params": {
+                "model": "gpt-3.5-turbo",
+                "stop": [ "```" ]
+            }
+        },
+        "args": {
+            "argument": {
+                "type": "strig",
+                "optional": "true",
+                "default": "some value"
+            }
+        }
+    }
+}
+

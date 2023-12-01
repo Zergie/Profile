@@ -199,8 +199,8 @@ end {
                             $end      = [datetime]::Parse($startEnd[1])
                         }
 
-                        $a        = (($start - [datetime]::Parse("05:00")).TotalHours * 4)
-                        $b        = (($end - $start).TotalHours * 4)
+                        $a        = [Math]::Max(0, ($start - [datetime]::Parse("05:00")).TotalHours * 4)
+                        $b        = [Math]::Max(0, ($end - $start).TotalHours * 4)
                         $timeline = "$(" " * $a)$("█" * $b)".PadRight(61)
 
                         $worktime = ($end - $start).TotalHours

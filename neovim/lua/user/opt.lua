@@ -2,7 +2,7 @@
 -- See `:help vim.o`
 
 vim.wo.number = true              -- Make line numbers default
-vim.o.mouse = ''                  -- Disable mouse mode
+-- vim.o.mouse = ''                  -- Disable mouse mode
 vim.o.breakindent = true          -- Enable break indent
 vim.o.undofile = true             -- Save undo history
 vim.o.ignorecase = true           -- Case insensitive searching UNLESS /C or capital in search

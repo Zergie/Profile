@@ -247,7 +247,10 @@ Get-Process msaccess |
     }
 
     if ($ShowDiff) {
-        foreach ($file in $pathes | Where-Object { $_ -notin $ignored }) {
+        foreach ($file in $pathes |
+                            Where-Object { $_ -notin $ignored } |
+                            Where-Object { $_.Extension -in @(".ACM", ".ACR", ".ACF") }
+            ) {
             $new = Get-Content $file
             $old = Get-Content "$($file.FullName).old" | ForEach-Object {$_} -End {""}
             $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
