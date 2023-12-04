@@ -1,10 +1,10 @@
 [CmdletBinding()]
 param (
-    [Parameter(Position=0, Mandatory=$true)]
+    [Parameter(Mandatory, Position=0, ParameterSetName="UrlParameterSet")]
     [string]
     $Url,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory)]
     [string]
     $OutFolder,
 
@@ -12,6 +12,47 @@ param (
     [string]
     $Password
 )
+dynamicparam {
+    $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+
+    # param Mail
+    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.ParameterSetName = "MailParameterSet"
+    $AttributeCollection.Add($ParameterAttribute)
+
+    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query "nextcloud" -First 3 |
+                ForEach-Object { "$($_.DateTimeSent.ToString("dd.MM.yyyy")) - $($_.Subject)" }
+    ))
+    $AttributeCollection.Add($ValidateSetAttribute)
+    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Mail", [string], $AttributeCollection)
+    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
+    
+    return $RuntimeParameterDictionary
+}
+begin {
+    switch ( $PSCmdlet.ParameterSetName ){
+        "MailParameterSet" {
+            $mail = . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query $PSBoundParameters["Mail"].Split("-")[1].Trim() -First 1
+
+            $Url = $mail.Body |
+                        Select-String "http.*nextcloud\.rocom\.de[^ \n\t]*" |
+                        ForEach-Object { $_.Matches.Value } |
+                        Select-Object -First 1
+
+            $Password = $mail.Body |
+                        Select-String "(?<=passwor[td]).*|pw.*" |
+                        ForEach-Object { $_.Matches.Value.TrimStart(' ', ':') } |
+                        Select-Object -First 1
+
+            if ($null -eq $Url -or $Url.Length -eq 0) {
+                throw "Could not find nextcloud url!"
+            }
+        }
+    }
+}
 end {
     Start-Process `
         -WindowStyle Minimized `
@@ -65,7 +106,7 @@ end {
                 $filename = $_ -replace ".+&files=", ''
                 $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($OutFolder, $filename))
 
-                Write-Host -ForegroundColor Cyan "Downloding $filename"
+                Write-Host -ForegroundColor Cyan "Downloding $path"
                 Invoke-WebRequest $_ -Headers @{Cookie=$cookie} -OutFile $path
             }
 

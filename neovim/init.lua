@@ -24,6 +24,29 @@ require('user.lspconfig')
 
 require("lazy").setup({
   {
+    "wellle/context.vim",
+    config = function()
+      -- vim.g.context_enabled = 1
+      -- vim.g.context_filetype_blacklist = []
+      -- vim.g.context_add_mappings = 1
+      -- vim.g.context_add_autocmds = 1
+      -- vim.g.context_presenter = <depends>
+      -- vim.g.context_max_height = 21
+      -- vim.g.context_max_per_indent = 5
+      vim.g.context_max_join_parts = 5
+      -- vim.g.context_ellipsis_char = '·'
+      -- vim.g.context_highlight_normal = 'Normal'
+      -- vim.g.context_highlight_border = 'Comment'
+      -- vim.g.context_highlight_tag    = 'Special'
+      -- vim.g.context_skip_regex = '^\s*\($\|#\|//\|/\*\|\*\($\|/s\|\/\)\)'
+      -- vim.g.context_extend_regex = '^\s*\([]{})]\|end\|else\|case\>\|default\>\)'
+      -- vim.g.context_join_regex = '^\W*$'
+      -- vim.g.Context_indent = { line -> [indent(line), indent(line)] }
+      -- vim.g.Context_border_indent = function('indent')
+    end,
+  },
+
+  {
     "jackMort/ChatGPT.nvim",
     event = "VeryLazy",
     config = function()
@@ -322,20 +345,22 @@ require("lazy").setup({
           name = "ChatGPT",
 
           c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
-          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",            mode = { "n", "v" } },
-          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",               mode = { "n", "v" } },
-          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                        mode = { "n", "v" } },
-          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                         mode = { "n", "v" } },
-          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                        mode = { "n", "v" } },
-          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                        mode = { "n", "v" } },
-          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",                    mode = { "n", "v" } },
-          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                        mode = { "n", "v" } },
-          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                         mode = { "n", "v" } },
-          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",                     mode = { "n", "v" } },
-          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",                     mode = { "n", "v" } },
-          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]",        mode = { "n", "v" } },
-          p = { "<cmd>r!git diff --staged<CR><cmd>normal V'[<CR><cmd>ChatGPTRun commit<CR>"
-          ,                                                                "Write a Commit message [AI]", mode = { "n", "v" } },
+          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",     mode = { "n", "v" } },
+          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",        mode = { "n", "v" } },
+          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                 mode = { "n", "v" } },
+          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                  mode = { "n", "v" } },
+          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                 mode = { "n", "v" } },
+          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                 mode = { "n", "v" } },
+          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",             mode = { "n", "v" } },
+          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                 mode = { "n", "v" } },
+          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                  mode = { "n", "v" } },
+          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",              mode = { "n", "v" } },
+          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",              mode = { "n", "v" } },
+          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+          p = { "<cmd>cd %:p:h/..<CR>" ..
+                "<cmd>r!git diff --staged<CR>" ..
+                "<cmd>normal V'[<CR>" ..
+                "<cmd>ChatGPTRun commit<CR>",                    "Write a Commit message [AI]",    mode = { "n", "v" } },
 
         }}, { prefix = "<leader>" })
 
@@ -822,9 +847,9 @@ require("lazy").setup({
         sources = {
           { name = 'luasnip', priority = 1, option = { keyword_pattern = [[\k\+]] } },
           { name = 'nvim_lsp', priority = 2, option = { keyword_pattern = [[\k\+]] } },
-          { name = 'dictionary', keyword_length = 2, max_items = 10, priority = 3, option = { keyword_pattern = [[\k\+]] }},
-          { name = 'buffer', max_items = 10, option = { keyword_pattern = [[\k\+]] }},
-          { name = 'path' },
+          { name = 'buffer', priority = 3, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
+          { name = 'dictionary', priority = 4, eyword_length = 2, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
+          { name = 'path', priority = 5 },
           sorting = {
             priority_weight = 1.0,
             comparators = {

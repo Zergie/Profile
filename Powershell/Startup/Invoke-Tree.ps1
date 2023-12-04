@@ -7,7 +7,7 @@ param
 
     [Parameter()]
     [int]
-    $Depth=3,
+    $Depth = 1,
 
     #List of wildcard matches. If a directoryname matches one of these, it will be skipped.
     [Parameter()]
@@ -109,7 +109,7 @@ begin {
     }
 }
 process {
-    $Global:Depth = $Depth
+    $Global:Depth = $Depth + 1
     $Global:Include = $Include
     $Global:Exclude = $Exclude
 

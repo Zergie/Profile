@@ -72,10 +72,9 @@ end {
         vi $arguments
     }
 
-Get-Process msaccess |
+    Get-Process msaccess |
         Where-Object MainWindowHandle -eq 0 |
         Stop-Process
-
 
     $script = [System.Text.StringBuilder]::new()
     $script.AppendLine() | Out-Null
@@ -100,10 +99,12 @@ Get-Process msaccess |
                 $script.AppendLine("application.LoadFromText 1, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
             "^\.(ACF)$" {
+                $script.AppendLine("DoCmd.Close 2, `"$($file.BaseName)`", 2") | Out-Null
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   2, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 2, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
             "^\.(ACR)$" {
+                $script.AppendLine("DoCmd.Close 3, `"$($file.BaseName)`", 2") | Out-Null
                 if ($ShowDiff) { $script.AppendLine("application.SaveAsText   3, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
                 $script.AppendLine("application.LoadFromText 3, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
             }
@@ -143,12 +144,14 @@ Get-Process msaccess |
             -End     { "== end vba script ==" } |
         Write-Debug
 
+    $wshell = New-Object -ComObject wscript.shell;
+    $wshell.AppActivate("Access") | Out-Null
+
     cscript.exe "$($env:TEMP)\script.vbs" //nologo
     Remove-Item "$($env:TEMP)\script.vbs"
 
     if ($Compile) {
         Write-Host "Compiling.."
-        $wshell = New-Object -ComObject wscript.shell;
 
         $wshell.AppActivate((Get-Process MSACCESS).MainWindowTitle) | Out-Null
         $wshell.SendKeys("%{f11}")

@@ -1,0 +1,38 @@
+# Snippets for DBMS schema
+# Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
+
+snippet IF
+	IF EXISTS(SELECT ${1:id} FROM ${2:table} WHERE ${3:condition})
+	BEGIN
+		${4}
+	END
+
+snippet IFNOT
+	IF NOT EXISTS(SELECT ${1:id} FROM ${2:table} WHERE ${3:condition})
+	BEGIN
+		${4}
+	END
+
+snippet DELETE
+	DELETE FROM ${1:table} WHERE ${2:condition}
+
+snippet DECLARE_LIST
+	DECLARE @Id int
+	DECLARE @list TABLE(Id int)
+
+snippet WHILE_LIST
+	INSERT INTO @list (Id) SELECT ${1:id} FROM ${2:table_src} WHERE ${3:condition}
+	SET @Id = NULL
+	SELECT TOP 1 @Id = Id FROM @list
+
+	WHILE (NOT @ID IS NULL)
+	BEGIN
+		INSERT INTO ${4:table_dst} (${5:id}, ${6:fields_dst})
+		SELECT ISNULL((SELECT MAX(ID) FROM ${4:table_dst}), 0)+1, ${7:fields_src}
+		FROM ${2:table}
+		WHERE ID=@Id
+
+		DELETE FROM @list WHERE Id=@Id
+		SET @Id = NULL
+		SELECT TOP 1 @Id = Id FROM @list
+	END
