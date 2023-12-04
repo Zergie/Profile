@@ -820,10 +820,10 @@ require("lazy").setup({
           end
         },
         sources = {
-          { name = 'luasnip', priority = 1 },
-          { name = 'nvim_lsp', priority = 2 },
-          { name = 'dictionary', keyword_length = 2, max_items = 10, priority = 3 },
-          { name = 'buffer', max_items = 10 },
+          { name = 'luasnip', priority = 1, option = { keyword_pattern = [[\k\+]] } },
+          { name = 'nvim_lsp', priority = 2, option = { keyword_pattern = [[\k\+]] } },
+          { name = 'dictionary', keyword_length = 2, max_items = 10, priority = 3, option = { keyword_pattern = [[\k\+]] }},
+          { name = 'buffer', max_items = 10, option = { keyword_pattern = [[\k\+]] }},
           { name = 'path' },
           sorting = {
             priority_weight = 1.0,
@@ -846,30 +846,10 @@ require("lazy").setup({
         experimental = {
           ghost_text = true,
         },
+        completion = {
+          keyword_pattern = [[\k\+]],
+        },
       }
-
-      -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-      cmp.setup.cmdline({ '/', '?' }, {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = {
-          { name = 'buffer' }
-        }
-      })
-
-      -- `:` cmdline setup.
-      cmp.setup.cmdline(':', {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = cmp.config.sources({
-          { name = 'path' }
-        }, {
-          {
-            name = 'cmdline',
-            option = {
-              ignore_cmds = { 'Man', '!' }
-            }
-          }
-        })
-      })
 
     end
   },

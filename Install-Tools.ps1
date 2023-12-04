@@ -47,6 +47,7 @@ $tools = @(
         [pscustomobject]@{name="BatteryBar"}
     }
     [pscustomobject]@{name="7zip"}
+    [pscustomobject]@{name="7zip.commandline"}
     [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="autohotkey"}
     [pscustomobject]@{name="bat"}

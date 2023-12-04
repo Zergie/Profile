@@ -121,7 +121,7 @@ Get-Process msaccess |
                 $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
             "^\.(xml|pfx)$" {
-                $ignored += $file
+                $ignored += @($file)
                 $warning = "ignored"
             }
             default {
