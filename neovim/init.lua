@@ -851,7 +851,7 @@ require("lazy").setup({
           { name = 'dictionary', priority = 4, eyword_length = 2, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
           { name = 'path', priority = 5 },
           sorting = {
-            priority_weight = 1.0,
+            priority_weight = 2.0,
             comparators = {
               cmp.config.compare.locality,
               cmp.config.compare.recently_used,
