@@ -14,8 +14,19 @@ $Destination = "${env:USERPROFILE}\Downloads\${filename}_$((Get-Date).ToString("
 Copy-Item -Path "${path}" -Destination "${Destination}" -Force
 
 if ($null -ne $slicer_process) {
+    Add-Type @"
+    using System;
+    using System.Runtime.InteropServices;
+    public class NativeMethods {
+        [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+                public static extern bool SetForegroundWindow(IntPtr hWnd);
+    }
+"@
+
+    [NativeMethods]::SetForegroundWindow($slicer_process.MainWindowHandle)
+
     $wshell = New-Object -ComObject wscript.shell;
-    $wshell.AppActivate($slicer_process.MainWindowTitle)
     $wshell.SendKeys("^i")
     $wshell.SendKeys($Destination)
     $wshell.SendKeys("{Enter}")
@@ -23,4 +34,4 @@ if ($null -ne $slicer_process) {
     . $slicer "${Destination}"
 }
 
-#pause
+# Read-Host
