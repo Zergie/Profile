@@ -145,7 +145,7 @@ end {
         Write-Debug
 
     $wshell = New-Object -ComObject wscript.shell;
-    $wshell.AppActivate("Access") | Out-Null
+    $wshell.AppActivate(((Get-Process MSACCESS).MainWindowTitle)) | Out-Null
 
     cscript.exe "$($env:TEMP)\script.vbs" //nologo
     Remove-Item "$($env:TEMP)\script.vbs"

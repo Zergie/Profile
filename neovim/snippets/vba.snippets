@@ -1,6 +1,20 @@
 # Snippets for Visual Basic for Application
 # Authored by Wolfgang Puchinger <wpuchinger@rocom-service.de>
 
+snippet event_date
+	BeforeUpdate ="[Event Procedure]"
+	OnDblClick ="=DatumZähler_DblClick()"
+	OnKeyPress ="[Event Procedure]"
+snippet event_date_sub
+	Private Sub ${1:control}_BeforeUpdate(Cancel As Integer)
+		DatumZähler_BeforeUpdate ${1:control}, Cancel
+	End Sub
+	Private Sub ${1:control}_KeyPress(KeyAscii As Integer)
+		DatumZähler KeyAscii
+	End Sub
+snippet event_combobox
+	OnDblClick ="=Combobox_DblClick()"
+
 snippet fail
 	Stop '#TO_BUILD FAIL
 snippet pass
@@ -12,6 +26,8 @@ snippet do
 	Loop
 	rs.Close
 
+snippet dimrs
+	Dim rs As Recordset
 snippet setrs
 	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}")
 snippet setrsro

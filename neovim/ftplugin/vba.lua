@@ -8,6 +8,9 @@ local themes = require('telescope.themes')
 local map = function (mode, lhs, rhs, desc)
     vim.keymap.set(mode, lhs, rhs, { buffer=0, noremap = true, silent = true, desc = desc })
 end
+local remap = function (mode, lhs, rhs, desc)
+    vim.keymap.set(mode, lhs, rhs, { buffer=0, noremap = false, silent = true, desc = desc })
+end
 
 local search = function (pattern, prompt)
     telescope.grep_string(themes.get_dropdown {
@@ -92,3 +95,35 @@ end, '[S]earch [D]efinition' )
 
 vim.opt_local.spell = false
 vim.o.commentstring = "'%s"
+
+
+function vba_selectFunction (around)
+    local function MatchAny( str, pattern_list )
+	for _, pattern in ipairs( pattern_list ) do
+	    local w = string.match( str, pattern )
+	    if w then return w end
+	end
+    end
+
+    while MatchAny(vim.api.nvim_get_current_line(), { "Enum ", "Sub ", "Function ", "Property " }) == nil do
+	vim.cmd('-')
+    end
+    local sel_start = vim.fn.line('.')
+
+    while MatchAny(vim.api.nvim_get_current_line(), { "End Sub", "End Function", "End Property", "End Enum" }) == nil do
+	vim.cmd('+')
+    end
+
+    local sel_end = vim.fn.line('.')
+    if around then
+	sel_start = sel_start + 1
+	sel_end = sel_end - 1
+    end
+
+    vim.cmd('normal! ' .. sel_start .. 'gg0V' .. sel_end .. 'gg')
+end
+
+for _, mode in ipairs({ 'x', 'o' }) do
+    map(mode, 'if', ':<c-u>lua vba_selectFunction(false)<cr>', "vba function")
+    map(mode, 'af', ':<c-u>lua vba_selectFunction(true)<cr>', "vba function")
+end

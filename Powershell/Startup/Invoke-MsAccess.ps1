@@ -167,6 +167,9 @@ if ($Inspect) {
                     Measure-Object |
                     ForEach-Object Count
 
+    $wshell = New-Object -ComObject wscript.shell;
+    $wshell.AppActivate(((Get-Process MSACCESS).MainWindowTitle)) | Out-Null
+
     Invoke-VBScript @"
     dim stdout : set stdout = CreateObject("Scripting.FileSystemObject").GetStandardStream(1)
     dim application: set application = GetObject(, "Access.Application")
@@ -203,6 +206,7 @@ if ($Inspect) {
             throw
         }
     }
+    $wshell.AppActivate((Get-Process WindowsTerminal).MainWindowTitle) | Out-Null
 
     $LogContent = Get-Content $LogFile -Encoding 1252 |
         Select-Object -Skip $LogEntries |

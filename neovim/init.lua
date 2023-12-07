@@ -33,7 +33,7 @@ require("lazy").setup({
       -- vim.g.context_presenter = <depends>
       -- vim.g.context_max_height = 21
       -- vim.g.context_max_per_indent = 5
-      vim.g.context_max_join_parts = 5
+      vim.g.context_max_join_parts = 8
       -- vim.g.context_ellipsis_char = '·'
       -- vim.g.context_highlight_normal = 'Normal'
       -- vim.g.context_highlight_border = 'Comment'
@@ -45,7 +45,6 @@ require("lazy").setup({
       -- vim.g.Context_border_indent = function('indent')
     end,
   },
-
   {
     "jackMort/ChatGPT.nvim",
     event = "VeryLazy",
@@ -785,23 +784,23 @@ require("lazy").setup({
             },
           })
         end
-      },
+      }
     },
     config = function()
       local cmp = require('cmp')
-      local luasnip = require('luasnip')
+      local ls = require('luasnip')
 
       cmp.setup {
         snippet = {
           expand = function(args)
-            luasnip.lsp_expand(args.body)
+            ls.lsp_expand(args.body)
           end,
         },
         mapping = cmp.mapping.preset.insert {
           ["<C-u>"] = cmp.mapping.scroll_docs(-2),
           ["<C-d>"] = cmp.mapping.scroll_docs(2),
           ["<C-h>"] = cmp.mapping.complete({ reason = cmp.ContextReason.Manual }),
-          ["<C-e>"] = cmp.mapping.abort(),
+          -- ["<C-e>"] = cmp.mapping.abort(),
           ["<Tab>"] = cmp.mapping.confirm({
             behavior = cmp.ConfirmBehavior.Insert,
             select = true, -- use first result if none explicitly selected
@@ -827,8 +826,9 @@ require("lazy").setup({
           -- end,
           -- ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
           -- ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
-          ['<C-n>'] = cmp.mapping(function() luasnip.jump(1) end, { 'i', 's'}),
-          ['<C-p>'] = cmp.mapping(function() luasnip.jump(-1) end, { 'i', 's'}),
+          ['<C-n>'] = cmp.mapping(function() ls.jump(1) end, { 'i', 's'}),
+          ['<C-p>'] = cmp.mapping(function() ls.jump(-1) end, { 'i', 's'}),
+          ['<C-e>'] = cmp.mapping(function() ls.change_choice(1) end, { 'i', 's'}),
         },
         formatting = {
           format = function(entry, vim_item)
@@ -850,12 +850,13 @@ require("lazy").setup({
           { name = 'buffer', priority = 3, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
           { name = 'dictionary', priority = 4, eyword_length = 2, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
           { name = 'path', priority = 5 },
+          { name = 'luasnip_choice', priority = 6},
           sorting = {
             priority_weight = 2.0,
             comparators = {
-              cmp.config.compare.locality,
               cmp.config.compare.recently_used,
               cmp.config.compare.score, -- based on :  score = score + ((#sources - (source_index - 1)) * sorting.priority_weight)
+              cmp.config.compare.locality,
               cmp.config.compare.offset,
               cmp.config.compare.order,
             },
@@ -876,6 +877,7 @@ require("lazy").setup({
         },
       }
 
+      require("user.snippets")
     end
   },
 })

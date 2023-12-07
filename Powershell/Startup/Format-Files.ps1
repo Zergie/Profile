@@ -97,7 +97,11 @@ end {
 
             switch -regex ($item.Name) {
                 "^schema\.xml$" {
-                    Write-Host "skipped: $($item.Name)"
+                    $content = Get-Content $item.FullName -Encoding utf8 |
+                        ForEach-Object { $_ -replace '="([^"]+)"','=''$1''' } |
+                        Out-String
+                    $content.Trim() |
+                        Set-Content $item.FullName -Encoding utf8
                     break
                 }
                 "\.(ACT|xml)$" {
