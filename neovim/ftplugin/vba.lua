@@ -115,7 +115,7 @@ function vba_selectFunction (around)
     end
 
     local sel_end = vim.fn.line('.')
-    if around then
+    if around == false then
 	sel_start = sel_start + 1
 	sel_end = sel_end - 1
     end

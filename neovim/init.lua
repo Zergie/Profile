@@ -847,8 +847,8 @@ require("lazy").setup({
         sources = {
           { name = 'luasnip', priority = 1, option = { keyword_pattern = [[\k\+]] } },
           { name = 'nvim_lsp', priority = 2, option = { keyword_pattern = [[\k\+]] } },
-          { name = 'buffer', priority = 3, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
-          { name = 'dictionary', priority = 4, eyword_length = 2, max_items = 10, option = { keyword_pattern = [[\k\+]] }},
+          { name = 'buffer', priority = 3, max_items = 5, option = { keyword_pattern = [[\k\+]] }},
+          { name = 'dictionary', priority = 4, keyword_length = 2, max_items = 5, option = { keyword_pattern = [[\k\+]] }},
           { name = 'path', priority = 5 },
           { name = 'luasnip_choice', priority = 6},
           sorting = {

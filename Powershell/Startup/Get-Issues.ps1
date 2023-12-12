@@ -377,7 +377,7 @@ process {
                             op    = "replace"
                             path  = "/fields/System.Description"
                             value = $_.fields.'System.Description' `
-                                        -replace 'Korrektur auf Aufgabe ID \d+ \(DevOpsID: (\d+)\)' `
+                                        -replace 'Korrektur auf Aufgabe ID \d+(?: |&nbsp;)\(DevOpsID: (\d+)\)' `
                                                , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1"
                                                               data-vss-mention="version:1.0">#$1</a>' `
                                         -replace "<p>&nbsp; </p>`n", '' `

@@ -23,13 +23,13 @@ dynamicparam {
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query "nextcloud" -First 3 |
+        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query "nextcloud,datenbank" -First 3 |
                 ForEach-Object { "$($_.DateTimeSent.ToString("dd.MM.yyyy")) - $($_.Subject)" }
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Mail", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
-    
+
     return $RuntimeParameterDictionary
 }
 begin {
@@ -101,13 +101,15 @@ end {
             Join-String -Separator ';'
 
         $files |
-            Select-Object -Skip 1 |
             ForEach-Object {
                 $filename = $_ -replace ".+&files=", ''
                 $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($OutFolder, $filename))
 
-                Write-Host -ForegroundColor Cyan "Downloding $path"
+                Write-Host -ForegroundColor Cyan "Downloding $_ => $path"
                 Invoke-WebRequest $_ -Headers @{Cookie=$cookie} -OutFile $path
+                if (![System.IO.Path]::Exists($path)) {
+                    Invoke-WebRequest $_ -OutFile $path
+                }
             }
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | Out-Null

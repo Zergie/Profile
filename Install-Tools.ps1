@@ -36,20 +36,21 @@ $modules = @(
 
 $tools = @(
     if (Test-IsWorkstation) {
+        [pscustomobject]@{name="autohotkey"}
         [pscustomobject]@{name="filezilla"}
         [pscustomobject]@{name="keepass"}
         [pscustomobject]@{name="microsoft-teams"}
-        [pscustomobject]@{name="phonerlite"}
+        [pscustomobject]@{name="nodejs-lts"}
         [pscustomobject]@{name="sql-server-management-studio"}
         [pscustomobject]@{name="zoom"}
     }
     if (Test-IsLaptop) {
         [pscustomobject]@{name="BatteryBar"}
     }
+
     [pscustomobject]@{name="7zip"}
     [pscustomobject]@{name="7zip.commandline"}
     [pscustomobject]@{name="InkScape"}
-    [pscustomobject]@{name="autohotkey"}
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
@@ -66,8 +67,8 @@ $tools = @(
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
-    [pscustomobject]@{name="nodejs-lts" ;}
     [pscustomobject]@{name="nuget.commandline"}
+    [pscustomobject]@{name="phonerlite"}
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
@@ -79,6 +80,7 @@ $tools = @(
     [pscustomobject]@{name="wireshark"}
     [pscustomobject]@{name="wiztree"}
     [pscustomobject]@{name="wsl2"}
+
 )
 
 $npm = @(
@@ -93,8 +95,6 @@ $github = @(
                       folder="$PSScriptRoot\warpd"}
     [pscustomobject]@{repo="max-niederman/ttyper"; file="ttyper-x86_64-*-windows-*.zip"
                       folder="$PSScriptRoot/ttyper"}
-    [pscustomobject]@{repo="jdegenstein/jmwright-CQ-Editor"; file="CQ-editor-Windows.zip"
-                      folder="$PSScriptRoot/CQ-editor"}
 )
 
 $patches = @(
@@ -133,6 +133,9 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\secrets\PhonerLite"
+                      destination = "$env:USERPROFILE\AppData\Roaming\PhonerLite"}
 
     # [pscustomobject]@{source      = "$PSScriptRoot\neovim\lua\server_configurations\rsvbalsp.lua"
     #                   destination = "$PSScriptRoot\neovim\plugged\nvim-lspconfig\lua\lspconfig\server_configurations\rsvbalsp.lua"}
