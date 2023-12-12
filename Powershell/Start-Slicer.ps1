@@ -28,6 +28,9 @@ if ($null -ne $slicer_process) {
 
     $wshell = New-Object -ComObject wscript.shell;
     $wshell.SendKeys("^i")
+
+    Start-Sleep -Milliseconds 500
+
     $wshell.SendKeys($Destination)
     $wshell.SendKeys("{Enter}")
 } else {
