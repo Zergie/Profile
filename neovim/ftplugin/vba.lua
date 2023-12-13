@@ -97,7 +97,7 @@ vim.opt_local.spell = false
 vim.o.commentstring = "'%s"
 
 
-function vba_selectFunction (around)
+function VBA_selectTag(around)
     local function MatchAny( str, pattern_list )
 	for _, pattern in ipairs( pattern_list ) do
 	    local w = string.match( str, pattern )
@@ -105,17 +105,36 @@ function vba_selectFunction (around)
 	end
     end
 
-    while MatchAny(vim.api.nvim_get_current_line(), { "Enum ", "Sub ", "Function ", "Property " }) == nil do
+    while MatchAny(vim.api.nvim_get_current_line(), { "^ *Begin ?", "Enum ", "Sub ", "Function ", "Property " }) == nil do
 	vim.cmd('-')
     end
     local sel_start = vim.fn.line('.')
 
-    while MatchAny(vim.api.nvim_get_current_line(), { "End Sub", "End Function", "End Property", "End Enum" }) == nil do
-	vim.cmd('+')
+    if MatchAny(vim.api.nvim_get_current_line(), { "^ *Begin ?"  }) then
+	local count = 1
+
+	while count > 0 do
+	    vim.cmd('+')
+	    if MatchAny(vim.api.nvim_get_current_line(), { "Begin ?" }) then
+		count = count + 1
+	    elseif MatchAny(vim.api.nvim_get_current_line(), { " End" }) then
+		count = count - 1
+	    end
+	end
+    else
+	while MatchAny(vim.api.nvim_get_current_line(), { "^End Sub", "^End Function", "^End Property", "^End Enum" }) == nil do
+	    vim.cmd('+')
+	end
     end
 
     local sel_end = vim.fn.line('.')
-    if around == false then
+    if around then
+	vim.cmd('+')
+	while string.len(vim.api.nvim_get_current_line()) == 0 do
+	    sel_end = sel_end + 1
+	    vim.cmd('+')
+	end
+    else
 	sel_start = sel_start + 1
 	sel_end = sel_end - 1
     end
@@ -124,6 +143,6 @@ function vba_selectFunction (around)
 end
 
 for _, mode in ipairs({ 'x', 'o' }) do
-    map(mode, 'if', ':<c-u>lua vba_selectFunction(false)<cr>', "vba function")
-    map(mode, 'af', ':<c-u>lua vba_selectFunction(true)<cr>', "vba function")
+    remap(mode, 'it', ':<c-u>lua VBA_selectTag(false)<cr>', "vba tag")
+    remap(mode, 'at', ':<c-u>lua VBA_selectTag(true)<cr>', "vba tag")
 end

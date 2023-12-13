@@ -2,7 +2,7 @@
 param (
 )
 process {
-    if ($null -ne (Get-Process MSACCESS -ErrorAction SilentlyContinue)) {
+    if ((Get-Process MSACCESS -ErrorAction SilentlyContinue).Count -gt 0) {
         if (!(Get-Process MSACCESS).CloseMainWindow()) {
             try {
                 . "$PSScriptRoot/Invoke-MsAccess.ps1" -Procedure Application.Quit | Out-Null

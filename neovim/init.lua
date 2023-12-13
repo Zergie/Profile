@@ -344,22 +344,23 @@ require("lazy").setup({
           name = "ChatGPT",
 
           c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
-          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",     mode = { "n", "v" } },
-          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",        mode = { "n", "v" } },
-          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                 mode = { "n", "v" } },
-          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                  mode = { "n", "v" } },
-          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                 mode = { "n", "v" } },
-          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                 mode = { "n", "v" } },
-          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",             mode = { "n", "v" } },
-          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                 mode = { "n", "v" } },
-          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                  mode = { "n", "v" } },
-          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",              mode = { "n", "v" } },
-          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",              mode = { "n", "v" } },
-          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",            mode = { "n", "v" } },
+          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",               mode = { "n", "v" } },
+          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                        mode = { "n", "v" } },
+          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                         mode = { "n", "v" } },
+          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                        mode = { "n", "v" } },
+          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                        mode = { "n", "v" } },
+          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",                    mode = { "n", "v" } },
+          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                        mode = { "n", "v" } },
+          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                         mode = { "n", "v" } },
+          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",                     mode = { "n", "v" } },
+          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",                     mode = { "n", "v" } },
+          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]",        mode = { "n", "v" } },
           p = { "<cmd>cd %:p:h/..<CR>" ..
                 "<cmd>r!git diff --staged<CR>" ..
                 "<cmd>normal V'[<CR>" ..
-                "<cmd>ChatGPTRun commit<CR>",                    "Write a Commit message [AI]",    mode = { "n", "v" } },
+                "<cmd>ChatGPTRun commit<CR>"
+          ,                                                                "Write a Commit message [AI]", mode = { "n", "v" } },
 
         }}, { prefix = "<leader>" })
 

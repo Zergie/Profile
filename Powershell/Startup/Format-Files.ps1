@@ -130,6 +130,7 @@ end {
                     $content = Get-Content $item -Encoding 1250 |
                                 ForEach-Object { $lineno++; [pscustomobject]@{ number= $lineno; content= $_ } }
 
+                    $countNoSaveCTIWhenDisabled = 0
                     $content |
                     ForEach-Object {
                         $keywords = "If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Sub|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case"
@@ -160,6 +161,13 @@ end {
 
                         if ($line -match "^\s*Next\s[^ ]+") {
                             $line -replace "Next\s[^ ]+", "Next"
+                        } elseif ($line -match "^\s*Checksum\s*=") {
+                            "Checksum =-240186"
+                        } elseif ($line -match "^\s*NoSaveCTIWhenDisabled\s*=1") {
+                            $countNoSaveCTIWhenDisabled += 1
+                            if ($countNoSaveCTIWhenDisabled -le 1) {
+                                $line
+                            }
                         } else {
                             $line
                         }

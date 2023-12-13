@@ -1,3 +1,0 @@
-
-        & $dockerScript -Purge
-    

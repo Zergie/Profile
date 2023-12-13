@@ -316,12 +316,14 @@ end {
                 }
 
                 if ($new_lines -eq -1 -and $del_lines -eq -1) {
-                    Write-Host "${j}: " -NoNewline
-                    Write-Host -ForegroundColor Red $old[$i] -NoNewline
-                    Write-Host -ForegroundColor Green $new[$j] -NoNewline
-                    Write-Host -ForegroundColor Magenta " (replace)"
-                    $changes += 1
-                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
+                    if ($old[$i] -ne $new[$j]) {
+                        Write-Host "${j}: " -NoNewline
+                        Write-Host -ForegroundColor Red $old[$i] -NoNewline
+                        Write-Host -ForegroundColor Green $new[$j] -NoNewline
+                        Write-Host -ForegroundColor Magenta " (replace)"
+                        $changes += 1
+                        if ($foundCodeBehindForm) { $changesBehindForm += 1 }
+                    }
                 }
 
                 $i += 1
