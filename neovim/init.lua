@@ -314,9 +314,9 @@ require("lazy").setup({
       -- map("F",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, "Hop backward find")
       -- map("t",         function () hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, "Hop forward till")
       -- map("T",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
-      map("<Leader>w", function () hop.hint_words{ } end, "Hop word")
+      map("s",         function () hop.hint_words{ } end, "Hop word")
       map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
-      map("s",         function () hop.hint_char1{ } end, "Hop 2chars forward")
+      map("<Leader>s", function () hop.hint_char1{ } end, "Hop 2chars forward")
     end,
   },
 
@@ -358,7 +358,7 @@ require("lazy").setup({
           l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]",        mode = { "n", "v" } },
           p = { "<cmd>cd %:p:h/..<CR>" ..
                 "<cmd>r!git diff --staged<CR>" ..
-                "<cmd>normal V'[<CR>" ..
+                "<cmd>normal V'[k<CR>" ..
                 "<cmd>ChatGPTRun commit<CR>"
           ,                                                                "Write a Commit message [AI]", mode = { "n", "v" } },
 

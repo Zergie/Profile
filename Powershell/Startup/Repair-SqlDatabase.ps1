@@ -9,6 +9,10 @@ param(
     $NoUpdate
 )
 
+Stop-Process -Name AdminTool.App -ErrorAction SilentlyContinue
+$logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
+# Find-LockingProcess -Path $logfile | Stop-Process -Force
+
 $department = $Database
 $main       = $Database -split '_' | Select-Object -SkipLast 1 | Join-String -Separator _
 $logwatcher = Start-Job {
@@ -33,7 +37,7 @@ Pop-Location
 $verb = if ($NoUpdate) { "--repair" } else { "--update" }
 Write-Host -ForegroundColor Cyan "AdminTool.App.exe $verb $department .."
 . "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" $verb $department --ini "X:\INI\$($main).ini"
-$process = Get-Process -Name "AdminTool.App"
+$process = Get-Process -Name AdminTool.App
 
 while (!$process.HasExited) {
     $logwatcher | Receive-Job | bat --paging never --style=plain --language log

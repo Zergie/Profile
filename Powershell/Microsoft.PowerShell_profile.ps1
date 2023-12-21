@@ -75,58 +75,6 @@ if ($firstUse) {
     Remove-Variable secrets
     Complete-Action
 
-    # show network info
-    Start-Action "Show network adapter"
-        Start-Job {
-            $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
-
-            # $preferedAdapter = $adapter |
-            #     Sort-Object LinkSpeed |
-            #     Select-Object -First 1
-            #
-            # $adapter |
-            #     Where-Object Name -NotIn $preferedAdapter.Name |
-            #     Where-Object Status -NE "Disconnected" |
-            #     ForEach-Object {
-            #         Write-Host -NoNewline "$($_.Name)> "
-            #         netsh wlan disconnect interface="$($_.Name)" | Write-Host
-            #     }
-            #
-            # if ($preferedAdapter.Status -ne "Up") {
-            #     Write-Host -NoNewline "$($preferedAdapter.Name)> "
-            #     netsh wlan connect name=wrt-home interface="$($preferedAdapter.Name)" | Write-Host
-            #
-            #     Start-Sleep -Seconds 2
-            #     $adapter = Get-NetAdapter -Physical | Where-Object Name -Like "WLAN*"
-            # }
-
-            1..3 |
-                ForEach-Object {
-                    $name = "WLAN$(if ($_ -ne 1) { " $_" })"
-                    if ($name -in $adapter.Name) {
-                        $adapter | Where-Object Name -eq $name
-                    } else {
-                        [pscustomobject] @{
-                            Name = $name
-                            Status = "Disconnected"
-                        }
-                    }
-                } |
-                ForEach-Object {
-                    [pscustomobject] @{
-                        Type   = 'WLAN'
-                        Name   = $_.Name
-                        Status = if ($_.Status -eq "Disconnected") {
-                                   $false
-                               } elseif ($_.Status -eq "Up") {
-                                   $true
-                               }
-                    }
-                } |
-                ConvertTo-Json
-        } | Out-Null
-    Complete-Action
-
     # show devops agent status
     Start-Action "Show devops agent status"
         Start-Job {
@@ -460,24 +408,12 @@ if  ($firstUse) {
         # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
         $variables = [pscustomobject]$variables
         $template = "
-╔═════════════════════╤═════════════════════════════╗
-║ WLAN : {0}          │ DevOps Agents : {1}         ║
-╚═════════════════════╧═════════════════════════════╝
+╔═════════════════════════════╗
+║ DevOps Agents : {0}         ║
+╚═════════════════════════════╝
 "
-        $placeholder = " # # # "
-        $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
-        $variables.'WLAN' |
-            Sort-Object Name |
-            ForEach-Object {
-                $index = $template.IndexOf("#")
-                $char = if ($_.Status) {'🟩'} else {'🟥'}
-                $template =$template.Remove($index, 2)
-                $template = $template.Insert($index, $char)
-            }
-        $template = $template.Replace("#", "🟥")
-
         $placeholder = " # # "
-        $template = $template.Replace("{1}".PadRight($placeholder.Length), $placeholder)
+        $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
         $variables.'DevOps Agents' |
             Sort-Object Name |
             ForEach-Object {

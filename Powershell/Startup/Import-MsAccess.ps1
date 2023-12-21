@@ -22,18 +22,39 @@ param(
 
     [Parameter()]
     [switch]
-    $ShowDiff,
-
-    [Parameter()]
-    [switch]
     $Edit,
 
     [Parameter()]
     [switch]
-    $Compile
+    $Compile,
+
+    [Parameter()]
+    [switch]
+    $Force
 )
 begin {
     $pathes = @()
+
+    function Invoke-VbScript {
+        param($script)
+        $script = $script.ToString()
+
+        Set-Content -Path "$($env:TEMP)\script.vbs" -Value $script
+
+        $line = 0
+        $script -split "`n" |
+            ForEach-Object `
+                -Begin   { "== vba script ==" } `
+                -Process { $line++; $line.ToString().PadRight(3) + $_ } `
+                -End     { "== end vba script ==" } |
+            Write-Debug
+
+        $wshell = New-Object -ComObject wscript.shell
+        $wshell.AppActivate(((Get-Process MSACCESS).MainWindowTitle)) | Out-Null
+        cscript.exe "$($env:TEMP)\script.vbs" //nologo
+        Remove-Item "$($env:TEMP)\script.vbs"
+
+    }
 }
 process {
     if (($null -eq $Path) -and ($null -eq $InputObject)) {
@@ -61,65 +82,14 @@ process {
         ForEach-Object { $_.Group[0] } |
         Where-Object Extension -NE ".old"
 
-    Write-Debug "PSBoundParameters: $($PSBoundParameters | ConvertTo-Json)"
-    Write-Debug "pathes: $($pathes.FullName | ConvertTo-Json)"
-    $ShowDiff = $true
-}
-end {
-    if ($Edit) {
-        $arguments = $($pathes | Join-String -Separator " ")
-        Write-Debug $arguments
-        vi $arguments
-    }
-
-    Get-Process msaccess |
-        Where-Object MainWindowHandle -eq 0 |
-        Stop-Process
-
-    $script = [System.Text.StringBuilder]::new()
-    $script.AppendLine() | Out-Null
-    $script.AppendLine('dim stdout : set stdout = CreateObject("Scripting.FileSystemObject").GetStandardStream(1)') | Out-Null
-    $script.AppendLine('dim application: set application = GetObject(, "Access.Application")') | Out-Null
-    $script.AppendLine('dim currentdb: set currentdb = application.CurrentDb()') | Out-Null
-    $script.AppendLine('on error resume next') | Out-Null
-    $script.AppendLine() | Out-Null
-
-    Write-Host
     $ignored = $()
     foreach ($file in $pathes) {
-        Write-Host "Importing $($file.Name) .." -NoNewline
         $warning = ""
 
         switch -regex ($file.Extension) {
+            "^\.(ACQ|ACF|ACR|ACM|ACS|ACT)$" { }
             "^\.(ACREF)$" {
                 throw "$($file.Extension) is not (yet) implemented"
-            }
-            "^\.(ACQ)$" {
-                if ($ShowDiff) { $script.AppendLine("application.SaveAsText   1, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
-                $script.AppendLine("application.LoadFromText 1, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
-            }
-            "^\.(ACF)$" {
-                $script.AppendLine("DoCmd.Close 2, `"$($file.BaseName)`", 2") | Out-Null
-                if ($ShowDiff) { $script.AppendLine("application.SaveAsText   2, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
-                $script.AppendLine("application.LoadFromText 2, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
-            }
-            "^\.(ACR)$" {
-                $script.AppendLine("DoCmd.Close 3, `"$($file.BaseName)`", 2") | Out-Null
-                if ($ShowDiff) { $script.AppendLine("application.SaveAsText   3, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
-                $script.AppendLine("application.LoadFromText 3, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
-            }
-            "^\.(ACS)$" {
-                if ($ShowDiff) { $script.AppendLine("application.SaveAsText   4, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
-                $script.AppendLine("application.LoadFromText 4, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
-            }
-            "^\.(ACM)$" {
-                if ($ShowDiff) { $script.AppendLine("application.SaveAsText   5, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null }
-                $script.AppendLine("application.LoadFromText 5, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
-            }
-            "^\.(ACT)$" {
-                if ($ShowDiff) { $script.AppendLine("application.ExportXml `"$($file.FullName).old`", 1") | Out-Null }
-                $script.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
-                $script.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
             }
             "^\.(xml|pfx)$" {
                 $ignored += @($file)
@@ -132,23 +102,236 @@ end {
 
         Write-Host " $warning" -ForegroundColor Yellow
     }
+    $pathes = $pathes | Where-Object { $_ -notin $ignored }
 
-    $script = $script.ToString()
-    Set-Content -Path "$($env:TEMP)\script.vbs" -Value $script
+    Write-Debug "PSBoundParameters: $($PSBoundParameters | ConvertTo-Json)"
+    Write-Debug "pathes: $($pathes.FullName | ConvertTo-Json)"
+}
+end {
+    if ($Edit) {
+        $arguments = $($pathes | Join-String -Separator " ")
+        Write-Debug $arguments
+        vi $arguments
+    }
 
-    $line = 0
-    $script -split "`n" |
-        ForEach-Object `
-            -Begin   { "== vba script ==" } `
-            -Process { $line++; $line.ToString().PadRight(3) + $_ } `
-            -End     { "== end vba script ==" } |
-        Write-Debug
+    Get-Process msaccess |
+        Where-Object MainWindowHandle -eq 0 |
+        Stop-Process
 
-    $wshell = New-Object -ComObject wscript.shell;
-    $wshell.AppActivate(((Get-Process MSACCESS).MainWindowTitle)) | Out-Null
+    $scriptPreamble = [System.Text.StringBuilder]::new()
+    $scriptPreamble.AppendLine() | Out-Null
+    $scriptPreamble.AppendLine('dim stdout : set stdout = CreateObject("Scripting.FileSystemObject").GetStandardStream(1)') | Out-Null
+    $scriptPreamble.AppendLine('dim application: set application = GetObject(, "Access.Application")') | Out-Null
+    $scriptPreamble.AppendLine('dim currentdb: set currentdb = application.CurrentDb()') | Out-Null
+    $scriptPreamble.AppendLine('dim vbcomponents : set vbcomponents = application.VBE.ActiveVBProject.VBComponents') | Out-Null
+    $scriptPreamble.AppendLine('dim codemodule') | Out-Null
+    $scriptPreamble.AppendLine('on error resume next') | Out-Null
+    $scriptPreamble.AppendLine() | Out-Null
+    Write-Host
 
-    cscript.exe "$($env:TEMP)\script.vbs" //nologo
-    Remove-Item "$($env:TEMP)\script.vbs"
+    $scriptExport = [System.Text.StringBuilder]::new()
+    $scriptExport.Append($scriptPreamble) | Out-Null
+    foreach ($file in $pathes) {
+        Write-Host "Exporting $($file.Name) .." -NoNewline
+
+        switch -regex ($file.Extension) {
+            "^\.(ACQ)$" {
+                $scriptExport.AppendLine("application.SaveAsText   1, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null
+            }
+            "^\.(ACF)$" {
+                $scriptExport.AppendLine("DoCmd.Close 2, `"$($file.BaseName)`", 2") | Out-Null
+                $scriptExport.AppendLine("application.SaveAsText   2, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null
+            }
+            "^\.(ACR)$" {
+                $scriptExport.AppendLine("DoCmd.Close 3, `"$($file.BaseName)`", 2") | Out-Null
+                $scriptExport.AppendLine("application.SaveAsText   3, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null
+            }
+            "^\.(ACS)$" {
+                $scriptExport.AppendLine("application.SaveAsText   4, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null
+            }
+            "^\.(ACM)$" {
+                $scriptExport.AppendLine("application.SaveAsText   5, `"$($file.BaseName)`", `"$($file.FullName).old`"") | Out-Null
+            }
+            "^\.(ACT)$" {
+                $scriptExport.AppendLine("application.ExportXml `"$($file.FullName).old`", 1") | Out-Null
+            }
+        }
+
+        Write-Host
+    }
+    Invoke-VbScript $scriptExport
+
+    $scriptImport = [System.Text.StringBuilder]::new()
+    $scriptImport.Append($scriptPreamble) | Out-Null
+    foreach ($file in $pathes) {
+        Write-Host "Importing $($file.Name) .." -NoNewline
+
+        if ($Force) {
+            switch -regex ($file.Extension) {
+                "^\.(ACQ)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 1, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACF)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 2, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACR)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 3, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACS)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 4, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACM)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 5, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACT)$" {
+                    $scriptImport.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
+                    $scriptImport.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
+                }
+            }
+        } else {
+            switch -regex ($file.Extension) {
+                "^\.(ACQ)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 1, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACS)$" {
+                    $scriptImport.AppendLine("application.LoadFromText 4, `"$($file.BaseName)`", `"$($file.FullName)`"") | Out-Null
+                }
+                "^\.(ACT)$" {
+                    $scriptImport.AppendLine("currentdb.TableDefs.Delete `"$($file.BaseName)`"") | Out-Null
+                    $scriptImport.AppendLine("application.ImportXml `"$($file.FullName)`", 1") | Out-Null
+                }
+                "^\.(ACF|ACR|ACM)$" {
+                    $foundCodeBehindForm = [System.IO.Path]::GetExtension($file) -notin @(".ACF", ".ACR")
+                    $VbLine = 0
+                    $new = Get-Content $file |
+                        ForEach-Object {
+                            [pscustomobject]@{
+                                Line = if ($_.StartsWith("Attribute ")) {
+                                    0
+                                } elseif ($foundCodeBehindForm) {
+                                    $VbLine += 1; $VbLine
+                                } elseif ($_ -eq "CodeBehindForm") {
+                                    $foundCodeBehindForm = $true; 0
+                                }
+                                Code = $_
+                            }
+                        }
+
+                    $foundCodeBehindForm = [System.IO.Path]::GetExtension($file) -notin @(".ACF", ".ACR")
+                    $VbLine = 0
+                    $old = Get-Content "$($file.FullName).old" |
+                        ForEach-Object {$_} -End {""} |
+                        ForEach-Object {
+                            [pscustomobject]@{
+                                Line = if ($_.StartsWith("Attribute ")) {
+                                    0
+                                } elseif ($foundCodeBehindForm) {
+                                    $VbLine += 1; $VbLine
+                                } elseif ($_ -eq "CodeBehindForm") {
+                                    $foundCodeBehindForm = $true; 0
+                                }
+                                Code = $_
+                            }
+                        }
+
+                    $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
+                    $vbcomponent_name = switch ($file.Extension) {
+                        ".ACM" { $scriptImport.AppendLine("set codemodule = vbcomponents(`"$($file.BaseName)`").CodeModule")        | Out-Null }
+                        ".ACF" { $scriptImport.AppendLine("set codemodule = vbcomponents(`"Form_$($file.BaseName)`").CodeModule")   | Out-Null }
+                        ".ACR" { $scriptImport.AppendLine("set codemodule = vbcomponents(`"Report_$($file.BaseName)`").CodeModule") | Out-Null }
+                    }
+
+                    $i = 0
+                    $j = 0
+                    $changes = 0
+                    $changesBehindForm = 0
+                    while ($j -lt $count) {
+                        $new_lines = -1
+                        $del_lines = -1
+
+                        try {
+                            while ($old[$i].Code.Trim() -eq "NoSaveCTIWhenDisabled =1") { $i += 1 }
+                            while ($new[$j].Code.Trim() -eq "NoSaveCTIWhenDisabled =1") { $j += 1 }
+                        } catch {
+                        }
+
+                        try {
+                            if ($old[$i].Code.StartsWith("Checksum =") -and $new[$j].Code.StartsWith("Checksum =")) {
+                                $new_lines = 0
+                                $del_lines = 0
+                            } elseif ($old[$i].Code -eq $new[$j].Code) {
+                                $new_lines = 0
+                                $del_lines = 0
+                            } else {
+                                foreach ($d in 1..99) {
+                                    if ($old[$i].Code -eq $new[$j+$d].Code) {
+                                        $new_lines = $d
+                                        break;
+                                    }
+                                    if ($old[$i+$d].Code -eq $new[$j].Code) {
+                                        $del_lines = $d
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch {
+                        }
+
+                        while ($new_lines -gt 0) {
+                            Write-Host "$($new[$j].Line): " -NoNewline
+                            Write-Host -ForegroundColor Green $new[$j].Code -NoNewline
+                            Write-Host -ForegroundColor Magenta " (new line)"
+                            $changes += 1
+                            if ($new[$j].Line -gt 0) {
+                                $changesBehindForm += 1
+                                $scriptImport.AppendLine("codemodule.InsertLines $($new[$j].Line), `"$( $new[$j].Code.Replace('"','`"`"') )`"") | Out-Null
+                            }
+                            $new_lines -= 1
+                            $j += 1
+                        }
+                        while ($del_lines -gt 0) {
+                            Write-Host "$($old[$j].Line): " -NoNewline
+                            Write-Host -ForegroundColor Red $old[$i].Code -NoNewline
+                            Write-Host -ForegroundColor Magenta " (deleted line)"
+                            $changes += 1
+                            if ($old[$j].Line -gt 0) {
+                                $changesBehindForm += 1
+                                $scriptImport.AppendLine("codemodule.DeleteLines $($old[$j].Line)") | Out-Null
+                            }
+                            $del_lines -= 1
+                            $i += 1
+                        }
+
+                        if ($new_lines -eq -1 -and $del_lines -eq -1) {
+                            if ($old[$i].Code -ne $new[$j].Code) {
+                                Write-Host "$($new[$j].Line): " -NoNewline
+                                Write-Host -ForegroundColor Red $old[$i].Code -NoNewline
+                                Write-Host -ForegroundColor Green $new[$j].Code -NoNewline
+                                Write-Host -ForegroundColor Magenta " (replace)"
+                                $changes += 1
+                                if ($new[$j].Line -gt 0) {
+                                    $changesBehindForm += 1
+                                    $scriptImport.AppendLine("codemodule.ReplaceLine $($new[$j].Line), `"$( $new[$j].Code.Replace('"','""') )`"") | Out-Null
+                                }
+                            }
+                        }
+
+                        $i += 1
+                        $j += 1
+                    }
+                    Write-Host -ForegroundColor Magenta "${file}: $changes changes ($changesBehindForm changes in VBA)"
+
+                    # git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
+                    Remove-Item "$($file.FullName).old"
+                }
+            }
+        }
+
+        Write-Host
+    }
+    Invoke-VbScript $scriptImport
+
+
 
     if ($Compile) {
         Write-Host "Compiling.."
@@ -246,94 +429,6 @@ end {
             Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
         } else {
             $wshell.AppActivate((Get-Process WindowsTerminal).MainWindowTitle) | Out-Null
-        }
-    }
-
-    if ($ShowDiff) {
-        foreach ($file in $pathes |
-                            Where-Object { $_ -notin $ignored } |
-                            Where-Object { $_.Extension -in @(".ACM", ".ACR", ".ACF") }
-            ) {
-            $new = Get-Content $file
-            $old = Get-Content "$($file.FullName).old" | ForEach-Object {$_} -End {""}
-            $count = [Math]::Max(($new | Measure-Object).Count, ($old | Measure-Object).Count)
-
-            $i = 0
-            $j = 0
-            $changes = 0
-            $changesBehindForm = 0
-            $foundCodeBehindForm = [System.IO.Path]::GetExtension($file) -notin @(".ACF", ".ACR")
-            while ($j -lt $count) {
-                $new_lines = -1
-                $del_lines = -1
-
-                try {
-                    while ($old[$i].Trim() -eq "NoSaveCTIWhenDisabled =1") { $i += 1 }
-                    while ($new[$j].Trim() -eq "NoSaveCTIWhenDisabled =1") { $j += 1 }
-                } catch {
-                }
-
-                try {
-                    if ($old[$i].StartsWith("Checksum =") -and $new[$j].StartsWith("Checksum =")) {
-                        $new_lines = 0
-                        $del_lines = 0
-                    } elseif ($old[$i] -eq $new[$j]) {
-                        $new_lines = 0
-                        $del_lines = 0
-                    } else {
-                        foreach ($d in 1..99) {
-                            if ($old[$i] -eq $new[$j+$d]) {
-                                $new_lines = $d
-                                break;
-                            }
-                            if ($old[$i+$d] -eq $new[$j]) {
-                                $del_lines = $d
-                                break;
-                            }
-                        }
-                    }
-                } catch {
-                }
-
-                while ($new_lines -gt 0) {
-                    Write-Host "${j}: " -NoNewline
-                    Write-Host -ForegroundColor Green $new[$j] -NoNewline
-                    Write-Host -ForegroundColor Magenta " (new line)"
-                    $changes += 1
-                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
-                    $new_lines -= 1
-                    $j += 1
-                    if (!$foundCodeBehindForm -and $new[$j] -eq "CodeBehindForm") { $foundCodeBehindForm = $true }
-                }
-                while ($del_lines -gt 0) {
-                    Write-Host "${j}: " -NoNewline
-                    Write-Host -ForegroundColor Red $old[$i] -NoNewline
-                    Write-Host -ForegroundColor Magenta " (deleted line)"
-                    $changes += 1
-                    if ($foundCodeBehindForm) { $changesBehindForm += 1 }
-                    $del_lines -= 1
-                    $i += 1
-                }
-
-                if ($new_lines -eq -1 -and $del_lines -eq -1) {
-                    if ($old[$i] -ne $new[$j]) {
-                        Write-Host "${j}: " -NoNewline
-                        Write-Host -ForegroundColor Red $old[$i] -NoNewline
-                        Write-Host -ForegroundColor Green $new[$j] -NoNewline
-                        Write-Host -ForegroundColor Magenta " (replace)"
-                        $changes += 1
-                        if ($foundCodeBehindForm) { $changesBehindForm += 1 }
-                    }
-                }
-
-                $i += 1
-                $j += 1
-                if (!$foundCodeBehindForm -and $new[$j] -eq "CodeBehindForm") { $foundCodeBehindForm = $true }
-            }
-            Write-Host -ForegroundColor Magenta "${file}: $changes changes ($changesBehindForm changes in VBA)"
-
-            # git --no-pager diff --no-index "$($file.FullName)" "$($file.FullName).old"
-            Remove-Item "$($file.FullName).old"
         }
     }
 }
