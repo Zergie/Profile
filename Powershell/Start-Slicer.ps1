@@ -1,11 +1,11 @@
 $slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\orca-slicer.exe"
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
 
-$path = $args
+$path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
 $filename = [System.IO.Path]::GetFileNameWithoutExtension($path)
 $extension = [System.IO.Path]::GetExtension($path)
 
-$Destination = "${env:USERPROFILE}\Downloads\${filename}_$((Get-Date).ToString("yyyy-MM-dd"))${extension}"
+$Destination = "${env:USERPROFILE}\Downloads\${filename.Replace(" ", "")}_$((Get-Date).ToString("yyyy-MM-dd"))${extension}"
 
 @{
     Path = $path
