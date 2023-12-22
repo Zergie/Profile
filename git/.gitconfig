@@ -83,8 +83,8 @@
 		fi; \
 		echo -e '\\E[38;5;14m'\"\\033[1mgit rev-list $MAIN_BRANCH $BRANCH\\033[0m\"; \
 		LAST_COMMON_COMMIT=`git rev-list $MAIN_BRANCH $BRANCH | tail -n1`; \
-		echo -e '\\E[38;5;14m'\"\\033[1mgit log-pretty $LAST_COMMON_COMMIT^1..$BRANCH\\033[0m\"; \
-		git log-pretty $LAST_COMMON_COMMIT^1..$BRANCH 2> /dev/null; \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit log-pretty $LAST_COMMON_COMMIT^1..$BRANCH $2 $3 $4\\033[0m\"; \
+		git log-pretty $LAST_COMMON_COMMIT^1..$BRANCH $2 $3 $4 2> /dev/null; \
 		};f"
 
 	# shortcuts
