@@ -45,6 +45,7 @@ $tools = @(
         [pscustomobject]@{name="zoom"}
     }
     if (Test-IsLaptop) {
+        [pscustomobject]@{name="autohotkey"}
         [pscustomobject]@{name="BatteryBar"}
     }
 
