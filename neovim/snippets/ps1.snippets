@@ -6,17 +6,17 @@ snippet req_core
 snippet req_admin
 	#Requires -RunAsAdministrator
 
-snippet pscustomobject
+snippet pscustomobject_
 	[pscustomobject]@{
 		${1:name} = ${2:value}
 	}
 
-snippet cmdletbinding
+snippet cmdletbinding_
 	[cmdletbinding()]
 	param(
 	)
 
-snippet param
+snippet Parameter_
 		[Parameter(Mandatory=$$true,
 				   ParameterSetName="${2:name}ParameterSet",
 				   ValueFromPipeline=$$true,
@@ -25,7 +25,7 @@ snippet param
 		[${1:type}]
 		${2:name}
 	
-snippet dynamicparam
+snippet dynamicparam_
 	dynamicparam {
 		$$RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
 

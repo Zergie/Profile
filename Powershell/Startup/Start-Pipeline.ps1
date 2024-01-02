@@ -87,7 +87,6 @@ begin {
                 [pscustomobject]@{ id= 40; name= "AdminTool" }
                 [pscustomobject]@{ id= 35; name= "TauOffice MDE" }
                 [pscustomobject]@{ id= 46; name= "TauOffice Basisstatistik" }
-                [pscustomobject]@{ id= 47; name= "TauOffice Updater" }
             )
         }
     } else  {

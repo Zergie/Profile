@@ -10,7 +10,11 @@ param(
 
     [Parameter()]
     [switch]
-    $NoHeader
+    $NoHeader,
+
+    [Parameter()]
+    [double]
+    $Statement = 0
 )
 Begin {
     function rnd() {
@@ -23,16 +27,41 @@ Begin {
     }
 }
 Process {
-    $Year   = [datetime]::Now.Year
-    $Begin  = if ($Start.Length -gt 0) { [datetime]::Parse($Start) } else { $null }
-    $Finish = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
+    $Year      = [datetime]::Now.Year
+    $Begin     = if ($Start.Length -gt 0) { [datetime]::Parse($Start) } else { $null }
+    $Finish    = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
+
+    $holidays  = (Invoke-RestMethod "https://feiertage-api.de/api/?jahr=$((Get-Date).Year)").BY |
+        Get-Member -Type NoteProperty |
+        ForEach-Object{
+            $item = $holidays."$($_.name)"
+            if ($item.hinweis -notlike "*Augsburger Friedensfest*") {
+                [datetime]::Parse($item.datum).ToString("dd.MM.yyyy")
+            }
+        }
 
     $lookup = [pscustomobject]@{
-        "Mo" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.5, -0.2,1.0)}
-        "Di" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
-        "Mi" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
-        "Do" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
-        "Fr" = [pscustomobject]@{start="08:30";end="15:00";var=@(-0.5,2.0, -0.2,1.0)}
+        "more"   = [pscustomobject]@{
+            "Mo" = [pscustomobject]@{start="07:30";end="17:15";var=@(-0.5,2.0, -0.2,0.5)}
+            "Di" = [pscustomobject]@{start="07:30";end="17:15";var=@(-0.5,1.5, -0.2,0.5)}
+            "Mi" = [pscustomobject]@{start="07:30";end="17:15";var=@(-0.5,1.5, -0.2,0.5)}
+            "Do" = [pscustomobject]@{start="07:30";end="17:15";var=@(-0.5,1.5, -0.2,0.5)}
+            "Fr" = [pscustomobject]@{start="07:30";end="17:00";var=@(-0.5,1.5, -0.2,0.5)}
+        }
+        "less"   = [pscustomobject]@{
+            "Mo" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.5, -0.2,1.0)}
+            "Di" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+            "Mi" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+            "Do" = [pscustomobject]@{start="08:30";end="16:15";var=@(-0.5,2.0, -0.2,1.0)}
+            "Fr" = [pscustomobject]@{start="08:30";end="15:00";var=@(-0.5,2.0, -0.2,1.0)}
+        }
+        "normal" = [pscustomobject]@{
+            "Mo" = [pscustomobject]@{start="08:30";end="17:15";var=@(-0.5,2.0, -0.2,0.8)}
+            "Di" = [pscustomobject]@{start="08:30";end="17:15";var=@(-0.5,1.5, -0.2,0.8)}
+            "Mi" = [pscustomobject]@{start="08:30";end="17:15";var=@(-0.5,1.5, -0.2,0.8)}
+            "Do" = [pscustomobject]@{start="08:30";end="17:15";var=@(-0.5,1.5, -0.2,0.8)}
+            "Fr" = [pscustomobject]@{start="08:30";end="15:00";var=@(-0.5,1.5, -0.2,0.8)}
+        }
     }
 
     1..356 |
@@ -41,12 +70,31 @@ Process {
         Where-Object { if ($null -eq $Begin)  { $true } else { $_ -ge $Begin  } } |
         Where-Object { if ($null -eq $Finish) { $true } else { $_ -le $Finish } } |
         ForEach-Object {
-            $preset = $lookup.($_.ToString("ddd"))
+
+            if ($Statement -lt 0) {
+                $l = $lookup.more
+            } elseif ($Statement -gt 8) {
+                $l = $lookup.less
+            } elseif ($Statement -gt 4) {
+                $l = $lookup.normal
+            } elseif ($null -eq $l) {
+                $l = $lookup.normal
+            } else {
+                # keep last lookup table
+            }
+
+            $preset = $l.($_.ToString("ddd"))
             [pscustomobject]@{
                 date      = $_.ToString("dd.MM.yyyy")
                 DayOfWeek = $_.ToString("ddd")
                 start     = [System.TimeOnly]::Parse($preset.start).Add([timespan]::FromHours((rnd $preset.var[0] $preset.var[1])))
                 end       = [System.TimeOnly]::Parse($preset.end).Add([timespan]::FromHours((rnd $preset.var[2] $preset.var[3])))
+            }
+        } |
+        ForEach-Object {
+            if ($_.date -notin $holidays) {
+                $Statement += ($_.end - $_.start).TotalHours - 8 -0.5
+                $_
             }
         } |
         ConvertTo-Csv -Delimiter `t |
