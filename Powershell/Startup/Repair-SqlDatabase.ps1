@@ -11,10 +11,12 @@ param(
 
 Stop-Process -Name AdminTool.App -ErrorAction SilentlyContinue
 $logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
-# Find-LockingProcess -Path $logfile | Stop-Process -Force
 
 $department = $Database
 $main       = $Database -split '_' | Select-Object -SkipLast 1 | Join-String -Separator _
+if ("Mandant" -in (. "$PSScriptRoot\Get-SqlTable.ps1" -Database $department).name) {
+    $main = $department
+}
 $logwatcher = Start-Job {
     $logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
 
@@ -35,13 +37,13 @@ Pop-Location
 
 
 $verb = if ($NoUpdate) { "--repair" } else { "--update" }
-Write-Host -ForegroundColor Cyan "AdminTool.App.exe $verb $department .."
+Write-Host -ForegroundColor Cyan "AdminTool.App.exe $verb $department --ini `"X:\INI\$($main).ini`" .."
 . "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" $verb $department --ini "X:\INI\$($main).ini"
 $process = Get-Process -Name AdminTool.App
 
 while (!$process.HasExited) {
     $logwatcher | Receive-Job | bat --paging never --style=plain --language log
 }
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 $logwatcher | Receive-Job | bat --paging never --style=plain --language log
 Stop-Job $logwatcher

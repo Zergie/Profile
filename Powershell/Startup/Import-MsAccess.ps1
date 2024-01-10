@@ -311,7 +311,7 @@ end {
                                 $changes += 1
                                 if ($new[$j].Line -gt 0) {
                                     $changesBehindForm += 1
-                                    $scriptImport.AppendLine("codemodule.ReplaceLine $($new[$j].Line), `"$( $new[$j].Code.Replace('"','""') )`"") | Out-Null
+                                    $scriptImport.AppendLine("codemodule.ReplaceLine $($new[$j].Line), `"$( $new[$j].Code.Replace('"','`"`"') )`"") | Out-Null
                                 }
                             }
                         }
