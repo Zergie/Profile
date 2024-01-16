@@ -126,6 +126,7 @@ process {
             $PSBoundParameters['Query'] = $_
         }
         $PSBoundParameters['Query'] = [string]$PSBoundParameters['Query']
+        $PSBoundParameters['TrustServerCertificate'] = $true
 
         if ($PSBoundParameters['Verbose'].IsPresent) {
             ($PSBoundParameters | ConvertTo-Json -Compress) -replace '"Verbose":\{[^\}]+\},?','' |
@@ -157,4 +158,3 @@ end { }
 # $metadata = New-Object System.Management.Automation.CommandMetaData(Get-Command Invoke-Sqlcmd)
 # [System.Management.Automation.ProxyCommand]::Create($metadata) | Out-File Invoke-Sqlcmd.ps1
 # ```
-

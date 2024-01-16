@@ -30,8 +30,12 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 function Test-IsWorkstation { $env:USERNAME -eq "puchinger" }
 function Test-IsLaptop { (Get-Computerinfo -Property CsPCSystemType).CsPCSystemType -ne 3 }
 
+Write-Host -ForegroundColor Cyan "Test-IsWorkstation: $(Test-IsWorkstation)"
+Write-Host -ForegroundColor Cyan "Test-IsLaptop: $(Test-IsLaptop)"
+
 $modules = @(
     "posh-git"
+    "SqlServer"
 )
 
 $tools = @(
@@ -279,7 +283,7 @@ if ($Install -in @('*', 'chocolatey')) {
 
     Write-Host -ForegroundColor Cyan ""
     Write-Host -ForegroundColor Cyan "chocolatey packages not in list:"
-    .\Powershell\Startup\Invoke-Chocolatey.ps1 -Command list |
+    . $PSScriptRoot\Powershell\Startup\Invoke-Chocolatey.ps1 -Command list |
         Where-Object 'package name' -notin $tools.Name |
         Where-Object 'package name' -NotLike KB* |
         Where-Object 'package name' -NotLike chocolatey* |

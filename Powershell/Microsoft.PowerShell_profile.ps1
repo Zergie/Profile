@@ -150,7 +150,7 @@ Start-Action "Set alias to my programs"
 Complete-Action
 
 # set alias to my scripts
-$dockerScript = "D:\Daten\docker.ps1"
+$dockerScript = "C:\Dokumente\Daten\docker.ps1"
 if ((Test-Path $dockerScript)) {
     Start-Action "Set alias to my scripts"
         Set-Alias d $dockerScript # todo: remove alias

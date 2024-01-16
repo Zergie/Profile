@@ -7,7 +7,7 @@ param(
     $Database
 )
 begin {
-    $dockerScript = "D:\Daten\docker.ps1"
+    $dockerScript = "C:\Dokumente\Daten\docker.ps1"
     $credentials =  Get-Content -raw $dockerScript |
                         Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |
                         ForEach-Object Matches |

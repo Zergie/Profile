@@ -8,7 +8,7 @@ begin {
         Invoke-Expression $Expression
     }
 
-    $data_folder = "D:\Daten\temp"
+    $data_folder = "C:\Dokumente\Daten\temp"
 }
 process {
 

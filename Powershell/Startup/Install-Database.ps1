@@ -11,7 +11,7 @@ dynamicparam {
         host = 'u266601-sub2.your-storagebox.de'
         user = 'u266601-sub2'
         port = 23
-        local_folder = 'D:\Daten'
+        local_folder = 'C:\Dokumente\Daten'
     }
     $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter databases.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
 
@@ -71,7 +71,7 @@ process {
     $Path = $PSBoundParameters['Path']
 
     if ($Path.StartsWith(".")) {
-        $Path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine("D:\Daten", $Path))
+        $Path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine("C:\Dokumente\Daten", $Path))
     }
 
     if ($PSDefaultParameterValues["*:Database"] -ne "master") {

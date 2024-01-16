@@ -30,7 +30,7 @@ param (
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true)]
         [string]
-        $Path = "D:\Dokumente\Tätigkeitsnachweis.xlsx",
+        $Path = "C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx",
 
         [Parameter(Mandatory=$false,
                    ParameterSetName="DefaultParameterSet",
