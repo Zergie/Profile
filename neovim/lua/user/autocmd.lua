@@ -11,6 +11,13 @@ nvim_create_autocmd({"BufWritePre"}, {
     end,
 })
 
+-- Signature Help when pause typeing
+nvim_create_autocmd({"CursorHoldI"}, {
+  pattern = "*.cs,*.ps1,*.py,*.ino",
+  command = "silent lua vim.lsp.buf.signature_help()"
+})
+
+
 -- enter insert after :term
 nvim_create_autocmd({"TermOpen"}, {
     pattern = "*",

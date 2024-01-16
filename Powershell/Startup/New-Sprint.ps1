@@ -48,7 +48,7 @@ Process {
                                 id= $new_iteration.identifier
                             }
     }
-    
+
     $team_holidays = @( $new_sprint.attributes.startDate, $new_sprint.attributes.finishDate) |
                         ForEach-Object Year |
                         Group-Object |
@@ -71,13 +71,9 @@ Process {
                                 }
                         } |
                         Where-Object hinweis -NotLike "* nur im Stadtgebiet Augsburg *" |
-                        Where-Object datum -GE $new_sprint.attributes.startDate -and datum -LE $new_sprint.attributes.finishDate |
-                        ForEach-Object `
-                            -Begin { Write-Host "holidays:" } `
-                            -Process {
-                                $_ | Format-Table
-                                $_.datum
-                            } |
+                        Where-Object datum -GE $new_sprint.attributes.startDate |
+                        Where-Object datum -LE $new_sprint.attributes.finishDate |
+                        ForEach-Object datum |
                         ForEach-Object `
                             -Begin   { $last = $null} `
                             -Process {

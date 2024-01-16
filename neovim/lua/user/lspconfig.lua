@@ -55,11 +55,6 @@ On_attach = function(client, bufnr)
     }
   )
 
-  nvim_create_autocmd({"CursorHoldI"}, {
-      pattern = "*.cs,*.ps1,*.py,*.ino",
-      command = "lua vim.lsp.buf.signature_help()"
-  })
-
   -- Lesser used LSP functionality
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>aa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')

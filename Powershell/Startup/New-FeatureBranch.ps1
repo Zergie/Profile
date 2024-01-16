@@ -34,6 +34,7 @@ dynamicparam {
                 } |
                 ForEach-Object workItems |
                 ForEach-Object id
+    try {
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
         & "$PSScriptRoot\Invoke-RestApi.ps1" `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
@@ -50,6 +51,7 @@ dynamicparam {
                 Sort-Object
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
+    } catch {}
 
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Name", [string], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)

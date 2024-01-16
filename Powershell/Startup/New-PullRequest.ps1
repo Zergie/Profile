@@ -13,32 +13,34 @@ dynamicparam {
     $ParameterAttribute.ParameterSetName = "IssuesParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
 
-    $ids = & "$PSScriptRoot\Invoke-RestApi.ps1" `
-                -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=6.0" `
-                -Body @{
-                    query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.IterationPath] = @currentIteration('[TauOffice]\TauOffice Team <id:48deb8b1-0e33-40d0-8879-71d5258a79f7>')"
-                } |
-                ForEach-Object workItems |
-                ForEach-Object id
-    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        & "$PSScriptRoot\Invoke-RestApi.ps1" `
-                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
-                -Body @{
-                    ids= $ids
-                    fields= @(
-                        "System.Id"
-                        "System.Title"
-                     )
-                } |
-                ForEach-Object value |
-                ForEach-Object fields |
-                ForEach-Object {
-                    "$($_.'System.Id') - $($_.'System.Title')"
-                    "$($_.'System.Id')"
+    try {
+        $ids = & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                    -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=6.0" `
+                    -Body @{
+                        query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.IterationPath] = @currentIteration('[TauOffice]\TauOffice Team <id:48deb8b1-0e33-40d0-8879-71d5258a79f7>')"
                     } |
-                Sort-Object
-    ))
-    $AttributeCollection.Add($ValidateSetAttribute)
+                    ForEach-Object workItems |
+                    ForEach-Object id
+        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
+            & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                    -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
+                    -Body @{
+                        ids= $ids
+                        fields= @(
+                            "System.Id"
+                            "System.Title"
+                         )
+                    } |
+                    ForEach-Object value |
+                    ForEach-Object fields |
+                    ForEach-Object {
+                        "$($_.'System.Id') - $($_.'System.Title')"
+                        "$($_.'System.Id')"
+                        } |
+                    Sort-Object
+        ))
+        $AttributeCollection.Add($ValidateSetAttribute)
+    } catch {}
 
     $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Issues", [string[]], $AttributeCollection)
     $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)

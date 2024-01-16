@@ -49,7 +49,7 @@ require("lazy").setup({
     "jackMort/ChatGPT.nvim",
     event = "VeryLazy",
     config = function()
-      require("chatgpt").setup{
+      require("chatgpt").setup {
         api_key_cmd = nil,
         yank_register = "+",
         edit_with_instructions = {
@@ -211,24 +211,24 @@ require("lazy").setup({
   },
 
 
-   -- -- Translator
-   -- {
-   --   'uga-rosa/translate.nvim',
-   --   config = function ()
-   --    local map = function (mode, lhs, rhs, desc)
-   --      vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
-   --    end
-   --     map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
-   --     map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
-   --   end
-   -- },
+  -- -- Translator
+  -- {
+  --   'uga-rosa/translate.nvim',
+  --   config = function ()
+  --    local map = function (mode, lhs, rhs, desc)
+  --      vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
+  --    end
+  --     map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
+  --     map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
+  --   end
+  -- },
 
-   -- Theme inspired by Atom
-   {
+  -- Theme inspired by Atom
+  {
     'navarasu/onedark.nvim',
     lazy = false,    -- make sure we load this during startup if it is your main colorscheme
     priority = 1000, -- make sure to load this before all the other start plugins
-    config = function ()
+    config = function()
       vim.o.termguicolors = true
       vim.cmd.colorscheme('onedark')
     end
@@ -240,23 +240,23 @@ require("lazy").setup({
     dependencies = {
       'tpope/vim-rhubarb',
     },
-    config = function ()
-      local map = function (mode, lhs, rhs, desc)
+    config = function()
+      local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Fugitive]" })
       end
 
       map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log")
-      map("n", "[q",        "<cmd>cprev<cr>",       "Prev qf item")
-      map("n", "]q",        "<cmd>cnext<cr>",       "Next qf item")
-      map("n", "[Q",        "<cmd>cfirst<cr>",      "First qf item")
-      map("n", "]Q",        "<cmd>clast<cr>",       "Last qf item")
+      map("n", "[q", "<cmd>cprev<cr>", "Prev qf item")
+      map("n", "]q", "<cmd>cnext<cr>", "Next qf item")
+      map("n", "[Q", "<cmd>cfirst<cr>", "First qf item")
+      map("n", "]Q", "<cmd>clast<cr>", "Last qf item")
     end
   },
 
   { -- File Explorer For Neovim Written In Lua
     'nvim-tree/nvim-tree.lua',
-    config = function ()
-      local map = function (mode, lhs, rhs, desc)
+    config = function()
+      local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [NvTree]" })
       end
 
@@ -271,7 +271,7 @@ require("lazy").setup({
       require("nvim-tree").setup()
 
       local api = require("nvim-tree.api")
-      map('n', '<Leader>x', function () api.tree.toggle({find_file=true, update_root=true}) end, "File Explorer")
+      map('n', '<Leader>x', function() api.tree.toggle({ find_file = true, update_root = true }) end, "File Explorer")
     end
   },
 
@@ -287,13 +287,13 @@ require("lazy").setup({
           section_separators = '',
         },
         sections = {
-          lualine_a = {'mode'},
-          lualine_b = {'branch', 'diff', 'diagnostics'},
+          lualine_a = { 'mode' },
+          lualine_b = { 'branch', 'diff', 'diagnostics' },
           -- lualine_b = {'diagnostics'},
-          lualine_c = {'filename'},
-          lualine_x = {'encoding', 'fileformat', 'filetype'},
-          lualine_y = {'progress'},
-          lualine_z = {'location'}
+          lualine_c = { 'filename' },
+          lualine_x = { 'encoding', 'fileformat', 'filetype' },
+          lualine_y = { 'progress' },
+          lualine_z = { 'location' }
         },
       }
     end
@@ -302,7 +302,7 @@ require("lazy").setup({
   { -- extended vim motions
     'phaazon/hop.nvim',
     config = function()
-      local map = function (lhs, rhs, desc)
+      local map = function(lhs, rhs, desc)
         vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Hop]" })
       end
       local hop = require("hop")
@@ -314,9 +314,9 @@ require("lazy").setup({
       -- map("F",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, "Hop backward find")
       -- map("t",         function () hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, "Hop forward till")
       -- map("T",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
-      map("s",         function () hop.hint_words{ } end, "Hop word")
-      map("<Leader>j", function () hop.hint_lines{ } end, "Hop word")
-      map("<Leader>s", function () hop.hint_char1{ } end, "Hop 2chars forward")
+      map("s", function() hop.hint_words {} end, "Hop word")
+      map("<Leader>j", function() hop.hint_lines {} end, "Hop word")
+      map("<Leader>s", function() hop.hint_char1 {} end, "Hop 2chars forward")
     end,
   },
 
@@ -328,55 +328,59 @@ require("lazy").setup({
       vim.o.timeout = true
       vim.o.timeoutlen = 300
     end,
-    config = function ()
+    config = function()
       local wk = require("which-key")
 
       wk.setup {
-          plugins = {
-              spelling = {
-                  enabled = false,
-              },
+        plugins = {
+          spelling = {
+            enabled = false,
           },
+        },
       }
 
       wk.register({
         p = {
           name = "ChatGPT",
 
-          c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
-          e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",            mode = { "n", "v" } },
-          g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",               mode = { "n", "v" } },
-          t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                        mode = { "n", "v" } },
-          k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                         mode = { "n", "v" } },
-          d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                        mode = { "n", "v" } },
-          a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                        mode = { "n", "v" } },
-          o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",                    mode = { "n", "v" } },
-          s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                        mode = { "n", "v" } },
-          f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                         mode = { "n", "v" } },
-          x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",                     mode = { "n", "v" } },
-          r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",                     mode = { "n", "v" } },
-          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]",        mode = { "n", "v" } },
-          p = { "<cmd>cd %:p:h/..<CR>" ..
-                "<cmd>r!git diff --staged<CR>" ..
-                "<cmd>normal V'[k<CR>" ..
-                "<cmd>ChatGPTRun commit<CR>"
-          ,                                                                "Write a Commit message [AI]", mode = { "n", "v" } },
+          c = { "<cmd>ChatGPT<CR>", "ChatGPT" },
+          e = { "<cmd>ChatGPTEditWithInstruction<CR>", "Edit with instruction [AI]", mode = { "n", "v" } },
+          g = { "<cmd>ChatGPTRun grammar_correction<CR>", "Grammar Correction [AI]", mode = { "n", "v" } },
+          t = { "<cmd>ChatGPTRun translate<CR>", "Translate [AI]", mode = { "n", "v" } },
+          k = { "<cmd>ChatGPTRun keywords<CR>", "Keywords [AI]", mode = { "n", "v" } },
+          d = { "<cmd>ChatGPTRun docstring<CR>", "Docstring [AI]", mode = { "n", "v" } },
+          a = { "<cmd>ChatGPTRun add_tests<CR>", "Add Tests [AI]", mode = { "n", "v" } },
+          o = { "<cmd>ChatGPTRun optimize_code<CR>", "Optimize Code [AI]", mode = { "n", "v" } },
+          s = { "<cmd>ChatGPTRun summarize<CR>", "Summarize [AI]", mode = { "n", "v" } },
+          f = { "<cmd>ChatGPTRun fix_bugs<CR>", "Fix Bugs [AI]", mode = { "n", "v" } },
+          x = { "<cmd>ChatGPTRun explain_code<CR>", "Explain Code [AI]", mode = { "n", "v" } },
+          r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit [AI]", mode = { "n", "v" } },
+          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+          p = {
+            "<cmd>cd %:p:h/..<CR>" ..
+            "<cmd>r!git diff --staged<CR>" ..
+            "<cmd>normal V'[k<CR>" ..
+            "<cmd>ChatGPTRun commit<CR>"
+            ,
+            "Write a Commit message [AI]",
+            mode = { "n", "v" }
+          },
 
-        }}, { prefix = "<leader>" })
+        }
+      }, { prefix = "<leader>" })
 
       wk.register({
         g = {
-          a = { "<Plug>(EasyAlign)", "Align [EasyAlign]", mode = { "n", "x" }},
+          a = { "<Plug>(EasyAlign)", "Align [EasyAlign]", mode = { "n", "x" } },
         }
       })
-
     end
   },
 
   -- allows align e.g. vipga=
   {
     'junegunn/vim-easy-align',
-    config = function ()
+    config = function()
     end
   },
 
@@ -385,16 +389,16 @@ require("lazy").setup({
   -- floating terminal for compling
   {
     'numToStr/FTerm.nvim',
-    config = function ()
+    config = function()
       local fterm = require('FTerm')
-      fterm.setup{
+      fterm.setup {
         cmd = "\"pwsh.exe\"",
       }
 
-      local map = function (mode, lhs, rhs, desc)
+      local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [FTerm]" })
       end
-      map("n", "<Leader>n",  fterm.toggle, "Toggle Terminal")
+      map("n", "<Leader>n", fterm.toggle, "Toggle Terminal")
       map("t", "<ESC><ESC>", fterm.toggle, "Toggle Terminal")
     end
   },
@@ -406,7 +410,7 @@ require("lazy").setup({
     dependencies = {
       'nvim-lua/plenary.nvim'
     },
-    config = function ()
+    config = function()
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
         path_display = { "truncate" },
@@ -428,11 +432,11 @@ require("lazy").setup({
       local telescope = require('telescope.builtin')
       local themes = require('telescope.themes')
       local minimal_theme = themes.get_dropdown {
-          winblend  = 10,
-          previewer = false,
-          layout_config = {
-            width = 0.5,
-          },
+        winblend      = 10,
+        previewer     = false,
+        layout_config = {
+          width = 0.5,
+        },
       }
       -- local cursor_theme = themes.get_cursor {
       --     winblend  = 10,
@@ -443,140 +447,141 @@ require("lazy").setup({
       --     },
       -- }
       local cursor_minimal_theme = themes.get_cursor {
-          winblend  = 20,
-          previewer = false,
-          layout_config = {
-            height = 0.25,
-          },
+        winblend      = 20,
+        previewer     = false,
+        layout_config = {
+          height = 0.25,
+        },
       }
 
-      local map = function (mode, lhs, rhs, desc)
+      local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
       end
 
-      map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end,              'Find existing buffers')
-      map('n', '<leader>sf',      function() telescope.find_files(minimal_theme) end,           '[S]earch [F]iles' )
-      map('n', '<leader>so',      function() telescope.oldfiles(minimal_theme) end,             '[S]earch in old files')
-      map('n', 'z=',              function() telescope.spell_suggest(cursor_minimal_theme) end, 'Spell Suggest')
-      map('n', '<leader>/',       telescope.current_buffer_fuzzy_find,                          'Search in current buffer' )
-      map("n", "<Leader>sb",      telescope.builtin,                                            "[S]earch [B]uiltin")
-      map("n", "<Leader>sm",      telescope.marks,                                              "[S]earch [M]arks")
-      map("n", "<Leader>sr",      telescope.resume,                                             "[S]earch [R]esume")
-      map('n', '<leader>sh',      telescope.help_tags,                                          '[S]earch [H]elp' )
-      map('n', '<leader>sw',      function() telescope.grep_string() end,                       '[S]earch current [W]ord' )
-      map('n', '<leader>sg',      telescope.live_grep,                                          '[S]earch by [G]rep' )
-      map('n', '<leader>sd',      telescope.diagnostics,                                        '[S]earch [D]iagnostics' )
+      map('n', '<leader><space>', function() telescope.buffers(minimal_theme) end, 'Find existing buffers')
+      map('n', '<leader>sf', function() telescope.find_files(minimal_theme) end, '[S]earch [F]iles')
+      map('n', '<leader>so', function() telescope.oldfiles(minimal_theme) end, '[S]earch in old files')
+      map('n', 'z=', function() telescope.spell_suggest(cursor_minimal_theme) end, 'Spell Suggest')
+      map('n', '<leader>/', telescope.current_buffer_fuzzy_find, 'Search in current buffer')
+      map("n", "<Leader>sb", telescope.builtin, "[S]earch [B]uiltin")
+      map("n", "<Leader>sm", telescope.marks, "[S]earch [M]arks")
+      map("n", "<Leader>sr", telescope.resume, "[S]earch [R]esume")
+      map('n', '<leader>sh', telescope.help_tags, '[S]earch [H]elp')
+      map('n', '<leader>sw', function() telescope.grep_string() end, '[S]earch current [W]ord')
+      map('n', '<leader>sg', telescope.live_grep, '[S]earch by [G]rep')
+      map('n', '<leader>sd', telescope.diagnostics, '[S]earch [D]iagnostics')
 
-      local run_commands = function (commands)
-          local fterm = require('FTerm')
-          fterm.run(";pushd " .. vim.fn.getcwd())
-          for _, cmd in ipairs(commands) do fterm.run(cmd) end
-          fterm.run(";popd")
+      local run_commands = function(commands)
+        local fterm = require('FTerm')
+        fterm.run(";pushd " .. vim.fn.getcwd())
+        for _, cmd in ipairs(commands) do fterm.run(cmd) end
+        fterm.run(";popd")
       end
 
       local save = function()
-          local buffers = ""
-          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-              if vim.api.nvim_buf_get_option(buf, 'modified') then
-                  buffers = buffers .. ' "' .. vim.uri_from_bufnr(buf) .. '"'
-              end
+        local buffers = ""
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if vim.api.nvim_buf_get_option(buf, 'modified') then
+            buffers = buffers .. ' "' .. vim.uri_from_bufnr(buf) .. '"'
           end
-          print(vim.inspect(buffers))
+        end
+        print(vim.inspect(buffers))
 
-          vim.cmd("wa")
-          local cmd_table = {
-              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-                  "Import-Msaccess -Path " .. buffers .. " -Compile",
-              },
-          }
+        vim.cmd("wa")
+        local cmd_table = {
+          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+            "Import-Msaccess -Path " .. buffers .. " -Compile",
+          },
+        }
 
-          if not (buffers == nil or buffers == "") then
-              run_commands(cmd_table[vim.fn.getcwd()] or {""})
-          end
+        if not (buffers == nil or buffers == "") then
+          run_commands(cmd_table[vim.fn.getcwd()] or { "" })
+        end
       end
-      map("n", "<Leader>ms", save,  "Save project")
+      map("n", "<Leader>ms", save, "Save project")
 
-      local build = function ()
-          vim.cmd("wa")
-          local cmd_table = {
-              ["C:\\GIT\\TauOffice\\Admintool"] = {
-                  "./make.ps1",
-              },
-              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-                  "sudo ../make.ps1 -dev",
-              },
-          }
-          run_commands(cmd_table[vim.fn.getcwd()] or {"sudo ./make.ps1"})
+      local build = function()
+        vim.cmd("wa")
+        local cmd_table = {
+          ["C:\\GIT\\TauOffice\\Admintool"] = {
+            "./make.ps1",
+          },
+          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+            "sudo ../make.ps1 -dev",
+          },
+        }
+        run_commands(cmd_table[vim.fn.getcwd()] or { "sudo ./make.ps1" })
       end
-      map("n", "<Leader>mk", build,  "Build project")
+      map("n", "<Leader>mk", build, "Build project")
 
-      local run = function ()
-          local cmd_table = {
-              ["C:\\GIT\\TauOffice\\Admintool"] = {
-                  "Stop-Process -ProcessName AdminTool.App -ErrorAction SilentlyContinue",
-                  ". 'C:/Program Files (x86)/Tau-Office/Admintool/AdminTool.App.exe'",
-                  "Watch-Log Admintool.log -Exit",
-              },
-              ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-                  "ii ../bin/tau-office.mdb",
-                  "sleep 5;Watch-Log TauError.log -Exit",
-              },
-          }
-          run_commands(cmd_table[vim.fn.getcwd()] or {})
+      local run = function()
+        local cmd_table = {
+          ["C:\\GIT\\TauOffice\\Admintool"] = {
+            "Stop-Process -ProcessName AdminTool.App -ErrorAction SilentlyContinue",
+            ". 'C:/Program Files (x86)/Tau-Office/Admintool/AdminTool.App.exe'",
+            "Watch-Log Admintool.log -Exit",
+          },
+          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
+            "ii ../bin/tau-office.mdb",
+            "sleep 5;Watch-Log TauError.log -Exit",
+          },
+        }
+        run_commands(cmd_table[vim.fn.getcwd()] or {})
       end
-      map("n", "<Leader>mr", run,  "Run project")
+      map("n", "<Leader>mr", run, "Run project")
 
-      map("n", "<Leader>mm", function ()
-          vim.cmd("wa")
-          require('FTerm').run(";$history = Get-History; $history | Select-Object -Last 1 |% { Write-Host -ForegroundColor Cyan $_ ; Invoke-Expression $_ }; Clear-History; $history | Add-History")
-      end,  "Repeat last command")
+      map("n", "<Leader>mm", function()
+        vim.cmd("wa")
+        require('FTerm').run(
+        ";$history = Get-History; $history | Select-Object -Last 1 |% { Write-Host -ForegroundColor Cyan $_ ; Invoke-Expression $_ }; Clear-History; $history | Add-History")
+      end, "Repeat last command")
     end
   },
 
 
   -- Add indentation guides even on blank lines
   {
-  'lukas-reineke/indent-blankline.nvim',
-    config = function ()
+    'lukas-reineke/indent-blankline.nvim',
+    config = function()
       -- See `:help indent_blankline.txt`
       local fghighlight = {
-          "Fg0",
-          "Fg1",
-          "Fg2",
-          "Fg3",
-          "Fg4",
-          "Fg5",
-          "Fg6",
+        "Fg0",
+        "Fg1",
+        "Fg2",
+        "Fg3",
+        "Fg4",
+        "Fg5",
+        "Fg6",
       }
       local bghighlight = {
-          "Bg0",
-          "Bg1",
-          "Bg2",
-          "Bg3",
-          "Bg4",
-          "Bg5",
-          "Bg6",
+        "Bg0",
+        "Bg1",
+        "Bg2",
+        "Bg3",
+        "Bg4",
+        "Bg5",
+        "Bg6",
       }
 
       local hooks = require "ibl.hooks"
       -- create the highlight groups in the highlight setup hook, so they are reset
       -- every time the colorscheme changes
       hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-          vim.api.nvim_set_hl(0, "Fg0", { fg = "#4A3FD0" })
-          vim.api.nvim_set_hl(0, "Fg1", { fg = "#CE22B0" })
-          vim.api.nvim_set_hl(0, "Fg2", { fg = "#FF3E83" })
-          vim.api.nvim_set_hl(0, "Fg3", { fg = "#FF7F5C" })
-          vim.api.nvim_set_hl(0, "Fg4", { fg = "#FFBF4E" })
-          vim.api.nvim_set_hl(0, "Fg5", { fg = "#F9F871" })
-          vim.api.nvim_set_hl(0, "Fg6", { fg = "#56B6C2" })
+        vim.api.nvim_set_hl(0, "Fg0", { fg = "#4A3FD0" })
+        vim.api.nvim_set_hl(0, "Fg1", { fg = "#CE22B0" })
+        vim.api.nvim_set_hl(0, "Fg2", { fg = "#FF3E83" })
+        vim.api.nvim_set_hl(0, "Fg3", { fg = "#FF7F5C" })
+        vim.api.nvim_set_hl(0, "Fg4", { fg = "#FFBF4E" })
+        vim.api.nvim_set_hl(0, "Fg5", { fg = "#F9F871" })
+        vim.api.nvim_set_hl(0, "Fg6", { fg = "#56B6C2" })
 
-          vim.api.nvim_set_hl(0, "Bg0", { bg = "#E06C75" })
-          vim.api.nvim_set_hl(0, "Bg1", { bg = "#E5C07B" })
-          vim.api.nvim_set_hl(0, "Bg2", { bg = "#61AFEF" })
-          vim.api.nvim_set_hl(0, "Bg3", { bg = "#D19A66" })
-          vim.api.nvim_set_hl(0, "Bg4", { bg = "#98C379" })
-          vim.api.nvim_set_hl(0, "Bg5", { bg = "#C678DD" })
-          vim.api.nvim_set_hl(0, "Bg6", { bg = "#56B6C2" })
+        vim.api.nvim_set_hl(0, "Bg0", { bg = "#E06C75" })
+        vim.api.nvim_set_hl(0, "Bg1", { bg = "#E5C07B" })
+        vim.api.nvim_set_hl(0, "Bg2", { bg = "#61AFEF" })
+        vim.api.nvim_set_hl(0, "Bg3", { bg = "#D19A66" })
+        vim.api.nvim_set_hl(0, "Bg4", { bg = "#98C379" })
+        vim.api.nvim_set_hl(0, "Bg5", { bg = "#C678DD" })
+        vim.api.nvim_set_hl(0, "Bg6", { bg = "#56B6C2" })
       end)
 
       require('ibl').setup {
@@ -598,11 +603,11 @@ require("lazy").setup({
   },
   { -- "gc" to comment visual regions/lines
     'numToStr/Comment.nvim',
-    config = function ()
+    config = function()
       require('Comment').setup()
     end
   },
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'tpope/vim-sleuth',   -- Detect tabstop and shiftwidth automatically
   'wilriker/gcode.vim', -- gcode syntax
 
 
@@ -616,7 +621,7 @@ require("lazy").setup({
           'williamboman/mason-lspconfig.nvim',
           { -- Additional lua configuration, makes nvim stuff amazing
             'folke/neodev.nvim',
-            config = function ()
+            config = function()
               require('neodev').setup()
             end
           },
@@ -636,8 +641,8 @@ require("lazy").setup({
               },
               pyright = {},
               lemminx = {
-                  filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
-              --     cmd       = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
+                filetypes = { "xml", "xsd", "xsl", "xslt", "svg", "ps1xml" },
+                --     cmd       = { 'c:/GIT/Profile/neovim/lsp_server/lemminx/lemminx-win32.exe' },
               },
               omnisharp = {
                 -- Enables support for reading code style, naming convention and analyzer
@@ -689,7 +694,7 @@ require("lazy").setup({
                   -- '-log',
                   -- '-logpath',
                   -- 'C:\\GIT\\mpcnc_post_processor\\handwheel\\firmware',
-                  }
+                }
               },
             }
 
@@ -707,10 +712,10 @@ require("lazy").setup({
               ensure_installed = vim.tbl_keys(servers),
             }
 
-            local tableHasKey = function (table,key) return table[key] ~= nil end
+            local tableHasKey = function(table, key) return table[key] ~= nil end
 
             mason_lspconfig.setup_handlers {
-              function (server_name)
+              function(server_name)
                 if tableHasKey(servers, server_name) and tableHasKey(servers[server_name], 'cmd') then
                   require('lspconfig')[server_name].setup {
                     cmd = servers[server_name]['cmd'],
@@ -734,7 +739,7 @@ require("lazy").setup({
       -- Useful status updates for LSP
       {
         'j-hui/fidget.nvim',
-        config = function ()
+        config = function()
           require('fidget').setup()
         end
       },
@@ -766,7 +771,7 @@ require("lazy").setup({
       },
       { -- Dictionary
         'uga-rosa/cmp-dictionary',
-        config = function ()
+        config = function()
           local dict = require("cmp_dictionary")
           dict.setup({
             exact = 2,
@@ -827,9 +832,9 @@ require("lazy").setup({
           -- end,
           -- ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
           -- ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
-          ['<C-n>'] = cmp.mapping(function() ls.jump(1) end, { 'i', 's'}),
-          ['<C-p>'] = cmp.mapping(function() ls.jump(-1) end, { 'i', 's'}),
-          ['<C-e>'] = cmp.mapping(function() ls.change_choice(1) end, { 'i', 's'}),
+          ['<C-n>'] = cmp.mapping(function() ls.jump(1) end, { 'i', 's' }),
+          ['<C-p>'] = cmp.mapping(function() ls.jump(-1) end, { 'i', 's' }),
+          ['<C-e>'] = cmp.mapping(function() ls.change_choice(1) end, { 'i', 's' }),
         },
         formatting = {
           format = function(entry, vim_item)
@@ -846,12 +851,16 @@ require("lazy").setup({
           end
         },
         sources = {
-          { name = 'luasnip', priority = 1, option = { keyword_pattern = [[\k\+]] } },
-          { name = 'nvim_lsp', priority = 2, max_items = 10, option = { keyword_pattern = [[\k\+]] } },
-          { name = 'buffer', priority = 3, max_items = 5, option = { keyword_pattern = [[\k\+]] }},
-          { name = 'dictionary', priority = 4, max_items = 5, keyword_length = 2, option = { keyword_pattern = [[\k\+]] }},
-          { name = 'path', priority = 5 },
-          { name = 'luasnip_choice', priority = 6},
+          { name = 'luasnip',        priority = 1, option = { keyword_pattern = [[\k\+]] } },
+          { name = 'nvim_lsp',       priority = 2, max_items = 10,                         option = {
+            keyword_pattern = [[\k\+]] } },
+          { name = 'buffer',         priority = 3, max_items = 5,                          option = {
+            keyword_pattern = [[\k\+]] } },
+          { name = 'dictionary',     priority = 4, max_items = 5,                          keyword_length = 2,
+                                                                                                                                     option = {
+              keyword_pattern = [[\k\+]] } },
+          { name = 'path',           priority = 5 },
+          { name = 'luasnip_choice', priority = 6 },
           sorting = {
             priority_weight = 2.0,
             comparators = {
