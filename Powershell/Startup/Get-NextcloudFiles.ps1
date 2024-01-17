@@ -90,7 +90,8 @@ end {
         " |
             ForEach-Object Content |
             ConvertFrom-Json |
-            ForEach-Object console).Split(",")
+            ForEach-Object console).Split(",") |
+            ForEach-Object { $_.Trim() }
 
         $cookie = Invoke-WebRequest -Method Post -Uri http://localhost:8888/cookies |
             ForEach-Object Content |
@@ -100,19 +101,60 @@ end {
             ForEach-Object{ "$($_.Definition.Substring(7))" }|
             Join-String -Separator ';'
 
+        $count = ($files | Measure-Object).Count
+
+        if ($count -gt 1) {
+            $DownloadFolder = [System.IO.Path]::Combine($env:TEMP, [System.IO.Path]::GetRandomFileName())
+            if (![System.IO.Path]::Exists($DownloadFolder)) {
+                Remove-Item -Recurse -Force $DownloadFolder -ErrorAction SilentlyContinue
+            }
+            New-Item $DownloadFolder -ItemType Directory | Out-Null
+        } else {
+            $DownloadFolder = $OutFolder
+        }
+
         $files |
             ForEach-Object {
-                $filename = $_ -replace ".+&files=", ''
-                $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($OutFolder, $filename))
+                if ($count -gt 1) {
+                    $filename = [System.Uri]::UnescapeDataString(($_ -replace ".+&files=", ''))
+                } else {
+                    $filename = "NextCloud.zip"
+                }
+                $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($DownloadFolder, $filename))
+
+                if ([System.IO.Path]::Exists($path)) {
+                    Remove-Item $path
+                }
 
                 Write-Host -ForegroundColor Cyan "Downloding $_ => $path"
                 Invoke-WebRequest $_ -Headers @{Cookie=$cookie} -OutFile $path
+
                 if (![System.IO.Path]::Exists($path)) {
+                    Write-Host -ForegroundColor Cyan "Downloding (without cookies) $_ => $path"
                     Invoke-WebRequest $_ -OutFile $path
+                }
+
+                if (![System.IO.Path]::Exists($path)) {
+                    Write-Error "$path was not downloaded!"
+                }
+
+                if ($count -gt 1 -and $path.EndsWith(".zip")) {
+                    Write-Host -ForegroundColor Cyan "Expand archive: $path"
+                    Expand-Archive $path -DestinationPath $DownloadFolder
+                    Remove-Item $path
                 }
             }
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | Out-Null
+
+        if ($count -gt 1) {
+            $path = [System.IO.Path]::Combine($OutFolder, "NextCloud.zip")
+            Write-Host -ForegroundColor Cyan "Compress archive => $path"
+
+            Get-ChildItem $DownloadFolder |
+                Compress-Archive -DestinationPath $path -Update
+            # Remove-Item -Recurse -Force $DownloadFolder
+        }
     }
     catch {
         $cefDownloader.Kill()

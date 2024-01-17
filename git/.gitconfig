@@ -107,6 +107,7 @@
 		git branch; \
 		git checkout -; \
 		"
+
 	resolve-merge-conflict = "!\
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
 		for file in $FILES; do \

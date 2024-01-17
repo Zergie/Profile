@@ -30,8 +30,8 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 function Test-IsWorkstation { $env:USERNAME -eq "puchinger" }
 function Test-IsLaptop { (Get-Computerinfo -Property CsPCSystemType).CsPCSystemType -ne 3 }
 
-Write-Host -ForegroundColor Cyan "Test-IsWorkstation: $(Test-IsWorkstation)"
-Write-Host -ForegroundColor Cyan "Test-IsLaptop: $(Test-IsLaptop)"
+Write-Host -ForegroundColor Cyan "  Test-IsWorkstation: $(Test-IsWorkstation)"
+Write-Host -ForegroundColor Cyan "  Test-IsLaptop: $(Test-IsLaptop)"
 
 $modules = @(
     "posh-git"
@@ -43,31 +43,30 @@ $tools = @(
         [pscustomobject]@{name="autohotkey"}
         [pscustomobject]@{name="filezilla"}
         [pscustomobject]@{name="keepass"}
-        [pscustomobject]@{name="microsoft-teams"}
         [pscustomobject]@{name="nodejs-lts"}
         [pscustomobject]@{name="sql-server-management-studio"}
         [pscustomobject]@{name="zoom"}
     }
     if (Test-IsLaptop) {
         [pscustomobject]@{name="autohotkey"}
-        [pscustomobject]@{name="BatteryBar"}
     }
 
     [pscustomobject]@{name="7zip"}
     [pscustomobject]@{name="7zip.commandline"}
-    [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
     [pscustomobject]@{name="delta"}
     [pscustomobject]@{name="discord"}
-    [pscustomobject]@{name="docker-desktop";reason="docker-desktop has to frequent and big updates"}
+    [pscustomobject]@{name="docker-desktop"}
+    [pscustomobject]@{name="dotnet-6.0-desktopruntime"}
     [pscustomobject]@{name="gh"}
     [pscustomobject]@{name="gimp"}
     [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="git-status-cache-posh-client"}
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
+    [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="irfanview"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
