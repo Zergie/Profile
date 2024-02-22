@@ -8,13 +8,13 @@ param(
 # Self-elevate the script if required
 if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
     $p = @{
-        FilePath = (Get-Process -PID $PID).Path 
+        FilePath = (Get-Process -PID $PID).Path
         Verb = "Runas"
         ArgumentList = @(
                             if ($PSBoundParameters.Debug.IsPresent) { "-NoExit" }
                             "-File"
                             "`"$($MyInvocation.MyCommand.Path)`""
-                            $MyInvocation.BoundParameters.GetEnumerator() | 
+                            $MyInvocation.BoundParameters.GetEnumerator() |
                                 ForEach-Object { "-$($_.Key)" }
             ) | Join-String -Separator " "
     }
@@ -68,6 +68,7 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
     "C:\Program Files (x86)\Common Files\Microsoft Shared\VBA\VBA7"
     "C:\Program Files (x86)\Common Files\Microsoft Shared\VBA\VBA7.1"
     "C:\Program Files\Microsoft Office 15\root\vfs\ProgramFilesCommonX86\Microsoft Shared\VBA\VBA7.1"
+    "C:\Program Files\Microsoft Office 16\root\vfs\ProgramFilesCommonX86\Microsoft Shared\VBA\VBA7.1"
 ) | ForEach-Object {
     if (Test-Path "$_\VBE7.DLL") {
         & $vbeThemeColorEditor.FullName `
@@ -83,7 +84,7 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
     CodeBackColors = "2 7 2 16 12 2 2 2 10 2 0 0 0 0 0 0"
     FontFace       = "Consolas"
     FontHeight     = 10
-} | 
+} |
     ForEach-Object {
         $item = $_
 
@@ -96,4 +97,4 @@ if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\VB98") {
         Write-Host -ForegroundColor Green "Writing to registry: $($_.Name) = $($_.Value)"
         Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\VBA\7.0\Common\" -Name $_.Name -Value $_.Value
         Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\VBA\7.1\Common\" -Name $_.Name -Value $_.Value
-    } 
+    }

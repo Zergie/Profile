@@ -624,7 +624,7 @@ require("lazy").setup({
             config = function()
               require('neodev').setup()
             end
-          },
+          }
         },
         config = function()
           if vim.loop.os_uname().sysname ~= 'Linux' then

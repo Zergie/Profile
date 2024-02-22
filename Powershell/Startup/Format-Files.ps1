@@ -163,6 +163,8 @@ end {
                             $line -replace "Next\s[^ ]+", "Next"
                         } elseif ($line -match "^\s*Checksum\s*=") {
                             "Checksum =-240186"
+                        } elseif ($line -match "Version =\d+") {
+                            "Version =20"
                         } elseif ($line -match "^\s*NoSaveCTIWhenDisabled\s*=1") {
                             $countNoSaveCTIWhenDisabled += 1
                             if ($countNoSaveCTIWhenDisabled -le 1) {

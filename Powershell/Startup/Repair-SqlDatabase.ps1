@@ -46,4 +46,9 @@ while (!$process.HasExited) {
 }
 Start-Sleep -Seconds 2
 $logwatcher | Receive-Job | bat --paging never --style=plain --language log
+
+switch -Regex (Get-Content $logfile -Tail 1) {
+    "\(Success\)" { Write-Host -ForegroundColor Green "Success" }
+    "Error"       { Write-Host -ForegroundColor Red "Error" }
+}
 Stop-Job $logwatcher

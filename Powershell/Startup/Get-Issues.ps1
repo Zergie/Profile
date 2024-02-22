@@ -437,11 +437,14 @@ process {
                         value = (Get-LocalUser -Name $env:USERNAME).FullName
                     }
                     $patches[$_.Id] += $patch
-                    $subtasks |
-                        ForEach-Object {
-                            $patches.Add($_.Id, @())
-                            $patches[$_.Id] += $patch
-                        }
+
+                    if ($null -ne $subtasks) {
+                        $subtasks |
+                            ForEach-Object {
+                                $patches.Add($_.Id, @())
+                                $patches[$_.Id] += $patch
+                            }
+                    }
                 }
                 if ($BeginWork) {
                     If ($_.fields.'System.State' -ne 'Done') {

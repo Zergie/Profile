@@ -1,12 +1,17 @@
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory, Position=0, ParameterSetName="UrlParameterSet")]
+    # [Parameter(Mandatory, Position=0, ParameterSetName="UrlParameterSet")]
     [string]
     $Url,
+
+    # [Parameter(Mandatory, Position=0, ParameterSetName="WorkitemParameterSet")]
+    [int]
+    $WorkitemId,
 
     [Parameter(Mandatory)]
     [string]
     $OutFolder,
+
 
     [Parameter()]
     [string]
@@ -19,7 +24,7 @@ dynamicparam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Mandatory = $true
-    $ParameterAttribute.ParameterSetName = "MailParameterSet"
+    # $ParameterAttribute.ParameterSetName = "MailParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
@@ -35,22 +40,38 @@ dynamicparam {
 begin {
     switch ( $PSCmdlet.ParameterSetName ){
         "MailParameterSet" {
-            $mail = . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query $PSBoundParameters["Mail"].Split("-")[1].Trim() -First 1
+            $text = (
+                        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" `
+                            -Query $PSBoundParameters["Mail"].Split("-")[1].Trim() `
+                            -First 1
+                    ).Body
+        }
+        "WorkitemParameterSet" {
+            $text = (
+                        . "$PSScriptRoot/Get-Issues.ps1" -WorkitemId $WorkitemId
+                    ).fields.'System.Description'
+        }
+    }
 
-            $Url = $mail.Body |
-                        Select-String "http.*nextcloud\.rocom\.de[^ \n\t]*" |
-                        ForEach-Object { $_.Matches.Value } |
-                        Select-Object -First 1
+    if ($text.Length -ne 0) {
+        $Url = $text |
+            Select-String "http.*nextcloud\.rocom\.de[^ \n\t]*" |
+                ForEach-Object { $_.Matches.Value } |
+                Select-Object -First 1
 
-            $Password = $mail.Body |
-                        Select-String "(?<=passwor[td]).*|pw.*" |
-                        ForEach-Object { $_.Matches.Value.TrimStart(' ', ':') } |
-                        Select-Object -First 1
+            $password = $text |
+                Select-String "((?<=passwor[td])|pw)\s*[:]?\s*(?<password>[^ ]+)" |
+                ForEach-Object { $_.Matches.Groups } |
+                Where-Object Name -eq password |
+                ForEach-Object Value |
+                Select-Object -First 1
 
             if ($null -eq $Url -or $Url.Length -eq 0) {
                 throw "Could not find nextcloud url!"
+            } else {
+                Write-Host -ForegroundColor Cyan "found url: $url"
+                Write-Host -ForegroundColor Cyan "found password: $password"
             }
-        }
     }
 }
 end {
@@ -67,7 +88,7 @@ end {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | Out-Null
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body $Url | Out-Null
-        if ($null -ne $Password) {
+        if ($null -ne $password) {
             Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
                 input = document.querySelectorAll('input[name=password]')[0];
                 input.value = 'zkpo1J73zE';

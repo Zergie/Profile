@@ -32,6 +32,18 @@
         {
             "command": 
             {
+                "action": "resizePane",
+                "direction": "left"
+            },
+            "keys": "win+ctrl+alt+n"
+        },
+        {
+            "command": "find",
+            "keys": "win+ctrl+alt+comma"
+        },
+        {
+            "command": 
+            {
                 "action": "splitPane",
                 "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe -l german",
                 "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
@@ -42,14 +54,10 @@
         {
             "command": 
             {
-                "action": "resizePane",
-                "direction": "left"
+                "action": "switchToTab",
+                "index": 3
             },
-            "keys": "win+ctrl+alt+n"
-        },
-        {
-            "command": "find",
-            "keys": "win+ctrl+alt+comma"
+            "keys": "win+ctrl+alt+4"
         },
         {
             "command": 
@@ -84,6 +92,18 @@
                 "index": 8
             },
             "keys": "win+ctrl+alt+9"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "split": "down"
+            },
+            "keys": "win+ctrl+alt+s"
+        },
+        {
+            "command": "markMode",
+            "keys": "win+ctrl+alt+period"
         },
         {
             "command": "unbound",
@@ -338,18 +358,6 @@
             "keys": "f21"
         },
         {
-            "command": "markMode",
-            "keys": "win+ctrl+alt+period"
-        },
-        {
-            "command": 
-            {
-                "action": "splitPane",
-                "split": "down"
-            },
-            "keys": "win+ctrl+alt+s"
-        },
-        {
             "command": 
             {
                 "action": "splitPane",
@@ -372,16 +380,16 @@
         {
             "command": 
             {
-                "action": "commandPalette"
+                "action": "newTab"
             },
-            "keys": "win+ctrl+alt+p"
+            "keys": "win+ctrl+alt+t"
         },
         {
             "command": 
             {
-                "action": "newTab"
+                "action": "commandPalette"
             },
-            "keys": "win+ctrl+alt+t"
+            "keys": "win+ctrl+alt+p"
         },
         {
             "command": 
@@ -404,18 +412,18 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 6
-            },
-            "keys": "win+ctrl+alt+7"
-        },
-        {
-            "command": 
-            {
                 "action": "findMatch",
                 "direction": "prev"
             },
             "keys": "win+ctrl+alt+l"
+        },
+        {
+            "command": 
+            {
+                "action": "switchToTab",
+                "index": 6
+            },
+            "keys": "win+ctrl+alt+7"
         },
         {
             "command": 
@@ -434,12 +442,8 @@
             "keys": "win+ctrl+alt+minus"
         },
         {
-            "command": 
-            {
-                "action": "swapPane",
-                "direction": "previousInOrder"
-            },
-            "keys": "ctrl+pgup"
+            "command": "expandSelectionToWord",
+            "keys": "win+ctrl+alt+h"
         },
         {
             "command": 
@@ -450,8 +454,12 @@
             "keys": "win+ctrl+alt+8"
         },
         {
-            "command": "expandSelectionToWord",
-            "keys": "win+ctrl+alt+h"
+            "command": 
+            {
+                "action": "swapPane",
+                "direction": "previousInOrder"
+            },
+            "keys": "ctrl+pgup"
         },
         {
             "command": 
@@ -511,24 +519,9 @@
             "command": 
             {
                 "action": "switchToTab",
-                "index": 3
-            },
-            "keys": "win+ctrl+alt+4"
-        },
-        {
-            "command": 
-            {
-                "action": "switchToTab",
                 "index": 0
             },
             "keys": "win+ctrl+alt+1"
-        },
-        {
-            "command": "selectAll"
-        },
-        {
-            "command": "toggleFocusMode",
-            "keys": "f11"
         },
         {
             "command": 
@@ -537,6 +530,13 @@
                 "direction": "nextInOrder"
             },
             "keys": "alt+right"
+        },
+        {
+            "command": "toggleFocusMode",
+            "keys": "f11"
+        },
+        {
+            "command": "selectAll"
         },
         {
             "command": 
@@ -665,6 +665,12 @@
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "hidden": false,
                 "name": "Windows PowerShell"
+            },
+            {
+                "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}",
+                "hidden": true,
+                "name": "Visual Studio Debug Console",
+                "source": "VSDebugConsole"
             }
         ]
     },
