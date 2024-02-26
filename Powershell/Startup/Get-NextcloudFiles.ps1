@@ -1,16 +1,16 @@
 [CmdletBinding()]
 param (
-    # [Parameter(Mandatory, Position=0, ParameterSetName="UrlParameterSet")]
+    [Parameter(Mandatory, Position=0, ParameterSetName="UrlParameterSet")]
     [string]
     $Url,
 
-    # [Parameter(Mandatory, Position=0, ParameterSetName="WorkitemParameterSet")]
+    [Parameter(Mandatory, Position=0, ParameterSetName="WorkitemParameterSet")]
     [int]
     $WorkitemId,
 
-    [Parameter(Mandatory)]
+    [Parameter()]
     [string]
-    $OutFolder,
+    $OutFolder = "C:\Dokumente\Daten",
 
 
     [Parameter()]
@@ -24,7 +24,7 @@ dynamicparam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Mandatory = $true
-    # $ParameterAttribute.ParameterSetName = "MailParameterSet"
+    $ParameterAttribute.ParameterSetName = "MailParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(

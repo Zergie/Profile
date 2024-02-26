@@ -41,7 +41,6 @@ Process {
     if ($Data -is [Hashtable]) {
         $Data = [pscustomobject]$Data
     }
-
     $Table = $Table.TrimStart("[").TrimEnd("]")
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `

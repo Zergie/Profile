@@ -2,7 +2,12 @@
 param(
     [Parameter(Mandatory=$false)]
     [switch]
-    $AllExceptSetup,
+    $All,
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet(1,2,3)]
+    [int[]]
+    $Stage,
 
     [Parameter(Mandatory=$false)]
     [switch]
@@ -76,19 +81,34 @@ begin {
     }
 
     # param Name
-    if ($AllExceptSetup) {
-        $Name = [pscustomobject]@{
-            "Stage 1"= @(
+    if ($All) {
+        $Stage = $(1,2,3)
+    }
+
+    if ($All) {
+        $Name = @{}
+
+        if (1 -in $Stage) {
+            $Name.Add("Stage 1", @(
                 [pscustomobject]@{ id= 45; name= "TauOffice Plugins" }
                 [pscustomobject]@{ id= 51; name= "TauOffice Controls" }
                 [pscustomobject]@{ id= 44; name= "TauOffice Utils" }
-            )
-            "Stage 2"= @(
+            ))
+        }
+        if (2 -in $Stage) {
+            $Name.Add("Stage 2", @(
                 [pscustomobject]@{ id= 40; name= "AdminTool" }
                 [pscustomobject]@{ id= 35; name= "TauOffice MDE" }
                 [pscustomobject]@{ id= 46; name= "TauOffice Basisstatistik" }
-            )
+            ))
         }
+        if (3 -in $Stage) {
+            $Name.Add("Stage 3", @(
+                [pscustomobject]@{ id= 41; name= "TauOffice Setup" }
+            ))
+        }
+
+        $Name = [pscustomobject]$Name
     } else  {
         $Name = [pscustomobject]@{
             "Stage 1"= Invoke-RestApi -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/pipelines?api-version=6.0-preview.1" |
@@ -168,12 +188,12 @@ process {
 
 
     $stages = $Name | Get-Member -MemberType NoteProperty | ForEach-Object Name | Sort-Object
-    foreach ($stage in $stages) {
+    foreach ($item in $stages) {
         Write-Host
-        Write-Host "== $stage of $($stages.count) =="
+        Write-Host "== $item of $($stages.count) =="
 
         $running_pipelines = @()
-        foreach ($pipeline in $Name.$stage) {
+        foreach ($pipeline in $Name.$item) {
             foreach ($b in $Branch) {
                 Write-Host "queuing $($pipeline.name) for " -NoNewline
                 Write-Host $b -ForegroundColor Cyan -NoNewline
