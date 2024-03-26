@@ -79,11 +79,14 @@ process {
 }
 end {
     # get worktimes from 'Tätigkeitsnachweis'
-    $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 2 |
+    $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 3 |
                     Where-Object { $_.date.Month -eq $Month }
 
     # remove weekends only
     $Days = $Days | Where-Object { $_ -in $WorkTimes.date.Day }
+    if (($Days | Measure-Object).Count -lt 10) {
+        throw "Less than 10 workdays found: $($Days | ConvertTo-Json -Compress)"
+    }
 
     # remove holidays
     $data = (Invoke-RestMethod 'https://feiertage-api.de/api/?jahr=$Year').BY

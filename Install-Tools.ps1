@@ -36,11 +36,13 @@ Write-Host -ForegroundColor Cyan "  Test-IsLaptop: $(Test-IsLaptop)"
 $modules = @(
     "posh-git"
     "SqlServer"
+    "ImportExcel"
 )
 
 $tools = @(
     if (Test-IsWorkstation) {
         [pscustomobject]@{name="autohotkey"}
+        [pscustomobject]@{name="azure-cli"}
         [pscustomobject]@{name="filezilla"}
         [pscustomobject]@{name="keepass"}
         [pscustomobject]@{name="nodejs-lts"}

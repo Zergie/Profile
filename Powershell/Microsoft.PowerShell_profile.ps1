@@ -147,6 +147,7 @@ Start-Action "Set alias to my programs"
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
+    Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
 Complete-Action
 
 # set alias to my scripts

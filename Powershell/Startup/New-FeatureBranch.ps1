@@ -14,6 +14,10 @@ param (
 
     [Parameter()]
     [switch]
+    $DoNotStart,
+
+    [Parameter()]
+    [switch]
     $BaseOnThisBranch
 )
 dynamicparam {
@@ -88,7 +92,7 @@ process {
         "git pull"
         "git checkout -b $branch"
         "git push --set-upstream origin $branch"
-        "Get-Issues -WorkitemId $issue -Pdf -BeginWork"
+        if (!$DoNotStart) { "Get-Issues -WorkitemId $issue -Pdf -BeginWork" }
     ) |
         ForEach-Object {
             $cmd = $_

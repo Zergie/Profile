@@ -83,7 +83,7 @@ Process {
                                     $last.end = $_
                                 } else {
                                     $last
-                                    $last = $null
+                                    $last = @{start=$_ ; end=$_}
                                 }
                             } `
                             -End { $last }

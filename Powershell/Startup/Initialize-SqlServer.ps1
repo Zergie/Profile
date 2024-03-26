@@ -20,12 +20,12 @@ process {
     Invoke-Expression2 "New-Item -ErrorAction SilentlyContinue -ItemType File      `"$data_drive\INI\Mandant.ini`"" | Out-Null
 
     # SqlServer
-    Invoke-Expression2 "docker ps -a --no-trunc --format `"{{json .}}`"" |
-        ConvertFrom-Json |
+    Invoke-Expression2 "docker ps -a --no-trunc --format json 2> nul" |
+        ConvertFrom-json |
         Where-Object {@("mssql", "").Contains($_.Names)} |
         ForEach-Object {
-            Invoke-Expression2 "docker stop $($_.Id)" | Out-Null
-            Invoke-Expression2 "docker rm $($_.Id)" | Out-Null
+            Invoke-Expression2 "docker stop $($_.ID)" | Out-Null
+            Invoke-Expression2 "docker rm $($_.ID)" | Out-Null
         }
 
     Invoke-Expression2 ". `"$PSScriptRoot\Start-SqlServer.ps1`""

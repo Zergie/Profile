@@ -297,4 +297,7 @@ Der Inhalt dieser E-Mail ist vertraulich und ausschließlich für den bezeichnet
     $smtp.EnableSsl = $true
     $smtp.Send($mail)
     $smtp.Dispose()
+
+    $mail.Attachments | ForEach-Object { $_.Dispose() }
+    $mail.Dispose()
 }

@@ -26,26 +26,26 @@ process {
     }
 
     foreach ($db in $Database) {
-        exec "USE [$db]"
-        $mdf = (exec "SELECT name FROM sys.database_files WHERE type_desc = 'ROWS'").name
-        $log = (exec "SELECT name FROM sys.database_files WHERE type_desc = 'LOG'").name
+        $mdf = (exec "USE [$db]; SELECT name FROM sys.database_files WHERE type_desc = 'ROWS'").name
+        $log = (exec "USE [$db]; SELECT name FROM sys.database_files WHERE type_desc = 'LOG'").name
         exec "USE master"
+        $mdf
 
-        exec "ALTER DATABASE [$db] SET RECOVERY SIMPLE" | Out-Null
-        exec "DBCC SHRINKDATABASE ([$db], 0)" | Out-Null
-        exec "DBCC SHRINKFILE ([$mdf], 0)" | Out-Null
-        exec "DBCC SHRINKFILE ([$log], 0)" | Out-Null
+        exec "USE master; ALTER DATABASE [$db] SET RECOVERY SIMPLE" | Out-Null
+        exec "USE [$db]; DBCC SHRINKDATABASE ([$db], 0)" | Out-Null
+        exec "USE [$db]; DBCC SHRINKFILE ([$mdf], 0)" | Out-Null
+        exec "USE [$db]; DBCC SHRINKFILE ([$log], 0)" | Out-Null
 
         #exec "USE master"
-        exec "ALTER DATABASE [$db] SET RECOVERY FULL" | Out-Null
-        exec "ALTER DATABASE [$db] MODIFY FILE (Name=$mdf, MAXSIZE=Unlimited)" | Out-Null
-        exec "ALTER DATABASE [$db] MODIFY FILE (Name=$log, MAXSIZE=Unlimited)" | Out-Null
+        exec "USE master; ALTER DATABASE [$db] SET RECOVERY FULL" | Out-Null
+        exec "USE master; ALTER DATABASE [$db] MODIFY FILE (Name=N'$mdf', MAXSIZE=Unlimited)" | Out-Null
+        exec "USE master; ALTER DATABASE [$db] MODIFY FILE (Name=N'$log', MAXSIZE=Unlimited)" | Out-Null
 
         if (! $credentials.IsInstalledOnHost) {
             Write-Host -ForegroundColor Cyan "`ndocker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak"
             docker exec -t  --privileged --user root mssql rm -f /tmp/$db.bak
 
-            exec "BACKUP DATABASE [$db] TO DISK='/tmp/$db.bak'"
+            exec "USE master; BACKUP DATABASE [$db] TO DISK='/tmp/$db.bak'"
 
             Write-Host -ForegroundColor Cyan "`ndocker cp mssql:/tmp/$db.bak `"$docker((Get-Location).Path)\$db.bak`""
             docker cp mssql:/tmp/$db.bak "$((Get-Location).Path)\$db.bak"
@@ -53,7 +53,7 @@ process {
             Write-Host -ForegroundColor Cyan "Remove-Item `"C:\temp\db.bak`" -Force -ErrorAction SilentlyContinue"
             Remove-Item "C:\temp\db.bak" -Force -ErrorAction SilentlyContinue
 
-            exec "BACKUP DATABASE [$db] TO DISK='C:\temp\db.bak'" -Verbose
+            exec "USE master; BACKUP DATABASE [$db] TO DISK='C:\temp\db.bak'" -Verbose
 
             Write-Host -ForegroundColor Cyan "`nCopy-Item C:\temp\db.bak `"$((Get-Location).Path)\$db.bak`""
             Copy-Item C:\temp\db.bak "$((Get-Location).Path)\$db.bak"

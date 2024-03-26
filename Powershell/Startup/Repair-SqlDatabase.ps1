@@ -32,7 +32,7 @@ Write-Host -ForegroundColor Cyan "linking schema.xml .."
 Write-Host
 Push-Location "${env:ProgramFiles(x86)}\Tau-Office\AdminTool\.."
 Remove-Item .\schema.xml -Force -ErrorAction SilentlyContinue
-New-Item -Type HardLink -Name schema.xml -Value "C:\GIT\TauOffice\DBMS\schema\schema.xml" | Out-Null
+New-Item -Type SymbolicLink -Name schema.xml -Value "C:\GIT\TauOffice\DBMS\schema\schema.xml" | Out-Null
 Pop-Location
 
 

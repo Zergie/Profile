@@ -12,6 +12,9 @@ param (
     [string]
     $OutFolder = "C:\Dokumente\Daten",
 
+    [Parameter()]
+    [switch]
+    $DebugRegex,
 
     [Parameter()]
     [string]
@@ -55,7 +58,7 @@ begin {
 
     if ($text.Length -ne 0) {
         $Url = $text |
-            Select-String "http.*nextcloud\.rocom\.de[^ \n\t]*" |
+            Select-String 'https?://nextcloud\.rocom\.de[^ "\n\t]*' |
                 ForEach-Object { $_.Matches.Value } |
                 Select-Object -First 1
 
@@ -71,6 +74,9 @@ begin {
             } else {
                 Write-Host -ForegroundColor Cyan "found url: $url"
                 Write-Host -ForegroundColor Cyan "found password: $password"
+            }
+            if ($DebugRegex) {
+                exit
             }
     }
 }

@@ -1,4 +1,5 @@
 #Requires -PSEdition Core
+[cmdletbinding()]
 param (
     [Parameter(Mandatory=$true,
                ParameterSetName="WorkitemIdParameterSetName",

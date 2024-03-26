@@ -15,14 +15,14 @@ local map    = function (mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { 
 
 -- Workspaces
 local cmd = vim.cmd
-map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/")                        end, "Workspace Profile")
-map("n", "<Leader>cA", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/")            end, "Workspace Admintool")
-map("n", "<Leader>cS", function () cmd("cd C:|cd /GIT/TauServer/")                      end, "Workspace Tau-Server")
-map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/")  end, "Workspace tau-office-controls")
-map("n", "<Leader>ci", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-installer/") end, "Workspace tau-office-installer")
-map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/")   end, "Workspace tau-office-plugins")
-map("n", "<Leader>ct", function () cmd("cd C:|cd /GIT/TauOffice/tau-office/source/")    end, "Workspace tau-office")
-map("n", "<Leader>cx", function () cmd("cd C:|cd /GIT/TauOffice/struktur")              end, "Workspace struktur")
+map("n", "<Leader>cP", function () cmd("cd C:|cd /GIT/Profile/|cd")                        end, "Workspace Profile")
+map("n", "<Leader>cA", function () cmd("cd C:|cd /GIT/TauOffice/Admintool/|cd")            end, "Workspace Admintool")
+map("n", "<Leader>cS", function () cmd("cd C:|cd /GIT/TauServer/|cd")                      end, "Workspace Tau-Server")
+map("n", "<Leader>cc", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-controls/|cd")  end, "Workspace tau-office-controls")
+map("n", "<Leader>ci", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-installer/|cd") end, "Workspace tau-office-installer")
+map("n", "<Leader>cp", function () cmd("cd C:|cd /GIT/TauOffice/tau-office-plugins/|cd")   end, "Workspace tau-office-plugins")
+map("n", "<Leader>ct", function () cmd("cd C:|cd /GIT/TauOffice/tau-office/source/|cd")    end, "Workspace tau-office")
+map("n", "<Leader>cx", function () cmd("cd C:|cd /GIT/TauOffice/struktur|cd")              end, "Workspace struktur")
 
 -- Remap space
 keymap("", "<Space>", "<nop>", opts)
