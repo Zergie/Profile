@@ -5,5 +5,4 @@ Feel free to clone and modify, but I will not accept any PR ;)
 
 There are some scripts worth mentioning:
 
-1. **Install-Tools.ps1** : Sets up chocolaty and installs my tools
-2. **Install-Config.ps1** : Links configuration files to the default locations.
+1. **Install-Tools.ps1** : Sets up chocolaty and installs my tools, links configuration files to the default locations.
