@@ -92,6 +92,12 @@ param (
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
+    [string]
+    $Tag,
+
+    [Parameter(Mandatory=$false,
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
     [Alias('p')]
     [switch]
     $Pdf
@@ -191,6 +197,10 @@ process {
     $IterationName = $PSBoundParameters['Iteration']
     $Query         = $PSBoundParameters['Query']
     $Name          = $PSBoundParameters['Name']
+
+    if ($Tag.Length -gt 0) {
+        $Update = $true
+    }
 
     $downloaded = @()
     if ($IterationName -eq "@Current Iteration") {
@@ -445,6 +455,15 @@ process {
                                 $patches[$_.Id] += $patch
                             }
                     }
+                }
+                if ($Tag.Length -gt 0) {
+                    $patch = [ordered]@{
+                        op    = "add"
+                        path  = "/fields/System.Tags"
+                        from  = "null"
+                        value = $Tag
+                    }
+                    $patches[$_.Id] += $patch
                 }
                 if ($BeginWork) {
                     If ($_.fields.'System.State' -ne 'Done') {

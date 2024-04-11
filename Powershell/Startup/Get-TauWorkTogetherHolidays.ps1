@@ -155,12 +155,25 @@ end {
         throw
     }
 
+    $filter = $response.legend |
+        Where-Object Name -Match "(Berufschule|Urlaub)" |
+        ForEach-Object color |
+        Group-Object |
+        ForEach-Object Name
+    $response = [pscustomobject]@{
+        status   = $response.status
+        error    = $response.error
+        legend   = $response.legend
+        holidays = $response.holidays |
+            Where-Object backgroundColor -in $filter
+    }
+
     if ($rocom) {
         $response = [pscustomobject]@{
-            status=$response.status
-            error=$response.error
-            legend=$response.legend
-            holidays=$response.holidays |
+            status   = $response.status
+            error    = $response.error
+            legend   = $response.legend
+            holidays = $response.holidays |
                 Where-Object {
                     $_.event -eq $false -or
                     $_.title -NotIn $rocom_service_employees
@@ -168,10 +181,10 @@ end {
         }
     } elseif ($rocomservice) {
         $response = [pscustomobject]@{
-            status=$response.status
-            error=$response.error
-            legend=$response.legend
-            holidays=$response.holidays |
+            status   = $response.status
+            error    = $response.error
+            legend   = $response.legend
+            holidays = $response.holidays |
                 Where-Object {
                     $_.event -eq $false -or
                     $_.title -In $rocom_service_employees
@@ -179,10 +192,10 @@ end {
         }
     } else {
         $response = [pscustomobject]@{
-            status=$response.status
-            error=$response.error
-            legend=$response.legend
-            holidays=$response.holidays
+            status   = $response.status
+            error    = $response.error
+            legend   = $response.legend
+            holidays = $response.holidays
         }
     }
 

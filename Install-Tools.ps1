@@ -55,6 +55,8 @@ $tools = @(
 
     [pscustomobject]@{name="7zip"}
     [pscustomobject]@{name="7zip.commandline"}
+    [pscustomobject]@{name="InkScape"}
+    [pscustomobject]@{name="autodesk-fusion360"}
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
     [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
@@ -68,7 +70,6 @@ $tools = @(
     [pscustomobject]@{name="git-status-cache-posh-client"}
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
-    [pscustomobject]@{name="InkScape"}
     [pscustomobject]@{name="irfanview"}
     [pscustomobject]@{name="microsoft-windows-terminal"}
     [pscustomobject]@{name="neovim"}
