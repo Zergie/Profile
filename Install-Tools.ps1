@@ -56,10 +56,10 @@ $tools = @(
     [pscustomobject]@{name="7zip"}
     [pscustomobject]@{name="7zip.commandline"}
     [pscustomobject]@{name="InkScape"}
-    [pscustomobject]@{name="autodesk-fusion360"}
+    [pscustomobject]@{name="autodesk-fusion360";reason="program has integrated updates";pin=$true}
     [pscustomobject]@{name="bat"}
     [pscustomobject]@{name="beyondcompare"}
-    [pscustomobject]@{name="brave";reason="brave has integrated updates";pin=$true}
+    [pscustomobject]@{name="brave";reason="program has integrated updates";pin=$true}
     [pscustomobject]@{name="delta"}
     [pscustomobject]@{name="discord"}
     [pscustomobject]@{name="docker-desktop"}
