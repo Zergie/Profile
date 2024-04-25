@@ -96,6 +96,10 @@ end {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
 
             switch -regex ($item.Name) {
+                "\.(old)$" {
+                    Remove-Item $item.FullName
+                    Write-Host "$($item.Name) removed."
+                }
                 "^schema\.xml$" {
                     $content = Get-Content $item.FullName -Encoding utf8 |
                         ForEach-Object { $_ -replace '="([^"]+)"','=''$1''' } |
@@ -212,6 +216,36 @@ end {
                 "\.(ps1)$" {
                     Get-Content $item |
                     ForEach-Object { $_.TrimEnd() } |
+                    Out-String |
+                    ForEach-Object { $_.TrimEnd() } |
+                    Set-Content $item
+                    break
+                }
+
+                "\.(yml)$" {
+                    $ignoreKeys = @(
+                        "task"
+                        "branch"
+                    ) |
+                        ForEach-Object { "(?<!${_}: )" } |
+                        Join-String -Separator ''
+                    $ignoreValues = @(
+                        "true"
+                        "none"
+                        "\d"
+                        "\d\d"
+                        "\d\d\d"
+                        "[>]"
+                        "[|]"
+                    ) |
+                        ForEach-Object { "(?!${_})" } |
+                        Join-String -Separator ''
+
+                    Get-Content $item |
+                    ForEach-Object { $_.TrimEnd() } |
+                    ForEach-Object { $_ -replace "^(\s*)([^:]+:\s*)'([^']+)'$",'$1$2$3' } |
+                    ForEach-Object { $_ -replace '^(\s*)([^:]+:\s*)"([^"]+)"$','$1$2$3' } |
+                    ForEach-Object { $_ -replace "^(\s*)([^#: []+:\s*)${ignoreKeys}${ignoreValues}((?:[^#'' ]+\s+)*[^#'' ]+)(\s*#|`$)",'$1$2''$3''$4'} |
                     Out-String |
                     ForEach-Object { $_.TrimEnd() } |
                     Set-Content $item

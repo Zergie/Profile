@@ -1,8 +1,13 @@
 [cmdletbinding()]
 param(
     [string[]]
-    $Recipient = @("to_tester@rocom.de", "jriedl@rocom.de")
-    # $Recipient = @("wpuchinger@rocom.de")
+    $Recipient = @("fannen@rocom.de"),
+
+    [string[]]
+    $Bcc = @("wpuchinger@rocom.de"),
+
+    [string[]]
+    $Cc = @("jriedl@rocom.de")
 )
 Set-Alias Get-Issues "$PSScriptRoot/Get-Issues.ps1"
 
@@ -197,12 +202,12 @@ $branches |
                 $last = $_
             }
         Set-ExcelRange -Range "A1:C1" -Merge
-        $last_merge = $false
+        $last_commit = ""
         $index = 0
         $color = $null
         $ws.Cells["A:A"] |
             ForEach-Object {
-                if ($_.Merge -and $last_merge -eq $true) {
+                if ($last_commit -eq $_.Value) {
                 } elseif ($_.Start.Row -eq 1) {
                 } elseif ($_.Start.Row -eq 2) {
                     Set-Format `
@@ -219,7 +224,7 @@ $branches |
                 if ($null -ne $color) {
                     Set-Format -Range "A$($_.Start.Row):C$($_.Start.Row)" -BackgroundColor $color
                 }
-                $last_merge = $_.Merge
+                $last_commit = $_.Value
             }
         Close-ExcelPackage $excel
     }
@@ -230,7 +235,6 @@ if ($Recipient.Count -eq 0) {
     Invoke-Item ${env:TEMP}/release_notes.xlsx
     exit
 }
-exit
 
 # get secrets
 $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
@@ -239,9 +243,9 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 
 # compose mail
 $mail = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
-$Recipient |
-    ForEach-Object { $mail.To.Add($_) }
-$mail.Bcc.Add("wpuchinger@rocom-service.de")
+$Recipient | ForEach-Object { $mail.To.Add($_) }
+$Bcc | ForEach-Object { $mail.Bcc.Add($_) }
+$Cc | ForEach-Object { $mail.Cc.Add($_) }
 $mail.ReplyTo = "noreply@rocom.de"
 $mail.Subject = "Release Notes"
 $mail.Body    = @"

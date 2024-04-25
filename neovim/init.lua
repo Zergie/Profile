@@ -362,7 +362,15 @@ require("lazy").setup({
             "<cmd>normal V'[k<CR>" ..
             "<cmd>ChatGPTRun commit<CR>"
             ,
-            "Write a Commit message [AI]",
+            "Write a commit message [AI]",
+            mode = { "n", "v" }
+          },
+          i = {
+            --"<cmd>normal ggVGyPV`]<CR>" ..
+            "<cmd>normal 9ggVGyggPV`]<CR>" ..
+            "<cmd>ChatGPTRun commit<CR>"
+            ,
+            "Write a simple commit message [AI]",
             mode = { "n", "v" }
           },
 

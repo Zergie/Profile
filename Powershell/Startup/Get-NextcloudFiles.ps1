@@ -8,14 +8,23 @@ param (
     [int]
     $WorkitemId,
 
+    [Parameter(ParameterSetName="WorkitemParameterSet")]
+    [Parameter(ParameterSetName="UrlParameterSet")]
+    [Parameter(ParameterSetName="MailParameterSet")]
     [Parameter()]
     [string]
     $OutFolder = "C:\Dokumente\Daten",
 
+    [Parameter(ParameterSetName="WorkitemParameterSet")]
+    [Parameter(ParameterSetName="UrlParameterSet")]
+    [Parameter(ParameterSetName="MailParameterSet")]
     [Parameter()]
     [switch]
     $DebugRegex,
 
+    [Parameter(ParameterSetName="WorkitemParameterSet")]
+    [Parameter(ParameterSetName="UrlParameterSet")]
+    [Parameter(ParameterSetName="MailParameterSet")]
     [Parameter()]
     [string]
     $Password
@@ -31,7 +40,7 @@ dynamicparam {
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query "nextcloud,datenbank" -First 3 |
+        . "$PSScriptRoot/Invoke-ExchangeWebServices.ps1" -Query "nextcloud" -First 3 |
                 ForEach-Object { "$($_.DateTimeSent.ToString("dd.MM.yyyy")) - $($_.Subject)" }
     ))
     $AttributeCollection.Add($ValidateSetAttribute)

@@ -20,13 +20,9 @@ if ("Mandant" -in (. "$PSScriptRoot\Get-SqlTable.ps1" -Database $department).nam
 $logwatcher = Start-Job {
     $logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
 
-    Get-ChildItem $logfile | Remove-Item
-    Set-Content $logfile ""
-    Get-Content -Path $logfile -Encoding utf8 -Wait
+    Get-Content -Path $logfile -Encoding utf8 -Wait -Tail 15 #|
 }
 
-# Invoke-Sqlcmd -Database $department -Query "INSERT INTO zr_aktion (id) VALUES (358)" -ErrorAction SilentlyContinue
-# Invoke-Sqlcmd -Database $department -Query "UPDATE zr_aktion SET aktiv=1 WHERE id=358"
 
 Write-Host -ForegroundColor Cyan "linking schema.xml .."
 Write-Host
@@ -41,8 +37,26 @@ Write-Host -ForegroundColor Cyan "AdminTool.App.exe $verb $department --ini `"X:
 . "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.App.exe" $verb $department --ini "X:\INI\$($main).ini"
 $process = Get-Process -Name AdminTool.App
 
+$foundStart = $false
+$startOfLog = [datetime]::Now.AddSeconds(-1)
 while (!$process.HasExited) {
-    $logwatcher | Receive-Job | bat --paging never --style=plain --language log
+    if (! $foundStart) {
+        $lines = $logwatcher | Receive-Job
+        foreach ($line in $lines) {
+            if ($null -ne $lines) {
+                try {
+                    $foundStart = $foundStart -or [datetime]::Parse($line.SubString(0, 23)) -ge $startOfLog
+                } catch {
+                }
+            }
+        }
+
+        if ($foundStart) {
+            $lines | bat --paging never --style=plain --language log
+        }
+    } else {
+        $logwatcher | Receive-Job | bat --paging never --style=plain --language log
+    }
 }
 Start-Sleep -Seconds 2
 $logwatcher | Receive-Job | bat --paging never --style=plain --language log

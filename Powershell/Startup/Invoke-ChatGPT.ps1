@@ -42,18 +42,22 @@ if ($Message.Count -gt 0) {
 while ($true) {
     # Check if user wants to exit or reset
     switch -Regex ($userMessage){
-        "^reset$" {
-            if ($Message.Count -eq 0) {
-                # Show startup text
-                Write-Host "Enter your prompt to continue. (type 'exit' to quit or 'reset' to start a new chat)"
-            }
+        "^(r|reset)$" {
+            Write-Host "Enter your prompt to continue. (type 'exit' to quit, 'copy' to copy or 'reset' to start a new chat)"
 
             # Reset the message history so we can start with a clean slate
             $MessageHistory.Clear()
             $MessageHistory.Add(@{"role" = "system"; "content" = $Role}) | Out-Null
         }
         "^$" { }
-        "^(q|exit)$" { exit }
+        "^(q|exit)$" {
+            Write-Host "Exiting.." -ForegroundColor Magenta
+            exit
+        }
+        "^(c|copy)$" {
+            Set-Clipboard $aiResponse
+            Write-Host "Copied to clipboard!" -ForegroundColor Magenta
+        }
         default {
             # Add new user prompt to list of messages
             $MessageHistory.Add(@{"role"="user"; "content"=$userMessage})
@@ -67,7 +71,7 @@ while ($true) {
                     "Authorization" = "Bearer $ApiKey"
                 } `
                 -Body (@{
-                    "model" = "gpt-3.5-turbo"
+                    "model" = "gpt-4"
                     "messages" = $MessageHistory
                     "max_tokens" = 1000 # Max amount of tokens the AI will respond with
                     "temperature" = 0.7 # Lower is more coherent and conservative, higher is more creative and diverse.
