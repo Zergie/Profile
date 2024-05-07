@@ -1,0 +1,22 @@
+{
+    "activate_air_filtration": [
+        "1"
+    ],
+    "default_filament_colour": [
+        "#80FF00"
+    ],
+    "enable_pressure_advance": [
+        "1"
+    ],
+    "filament_settings_id": [
+        "Generic PLA"
+    ],
+    "filament_start_gcode": [
+        "; filament start gcode"
+    ],
+    "from": "User",
+    "inherits": "Voron Generic PLA",
+    "is_custom_defined": "0",
+    "name": "Generic PLA",
+    "version": "1.8.0.0"
+}

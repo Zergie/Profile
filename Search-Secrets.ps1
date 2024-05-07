@@ -60,7 +60,18 @@ if (!$NoFilter -and !$Update) {
 Push-Location $PSScriptRoot
 $p = $PSScriptRoot -replace "\\","\\"
 
-$secrets = Get-ChildItem "$PSScriptRoot" -Recurse -File -Exclude "*.exe" | Select-String -Pattern $pattern
+$secrets = Get-ChildItem "$PSScriptRoot" -Recurse -File -Exclude @(
+                "*.dict"
+                "*.dll"
+                "*.exe"
+                "*.pdb"
+                "*.png"
+                "*.psd"
+                "*.pyc"
+                "*.pyd"
+                "*.zip"
+            )|
+            Select-String -Pattern $pattern
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(\.git)\\"                                # do not include .git
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(\.gitmodule)$"                           # do not include .gitmodule
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(Powershell\\Modules|AutoHotkey\\libs)\\" # do not include external plugins
@@ -68,6 +79,8 @@ $secrets = $secrets | Where-Object Path -NotMatch "$p\\neovim\\(plugged|lsp_serv
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\(secrets)\\"                              # do not include my 'secrets' submodule
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Powershell\\secrets.json"                 # do not include my 'secrets.json'
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Beyond Compare 4\\BC4Key.txt"             # do not include my 'BC4Key.txt'
+$secrets = $secrets | Where-Object Path -NotMatch "$p\\CQ-editor"                                # do not include CQ-editor
+$secrets = $secrets | Where-Object Path -NotMatch "\\package-lock.json$"                         # do not include npm package-lock
 $secrets = $secrets | Where-Object Path -NotMatch "$p\\Search-Secrets.ps1"                       # do not include myself
 $secrets = $secrets | Where-Object { $_.Line -notin $allowed }
 Pop-Location

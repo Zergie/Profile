@@ -1,0 +1,15 @@
+{
+    "brim_type": "brim_ears",
+    "enable_arc_fitting": "1",
+    "from": "User",
+    "infill_anchor_max": "40",
+    "inherits": "0.20mm Standard @Voron",
+    "initial_layer_line_width": "0.4",
+    "is_custom_defined": "0",
+    "name": "0.20mm Gridfinity",
+    "print_settings_id": "0.20mm Gridfinity",
+    "sparse_infill_density": "10%",
+    "sparse_infill_line_width": "0.4",
+    "top_shell_layers": "3",
+    "version": "1.8.0.0"
+}

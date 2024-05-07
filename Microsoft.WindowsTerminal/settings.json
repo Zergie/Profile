@@ -32,6 +32,16 @@
         {
             "command": 
             {
+                "action": "splitPane",
+                "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe -l german",
+                "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
+                "split": "auto"
+            },
+            "keys": "f4"
+        },
+        {
+            "command": 
+            {
                 "action": "resizePane",
                 "direction": "left"
             },
@@ -40,16 +50,6 @@
         {
             "command": "find",
             "keys": "win+ctrl+alt+comma"
-        },
-        {
-            "command": 
-            {
-                "action": "splitPane",
-                "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe -l german",
-                "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
-                "split": "auto"
-            },
-            "keys": "f4"
         },
         {
             "command": 
@@ -92,18 +92,6 @@
                 "index": 8
             },
             "keys": "win+ctrl+alt+9"
-        },
-        {
-            "command": 
-            {
-                "action": "splitPane",
-                "split": "down"
-            },
-            "keys": "win+ctrl+alt+s"
-        },
-        {
-            "command": "markMode",
-            "keys": "win+ctrl+alt+period"
         },
         {
             "command": "unbound",
@@ -361,6 +349,24 @@
             "command": 
             {
                 "action": "splitPane",
+                "split": "down"
+            },
+            "keys": "win+ctrl+alt+s"
+        },
+        {
+            "command": 
+            {
+                "action": "closeTab"
+            }
+        },
+        {
+            "command": "markMode",
+            "keys": "win+ctrl+alt+period"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
                 "commandline": "C:\\Program Files\\Tau-Server\\tauServer_Service.exe",
                 "profile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "split": "auto"
@@ -380,16 +386,16 @@
         {
             "command": 
             {
-                "action": "newTab"
+                "action": "commandPalette"
             },
-            "keys": "win+ctrl+alt+t"
+            "keys": "win+ctrl+alt+p"
         },
         {
             "command": 
             {
-                "action": "commandPalette"
+                "action": "newTab"
             },
-            "keys": "win+ctrl+alt+p"
+            "keys": "win+ctrl+alt+t"
         },
         {
             "command": 
@@ -412,18 +418,18 @@
         {
             "command": 
             {
-                "action": "findMatch",
-                "direction": "prev"
-            },
-            "keys": "win+ctrl+alt+l"
-        },
-        {
-            "command": 
-            {
                 "action": "switchToTab",
                 "index": 6
             },
             "keys": "win+ctrl+alt+7"
+        },
+        {
+            "command": 
+            {
+                "action": "findMatch",
+                "direction": "prev"
+            },
+            "keys": "win+ctrl+alt+l"
         },
         {
             "command": 
@@ -448,18 +454,18 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 7
-            },
-            "keys": "win+ctrl+alt+8"
-        },
-        {
-            "command": 
-            {
                 "action": "swapPane",
                 "direction": "previousInOrder"
             },
             "keys": "ctrl+pgup"
+        },
+        {
+            "command": 
+            {
+                "action": "switchToTab",
+                "index": 7
+            },
+            "keys": "win+ctrl+alt+8"
         },
         {
             "command": 
@@ -524,16 +530,16 @@
             "keys": "win+ctrl+alt+1"
         },
         {
+            "command": "toggleFocusMode",
+            "keys": "f11"
+        },
+        {
             "command": 
             {
                 "action": "moveFocus",
                 "direction": "nextInOrder"
             },
             "keys": "alt+right"
-        },
-        {
-            "command": "toggleFocusMode",
-            "keys": "f11"
         },
         {
             "command": "selectAll"
@@ -557,15 +563,13 @@
         {
             "command": 
             {
-                "action": "closeTab"
-            }
-        },
-        {
-            "command": 
-            {
                 "action": "scrollUp"
             },
             "keys": "win+ctrl+alt+k"
+        },
+        {
+            "command": "openSystemMenu",
+            "keys": "win+ctrl+alt+enter"
         },
         {
             "command": 
@@ -582,10 +586,6 @@
                 "direction": "down"
             },
             "keys": "win+ctrl+alt+e"
-        },
-        {
-            "command": "openSystemMenu",
-            "keys": "win+ctrl+alt+enter"
         },
         {
             "command": "closePane",
@@ -667,10 +667,16 @@
                 "name": "Windows PowerShell"
             },
             {
-                "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}",
-                "hidden": true,
-                "name": "Visual Studio Debug Console",
-                "source": "VSDebugConsole"
+                "guid": "{ee0d902b-88a0-5a27-b030-a3d548c287b6}",
+                "hidden": false,
+                "name": "Developer Command Prompt for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{ba4fe4e1-9b3d-5342-9520-9fa39f0c33ad}",
+                "hidden": false,
+                "name": "Developer PowerShell for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
             }
         ]
     },

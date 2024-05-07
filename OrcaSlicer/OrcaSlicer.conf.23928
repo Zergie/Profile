@@ -1,0 +1,4 @@
+{
+    "app": {
+        "allow_ip_resolve": true,
+        "associate_3mf": false,
