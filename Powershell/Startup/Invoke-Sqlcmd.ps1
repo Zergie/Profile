@@ -39,6 +39,13 @@ param(
     [string[]]
     ${Query},
 
+    [Parameter(ValueFromPipeline=$true
+              , ValueFromPipelineByPropertyName=$true
+              )]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    ${Path},
+
     [ValidateRange(0, 65535)]
     [int]
     ${QueryTimeout},
@@ -122,7 +129,11 @@ begin {
 
 process {
     try {
-        if (-not $PSBoundParameters.ContainsKey('Query')) {
+        if ($PSBoundParameters.ContainsKey('Path')) {
+            $PSBoundParameters['Query'] = Get-Content $PSBoundParameters['Path'] |
+                                            Join-String -Separator `n
+            $PSBoundParameters.Remove('Path') | Out-Null
+        } elseif (-not $PSBoundParameters.ContainsKey('Query')) {
             $PSBoundParameters['Query'] = $_
         }
         $PSBoundParameters['Query'] = [string]$PSBoundParameters['Query']

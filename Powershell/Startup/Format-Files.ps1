@@ -88,6 +88,10 @@ end {
     if ($count -eq 0) {
         Write-Error "No path specified."
     } else {
+        if ((Get-Process nvim -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
+            nvr -c "silent wa"
+        }
+
         Write-Progress -Status "Generating patches" -PercentComplete 1
         Push-Location "$(Get-GitDirectory)/.."
         git difftool --tool=patch

@@ -5,25 +5,38 @@
 #>
 [cmdletbinding()]
 param(
-    # User message.
-    # You can use this to give the AI instructions on what to do, how to act or how to respond to future prompts.
-    # If a message is defined, the script will run non interactive.
-    [Parameter()]
+    [Parameter(ParameterSetName="ChatParameterSet")]
+    [ValidateSet("gpt-4", "gpt-4-turbo", "gpt-3.5-turbo")]
+    [string]
+    $Model = "gpt-4-turbo",
+
+    [Parameter(ParameterSetName="ChatParameterSet",
+               ValueFromPipeline)]
     [string[]]
     $Message,
 
-    # System message.
-    # You can use this to give the AI instructions on what to do, how to act or how to respond to future prompts.
-    # Default value for ChatGPT = "You are a helpful assistant."
-    [Parameter()]
+    [Parameter(ParameterSetName="ChatParameterSet")]
     [string]
     $Role = "You are a helpful assistant",
 
-    # Forces interactive behaviour
-    [Parameter()]
+    [Parameter(ParameterSetName="ChatParameterSet")]
     [switch]
-    $Interactive
+    $Interactive,
+
+    [Parameter(ParameterSetName="PullRequestParameterSet")]
+    [switch]
+    $WritePullRequest
 )
+if ($WritePullRequest) {
+    $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summeriazes the given commits"
+    $Message = @(
+                    git blog |
+                            Select-String '(?<=[^-]- )[^(]+' -AllMatches |
+                            ForEach-Object{$_.Matches.Value} |
+                            Join-String -Separator `n
+                    "copy"
+                )
+}
 
 $ApiEndpoint = "https://api.openai.com/v1/chat/completions"
 $ApiKey = $env:OPENAI_API_KEY
@@ -71,7 +84,7 @@ while ($true) {
                     "Authorization" = "Bearer $ApiKey"
                 } `
                 -Body (@{
-                    "model" = "gpt-4"
+                    "model" = $Model
                     "messages" = $MessageHistory
                     "max_tokens" = 1000 # Max amount of tokens the AI will respond with
                     "temperature" = 0.7 # Lower is more coherent and conservative, higher is more creative and diverse.

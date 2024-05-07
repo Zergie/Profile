@@ -19,8 +19,8 @@ if ("Mandant" -in (. "$PSScriptRoot\Get-SqlTable.ps1" -Database $department).nam
 }
 $logwatcher = Start-Job {
     $logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
-
-    Get-Content -Path $logfile -Encoding utf8 -Wait -Tail 15 #|
+    Get-Content -Path $logfile -Encoding utf8 -Tail 20
+    Get-Content -Path $logfile -Encoding utf8 -Wait -Tail 1 | Select-Object -Skip 1
 }
 
 
@@ -64,5 +64,15 @@ $logwatcher | Receive-Job | bat --paging never --style=plain --language log
 switch -Regex (Get-Content $logfile -Tail 1) {
     "\(Success\)" { Write-Host -ForegroundColor Green "Success" }
     "Error"       { Write-Host -ForegroundColor Red "Error" }
+    default       {
+        Start-Sleep -Seconds 2
+        $logwatcher | Receive-Job | bat --paging never --style=plain --language log
+
+        switch -Regex (Get-Content $logfile -Tail 1) {
+            "\(Success\)" { Write-Host -ForegroundColor Green "Success" }
+            "Error"       { Write-Host -ForegroundColor Red "Error" }
+            default       { $logwatcher | Receive-Job | bat --paging never --style=plain --language log }
+        }
+    }
 }
 Stop-Job $logwatcher

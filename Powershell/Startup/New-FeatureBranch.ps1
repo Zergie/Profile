@@ -1,14 +1,12 @@
 param (
-    [Parameter(Mandatory=$false,
-        Position=0,
-        ParameterSetName="WorkitemIdParameterSet")]
+    [Parameter(Position=0,
+               ParameterSetName="WorkitemIdParameterSet")]
     [string]
     $WorkitemId,
 
-    [Parameter(Mandatory=$false,
-        Position=0,
-        ParameterSetName="ForceNameParameterSet",
-        ValueFromRemainingArguments=$true)]
+    [Parameter(Position=0,
+               ParameterSetName="ForceNameParameterSet",
+               ValueFromRemainingArguments=$true)]
     [string[]]
     $ForceName,
 
@@ -65,10 +63,10 @@ dynamicparam {
 begin {
     # save $PSDefaultParameterValues
     $OldPSDefaultParameterValues = $PSDefaultParameterValues.Clone()
-        $PSDefaultParameterValues = @{
-            'Write-Error:CategoryActivity' = $MyInvocation.MyCommand.Name
-            'Write-Progress:Activity'      = $MyInvocation.MyCommand.Name
-        }
+    $PSDefaultParameterValues = @{
+        'Write-Error:CategoryActivity' = $MyInvocation.MyCommand.Name
+        'Write-Progress:Activity'      = $MyInvocation.MyCommand.Name
+    }
 }
 process {
     $Name = if ($null -ne $ForceName) { $ForceName }

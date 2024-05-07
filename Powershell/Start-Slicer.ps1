@@ -1,4 +1,4 @@
-$slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\orca-slicer.exe"
+$slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\OrcaSlicer\orca-slicer.exe"
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
 
 $path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName

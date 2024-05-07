@@ -105,7 +105,8 @@ $github = @(
 )
 
 $patches = @(
-    [pscustomobject]@{file="C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua"; patch="$PSScriptRoot\neovim\patches\util.lua.patch"}
+    [pscustomobject]@{file="C:\tools\neovim\nvim-win64\share\nvim\runtime\lua\vim\lsp\util.lua";
+                      patch="$PSScriptRoot\neovim\patches\util.lua.patch"}
 )
 
 $junctions = @(
@@ -118,6 +119,9 @@ $junctions = @(
 
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\secrets.json"
                           destination = "$PSScriptRoot\Powershell\secrets.json"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\secrets\PhonerLite"
+                          destination = "$env:USERPROFILE\AppData\Roaming\PhonerLite"}
     }
 
     [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
@@ -141,8 +145,8 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
 
-    [pscustomobject]@{source      = "$PSScriptRoot\secrets\PhonerLite"
-                      destination = "$env:USERPROFILE\AppData\Roaming\PhonerLite"}
+    [pscustomobject]@{source      = "$PSScriptRoot\OrcaSlicer"
+                      destination = "$env:USERPROFILE\AppData\Roaming\OrcaSlicer"}
 
     # [pscustomobject]@{source      = "$PSScriptRoot\neovim\lua\server_configurations\rsvbalsp.lua"
     #                   destination = "$PSScriptRoot\neovim\plugged\nvim-lspconfig\lua\lspconfig\server_configurations\rsvbalsp.lua"}

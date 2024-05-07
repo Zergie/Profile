@@ -61,6 +61,7 @@ begin {
         Start-Sleep -Milliseconds 500
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "document.querySelectorAll('a.btn')[0].click()" | Out-Null
+        Start-Sleep -Milliseconds 500
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
             var input = document.querySelectorAll('input.form-control.datepicker')[0];
@@ -163,7 +164,10 @@ end {
                                 Array.from(workType.options).find(el => el.textContent === 'Standard').selected = true
                                 workType.dispatchEvent(new Event('change', { bubbles: true }));
                                 workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+                            " | Out-Null
 
+                            Start-Sleep -Milliseconds 500
+                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
                                 Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Speichern').click()
                             " | Out-Null
                         }

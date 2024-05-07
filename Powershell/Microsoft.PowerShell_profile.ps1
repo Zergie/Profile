@@ -163,7 +163,7 @@ if ((Test-Path $dockerScript)) {
         Set-Alias gr "$PSScriptRoot\Startup\Get-Random.ps1"
         Set-Alias ut "$PSScriptRoot\Startup\Update-SqlTable.ps1"
         Set-Alias it "$PSScriptRoot\Startup\Import-SqlTable.ps1"
-        Set-Alias s  "$PSScriptRoot\Startup\Get-Utring.ps1"
+        Set-Alias s  "$PSScriptRoot\Startup\Get-String.ps1"
     Complete-Action
 
     # set argument completer
