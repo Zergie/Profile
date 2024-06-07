@@ -395,7 +395,8 @@ process {
                                         -replace 'Beheben (ab|in|bis)(:|)', 'Umsetzen $1 ' `
                                         -replace 'Fehler (siehe) ', 'Aufgabe $1 ' `
                                         -replace 'Fehlerbeschreibung ', 'Aufgabenbeschreibung ' `
-                                        -replace '(Hallo) Wolfgang', '$1'
+                                        -replace '(Hallo) Wolfgang', '$1' `
+                                        -replace 'Prio \d+', ''
                     }
 
                     if ($Update -and ($subtasks | Measure-Object).Count -eq 0) {

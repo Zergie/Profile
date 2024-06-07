@@ -6,9 +6,9 @@
 [cmdletbinding()]
 param(
     [Parameter(ParameterSetName="ChatParameterSet")]
-    [ValidateSet("gpt-4", "gpt-4-turbo", "gpt-3.5-turbo")]
+    [ValidateSet("gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo")]
     [string]
-    $Model = "gpt-4-turbo",
+    $Model = "gpt-4o",
 
     [Parameter(ParameterSetName="ChatParameterSet",
                ValueFromPipeline)]

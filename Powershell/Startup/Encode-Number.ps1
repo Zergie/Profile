@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory)]
-    [string]
+    [string[]]
     $Encoding,
 
     [Parameter()]
@@ -14,15 +14,14 @@ param (
     $Number
 )
 begin {
-    if ($Encoding.StartsWith('0')) {
-        $dict = "$Encoding"
+    if ($Encoding.Count -eq 1) {
+        $dict = "$Encoding".ToCharArray()
     } else {
-        $dict = " $Encoding"
+        $dict = @() + $Encoding
     }
     $numbers = @()
 }
 process {
-
     If ($Length -gt 0) {
          $numbers += 0..([Math]::Pow($dict.Length, $Length) - 1)
     } else {
@@ -30,18 +29,18 @@ process {
     }
 }
 end {
+    Write-Verbose "dict.count = $($dict.count)"
     $numbers |
         ForEach-Object {
             $i = $_
             $ret = ""
             while ($i -gt 0 -or $ret.Length -eq 0) {
-                $j = $i % ($dict.length)
-                    $ret = "$($dict[$j])${ret}"
-                    $i = [int](($i - $j - 1) / $dict.length)
+                $j = $i % ($dict.count)
+                Write-Verbose "j = $j"
+                $ret = "$($dict[$j])${ret}"
+                $i = [int](($i - $j) / $dict.count)
             }
-            # Write-host "$_ -> $ret"
+            Write-Verbose "$_ -> $ret"
             $ret
-        } |
-        Group-Object |
-        ForEach-Object Name
+        }
 }

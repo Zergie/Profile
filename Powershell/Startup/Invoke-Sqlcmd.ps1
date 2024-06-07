@@ -115,7 +115,7 @@ param(
 
     [Alias('As')]
     # [Microsoft.SqlServer.Management.PowerShell.OutputType] # error: Unable to find type [Microsoft.SqlServer.Management.PowerShell.OutputType]
-    [ValidateSet('DataRows','DataSet','DataTables')]
+    [ValidateSet('DataRows','DataSet','DataTables', 'Json', 'Csv', 'ReplItem')]
     [string]
     ${OutputAs},
 
@@ -150,7 +150,71 @@ process {
             $PSBoundParameters['OutBuffer'] = 1
         }
 
-        & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters
+        if ($PSBoundParameters['OutputAs'] -eq 'Csv') {
+            $PSBoundParameters.Remove('OutputAs') | Out-Null
+            & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters |
+                ConvertTo-Csv
+        } elseif ($PSBoundParameters['OutputAs'] -eq 'Json') {
+            $PSBoundParameters.Remove('OutputAs') | Out-Null
+            & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters |
+                ConvertTo-Csv |
+                ConvertFrom-Csv |
+                ConvertTo-Json
+        } elseif ($PSBoundParameters['OutputAs'] -eq 'ReplItem') {
+            "<?xml version='1.0' encoding='windows-1250'?>"
+            "<DatML-RAW-D xmlns='http://www.destatis.de/schema/datml-raw/2.0/de' version='2.0'>"
+            " <replizierung version='2024.05.21' revision='000'>"
+
+            $PSBoundParameters['OutputAs'] = "DataTables"
+            & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters -PipelineVariable dt |
+                ForEach-Object rows -PipelineVariable row |
+                ForEach-Object {
+                      $stage  = 0
+                      $reader = [System.IO.StringReader]::new($PSBoundParameters["Query"])
+                      $parser = New-Object -TypeName "Microsoft.SqlServer.TransactSql.ScriptDom.TSql100Parser" -ArgumentList $true
+                      $table  = $parser.GetTokenStream($reader, [ref] $null) |
+                        ForEach-Object{
+                          if ($stage -eq 1 -and $_.TokenType -eq [Microsoft.SqlServer.TransactSql.ScriptDom.TSqlTokenType]::Identifier) {
+                             $_
+                          }
+                          if ($_.TokenType -eq [Microsoft.SqlServer.TransactSql.ScriptDom.TSqlTokenType]::From) {
+                            $stage += 1
+                          }
+                        } |
+                        Select-Object -First 1 |
+                        ForEach-Object Text
+                      $idname = "ID"
+                      $id = $row.($idname)
+
+                      " <replitem key='tau-office.mdb_$($table.ToLower()):$($id.ToString().ToLower())'>"
+                      "  <aktion>ADDNEW</aktion>"
+                      "  <db>tau-office.mdb</db>"
+                      "  <idfeldname>${idname}</idfeldname>"
+                      "  <tabelle>${table}</tabelle>"
+                      "  <tabelle_id>${id}</tabelle_id>"
+                      "  <tabelle_idnew/>"
+                      "  <fields>"
+                      $dt.Columns |
+                        ForEach-Object ColumnName -PipelineVariable p |
+                        ForEach-Object {
+                          "   <field key='$($p.ToLower())'>"
+                          "    <field_fieldname>$([System.Security.SecurityElement]::Escape($p))</field_fieldname>"
+                          if ($row.($p) -eq [System.DBNull]::Value) {
+                          "    <field_newvalue/>"
+                          } else {
+                          "    <field_newvalue>$([System.Security.SecurityElement]::Escape($row.($p).ToString()))</field_newvalue>"
+                          }
+                          "   </field>"
+                        }
+                      "  </fields>"
+                      " </replitem>"
+                    }
+
+            " </replizierung>"
+            "</DatML-RAW-D>"
+        } else {
+            & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters
+        }
     } catch {
         throw
     }

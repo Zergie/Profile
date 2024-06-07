@@ -84,10 +84,10 @@
         Write-Verbose $Query
 
         if (-not $PSBoundParameters.ContainsKey("Table")) {
-            Invoke-Sqlcmd -Database $Database -Query $Query `
-                | ConvertTo-Csv
-                | ConvertFrom-Csv
-                | ForEach-Object {
+            Invoke-Sqlcmd -Database $Database -Query $Query |
+                ConvertTo-Csv |
+                ConvertFrom-Csv |
+                ForEach-Object {
                     [pscustomobject]@{
                         name        = $_.name
                         create_date = [System.DateTime]::Parse($_.create_date)
@@ -96,15 +96,18 @@
                     }
                 }
         } elseif ( $NullValues ) {
-            Invoke-Sqlcmd -Database $Database -Query $Query `
-                | ForEach-Object { $o = $_; Get-Member -InputObject $o -Type Properties
-                | ForEach-Object Name
-                | ForEach-Object { $o.$_ = [System.DBNull]::Value }; $o} `
-                | ConvertTo-Csv
-                | ConvertFrom-Csv
+            Invoke-Sqlcmd -Database $Database -Query $Query |
+                ForEach-Object {
+                    $o = $_
+                    Get-Member -InputObject $o -Type Properties |
+                    ForEach-Object Name |
+                    ForEach-Object { $o.$_ = [System.DBNull]::Value }
+                    $o
+                } |
+                ConvertTo-Csv |
+                ConvertFrom-Csv
         } else {
-            Invoke-Sqlcmd -Database $Database -Query $Query `
-                | ConvertTo-Csv
-                | ConvertFrom-Csv
+            Invoke-Sqlcmd -Database $Database -Query $Query |
+                ConvertTo-Csv |
+                ConvertFrom-Csv
         }
-

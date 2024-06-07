@@ -175,7 +175,7 @@ require("lazy").setup({
           },
         },
         openai_params = {
-          model = "gpt-3.5-turbo",
+          model = "gpt-4o",
           frequency_penalty = 0,
           presence_penalty = 0,
           max_tokens = 300,
@@ -184,7 +184,7 @@ require("lazy").setup({
           n = 1,
         },
         openai_edit_params = {
-          model = "gpt-3.5-turbo",
+          model = "gpt-4o",
           frequency_penalty = 0,
           presence_penalty = 0,
           temperature = 0,
@@ -361,18 +361,20 @@ require("lazy").setup({
           r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit [AI]", mode = { "n", "v" } },
           l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
           p = {
-            "<cmd>cd %:p:h/..<CR>" ..
-            "<cmd>r!git diff --staged<CR>" ..
-            "<cmd>normal V'[k<CR>" ..
-            "<cmd>ChatGPTRun commit<CR>"
+            function ()
+            vim.cmd("r!git -C %:p:h/.. diff --staged")
+            vim.cmd("normal V'[k")
+            vim.cmd("ChatGPTRun commit")
+	    end
             ,
             "Write a commit message [AI]",
             mode = { "n", "v" }
           },
           i = {
-            --"<cmd>normal ggVGyPV`]<CR>" ..
-            "<cmd>normal 9ggVGyggPV`]<CR>" ..
-            "<cmd>ChatGPTRun commit<CR>"
+            function ()
+            vim.cmd("normal Gx.9ggvipyuggP`]I# vip")
+            vim.cmd("ChatGPTRun commit")
+	    end
             ,
             "Write a simple commit message [AI]",
             mode = { "n", "v" }
@@ -793,13 +795,7 @@ require("lazy").setup({
             async = false,
             sqlite = false,
             max_items = -1,
-            capacity = 5,
             debug = false,
-          })
-          dict.switcher({
-            filetype = {
-              gitcommit = "C:/GIT/Profile/neovim/spell/en_us.dict",
-            },
           })
         end
       }

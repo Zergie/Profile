@@ -1,19 +1,16 @@
 Param
 (
-    [Parameter(Mandatory=$true,
-               ParameterSetName="AddressParameterSet",
+    [Parameter(
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Address,
-    
-    [Parameter(Mandatory=$true,
-               ParameterSetName="AddressParameterSet",
+
+    [Parameter(
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Username,
-    
-    [Parameter(Mandatory=$true,
-               ParameterSetName="AddressParameterSet",
+
+    [Parameter(
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Password,

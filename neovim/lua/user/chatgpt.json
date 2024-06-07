@@ -2,16 +2,15 @@
     "commit": {
         "type": "chat",
         "opts": {
-            "template": "Write a commit message for this git diff: {{input}}",
+            "template": "Write a commit message for the following git diff. Do not write anything else. Do not include ```. Git diff: {{input}}",
             "strategy": "replace",
             "params": {
-                "model": "gpt-4",
-                "stop": [ "```" ]
+                "model": "gpt-4o"
             }
         },
         "args": {
             "argument": {
-                "type": "strig",
+                "type": "string",
                 "optional": "true",
                 "default": "some value"
             }

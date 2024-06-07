@@ -59,6 +59,10 @@ process {
                     ForEach-Object { $_.Matches.Groups[1].Value } |
                     Select-Object -First 1
 
+    if ($sourceRef -match ("^(master|release/)")) {
+        throw "Can not create a pull request for $sourceRef"
+    }
+
     $sourceRepositoryUrl = (git ls-remote --get-url origin).Trim()
     $sourceRepositoryId = . "$PSScriptRoot\Invoke-RestApi.ps1" `
         -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/git/repositories?api-version=7.0" |

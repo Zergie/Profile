@@ -25,6 +25,24 @@ snippet do
 		rs.MoveNext
 	Loop
 	rs.Close
+snippet withsql
+	With New SqlBuilder
+		.Append " SELECT ${1:*}"
+		.Append " FROM ${2:Table}"
+		.Append " WHERE ${3:Condition}"
+
+		Set rs = rcOpenRecordset(GLBdB.GdB, .GetAsString())
+	End With
+snippet withsqlro
+	With New SqlBuilder
+		.Append " SELECT ${1:*}"
+		.Append " FROM ${2:Table}"
+		.Append " WHERE ${3:Condition}"
+
+		Set rs = rcOpenRecordset(GLBdB.GdB, .GetAsString(), dbOpenForwardOnly, dbReadOnly)
+	End With
+snippet .append
+	.Append "${1}"
 
 snippet dimrs
 	Dim rs As Recordset

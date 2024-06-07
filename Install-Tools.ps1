@@ -1,10 +1,34 @@
 [CmdletBinding()]
 param(
-    [Parameter(Position=0)]
-    [ValidateSet("*", "chocolatey", "pwsh-modules", "npm", "junctions", "patches", "github-releases", "commands")]
-    [string]
-    $Install = "*"
 )
+dynamicparam {
+    $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+
+    @(
+            "all"
+            "chocolatey"
+            "pwsh-modules"
+            "npm"
+            "junctions"
+            "patches"
+            "github-releases"
+            "commands"
+    ) |
+        ForEach-Object {
+            $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+            $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+            $ParameterAttribute.Position = 0
+            $ParameterAttribute.Mandatory = $false
+            $ParameterAttribute.ParameterSetName = "$_ParameterSet"
+            $AttributeCollection.Add($ParameterAttribute)
+
+            $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("$_", [switch], $AttributeCollection)
+            $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
+        }
+
+    return $RuntimeParameterDictionary
+}
+process {
 $ErrorActionPreference = 'Stop'
 
 # Self-elevate the script if required
@@ -16,7 +40,13 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
             "sudo"
             "`"$($MyInvocation.MyCommand.Path)`""
             $MyInvocation.BoundParameters.GetEnumerator() |
-                ForEach-Object { "-$($_.Key) $($_.Value)" }
+                ForEach-Object {
+                    if ($_.Value -eq $true) {
+                        "-$($_.Key)"
+                    } else {
+                        "-$($_.Key) $($_.Value)"
+                    }
+                }
         ) | Join-String -Separator " "
         Write-Host -ForegroundColor Cyan $expression
         Invoke-Expression $expression
@@ -256,7 +286,7 @@ function Install-Junction {
 }
 
 # powershell modules
-if ($Install -in @('*', 'pwsh-modules')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.'pwsh-modules') {
     foreach ($tool in $modules) {
         Write-Host -ForegroundColor Cyan "Installing $tool"
         Install-Module -Name $tool -Force
@@ -265,7 +295,7 @@ if ($Install -in @('*', 'pwsh-modules')) {
 
 
 # chocolatey tools
-if ($Install -in @('*', 'chocolatey')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.chocolatey) {
     Write-Host -ForegroundColor Cyan "Installing chocolatey"
     foreach ($tool in $tools | Where-Object version -NE $null) {
         "choco install $($tool.name) --version $($tool.version) --allow-downgrade -y" |
@@ -299,31 +329,33 @@ if ($Install -in @('*', 'chocolatey')) {
 }
 
 # npm
-if ($Install -in @('*', 'npm')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.npm) {
     "npm install -g $($npm.name)" | ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
 }
 
 # junctions
-if ($Install -in @('*', 'junctions')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.junctions) {
     $junctions | Install-Junction
 }
 
 
 # patches
-if ($Install -in @('*', 'patches')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.patches) {
     $patches | Update-File
 }
 
 
 # github releases
-if ($Install -in @('*', 'github-releases')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.'github-releases') {
     $github | Get-GithubRelease
 }
 
 # commands
-if ($Install -in @('*', 'commands')) {
+if ($PSBoundParameters.All -or $PSBoundParameters.commands) {
     foreach ($item in $commands) {
         Write-Host -ForegroundColor Cyan "$item"
         Invoke-Command -ScriptBlock $item
     }
+}
+
 }

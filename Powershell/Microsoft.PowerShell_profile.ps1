@@ -29,7 +29,7 @@ function Complete-Action {
     $Global:profiler.current.Add($Status, $endtime)
 
     $Global:profiler.runtime = ((Get-Date) - $Global:profiler.start)
-    $percent = [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds)
+    $percent = [Math]::Max(0, [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds))
     Write-Progress -Activity "Loading" -Status $Status -PercentComplete $percent
 }
 Write-Progress -Activity "Loading" -Status "Starting" -PercentComplete 1
@@ -221,6 +221,9 @@ if ((Test-Path $dockerScript)) {
 
             "Import-SqlTable.ps1:Username" = $credentials.Username
             "Import-SqlTable.ps1:Password" = $credentials.Password
+
+            "Delete-SqlTable.ps1:Username" = $credentials.Username
+            "Delete-SqlTable.ps1:Password" = $credentials.Password
 
             "Write-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
             "Write-SqlTableData.ps1:SchemaName" = "dbo"

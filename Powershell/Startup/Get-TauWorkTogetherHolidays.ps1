@@ -217,7 +217,7 @@ end {
                         $dat = [datetime]$_.start
                         "$($dat.Year)-$($dat.Month)" -IN ($dates | ForEach-Object { "$($_.year)-$($_.month)" })
                     }
-    $response.holidays += $holidays
+    $response.holidays = @() + $response.holidays + $holidays
 
     if ($FormatNice) {
         $end = [datetime]::new($dates[0].year, $dates[0].month, 1)

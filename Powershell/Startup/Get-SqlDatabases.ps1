@@ -18,6 +18,5 @@ process {
             $object
         }
 }
-end {        
-} 
-
+end {
+}
