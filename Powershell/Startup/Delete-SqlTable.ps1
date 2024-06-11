@@ -43,7 +43,7 @@ param(
     $Filter,
 
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Position=2)]
+    [Parameter(Position=2, ValueFromPipeline)]
     [object]
     $Value
 )
