@@ -43,7 +43,9 @@ Complete-Action
 
 # initialize environment
 Start-Action "Initialize environment "
-    $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
+    if ((Test-Path "$PSScriptRoot\secrets")) {
+        $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
+    }
     $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
     $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
     $env:POWERSHELL_UPDATECHECK              = "OFF"

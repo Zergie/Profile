@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
 )
+$ErrorActionPreference = 'Stop'
 
 function Get-RGB {
     param (
@@ -14,8 +15,12 @@ function Get-RGB {
 }
 
 # Import modules
-Import-Module -SkipEditionCheck posh-git
-Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
+try {
+    Import-Module -SkipEditionCheck posh-git
+    Import-Module -SkipEditionCheck 'C:\ProgramData\chocolatey\lib\git-status-cache-posh-client\tools\git-status-cache-posh-client-1.0.0\GitStatusCachePoshClient.psm1'
+} catch {
+    exit
+}
 $GitPromptSettings.EnableFileStatusFromCache = $true
 
 # colors
