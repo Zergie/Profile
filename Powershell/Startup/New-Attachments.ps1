@@ -13,7 +13,7 @@ param (
     $Path
 )
 Begin {
-    New-Alias -Name "Invoke-RestApi"  -Value "$PSScriptRoot\Invoke-RestApi.ps1"  -ErrorAction SilentlyContinue
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
     $Items = @()
 }
 Process{
@@ -47,7 +47,7 @@ End{
     $attachments = $downloaded |
                     ForEach-Object {
                         $w=$_
-                        
+
                         $w.relations |
                             Add-Member -Type NoteProperty   -Name WorkItem -Value $w.id -ErrorAction SilentlyContinue -PassThru |
                             Add-Member -Type ScriptProperty -Name Id -Value {$this.url.Split('/') | Select-Object -Last 1} -ErrorAction SilentlyContinue -PassThru |
@@ -67,7 +67,7 @@ End{
                     } |
                     Where-Object rel -EQ "AttachedFile"
     Write-Progress -Activity "Downloading workitems" -Completed
-    
+
 
     Write-Progress -Activity "Droping old attachments"
     $old_attachment = @()

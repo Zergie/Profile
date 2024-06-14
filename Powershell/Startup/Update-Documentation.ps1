@@ -14,7 +14,7 @@ param (
     $Path
 )
 Begin {
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
     $Items = @()
 }
 Process{
@@ -42,8 +42,8 @@ End{
 
 
     Write-Progress -Activity "Downloading attachments"
-    $attachments = $downloaded | 
-                        ForEach-Object { 
+    $attachments = $downloaded |
+                        ForEach-Object {
                             $w=$_
                             $w.relations |
                                 Add-Member -Type NoteProperty   -Name WorkItem -Value $w.Id -ErrorAction SilentlyContinue -PassThru |
@@ -63,15 +63,15 @@ End{
                         -Variables @{ id = $item.id }
                 ))
         $hash =  Get-FileHash -InputStream $stream | ForEach-Object Hash
-        
+
         Add-Member -InputObject $item -MemberType NoteProperty -Name "Hash" -Value $hash
-        
+
         $index += 1
     }
     Write-Progress -Activity "Downloading attachments" -Completed
 
 
-    
+
     Write-Progress -Activity "Updateing workitems"
     $index = 0
     $count = $Items.Count
@@ -94,13 +94,13 @@ End{
         } else {
             $upload = $true
         }
-        
+
         if ($upload) {
-            Write-Host "Updating workitem $($item.id)"            
+            Write-Host "Updating workitem $($item.id)"
             if ($null -ne $old_attachment) {
                 $index = 0
-                $relations = $downloaded | 
-                                Where-Object Id -EQ $item.id | 
+                $relations = $downloaded |
+                                Where-Object Id -EQ $item.id |
                                 Select-Object -First 1 |
                                 ForEach-Object relations
                 foreach ($rel in $relations) {
@@ -109,14 +109,14 @@ End{
                     }
                     $index++
                 }
-                
+
                 Invoke-RestApi `
                     -Endpoint "PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=6.0" `
                     -PatchBody @([ordered]@{
                         "op" = "remove"
                         "path" = "/relations/$index"
                     }) `
-                    -Variables @{ id = $item.id } | 
+                    -Variables @{ id = $item.id } |
                     Out-Null
             }
 
@@ -135,7 +135,7 @@ End{
                         "url" = $attachment.url
                     }
                 }) `
-                -Variables @{ id = $item.id } | 
+                -Variables @{ id = $item.id } |
                 Out-Null
 
         } else {

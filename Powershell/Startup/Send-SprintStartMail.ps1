@@ -9,7 +9,7 @@ param(
 )
 Process {
     if ($null -eq $PSBoundParameters.ErrorAction) { $ErrorActionPreference = 'Stop' }
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
 
     # get secrets
     $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |

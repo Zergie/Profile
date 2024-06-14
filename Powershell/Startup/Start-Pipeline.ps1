@@ -61,7 +61,7 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 begin {
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
 
     # param Branch
     if ($SetupsOnly) {

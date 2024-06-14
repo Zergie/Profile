@@ -1,5 +1,9 @@
+$builtin    = @("-b", "--background")
+$servername = "127.0.0.1:6789"
+$cmdline    = "vi $($args | Join-String -Separator ' ') "
+
 if ($null -eq (Get-Process -Name nvim -ErrorAction SilentlyContinue)) {
-    wt new-tab "C:/tools/neovim/nvim-win64/bin/nvim.exe" --listen 127.0.0.1:6789
+    wt new-tab "C:/tools/neovim/nvim-win64/bin/nvim.exe" --listen $servername
 }
 
 $editorArgs = @{
@@ -8,16 +12,22 @@ $editorArgs = @{
         "C:/Python311/Lib/site-packages/nvr/nvr.py"
 
         "--servername"
-        "127.0.0.1:6789"
+        "$servername"
 
         # close terminal window
         "-cc"
         "lua require('FTerm').close()"
 
-        # focus editor
-        "-cc"
-        "silent !wt focus-tab -t 1"
-    ) + $args
+        if ($cmdline -match "\s(-b|--background)\s") {
+            # defocus editor
+            "-cc"
+            "silent !wt focus-tab -t 0"
+        } else {
+            # focus editor
+            "-cc"
+            "silent !wt focus-tab -t 1"
+        }
+    ) + $args | Where-Object { $_ -notin $builtin }
 }
 
 if ($input.MoveNext()) {

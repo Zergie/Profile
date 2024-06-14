@@ -89,16 +89,16 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 Process {
-    if ($PSBoundParameters.Debug) { $ErrorActionPreference = 'Break' }
+    if ($null -eq $PSBoundParameters.ErrorAction) { $ErrorActionPreference = 'Stop' }
     $Tag = $PSBoundParameters['Tag']
     $Year = $PSBoundParameters['Year']
 
     $start_date = [datetime]::new($Year, $Month, 1)
     $end_date   = $start_date.AddMonths(1).AddDays(-1)
 
-    New-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues.ps1" -ErrorAction SilentlyContinue
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1" -ErrorAction SilentlyContinue
-    New-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1" -ErrorAction SilentlyContinue
+    Set-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues.ps1"
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
 
     if ($All) {
         $Workitem = Get-Issues -Start $start_date -End ($end_date.AddDays(14)) |

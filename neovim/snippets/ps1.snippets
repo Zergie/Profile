@@ -11,6 +11,9 @@ snippet pscustomobject_
 		${1:name} = ${2:value}
 	}
 
+snippet alias
+    Set-Alias -Name "${1:command}" -Value "$PSScriptRoot\\${1:command}.ps1"
+
 snippet cmdletbinding_
 	[cmdletbinding()]
 	param(

@@ -10,8 +10,9 @@ param (
     $UpdateLast
 )
 Process {
-
-    New-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
+    Set-Alias -Name "Get-Issues" -Value "PSScriptRoot\Get-Issues"
+    Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "PSScriptRoot\"Get-TauWorkTogetherHolidays".ps1"
 
     $global:holidays = Get-TauWorkTogetherHolidays -rocomservice |
                             ForEach-Object holidays
@@ -133,6 +134,7 @@ Process {
     }
 
     if (! $UpdateLast) {
+        Get-Issues -New -Assign -Update
         Start-Process "https://dev.azure.com/rocom-service/TauOffice/_sprints/capacity/TauOffice%20Team/TauOffice/$($new_sprint.name -replace " ","%20")"
     }
 }

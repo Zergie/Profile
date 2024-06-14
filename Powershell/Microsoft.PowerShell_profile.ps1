@@ -43,7 +43,7 @@ Complete-Action
 
 # initialize environment
 Start-Action "Initialize environment "
-    if ((Test-Path "$PSScriptRoot\secrets")) {
+    if ((Test-Path "$PSScriptRoot\secrets.json")) {
         $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
     }
     $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
@@ -74,7 +74,7 @@ if ($firstUse) {
                 $rename.NameSpace("$drive\").Self.Name = "$name"
             }
         }
-    Remove-Variable secrets
+    Get-Variable | Where-Object name -eq secrets | Remove-Variable
     Complete-Action
 
     # show devops agent status
@@ -129,7 +129,6 @@ Start-Action "Load scripts"
     @(
         Get-ChildItem "$PSScriptRoot\Startup\*.ps1"
     ) |
-        Where-Object Name -NE "Invoke-RestApi.ps1" |
         ForEach-Object {
             New-Alias -Name $_.BaseName -Value $_.FullName -ErrorAction SilentlyContinue
         }
@@ -227,13 +226,16 @@ if ((Test-Path $dockerScript)) {
             "Delete-SqlTable.ps1:Username" = $credentials.Username
             "Delete-SqlTable.ps1:Password" = $credentials.Password
 
-            "Write-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-            "Write-SqlTableData.ps1:SchemaName" = "dbo"
+            "Write-SqlTableData.ps1:Credential"   = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Write-SqlTableData.ps1:SchemaName"   = "dbo"
             "Write-SqlTableData.ps1:DatabaseName" = "master"
 
-            "Read-SqlTableData.ps1:Credential" = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
-            "Read-SqlTableData.ps1:SchemaName" = "dbo"
+            "Read-SqlTableData.ps1:Credential"   = New-Object System.Management.Automation.PSCredential $credentials.Username, (ConvertTo-SecureString $credentials.Password -AsPlainText -Force)
+            "Read-SqlTableData.ps1:SchemaName"   = "dbo"
             "Read-SqlTableData.ps1:DatabaseName" = "master"
+
+            "Write-Error:CategoryActivity" = {(Get-PSCallStack).command | Where-Object { $_.Length -gt 0 } | Select-Object -First 1 }
+            "Write-Progress:Activity"      = {(Get-PSCallStack).command | Where-Object { $_.Length -gt 0 } | Select-Object -First 1 }
         }
     Complete-Action
 }
