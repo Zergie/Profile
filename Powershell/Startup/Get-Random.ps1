@@ -36,6 +36,7 @@
         [Parameter(ParameterSetName='StreetNameParameterSet')]
         [Parameter(ParameterSetName='CityNameParameterSet')]
         [Parameter(ParameterSetName='CityParameterSet')]
+        [Parameter(ParameterSetName='TauOfficeParameterSet')]
         [ValidateRange(1, 2147483647)]
         [int]
         ${Count},
@@ -87,8 +88,12 @@
 
         [Parameter(ParameterSetName='DatePeriodParameterSet', Mandatory=$true)]
         [switch]
-        ${DatePeriod}
+        ${DatePeriod},
 
+        [Parameter(ParameterSetName='TauOfficeParameterSet', Mandatory=$true)]
+        [ValidateSet("Betreute Personen", "Betreuer")]
+        [string]
+        ${TauOffice}
     )
     begin
     {
@@ -101,13 +106,14 @@
 
             if(${LastName}) {
                 $PSBoundParameters.Remove("LastName") | Out-Null
-                Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
+                $names = Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                     ConvertFrom-Json |
-                    ForEach-Object LastName |
-                    Get-Random @PSBoundParameters |
+                    ForEach-Object LastName
+                $names |
+                    Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters |
                     ForEach-Object {
-                        if ((Get-Random -Minimum 0 -Maximum 100) -gt 70) {
-                            "$_-$($names | Get-Random)"
+                        if ((Microsoft.PowerShell.Utility\Get-Random -Minimum 0 -Maximum 100) -gt 70) {
+                            "$_-$($names | Microsoft.PowerShell.Utility\Get-Random)"
                         } else {
                             $_
                         }
@@ -120,61 +126,109 @@
                     Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                         ConvertFrom-Json |
                         ForEach-Object MaleName |
-                        Get-Random @PSBoundParameters
+                        Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
                 } elseif (${FemaleName}) {
                     Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                         ConvertFrom-Json |
                         ForEach-Object FemaleName |
-                        Get-Random @PSBoundParameters
+                        Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
                 } else {
                     Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                         ConvertFrom-Json -AsHashtable |
                         ForEach-Object { $_.GetEnumerator() }|
                         Where-Object Name -in "MaleName","FemaleName"|
                         ForEach-Object Value |
-                        Get-Random @PSBoundParameters
+                        Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
                 }
             } elseif(${StreetName}) {
                 $PSBoundParameters.Remove("StreetName") | Out-Null
                 Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                     ConvertFrom-Json |
                     ForEach-Object StreetName |
-                    Get-Random @PSBoundParameters
+                    Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
             } elseif(${CityName}) {
                 $PSBoundParameters.Remove("CityName") | Out-Null
                 Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                     ConvertFrom-Json |
                     ForEach-Object CityName |
-                    Get-Random @PSBoundParameters
+                    Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
             } elseif(${City}) {
                 $PSBoundParameters.Remove("City") | Out-Null
                 Get-Content "$PSScriptRoot/Get-Random.json" -Encoding utf8 |
                     ConvertFrom-Json |
                     ForEach-Object City |
-                    Get-Random @PSBoundParameters
+                    Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
+            } elseif(${TauOffice}) {
+                if ($PSBoundParameters.ContainsKey("Count")) {
+                    $count = $PSBoundParameters["Count"]
+                    $PSBoundParameters.Remove("Count") | Out-Null
+                } else {
+                    $count = 1
+                }
+                1..$count |
+                    ForEach-Object {
+                        switch (${TauOffice}) {
+                            "Betreute Personen" {
+                                [pscustomobject]@{
+                                    "::Table"  = ${TauOffice}
+                                    Name       = Get-Random -LastName
+                                    Vorname    = Get-Random -FirstName
+                                    Geschlecht = "M","W","U"|Get-Random
+                                    Ort        = $($o = Get-Random -City; $o).city
+                                    Plz        = $o.plz
+                                    Betr_von   = Get-Random -Date -Maximum 0
+                                    AKTZ       = "TEST"
+                                }
+                            }
+                            "Betreuer" {
+                                $d = [pscustomobject]@{
+                                    "::Table"     = ${TauOffice}
+                                    Id            = Get-Random -Minimum -100000 -Maximum -1
+                                    Name          = Get-Random -LastName
+                                    Vorname       = Get-Random -FirstName
+                                    Geschlecht    = "M","W","U"|Get-Random
+                                    Ort           = $($o = Get-Random -City; $o).city
+                                    Plz           = $o.plz
+                                    AngestelltVon = Get-Random -Date -Maximum 0
+                                    PersonalNr    = "TEST"
+                                    IstBetreuer   = $true
+                                }
+                                $d
+                                [pscustomobject]@{
+                                    "::Table"      = "ZR_Account"
+                                    Mitarbeiter_ID = $d.Id
+                                    Benutzername   = $d.Name
+                                    Mandant        = 42
+                                }
+                            }
+                            default {
+                                Write-Error "not implememted"
+                            }
+                        }
+                    }
             } elseif(${Time}) {
                 $PSBoundParameters.Remove("Time") | Out-Null
-                (New-Object datetime 1899,12,31).AddHours((Get-Random @PSBoundParameters -Minimum 6 -Maximum 19)).AddMinutes((Get-Random @PSBoundParameters -Minimum 0 -Maximum 59))
+                (New-Object datetime 1899,12,31).AddHours((Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters -Minimum 6 -Maximum 19)).AddMinutes((Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters -Minimum 0 -Maximum 59))
             } elseif (${TimePeriod}) {
-                if (-not $PSBoundParameters['Minimum']) { $PSBoundParameters.Add('Minimum', 15) }
-                if (-not $PSBoundParameters['Maximum']) { $PSBoundParameters.Add('Maximum', 120) }
+                if (-not $PSBoundParameters.ContainsKey('Minimum')) { $PSBoundParameters.Add('Minimum', 15) }
+                if (-not $PSBoundParameters.ContainsKey('Maximum')) { $PSBoundParameters.Add('Maximum', 120) }
                 $PSBoundParameters.Remove('TimePeriod') | Out-Null
-                $diff = Get-Random @PSBoundParameters
+                $diff = Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters
 
                 $PSBoundParameters.Remove('Minimum') | Out-Null
                 $PSBoundParameters.Remove('Maximum') | Out-Null
-                $start= Get-Random -Time @PSBoundParameters
+                $start= Microsoft.PowerShell.Utility\Get-Random -Time @PSBoundParameters
                 [pscustomobject]@{
                     start= $start
                     end=   $start.AddMinutes($diff)
                 }
 
             } elseif (${DatePeriod}) {
-                if (-not $PSBoundParameters['Minimum']) { $PSBoundParameters.Add('Minimum', 1) }
-                if (-not $PSBoundParameters['Maximum']) { $PSBoundParameters.Add('Maximum', 120) }
+                if (-not $PSBoundParameters.ContainsKey('Minimum')) { $PSBoundParameters.Add('Minimum', 1) }
+                if (-not $PSBoundParameters.ContainsKey('Maximum')) { $PSBoundParameters.Add('Maximum', 120) }
                 $PSBoundParameters.Remove('DatePeriod') | Out-Null
 
-                Get-Random @PSBoundParameters |% {
+                Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters |% {
                     $PSBoundParameters.Remove('Minimum') | Out-Null
                     $PSBoundParameters.Remove('Maximum') | Out-Null
                     $PSBoundParameters.Remove('Count') | Out-Null
@@ -186,10 +240,10 @@
                 }
             } elseif(${Date}) {
                 $PSBoundParameters.Remove("Date") | Out-Null
-                if (-not $PSBoundParameters['Minimum']) { $PSBoundParameters.Add('Minimum', -400) }
-                if (-not $PSBoundParameters['Maximum']) { $PSBoundParameters.Add('Maximum', 400) }
+                if (-not $PSBoundParameters.ContainsKey('Minimum')) { $PSBoundParameters.Add('Minimum', -400) }
+                if (-not $PSBoundParameters.ContainsKey('Maximum')) { $PSBoundParameters.Add('Maximum', 400) }
 
-                Get-Random @PSBoundParameters |% {
+                Microsoft.PowerShell.Utility\Get-Random @PSBoundParameters |% {
                     (Get-Date).AddDays($_).Date
                 }
 

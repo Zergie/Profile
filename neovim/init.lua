@@ -344,44 +344,59 @@ require("lazy").setup({
       }
 
       wk.register({
-        p = {
-          name = "ChatGPT",
-
-          c = { "<cmd>ChatGPT<CR>", "ChatGPT" },
-          e = { "<cmd>ChatGPTEditWithInstruction<CR>", "Edit with instruction [AI]", mode = { "n", "v" } },
-          g = { "<cmd>ChatGPTRun grammar_correction<CR>", "Grammar Correction [AI]", mode = { "n", "v" } },
-          t = { "<cmd>ChatGPTRun translate<CR>", "Translate [AI]", mode = { "n", "v" } },
-          k = { "<cmd>ChatGPTRun keywords<CR>", "Keywords [AI]", mode = { "n", "v" } },
-          d = { "<cmd>ChatGPTRun docstring<CR>", "Docstring [AI]", mode = { "n", "v" } },
-          a = { "<cmd>ChatGPTRun add_tests<CR>", "Add Tests [AI]", mode = { "n", "v" } },
-          o = { "<cmd>ChatGPTRun optimize_code<CR>", "Optimize Code [AI]", mode = { "n", "v" } },
-          s = { "<cmd>ChatGPTRun summarize<CR>", "Summarize [AI]", mode = { "n", "v" } },
-          f = { "<cmd>ChatGPTRun fix_bugs<CR>", "Fix Bugs [AI]", mode = { "n", "v" } },
-          x = { "<cmd>ChatGPTRun explain_code<CR>", "Explain Code [AI]", mode = { "n", "v" } },
-          r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit [AI]", mode = { "n", "v" } },
-          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+        H = { "<cmd>bp<CR>", "Prev buffer", mode = { "n" } },
+        L = { "<cmd>bn<CR>", "Next buffer", mode = { "n" } },
+        ["<leader>"] = {
+          c = {
+            name = "+workspace",
+            A = { "<cmd>cd C:|cd /GIT/TauOffice/Admintool/|cd<CR>",               "Admintool",                mode = { "n" } },
+            P = { "<cmd>cd C:|cd /GIT/Profile/|cd<CR>",                           "Profile",                  mode = { "n" } },
+            S = { "<cmd>cd C:|cd /GIT/TauServer/|cd<CR>",                         "Tau-Server",               mode = { "n" } },
+            c = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-controls/|cd<CR>",     "tau-office-controls",      mode = { "n" } },
+            d = { "<cmd>cd %:p:h<cr>",                                            "Change working directory", mode = { "n" } },
+            i = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-installer/|cd<CR>",    "tau-office-installer",     mode = { "n" } },
+            p = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-plugins/|cd<CR>",      "tau-office-plugins",       mode = { "n" } },
+            u = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-utils/source/|cd<CR>", "tau-office-utils",         mode = { "n" } },
+            t = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office/source/|cd<CR>",       "tau-office",               mode = { "n" } },
+            x = { "<cmd>cd C:|cd /GIT/TauOffice/struktur|cd<CR>",                 "struktur",                 mode = { "n" } },
+          },
           p = {
-            function ()
-            vim.cmd("r!git -C %:p:h/.. diff --staged")
-            vim.cmd("normal V'[k")
-            vim.cmd("ChatGPTRun commit")
-	    end
-            ,
-            "Write a commit message [AI]",
-            mode = { "n", "v" }
-          },
-          i = {
-            function ()
-            vim.cmd("normal Gx.9ggvipyuggP`]I# vip")
-            vim.cmd("ChatGPTRun commit")
-	    end
-            ,
-            "Write a simple commit message [AI]",
-            mode = { "n", "v" }
-          },
-
-        }
-      }, { prefix = "<leader>" })
+            name = "ChatGPT",
+            c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
+            e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",     mode = { "n", "v" } },
+            g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",        mode = { "n", "v" } },
+            t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                 mode = { "n", "v" } },
+            k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                  mode = { "n", "v" } },
+            d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                 mode = { "n", "v" } },
+            a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                 mode = { "n", "v" } },
+            o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",             mode = { "n", "v" } },
+            s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                 mode = { "n", "v" } },
+            f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                  mode = { "n", "v" } },
+            x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",              mode = { "n", "v" } },
+            r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",              mode = { "n", "v" } },
+            l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
+            p = {
+              function ()
+              vim.cmd("r!git -C %:p:h/.. diff --staged")
+              vim.cmd("normal V'[k")
+              vim.cmd("ChatGPTRun commit")
+              end
+              ,
+              "Write a commit message [AI]",
+              mode = { "n", "v" }
+            },
+            i = {
+              function ()
+              vim.cmd("normal Gx.9ggvipyuggP`]I# vip")
+              vim.cmd("ChatGPTRun commit")
+              end
+              ,
+              "Write a simple commit message [AI]",
+              mode = { "n", "v" }
+            },
+          }
+        },
+      })
 
       wk.register({
         g = {

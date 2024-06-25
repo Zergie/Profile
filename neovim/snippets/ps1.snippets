@@ -12,7 +12,7 @@ snippet pscustomobject_
 	}
 
 snippet alias
-    Set-Alias -Name "${1:command}" -Value "$PSScriptRoot\\${1:command}.ps1"
+    Set-Alias -Name "${1:command}" -Value "$$PSScriptRoot\\${1:command}.ps1"
 
 snippet cmdletbinding_
 	[cmdletbinding()]
@@ -20,33 +20,34 @@ snippet cmdletbinding_
 	)
 
 snippet Parameter_
-		[Parameter(Mandatory=$$true,
+		[Parameter(Mandatory,
 				   ParameterSetName="${2:name}ParameterSet",
-				   ValueFromPipeline=$$true,
-				   ValueFromPipelineByPropertyName=$$false)]
+				   ValueFromPipeline)]
 		[ValidateNotNullOrEmpty()]
 		[${1:type}]
 		${2:name}
 	
+snippet pscustomobject_dynamicparam
+			[pscustomobject]@{
+				Position = ${1:0}
+				Type = [${2:type}]
+				Name = "${3:name}"
+				ParameterSetName = "${3:name}ParameterSet"
+				ValidateSet = @(${4:values})
+			}
+
 snippet dynamicparam_
 	dynamicparam {
-		$$RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
-
-		# param ${1:param}
-		$$AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
-		$$ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-		$$ParameterAttribute.Mandatory = $$true
-		$$ParameterAttribute.ParameterSetName = "${1:param}ParameterSet"
-		$$AttributeCollection.Add($$ParameterAttribute)
-
-		$$ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-			${2:values}
-		))
-		$$AttributeCollection.Add($$ValidateSetAttribute)
-		$$RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("${1:param}", [string], $$AttributeCollection)
-		$$RuntimeParameterDictionary.Add($$RuntimeParameter.Name, $$RuntimeParameter)
-
-		return $$RuntimeParameterDictionary
+		Set-Alias "New-DynamicParameter" "$PSScriptRoot\New-DynamicParameter.ps1"
+		@(
+			[pscustomobject]@{
+				Position = ${1:0}
+				Type = [${2:type}]
+				Name = "${3:name}"
+				ParameterSetName = "${3:name}ParameterSet"
+				ValidateSet = @(${4:values})
+			}
+		) | New-DynamicParameter
 	}
 
 # ansi colors

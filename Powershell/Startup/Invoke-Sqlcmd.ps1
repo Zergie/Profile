@@ -129,10 +129,10 @@ begin {
 
 process {
     try {
-        if ($PSBoundParameters.ContainsKey('Path')) {
-            $PSBoundParameters['Query'] = Get-Content $PSBoundParameters['Path'] |
+        if ($PSBoundParameters.ContainsKey('InputFile')) {
+            $PSBoundParameters['Query'] = Get-Content $PSBoundParameters['InputFile'] |
                                             Join-String -Separator `n
-            $PSBoundParameters.Remove('Path') | Out-Null
+            $PSBoundParameters.Remove('InputFile') | Out-Null
         } elseif (-not $PSBoundParameters.ContainsKey('Query')) {
             $PSBoundParameters['Query'] = $_
         }

@@ -4,7 +4,7 @@ param(
     $Recipient = @("fannen@rocom.de"),
 
     [string[]]
-    $Bcc = @("wpuchinger@rocom.de"),
+    $Bcc = @("wpuchinger@rocom-service.de"),
 
     [string[]]
     $Cc = @("jriedl@rocom.de"),
@@ -15,24 +15,8 @@ param(
 Set-Alias Get-Issues "$PSScriptRoot/Get-Issues.ps1"
 
 if ($WaitHours -gt 0) {
-    $Wait = [TimeSpan]::FromHours($WaitHours)
-    Write-Host
-    while ($Wait.TotalHours -gt 1) {
-        Write-Host "Waiting $($Wait.TotalHours) h, sending @ $([datetime]::Now.Add($Wait).ToString("HH:mm")) .."
-        Start-Sleep -Duration ([TimeSpan]::FromHours([System.Math]::Min(1, $Wait.TotalHours)))
-        $Wait -= [TimeSpan]::FromHours(1)
-    }
-    while ($Wait.TotalMinutes -gt 1) {
-        Write-Host "Waiting $($Wait.TotalMinutes.ToString("0")) minutes, sending @ $([datetime]::Now.Add($Wait).ToString("HH:mm")) .."
-        Start-Sleep -Duration ([TimeSpan]::FromMinutes([System.Math]::Min(10, $Wait.TotalMinutes)))
-        $Wait -= [TimeSpan]::FromMinutes(10)
-    }
-    while ($Wait.TotalSeconds -gt 1) {
-        Write-Host "Waiting $($Wait.TotalSeconds.ToString("0")) seconds, sending @ $([datetime]::Now.Add($Wait).ToString("HH:mm")) .."
-        Start-Sleep -Duration ([TimeSpan]::FromSeconds([System.Math]::Min(10, $Wait.TotalSeconds)))
-        $Wait -= [TimeSpan]::FromSeconds(10)
-    }
-    Write-Host
+    Set-Alias -Name "Wait-Hours" -Value "$PSScriptRoot\Wait-Hours.ps1"
+    Wait-Hours -Hours $WaitHours
 }
 
 Push-Location C:\GIT\TauOffice
@@ -268,8 +252,8 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 # compose mail
 $mail = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
 $Recipient | ForEach-Object { $mail.To.Add($_) }
-$Bcc | ForEach-Object { $mail.Bcc.Add($_) }
-$Cc | ForEach-Object { $mail.Cc.Add($_) }
+$Bcc       | ForEach-Object { $mail.Bcc.Add($_) }
+$Cc        | ForEach-Object { $mail.Cc.Add($_) }
 $mail.ReplyTo = "noreply@rocom.de"
 $mail.Subject = "Release Notes"
 $mail.Body    = @"

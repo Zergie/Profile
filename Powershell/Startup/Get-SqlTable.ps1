@@ -36,10 +36,13 @@ param(
     [switch]
     $Progress,
 
+    [Parameter()]
+    [string]
+    $OutFile,
+
     [switch]
     $NullValues
 )
-
 if ($Progress) {
     Invoke-WithProgress $MyInvocation
 } else {
@@ -91,7 +94,7 @@ if ($Progress) {
     Write-Verbose $Query
 
     if (-not $PSBoundParameters.ContainsKey("Table")) {
-        Invoke-Sqlcmd -Database $Database -Query $Query |
+        $result = Invoke-Sqlcmd -Database $Database -Query $Query |
             ConvertTo-Csv |
             ConvertFrom-Csv |
             ForEach-Object {
@@ -102,8 +105,8 @@ if ($Progress) {
                     database    = $_.database
                 }
             }
-    } elseif ( $NullValues ) {
-        Invoke-Sqlcmd -Database $Database -Query $Query |
+    } elseif ($NullValues) {
+        $result = Invoke-Sqlcmd -Database $Database -Query $Query |
             ForEach-Object {
                 $o = $_
                 Get-Member -InputObject $o -Type Properties |
@@ -114,8 +117,22 @@ if ($Progress) {
             ConvertTo-Csv |
             ConvertFrom-Csv
     } else {
-        Invoke-Sqlcmd -Database $Database -Query $Query |
+        $result = Invoke-Sqlcmd -Database $Database -Query $Query |
             ConvertTo-Csv |
             ConvertFrom-Csv
+    }
+
+
+    if ($PSBoundParameters.ContainsKey("OutFile")) {
+        if ($OutFile -eq ".") {
+            $OutFile = "${Table}.json"
+        }
+        $result |
+            ConvertTo-Json |
+            Set-Content $OutFile -Encoding utf-8
+
+        Get-ChildItem $OutFile
+    } else {
+        $result
     }
 }

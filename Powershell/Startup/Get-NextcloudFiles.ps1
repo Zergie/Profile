@@ -8,6 +8,11 @@ param (
     [int]
     $WorkitemId,
 
+    [Parameter(Mandatory, Position=0, ParameterSetName="ClipboardParameterSet")]
+    [switch]
+    $Clipboard,
+
+    [Parameter(ParameterSetName="ClipboardParameterSet")]
     [Parameter(ParameterSetName="WorkitemParameterSet")]
     [Parameter(ParameterSetName="UrlParameterSet")]
     [Parameter(ParameterSetName="MailParameterSet")]
@@ -15,6 +20,7 @@ param (
     [string]
     $OutFolder = "C:\Dokumente\Daten",
 
+    [Parameter(ParameterSetName="ClipboardParameterSet")]
     [Parameter(ParameterSetName="WorkitemParameterSet")]
     [Parameter(ParameterSetName="UrlParameterSet")]
     [Parameter(ParameterSetName="MailParameterSet")]
@@ -22,6 +28,7 @@ param (
     [switch]
     $DebugRegex,
 
+    [Parameter(ParameterSetName="ClipboardParameterSet")]
     [Parameter(ParameterSetName="WorkitemParameterSet")]
     [Parameter(ParameterSetName="UrlParameterSet")]
     [Parameter(ParameterSetName="MailParameterSet")]
@@ -62,6 +69,9 @@ begin {
             $text = (
                         . "$PSScriptRoot/Get-Issues.ps1" -WorkitemId $WorkitemId
                     ).fields.'System.Description'
+        }
+        "ClipboardParameterSet" {
+            $text = Get-Clipboard
         }
     }
 
@@ -152,7 +162,7 @@ end {
         $files |
             ForEach-Object {
                 if ($count -gt 1) {
-                    $filename = [System.Uri]::UnescapeDataString(($_ -replace ".+&files=", ''))
+                    $filename = [System.Uri]::UnescapeDataString($_) -replace ".+(\?path|&files)=/*", ''
                 } else {
                     $filename = "NextCloud.zip"
                 }

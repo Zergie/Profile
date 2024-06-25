@@ -1,15 +1,15 @@
 param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $ServerInstance,
 
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Username,
 
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Password,
@@ -18,13 +18,18 @@ param(
     [string]
     $Database,
 
-    [Parameter(Mandatory, Position=0)]
+    [Parameter(Mandatory, Position=0, ValueFromPipelineByPropertyName)]
+    [Alias("::Table")]
     [string]
     $Table,
 
-    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [Parameter(Mandatory, ValueFromPipeline)]
     [pscustomobject]
-    $Data
+    $Data,
+
+    [Parameter()]
+    [switch]
+    $PassThru
 )
 Begin {
     $connection_string = @(
@@ -41,12 +46,12 @@ Process {
     if ($Data -is [Hashtable]) {
         $Data = [pscustomobject]$Data
     }
+    $PassThruData = $Data
+    $Data = $Data.psobject.Properties | Where-Object Name -NotLike "::*"
     $Table = $Table.TrimStart("[").TrimEnd("]")
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `
                     -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
-
-
 
     $Query = "INSERT INTO"
 
@@ -57,13 +62,13 @@ Process {
         $Query += " [$Table] "
     }
 
-    $Query += "($(($Data.psobject.properties.Name | ForEach-Object { "[$_]" }) -join ","))"
+    $Query += "($(($Data.Name | ForEach-Object { "[$_]" }) -join ","))"
     $Query += " VALUES "
-    $Query += "($(($Data.psobject.properties.Name | ForEach-Object { "@$_" }) -join ","))"
+    $Query += "($(($Data.Name | ForEach-Object { "@$_" }) -join ","))"
 
     $command = $connection.CreateCommand()
     $command.CommandText = $Query
-    foreach ($p in $Data.psobject.properties) {
+    foreach ($p in $Data) {
         if ($null -eq $p.Value) {
             $db_value = [System.DBNull]::Value
         } elseif ( $p.Name -in $data_types.column_name ) {
@@ -92,6 +97,11 @@ Process {
     $command.Dispose()
 
     Write-Verbose $Query
+
+    if ($PassThru) {
+        $PassThruData |
+            Select-Object -ExcludeProperty "::Table"
+    }
 }
 End {
     $connection.Close()
