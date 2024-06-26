@@ -82,10 +82,21 @@ if ($firstUse) {
         Start-Job {
             param([pscustomobject] $oldProfiler, [pscustomobject] $oldVariables)
 
-            # if (((Get-Date) - $oldProfiler.start).TotalHours -lt 12 `
-            #     -and $null -ne $oldProfiler.variables.'DevOps Agents') {
-            #     $oldProfiler.variables.'DevOps Agents' | ConvertTo-Json
-            # } else {
+            $Connectivity = Get-NetConnectionProfile |
+                ForEach-Object { $_.IPv4Connectivity; $_.IPv6Connectivity } |
+                Where-Object { $_ -eq "Internet" } |
+                Measure-Object
+
+            if ($Connectivity.Count -eq 0) {
+                $oldProfiler.variables.'DevOps Agents' |
+                    ForEach-Object {
+                        [pscustomobject]@{
+                            Type   = 'DevOps Agents'
+                            Status = 'offline'
+                        }
+                    } |
+                    ConvertTo-Json
+            } else {
                 . "$using:PSScriptRoot/Startup/Invoke-RestApi.ps1" `
                     -Endpoint "GET https://dev.azure.com/{organization}/_apis/distributedtask/pools/{poolId}/agents?api-version=7.0" `
                     -Variables @{poolid=1} |
@@ -93,16 +104,23 @@ if ($firstUse) {
                     ForEach-Object {
                         [pscustomobject]@{
                             Type   = 'DevOps Agents'
-                            Status = if ($_.Status -eq "offline") {
-                                       $false
-                                   } elseif ($_.Status -eq "online") {
-                                       $true
-                                   }
+                            Status = $_.Status
                         }
                     } |
                     ConvertTo-Json
-            # }
+            }
         } -ArgumentList $profiler.last, $profiler.variables | Out-Null
+    Complete-Action
+
+    # cache choco outdated
+    Start-Action "Check chocolaty packages"
+        Start-Job {
+            . "$using:PSScriptRoot/Startup/Invoke-Chocolatey.ps1" outdated |
+                Where-Object pinned -eq $false |
+                Where-Object name -NotLike "*.install" |
+                ConvertTo-Json -Depth 9 |
+                Out-File $env:TEMP\chocolaty.json -Encoding utf-8
+        } | Out-Null
     Complete-Action
 }
 
@@ -405,7 +423,19 @@ if  ($firstUse) {
                     ConvertFrom-Json |
                     Group-Object Type |
                     ForEach-Object {
-                        $variables.Add($_.Name, $_.Group)
+                        $item = $_
+                        try {
+                            $variables.Add($_.Name, $_.Group)
+                        } catch {
+                            @(
+                                "`n== `$variables =="
+                                $variables | ConvertTo-Json
+                                "`n== `$item =="
+                                $item | ConvertTo-Json
+                                ""
+                            ) | Join-String -Separator "`n" | Write-Host -ForegroundColor Red
+                            throw $_
+                        }
                     }
                 Stop-Job $_
                 Remove-Job $_
@@ -415,25 +445,55 @@ if  ($firstUse) {
         # ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
         # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
         $variables = [pscustomobject]$variables
+        $length = 12
         $template = "
-╔═════════════════════════════╗
-║ DevOps Agents : {0}         ║
-╚═════════════════════════════╝
+╔═════════════════$([string]::new('═', $length))╗
+║ DevOps Agents : $('{0}'.PadRight($length))║
+║ Chocolaty     : $('{1}'.PadRight($length))║
+╚═════════════════$([string]::new('═', $length))╝
 "
-        $placeholder = " # # "
-        $template = $template.Replace("{0}".PadRight($placeholder.Length), $placeholder)
-        $variables.'DevOps Agents' |
-            Sort-Object Name |
-            ForEach-Object {
-                $index = $template.IndexOf("#")
-                $char = if ($_.Status) {'🟩'} else {'🟥'}
-                $template =$template.Remove($index, 2)
-                $template = $template.Insert($index, $char)
+        $text = $variables.'DevOps Agents' |
+            Where-Object Status -eq "offline" |
+            Measure-Object |
+            ForEach-Object Count
+
+        if ($text -gt 0) {
+            $text = "$text offline"
+        } else {
+            $text = $variables.'DevOps Agents' |
+                Where-Object Status -eq "online" |
+                Measure-Object |
+                ForEach-Object Count
+            $text = "$text online"
+        }
+        if ($text.Length -gt $length) { $text = $text.Substring(0, $length) }
+        $text = $text.PadRight($length) `
+              -replace "(2)( on)","`e[32m`$1`e[0m`$2" `
+              -replace "(\d+)( off)","`e[31m`$1`e[0m`$2"
+        $template = $template.Replace("{0}".PadRight($length), $text)
+
+        $text = "up to date"
+        if (Test-Path $env:TEMP\chocolaty.json) {
+            $text = Get-Content $env:TEMP\chocolaty.json -Encoding utf-8 |
+                ConvertFrom-Json |
+                Measure-Object |
+                ForEach-Object Count
+
+            if ($text-gt 0) {
+                $text = "$text outdated"
+            } else {
+                $text = "up to date"
             }
-        $template = $template.Replace("#", "🟥")
+        }
+        if ($text.Length -gt $length) { $text = $text.Substring(0, $length) }
+        $text = $text.PadRight($length) `
+              -replace "(up to date)","`e[32m`$1`e[0m" `
+              -replace "(\d+)( outdated)","`e[31m`$1`e[0m`$2"
+        $template = $template.Replace("{1}".PadRight($length), $text)
+        Remove-Variable text
 
         Write-Host $template.Trim()
-        Remove-Variable template, placeholder
+        Remove-Variable template, length
     Complete-Action
 }
 
@@ -442,6 +502,6 @@ if ($profiler.current.Length -gt 0) {
     $profiler.last = $profiler.current
     $profiler.current = $null
     $profiler.runtime = ((Get-Date) - $profiler.start).TotalSeconds
-    $profiler | ConvertTo-Json -Depth 9 | Set-Content $env:TEMP\Profile.json
+    $profiler | ConvertTo-Json -Depth 9 | Set-Content $env:TEMP\Profile.json -Encoding utf-8
 }
 Remove-Variable profiler, variables -ErrorAction SilentlyContinue

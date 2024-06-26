@@ -14,6 +14,9 @@ param (
     $Arguments
 )
 begin {
+    if ($null -eq (Get-FormatData -TypeName 'User.ChocoOutdated')) {
+        Update-FormatData -PrependPath "$PSScriptRoot\..\Format\User.ChocoOutdated.ps1xml"
+    }
 }
 process {
     $cmd = ". 'C:\ProgramData\chocolatey\bin\choco.exe' $Command $Arguments"
@@ -27,19 +30,13 @@ process {
                 if (!$found_begin) {
                     $_
                 } elseif ($_ -like "*|*") {
-                    if (($i % 2) -eq 1) {
-                        $c = "`e[38;5;8m"
-                    } else {
-                        $c = ""
-                    }
-
-                    $line = $c + ($_ -replace "\|","`e[0m|$c") + "`e[0m"
-                    $line |
-                        ConvertFrom-Csv -Delimiter "|" -Header "package name".PadRight(32),"current version","available version","pinned?" |
+                    $_ |
+                        ConvertFrom-Csv -Delimiter "|" -Header "name","current version","available version","pinned" |
                         ForEach-Object {
-                            if ($_.'pinned?' -like "*true*") {
-                                $_.("package name".PadRight(32)) += "📍"
-                            }
+                            $_.'current version' = [System.Version]::Parse($_.'current Version')
+                            $_.'available version' = [System.Version]::Parse($_.'available version')
+                            $_.pinned = ($_.pinned -like "*true*")
+                            $_.PSObject.TypeNames.Insert(0,'User.ChocoOutdated')
                             $_
                         }
                 }

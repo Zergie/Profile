@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<?xml-model href="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd"?>
+
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>User.ChocoOutdated</Name>
+            <ViewSelectedBy>
+                <TypeName>User.ChocoOutdated</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>package name</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>current version</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>available version</Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.pinned -eq $true) {
+                                        "$($_.name)📍"
+                                    } else {
+                                        "$($_.name)"
+                                    }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>current version</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>available version</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>
