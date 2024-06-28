@@ -1,5 +1,8 @@
 [CmdletBinding()]
 param(
+    [Parameter()]
+    [switch]
+    ${ReadOnly}
 )
 DynamicParam {
     $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
@@ -23,6 +26,15 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 process {
-    $Port = $PSBoundParameters['Port']
-    . 'C:\ProgramData\chocolatey\bin\PLINK.EXE' -serial $Port
+    if ($ReadOnly) {
+        $port = [System.IO.Ports.SerialPort]::new($PSBoundParameters.Port)
+        try {
+            $port.Open()
+            while(1) { $port.ReadLine() }
+        } finally {
+            $port.Close()
+        }
+    } else {
+        . 'C:\ProgramData\chocolatey\bin\PLINK.EXE' -serial $PSBoundParameters.Port
+    }
 }
