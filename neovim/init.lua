@@ -215,17 +215,19 @@ require("lazy").setup({
   },
 
 
-  -- -- Translator
-  -- {
-  --   'uga-rosa/translate.nvim',
-  --   config = function ()
-  --    local map = function (mode, lhs, rhs, desc)
-  --      vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
-  --    end
-  --     map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
-  --     map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
-  --   end
-  -- },
+  -- Translator
+  {
+    'uga-rosa/translate.nvim',
+    config = function ()
+     local map = function (mode, lhs, rhs, desc)
+       vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
+     end
+      map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
+      map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
+      map('v', '<Leader>td', ':Translate de<CR>', 'Translate to german')
+      map('v', '<Leader>te', ':Translate en<CR>', 'Translate to english')
+    end
+  },
 
   -- Theme inspired by Atom
   {
