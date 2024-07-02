@@ -1,36 +1,45 @@
 [CmdletBinding()]
 param(
-    [Parameter()]
+    [Parameter(ParameterSetName="ReadOnlyParameterSet")]
+    [switch]
+    ${Unique},
+
+    [Parameter(ParameterSetName="ReadOnlyParameterSet")]
     [switch]
     ${ReadOnly}
 )
 DynamicParam {
-    $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
-
-    # param Port
-    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
-    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
-    $AttributeCollection.Add($ParameterAttribute)
-
-    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute((
-        [System.IO.Ports.SerialPort]::GetPortNames() | Group-Object | ForEach-Object Name
-    ))
-    $AttributeCollection.Add($ValidateSetAttribute)
-
-    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Port", [string], $AttributeCollection)
-    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
-
-
-    return $RuntimeParameterDictionary
+    Set-Alias "New-DynamicParameter" "$PSScriptRoot\New-DynamicParameter.ps1"
+    @(
+        [pscustomobject]@{
+            Position = 0
+            Type = [string]
+            Name = "Port"
+            ValidateSet = [System.IO.Ports.SerialPort]::GetPortNames() |
+                            Group-Object |
+                            ForEach-Object Name
+        }
+    ) | New-DynamicParameter
 }
 process {
     if ($ReadOnly) {
         $port = [System.IO.Ports.SerialPort]::new($PSBoundParameters.Port)
         try {
             $port.Open()
-            while(1) { $port.ReadLine() }
+
+            while(1) {
+                $port.ReadLine() |
+                ForEach-Object {
+                    if ($PSBoundParameters.Unique) {
+                        if ($_ -ne $Last) {
+                            $Last = $_
+                            $_
+                        }
+                    } else {
+                        $_
+                    }
+                }
+            }
         } finally {
             $port.Close()
         }
