@@ -78,11 +78,14 @@ Process {
                 $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
 
                 if ($sql_data_type -eq "datetime") {
-                    try {
-                        $db_value = [Datetime]::ParseExact($p.Value, "MM/dd/yyyy HH:mm:ss", $null)
-                    } catch {
-                        $db_value = [Datetime]::Parse($p.Value)
-                    }
+                    $db_value = $(switch -Regex ($p.Value) {
+                        "\d+\.\d+\.\d+ \d+:\d+:\d+$" { [Datetime]::ParseExact($p.Value, "dd.MM.yyyy HH:mm:ss", $null) }
+                        "\d+\.\d+\.\d+ \d+:\d+$"     { [Datetime]::ParseExact($p.Value, "dd.MM.yyyy HH:mm", $null) }
+                        "\d+\.\d+\.\d+$"             { [Datetime]::ParseExact($p.Value, "dd.MM.yyyy", $null) }
+                        "\d+/\d+/\d+ \d+:\d+:\d+$"   { [Datetime]::ParseExact($p.Value, "MM/dd/yyyy HH:mm:ss", $null) }
+                        "\d+/\d+/\d+$"               { [Datetime]::ParseExact($p.Value, "MM/dd/yyyy", $null) }
+                        default                      { [Datetime]::Parse($p.Value) }
+                    })
                 } else {
                     $db_value = $p.Value
                 }

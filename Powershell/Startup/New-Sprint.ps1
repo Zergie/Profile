@@ -12,7 +12,7 @@ param (
 Process {
     Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
     Set-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues"
-    Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\"Get-TauWorkTogetherHolidays".ps1"
+    Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
 
     $global:holidays = Get-TauWorkTogetherHolidays -rocomservice |
                             ForEach-Object holidays

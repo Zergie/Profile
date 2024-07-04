@@ -171,7 +171,12 @@ process {
                 ForEach-Object {
                       $stage  = 0
                       $reader = [System.IO.StringReader]::new($PSBoundParameters["Query"])
-                      $parser = New-Object -TypeName "Microsoft.SqlServer.TransactSql.ScriptDom.TSql100Parser" -ArgumentList $true
+                      try {
+                          $parser = New-Object -TypeName "Microsoft.SqlServer.TransactSql.ScriptDom.TSql100Parser" -ArgumentList $true
+                      } catch {
+                          [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.TransactSql.ScriptDom") | Out-Null
+                          $parser = New-Object -TypeName "Microsoft.SqlServer.TransactSql.ScriptDom.TSql100Parser" -ArgumentList $true
+                      }
                       $table  = $parser.GetTokenStream($reader, [ref] $null) |
                         ForEach-Object{
                           if ($stage -eq 1 -and $_.TokenType -eq [Microsoft.SqlServer.TransactSql.ScriptDom.TSqlTokenType]::Identifier) {

@@ -195,11 +195,14 @@ Process {
             $workitem_revision = Invoke-RestApi `
                             -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{id}/revisions/{revisionNumber}?api-version=6.0" `
                             -Variables @{ id = $item.id; revisionNumber = $rev }
-            $item.revisions += $workitem_revision
 
-            if ($workitem_revision.fields.'System.State' -in 'Done','To Do') {
-                if ($workitem_revision.fields.'System.ChangedDate' -lt $start_date) {
-                    break
+            if ($workitem_revision.fields.'System.ChangedDate' -lt $end_date) {
+                $item.revisions += $workitem_revision
+
+                if ($workitem_revision.fields.'System.State' -in 'Done','To Do') {
+                    if ($workitem_revision.fields.'System.ChangedDate' -lt $start_date) {
+                        break
+                    }
                 }
             }
         }
@@ -310,6 +313,10 @@ Process {
                 $ret.End = $_.Done
             }
 
+            if ($null -eq $_.End) {
+                $ret.End = $end_date
+            }
+
             $ret
         } |
         Where-Object { $_.Start -ne $null } |
@@ -350,6 +357,7 @@ Process {
         } |
         Group-Object Datum, Oberpunkt, Arbeitsschritt |
         ForEach-Object { $_.Group[0] } |
+        Where-Object { $_.Datum -LE [datetime]::Now } |
         Sort-Object Datum, Oberpunkt, Arbeitsschritt |
         ConvertTo-Csv -Delimiter `t |
         Set-Clipboard

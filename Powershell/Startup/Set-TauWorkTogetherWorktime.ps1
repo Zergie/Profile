@@ -80,13 +80,35 @@ process {
 }
 end {
     # get worktimes from 'Tätigkeitsnachweis'
-    $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 3 |
-                    Where-Object { $_.date.Month -eq $Month }
+    $pkgobj = New-Object -TypeName OfficeOpenXml.ExcelPackage -ArgumentList 'C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx'
+    $WorkTimes = $pkgobj.Workbook.Worksheets["Arbeitszeiten"].Cells |
+        Where-Object { $_.Start.Row -ge 3 } |
+        Group-Object { $_.Start.Row } |
+        ForEach-Object {
+            if ($_.Name -eq "3") {
+                $columns = $_.Group | ForEach-Object { $_.Value.ToString() }
+            } else {
+                $i = 0
+                $obj = @{}
+                $_.Group | ForEach-Object {
+                    $obj.Add($columns[$i], $_.Value)
+                    $i += 1
+                }
+                [pscustomobject]$obj
+           }
+        } |
+        Where-Object { $_.date.Month -eq $Month }
+    $pkgobj.Dispose()
+    Remove-Variable pkgobj, columns
+    # $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 3 |
+    #                 Where-Object { $_.date.Month -eq $Month }
 
     # remove weekends only
     $Days = $Days | Where-Object { $_ -in $WorkTimes.date.Day }
     if (($Days | Measure-Object).Count -lt 10) {
-        throw "Less than 10 workdays found: $($Days | ConvertTo-Json -Compress)"
+        if (! $PSBoundParameters.ContainsKey("Days")) {
+            throw "Less than 10 workdays found: $($Days | ConvertTo-Json -Compress)"
+        }
     }
 
     # remove holidays
@@ -141,6 +163,23 @@ end {
                     $WorkTimes |
                         Where-Object { $_.date -eq $date } |
                         ForEach-Object {
+                            if ($_.duration -gt 6) {
+                                $mid = $_.start.Date.AddHours(12).AddMinutes((Get-Random -Minimum -5 -Maximum 60))
+                                [pscustomobject] @{
+                                    date = $_.date
+                                    start = $_.start
+                                    end = $mid
+                                }
+                                [pscustomobject] @{
+                                    date = $_.date
+                                    start = $mid.AddMinutes((Get-Random -Minimum 29 -Maximum 32))
+                                    end = $_.end
+                                }
+                            } else {
+                                $_
+                            }
+                        } |
+                        ForEach-Object {
                             Write-Host "add workhours ($($_.start.ToString("HH:mm")) - $($_.end.ToString("HH:mm")))"
 
                             Start-Sleep -Milliseconds 500
@@ -161,7 +200,7 @@ end {
                                 endTime.dispatchEvent(new Event('input', { bubbles: true }));
 
                                 var workType = document.querySelectorAll('select.form-control')[1];
-                                Array.from(workType.options).find(el => el.textContent === 'Standard').selected = true
+                                Array.from(workType.options).find(el => el.textContent === 'Homeoffice').selected = true
                                 workType.dispatchEvent(new Event('change', { bubbles: true }));
                                 workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
                             " | Out-Null
