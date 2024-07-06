@@ -2,16 +2,6 @@ $slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\OrcaSlicer\orca-slicer
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
 
 $path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
-$filename = [System.IO.Path]::GetFileNameWithoutExtension($path)
-$extension = [System.IO.Path]::GetExtension($path)
-
-$Destination = "${env:USERPROFILE}\Downloads\${filename.Replace(" ", "")}_$((Get-Date).ToString("yyyy-MM-dd"))${extension}"
-
-@{
-    Path = $path
-    Destination = $Destination
-}
-Copy-Item -Path "${path}" -Destination "${Destination}" -Force
 
 if ($null -ne $slicer_process) {
     Add-Type @"
@@ -29,12 +19,13 @@ if ($null -ne $slicer_process) {
     $wshell = New-Object -ComObject wscript.shell;
     $wshell.SendKeys("^i")
 
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds 750
 
-    $wshell.SendKeys($Destination)
+    Set-Clipboard -Value ${path}
+    $wshell.SendKeys("^v")
     $wshell.SendKeys("{Enter}")
 } else {
-    . $slicer "${Destination}"
+    . $slicer "${path}"
 }
 
 # Read-Host
