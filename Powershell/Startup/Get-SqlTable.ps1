@@ -131,24 +131,25 @@ if ($Progress) {
 
         Get-ChildItem $OutFile
     } else {
-        # $result
+        $props = $result |
+            Select-Object -First 1 |
+            ForEach-Object psadapted |
+            Get-Member
+
         $result |
             ForEach-Object {
-                $props = $_.psobject.Properties.Name
-
-                if ("LetzteDbRevision" -in $props) {
+                if ("LetzteDbRevision" -in $props.Name) {
                     $_.LetzteDbRevision = ([int]($_.LetzteDbRevision[0])).ToString("000")
                 }
-                if ("MandantDbRevision" -in $props) {
+                if ("MandantDbRevision" -in $props.Name) {
                     $_.MandantDbRevision = ([int]($_.MandantDbRevision[0])).ToString("000")
                 }
 
-                if ($PSBoundParameters.ContainsKey("Table")) {
-                    $_ |
-                        Select-Object -ExcludeProperty RowError,RowState,HasErrors,ItemArray,Table |
+                if ($PSBoundParameters.ContainsKey("Table") -and !$PSBoundParameters.ContainsKey("Fields")) {
+                    $_.psadapted |
                         Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table -PassThru
                 } else {
-                    $_
+                    $_.psadapted
                 }
             }
     }

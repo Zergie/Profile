@@ -23,6 +23,9 @@ param(
     [string]
     $Table,
 
+    [string[]]
+    $ExcludeProperty,
+
     [Parameter(Mandatory, ValueFromPipeline)]
     [pscustomobject]
     $Data,
@@ -47,10 +50,17 @@ Process {
         $Data = [pscustomobject]$Data
     }
     $PassThruData = $Data
-    $Data = $Data.psobject.Properties |
+    $Data = $Data |
+                ForEach-Object psadapted -PipelineVariable item |
+                Get-Member -MemberType Property |
                 Where-Object Name -NotLike "::*" |
-                Where-Object TypeNameOfValue -NotIn "System.Object[]","System.Data.DataRowState","System.Data.DataTable" |
-                Where-Object Name -NotIn "RowError","HasErrors"
+                Where-Object Name -NotIn $ExcludeProperty |
+                ForEach-Object {
+                    [pscustomobject]@{
+                        Name = $_.Name
+                        Value = $item.($_.Name)
+                    }
+                }
     $Table = $Table.TrimStart("[").TrimEnd("]")
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `
@@ -104,17 +114,17 @@ Process {
         Write-Verbose "$($p.Name): $(if ($db_value -eq [System.DBNull]::Value) {"`e[3m__null__`e[0m"} else {$db_value})"
         $command.Parameters.AddWithValue($p.Name, $db_value) | Out-Null
     }
-    try {
+    # try {
         $command.ExecuteNonQuery() | Out-Null
-    } catch {
-        if ($Table.Contains(".")) {
-            $command.CommandText = "SET IDENTITY_INSERT $TABLE ON; $Query;SET IDENTITY_INSERT $TABLE OFF"
-        }
-        else {
-            $command.CommandText = "SET IDENTITY_INSERT [$TABLE] ON; $Query;SET IDENTITY_INSERT [$TABLE] OFF"
-        }
-        $command.ExecuteNonQuery() | Out-Null
-    }
+    # } catch {
+    #     if ($Table.Contains(".")) {
+    #         $command.CommandText = "SET IDENTITY_INSERT $TABLE ON; $Query;SET IDENTITY_INSERT $TABLE OFF"
+    #     }
+    #     else {
+    #         $command.CommandText = "SET IDENTITY_INSERT [$TABLE] ON; $Query;SET IDENTITY_INSERT [$TABLE] OFF"
+    #     }
+    #     $command.ExecuteNonQuery() | Out-Null
+    # }
     $command.Dispose()
 
     Write-Verbose $Query
