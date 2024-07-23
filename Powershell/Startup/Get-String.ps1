@@ -17,8 +17,8 @@
     )
 
     switch ($PSCmdlet.ParameterSetName) {
-        "DatabaseParameterSet" { "[$Database]" }
-        "TableParameterSet"    { "[$Table]" }
-        "FieldParameterSet"    { "[$Table].[$Field]" }
+        "DatabaseParameterSet" { "$Database" }
+        "TableParameterSet"    { "$Table" }
+        "FieldParameterSet"    { "$Table.$Field" }
         default { $PSCmdlet.ParameterSetName }
     }

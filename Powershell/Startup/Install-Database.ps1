@@ -91,7 +91,7 @@ process {
 
     if ($AsJob) {
         $p.Remove('AsJob')
-        Start-Job {
+        Start-ThreadJob {
             param($dockerScript, $Path, $p)
             & $dockerScript -Install $Path @p
         } -ArgumentList $dockerScript, $Path, $p

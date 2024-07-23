@@ -54,12 +54,12 @@ process {
     $sourceRef = git rev-parse --symbolic-full-name HEAD |
                     Select-String "(?:refs/heads/)(.*)" |
                     ForEach-Object { $_.Matches.Groups[1].Value }
-    $targetRef = git log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit -20 |
-                    Select-String "\b(master|main|release/[\d-]+)\b" |
+    $targetRef = git log --color --graph --pretty=format:'%C(auto)%h%C(reset) - %s%C(auto)%d%C(reset)' --abbrev-commit -40 |
+                    Select-String "origin/(master|main|release/[\d-]+)\b" |
                     ForEach-Object { $_.Matches.Groups[1].Value } |
                     Select-Object -First 1
 
-    if ($sourceRef -match ("^(master|release/)")) {
+    if ($sourceRef -match ("^(main|master|release/)")) {
         throw "Can not create a pull request for $sourceRef"
     }
 
@@ -105,7 +105,7 @@ process {
     }
 
     $targetRepositoryId = $sourceRepositoryId | Select-Object -First 1
-    $url = "https://dev.azure.com/rocom-service/TauOffice/_git/TauOffice/pullrequestcreate?sourceRef=$sourceRef&targetRef=$targetRef&sourceRepositoryId=$sourceRepositoryId&targetRepositoryId=$targetRepositoryId"
+    $url = "https://$((git config --get remote.origin.url) -split "@" | Select-Object -Last 1)/pullrequestcreate?sourceRef=$sourceRef&targetRef=$targetRef&sourceRepositoryId=$sourceRepositoryId&targetRepositoryId=$targetRepositoryId"
 
     Start-Process $url
 

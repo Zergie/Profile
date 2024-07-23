@@ -128,7 +128,7 @@ end {
 
                 "\.(ACF|ACR|ACM)$" {
                     git restore "$item"
-                    Start-Job -ArgumentList $item.FullName {
+                    Start-ThreadJob -ArgumentList $item.FullName {
                         param( [string] $item )
                         & "C:\Program Files\Git\usr\bin\patch.exe" "$item" "$item.patch" | Out-Null
                         & "C:\Program Files\Git\usr\bin\unix2dos.exe" "$item" | Out-Null

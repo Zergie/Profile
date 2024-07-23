@@ -117,9 +117,7 @@ if ($Progress) {
             ConvertTo-Csv |
             ConvertFrom-Csv
     } else {
-        $result = Invoke-Sqlcmd -Database $Database -Query $Query |
-            ConvertTo-Csv |
-            ConvertFrom-Csv
+        $result = Invoke-Sqlcmd -Database $Database -Query $Query
     }
 
 
@@ -133,6 +131,25 @@ if ($Progress) {
 
         Get-ChildItem $OutFile
     } else {
-        $result
+        # $result
+        $result |
+            ForEach-Object {
+                $props = $_.psobject.Properties.Name
+
+                if ("LetzteDbRevision" -in $props) {
+                    $_.LetzteDbRevision = ([int]($_.LetzteDbRevision[0])).ToString("000")
+                }
+                if ("MandantDbRevision" -in $props) {
+                    $_.MandantDbRevision = ([int]($_.MandantDbRevision[0])).ToString("000")
+                }
+
+                if ($PSBoundParameters.ContainsKey("Table")) {
+                    $_ |
+                        Select-Object -ExcludeProperty RowError,RowState,HasErrors,ItemArray,Table |
+                        Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table -PassThru
+                } else {
+                    $_
+                }
+            }
     }
 }

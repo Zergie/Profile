@@ -344,7 +344,7 @@ end {
         $wshell.SendKeys("{ENTER}")
         while (-not $wshell.AppActivate("Microsoft Visual Basic for Applications")) { Start-Sleep .25 }
 
-        $message = Start-Job {
+        $message = Start-ThreadJob {
             Add-Type '
                 using System;
                 using System.Runtime.InteropServices;

@@ -40,7 +40,7 @@ Write-Host "Watching file: $path"
 Get-ChildItem $path | Remove-Item
 Set-Content $path ""
 
-$watcher = Start-Job {
+$watcher = Start-ThreadJob {
     param($Path)
     if ("TauError" -in $Path) {
         Get-Content -Path $path -Encoding 1252 -Wait

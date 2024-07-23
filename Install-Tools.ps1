@@ -149,6 +149,8 @@ $junctions = @(
 
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\secrets.json"
                           destination = "$PSScriptRoot\Powershell\secrets.json"}
+        [pscustomobject]@{source      = "$PSScriptRoot\secrets\Locations.json"
+                          destination = "$PSScriptRoot\Powershell\Locations.json"}
 
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\PhonerLite"
                           destination = "$env:USERPROFILE\AppData\Roaming\PhonerLite"}

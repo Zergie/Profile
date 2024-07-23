@@ -115,7 +115,7 @@ param(
 
     [Alias('As')]
     # [Microsoft.SqlServer.Management.PowerShell.OutputType] # error: Unable to find type [Microsoft.SqlServer.Management.PowerShell.OutputType]
-    [ValidateSet('DataRows','DataSet','DataTables', 'Json', 'Csv', 'ReplItem')]
+    [ValidateSet('DataRows','DataSet','DataTables', 'Json', 'Csv', 'ReplItem', 'Array')]
     [string]
     ${OutputAs},
 
@@ -154,6 +154,11 @@ process {
             $PSBoundParameters.Remove('OutputAs') | Out-Null
             & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters |
                 ConvertTo-Csv
+        } elseif ($PSBoundParameters['OutputAs'] -eq 'Array') {
+            $PSBoundParameters.Remove('OutputAs') | Out-Null
+            & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters |
+                ConvertTo-Csv |
+                ConvertFrom-Csv
         } elseif ($PSBoundParameters['OutputAs'] -eq 'Json') {
             $PSBoundParameters.Remove('OutputAs') | Out-Null
             & 'SqlServer\Invoke-Sqlcmd' @PSBoundParameters |

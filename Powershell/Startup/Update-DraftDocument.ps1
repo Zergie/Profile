@@ -29,8 +29,8 @@ $mappings = @{
                 Output       = ''
                 ScriptBlock  = {
                     param([string] $file, [string] $output)
-                    
-                    $hwnd_terminal = Start-Job {
+
+                    $hwnd_terminal = Start-ThreadJob {
                         (Add-Type `
                         -MemberDefinition '[DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
                         ' `
@@ -41,12 +41,12 @@ $mappings = @{
                     $process_old = Get-Process 'Balsamiq Mockups 3' |
                                         Where-Object MainWindowTitle -like "*$file*" |
                                         Select-Object -First 1
-                    
+
                     if ($null -eq $process_old) {
                         $process = Start-Process `
                                         -PassThru `
                                         -FilePath "C:\Program Files (x86)\Balsamiq Mockups 3\Balsamiq Mockups 3.exe" `
-                                        -ArgumentList @( 
+                                        -ArgumentList @(
                                             '"$file.FullName"'
                                         )
                         $process.WaitForInputIdle()
@@ -70,10 +70,10 @@ $mappings = @{
                         $type::SetForegroundWindow($hwnd) | Out-Null
                     }
 
-                    Start-Job -ScriptBlock $setForegroundWindow -ArgumentList $process_old.MainWindowHandle | Wait-Job | Receive-Job
+                    Start-ThreadJob -ScriptBlock $setForegroundWindow -ArgumentList $process_old.MainWindowHandle | Wait-Job | Receive-Job
 
                     Write-Host $output
-                    Start-Job -ArgumentList $output {
+                    Start-ThreadJob -ArgumentList $output {
                         param([string] $output)
                         Add-Type -AssemblyName System.Windows.Forms
                         [System.Windows.Forms.SendKeys]::SendWait("+^R")
@@ -81,9 +81,9 @@ $mappings = @{
                         [System.Windows.Forms.SendKeys]::SendWait("$output{Enter}")
                         Start-Sleep -Milliseconds 1000
                         [System.Windows.Forms.SendKeys]::SendWait("{Tab}{Enter}")
-                    } | Wait-Job | Receive-Job               
+                    } | Wait-Job | Receive-Job
 
-                    Start-Job -ScriptBlock $setForegroundWindow -ArgumentList $hwnd_terminal | Wait-Job | Receive-Job
+                    Start-ThreadJob -ScriptBlock $setForegroundWindow -ArgumentList $hwnd_terminal | Wait-Job | Receive-Job
 
                     $process_old.WaitForInputIdle()
                     if ($null -ne $process) {
@@ -109,9 +109,9 @@ $processes = Get-ChildItem |
             }
 
             if ($outdated) {
-                Get-ChildItem $output -ErrorAction SilentlyContinue | 
+                Get-ChildItem $output -ErrorAction SilentlyContinue |
                     Remove-Item -Force -Recurse
-                
+
                 if ([string]::IsNullOrWhiteSpace($mapping.Output)) {
                     New-Item -ItemType Directory -Path $output -ErrorAction SilentlyContinue | Out-Null
                 }
@@ -137,28 +137,28 @@ $processes = Get-ChildItem |
     }
 
 foreach ($p in $processes) {
-    $p.WaitForExit() 
+    $p.WaitForExit()
 }
 
 function Invoke-VBScript {
     param(
          [Parameter(Mandatory = $true)]
-         [string] 
+         [string]
          $script
     )
     $path = "$($env:TEMP)\script.vbs"
     Set-Content -Path "$path" -Value $script
 
     $line = 0
-    $script -split "`n" | 
+    $script -split "`n" |
         ForEach-Object `
             -Begin   {"== vba script ==" } `
-            -Process { 
+            -Process {
                 $line++
                     $line.ToString().PadRight(3) + $_.ToString()
             } `
             -End     { "== end vba script ==" } |
-        Write-Verbose 
+        Write-Verbose
 
     cscript.exe "$path" //nologo
     Remove-Item "$path"

@@ -17,7 +17,7 @@ $main       = $Database -split '_' | Select-Object -SkipLast 1 | Join-String -Se
 if ("Mandant" -in (. "$PSScriptRoot\Get-SqlTable.ps1" -Database $department).name) {
     $main = $department
 }
-$logwatcher = Start-Job {
+$logwatcher = Start-ThreadJob {
     $logfile    = "C:\Program Files (x86)\Tau-Office\AdminTool\AdminTool.log"
     Get-Content -Path $logfile -Encoding utf8 -Tail 20
     Get-Content -Path $logfile -Encoding utf8 -Wait -Tail 1 | Select-Object -Skip 1

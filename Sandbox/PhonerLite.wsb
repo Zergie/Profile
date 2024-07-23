@@ -1,0 +1,23 @@
+<Configuration>
+	<VGpu>Enable</VGpu>
+	<Networking>Enable</Networking>
+	<AudioInput>Default</AudioInput>
+	<VideoInput>Default</VideoInput>
+	<ProtectedClient>Default</ProtectedClient>
+	<PrinterRedirection>Default</PrinterRedirection>
+	<ClipboardRedirection>Default</ClipboardRedirection>
+	<MemoryInMB></MemoryInMB>
+	<MappedFolders>
+		<MappedFolder>
+			<HostFolder>C:\Program Files (x86)\PhonerLite</HostFolder>
+			<ReadOnly>true</ReadOnly>
+		</MappedFolder>
+		<MappedFolder>
+			<HostFolder>C:\GIT\Profile\secrets\PhonerLite</HostFolder>
+            <SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Roaming\PhonerLite</SandboxFolder>
+		</MappedFolder>
+	</MappedFolders>
+	<LogonCommand>
+		<Command>C:\Users\WDAGUtilityAccount\Desktop\PhonerLite\PhonerLite.exe</Command>
+	</LogonCommand>
+</Configuration>

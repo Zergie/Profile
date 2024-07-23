@@ -9,7 +9,7 @@ process {
     $expression = "`"$dockerScript`" -Start"
     if ($AsJob) {
         $expression = @(
-            "Start-Job {"
+            "Start-ThreadJob {"
             "pwsh -NoProfile -File"
             $expression
             "}"

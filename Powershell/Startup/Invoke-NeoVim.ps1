@@ -4,6 +4,9 @@ $cmdline    = "vi $($args | Join-String -Separator ' ') "
 
 if ($null -eq (Get-Process -Name nvim -ErrorAction SilentlyContinue)) {
     wt new-tab "C:/tools/neovim/nvim-win64/bin/nvim.exe" --listen $servername
+    $new_process = $true
+} else {
+    $new_process = $false
 }
 
 $editorArgs = @{
@@ -22,6 +25,8 @@ $editorArgs = @{
             # defocus editor
             "-cc"
             "silent !wt focus-tab -t 0"
+        } elseif ($new_process) {
+            # new process are already focused
         } else {
             # focus editor
             "-cc"

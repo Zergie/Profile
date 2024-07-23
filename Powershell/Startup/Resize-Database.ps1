@@ -1,23 +1,23 @@
 
     param(
         [Parameter(Mandatory=$true)]
-        [string] 
+        [string]
         $Database
     )
 Begin {}
 Process {
     Invoke-SqlCmd -Database master -Query "
-    DECLARE @kill varchar(MAX) = '';  
-    
-    SELECT @kill = @kill + 'kill ' + CONVERT(varchar(5), session_id) + ';' 
+    DECLARE @kill varchar(MAX) = '';
+
+    SELECT @kill = @kill + 'kill ' + CONVERT(varchar(5), session_id) + ';'
     FROM sys.dm_exec_sessions
     WHERE database_id  = db_id('$Database')
-    
+
     EXEC(@kill);" -Debug
 
     $old_size = (Invoke-Sqlcmd -Database $Database -Query "SELECT sum(size) FROM sys.database_files").Column1 * 8/1024
 
-    $job = Start-Job -ArgumentList $Database,$PSDefaultParameterValues -ScriptBlock {
+    $job = Start-ThreadJob -ArgumentList $Database,$PSDefaultParameterValues -ScriptBlock {
         param($Database,$dict)
         $PSDefaultParameterValues = $dict
 
@@ -28,12 +28,12 @@ Process {
 
         Invoke-Sqlcmd -Database $Database -Query "DBCC SHRINKFILE ([$mdf], 0)" | Out-Null
         Invoke-Sqlcmd -Database $Database -Query "DBCC SHRINKFILE ([$log], 0)" | Out-Null
-        
+
         Invoke-Sqlcmd -Database master -Query "ALTER DATABASE [$Database] SET RECOVERY FULL"
         Invoke-Sqlcmd -Database master -Query "ALTER DATABASE [$Database] MODIFY FILE (Name=$mdf, MAXSIZE=Unlimited)"
         Invoke-Sqlcmd -Database master -Query "ALTER DATABASE [$Database] MODIFY FILE (Name=$log, MAXSIZE=Unlimited)"
     }
-    
+
     While ($job.State -eq "Running") {
         $request = Invoke-Sqlcmd `
                         -Database master `
@@ -55,4 +55,3 @@ Process {
     }
 }
 End {}
-

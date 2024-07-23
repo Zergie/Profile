@@ -79,7 +79,7 @@ if ($firstUse) {
 
     # show devops agent status
     Start-Action "Show devops agent status"
-        Start-Job {
+        Start-ThreadJob {
             param([pscustomobject] $oldProfiler, [pscustomobject] $oldVariables)
 
             $Connectivity = Get-NetConnectionProfile |
@@ -109,17 +109,26 @@ if ($firstUse) {
                     } |
                     ConvertTo-Json
             }
-        } -ArgumentList $profiler.last, $profiler.variables | Out-Null
+        } -Name DevOps -ArgumentList $profiler.last, $profiler.variables | Out-Null
     Complete-Action
 
     # cache choco outdated
     Start-Action "Check chocolaty packages"
-        Start-Job {
+        Start-ThreadJob {
             . "$using:PSScriptRoot/Startup/Invoke-Chocolatey.ps1" outdated |
                 Where-Object pinned -eq $false |
                 Where-Object name -NotLike "*.install" |
                 ConvertTo-Json -Depth 9 |
                 Out-File $env:TEMP\chocolaty.json -Encoding utf-8
+        } | Out-Null
+    Complete-Action
+
+    Start-Action "Logging location"
+        Start-ThreadJob {
+            Invoke-RestMethod "https://ipapi.co/json/" |
+                Add-Member -NotePropertyName date -NotePropertyValue (Get-Date) -PassThru |
+                ConvertTo-Json -Compress |
+                Add-Content -PassThru "$using:PSScriptRoot/Locations.json" -Encoding UTF8
         } | Out-Null
     Complete-Action
 }
@@ -154,6 +163,8 @@ Complete-Action
 
 # set alias to my programs
 Start-Action "Set alias to my programs"
+    Import-Module 'gsudoModule'
+    Set-Alias sudo    gsudo
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
@@ -416,7 +427,7 @@ if  ($firstUse) {
     Start-Action "Finish job"
         $variables = @{}
         Get-Job |
-            Where-Object Name -NE "mssql" |
+            Where-Object Name -EQ DevOps |
             ForEach-Object {
                 Wait-Job $_ | Out-Null
                 Receive-Job $_ |

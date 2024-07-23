@@ -65,7 +65,7 @@ end {
 
     if ($SetAsWallpaper) {
         Write-Host "Setting Wallpaper.."
-        Start-Job -ArgumentList (Resolve-Path $OutFile).Path, "Span" {
+        Start-ThreadJob -ArgumentList (Resolve-Path $OutFile).Path, "Span" {
             param(
                 [parameter(Mandatory=$True)]
                 [string]$Image,
@@ -83,7 +83,7 @@ end {
                 "Center"  {"0"}
                 "Span"    {"22"}
             }
-             
+
             If($Style -eq "Tile") {
                 New-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -PropertyType String -Value $WallpaperStyle -Force
                 New-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -PropertyType String -Value 1 -Force
@@ -95,20 +95,20 @@ end {
             Add-Type -TypeDefinition @"
             using System;
             using System.Runtime.InteropServices;
-              
+
             public class Params
             {
                 [DllImport("User32.dll",CharSet=CharSet.Unicode)]
                 public static extern int SystemParametersInfo (Int32 uAction, Int32 uParam, String lpvParam, Int32 fuWinIni);
             }
 "@
-              
+
             $SPI_SETDESKWALLPAPER = 0x0014
             $UpdateIniFile = 0x01
             $SendChangeEvent = 0x02
-          
+
             $fWinIni = $UpdateIniFile -bor $SendChangeEvent
-          
+
             [Params]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $Image, $fWinIni)
         } | Wait-Job | Remove-Job
     }
