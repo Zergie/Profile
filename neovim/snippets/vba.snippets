@@ -51,6 +51,15 @@ snippet setrs
 snippet setrsro
 	Set rs = rcOpenRecordset(GLBdB.GdB, "${1:Query}", dbOpenForwardOnly, dbReadOnly)
 
+snippet rcexe
+	rcExecute GLBdB.GdB, "${1:Query}"
+snippet rcInsert
+	rcExecute GLBdB.GdB, buildInsert("${1:Table}", "${2:Field}", "${3:Value}")
+snippet rcUpdate
+	rcExecute GLBdB.GdB, buildUpdate("${1:Table}", "${2:Criteria}", "${3:Field}", "${4:Value}")
+snippet rcDelete
+	rcExecute GLBdB.GdB, buildDelete("${1:Table}", "${2:Criteria}")
+
 snippet if
 	If ${1:Condition} Then
 snippet else

@@ -50,9 +50,9 @@ Process {
         $Data = [pscustomobject]$Data
     }
     $PassThruData = $Data
-    $Data = $Data |
-                ForEach-Object psadapted -PipelineVariable item |
-                Get-Member -MemberType Property |
+    $Data = $Data.psextended |
+                ForEach-Object {$_} -PipelineVariable item |
+                Get-Member -MemberType NoteProperty |
                 Where-Object Name -NotLike "::*" |
                 Where-Object Name -NotIn $ExcludeProperty |
                 ForEach-Object {
@@ -78,6 +78,7 @@ Process {
     $Query += "($(($Data.Name | ForEach-Object { "[$_]" }) -join ","))"
     $Query += " VALUES "
     $Query += "($(($Data.Name | ForEach-Object { "@$_" }) -join ","))"
+    Write-Verbose $Query
 
     $command = $connection.CreateCommand()
     $command.CommandText = $Query
@@ -91,7 +92,7 @@ Process {
                 $sql_data_type = $data_types | Where-Object column_name -eq $p.Name | Select-Object -First 1 | ForEach-Object data_type
 
                 if ($sql_data_type -eq "datetime") {
-                    if ($p.Value.Length -lt 5) {
+                    if ($p.Value.ToString().Length -lt 5) {
                         $db_value = [System.DBNull]::Value
                     } else {
                         $db_value = $(switch -Regex ($p.Value) {

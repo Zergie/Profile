@@ -134,7 +134,7 @@ if ($Progress) {
         $props = $result |
             Select-Object -First 1 |
             ForEach-Object psadapted |
-            Get-Member
+            Get-Member -MemberType Property
 
         $result |
             ForEach-Object {
@@ -145,12 +145,43 @@ if ($Progress) {
                     $_.MandantDbRevision = ([int]($_.MandantDbRevision[0])).ToString("000")
                 }
 
+                $item = $_
+                $props |
+                    Where-Object Definition -Like "datetime *" |
+                    ForEach-Object {
+                        $v = $item.($_.Name)
+                        if ($v -eq [DBNull]::Value) {
+                        } elseif ($v.Year -eq 1899 -and $v.Month -eq 12 -and $v.Day -eq 30) {
+                            $item.psadapted |
+                                Add-Member `
+                                    -Force `
+                                    -NotePropertyName $_.Name `
+                                    -NotePropertyValue ([System.TimeOnly]::FromDateTime($v))
+                        } elseif ($v.Hour -eq 0 -and $v.Minute -eq 0 -and $v.Second -eq 0) {
+                            $item.psadapted |
+                                Add-Member `
+                                    -Force `
+                                    -NotePropertyName $_.Name `
+                                    -NotePropertyValue ([System.DateOnly]::FromDateTime($v))
+                        }
+                    }
+
                 if ($PSBoundParameters.ContainsKey("Table") -and !$PSBoundParameters.ContainsKey("Fields")) {
                     $_.psadapted |
-                        Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table -PassThru
-                } else {
-                    $_.psadapted
+                        Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table
                 }
+
+                if (!$PSBoundParameters.ContainsKey('Fields')) {
+                    $Fields = @()
+                    $Fields += Invoke-Sqlcmd `
+                        -Database $Database `
+                        -Query "SELECT column_name FROM Information_Schema.columns WHERE table_name='$Table' ORDER BY ORDINAL_POSITION" |
+                        ForEach-Object column_name
+                    if ($PSBoundParameters.ContainsKey("Table")) {
+                        $Fields += "::Table"
+                    }
+                }
+                $_.psadapted | Select-Object -Property $Fields
             }
     }
 }

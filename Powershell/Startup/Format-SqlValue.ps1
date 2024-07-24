@@ -9,9 +9,10 @@
             'System.DateTime' { "'$( $Value.ToString("yyyy-MM-ddTHH:mm:ss") )'" }
             'System.String'   { "'$( $Value -replace "'","''" )'" }
             'System.Boolean'  { "$( if ($Value) { 1 } else { 0 } )" }
+            'System.Collections.ArrayList'
+                              { "($( ($Value | Format-SqlValue) -join ',') )" }
             'System.Object[]' { "($( ($Value | Format-SqlValue) -join ',') )" }
             'System.DBNull'   { "NULL" }
             default           { "$Value" }
         }
     }
-
