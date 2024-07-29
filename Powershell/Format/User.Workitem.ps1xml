@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <?xml-model href="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd"?>
-
 <Configuration>
     <ViewDefinitions>
         <View>
@@ -60,6 +59,7 @@ switch ($workitem.fields.'System.State') {
                             <TableColumnItem>
                                 <ScriptBlock>$_.fields.'Microsoft.VSTS.Scheduling.Effort'</ScriptBlock>
                             </TableColumnItem>
+
                         </TableColumnItems>
                     </TableRowEntry>
                 </TableRowEntries>

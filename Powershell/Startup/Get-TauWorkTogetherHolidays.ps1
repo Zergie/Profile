@@ -203,6 +203,7 @@ end {
     $holidays = (Invoke-RestMethod "https://feiertage-api.de/api/?jahr=$((Get-Date).Year)").BY
     $holidays = $holidays |
                     Get-Member -Type NoteProperty |
+                    Where-Object Name -NotLike Augsburger* |
                     ForEach-Object{
                         [pscustomobject]@{
                             id     = $null

@@ -21,20 +21,22 @@ process {
     Write-Host -ForegroundColor Cyan $expression
     Invoke-Expression $expression
 
-    If ($AsJob) {
-    } else {
-        $seconds = 10
-        $success = $false
-        while (! $success) {
-            Write-Progress -Activity "Waiting for SQL Server to start up..." -SecondsRemaining $seconds
+    # docker ps --format json 2> nul |
+    #     ConvertFrom-Json |
+    #     Where-Object names -Like mssql |
+    #     ForEach-Object Status
 
-            Start-Sleep -Seconds 2
-            $seconds -= 2
+    $seconds = 10
+    $success = $false
+    while (! $success) {
+        Write-Progress -Activity "Waiting for SQL Server to start up..." -SecondsRemaining $seconds
 
-            try {
-                Invoke-Sqlcmd -Database master -Query "SELECT name, compatibility_level, state_desc FROM sys.databases ORDER BY name"
-                $success = $true
-            } catch {}
-        }
+        Start-Sleep -Seconds 2
+        $seconds -= 2
+
+        try {
+            Invoke-Sqlcmd -Database master -Query "SELECT name, compatibility_level, state_desc FROM sys.databases ORDER BY name"
+            $success = $true
+        } catch {}
     }
 }

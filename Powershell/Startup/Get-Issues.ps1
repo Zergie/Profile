@@ -523,6 +523,13 @@ process {
             ForEach-Object { $_.url.Replace("/_apis/wit/workItems/", "/_workitems/edit/") } |
             ForEach-Object { Start-Process $_ }
     }
+
+    if ($PSBoundParameters.ContainsKey('Iteration')) {
+        $sum = $workitems |
+                    Measure-Object -Sum {$_.fields.'Microsoft.VSTS.Scheduling.Effort'} |
+                    ForEach-Object Sum
+        "`nPlanned Effort: $sum"
+    }
 }
 end {
     $PSDefaultParameterValues.Remove("ForEach-Object:WhatIf")

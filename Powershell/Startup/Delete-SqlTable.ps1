@@ -39,7 +39,7 @@ param(
 
     # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Position=1)]
-    [string[]]
+    [string]
     $Filter,
 
     # [Parameter(ParameterSetName='FilterParameterSet')]
