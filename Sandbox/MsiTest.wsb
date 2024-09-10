@@ -1,0 +1,19 @@
+<Configuration>
+	<VGpu>Enable</VGpu>
+	<Networking>Enable</Networking>
+	<AudioInput>Default</AudioInput>
+	<VideoInput>Default</VideoInput>
+	<ProtectedClient>Default</ProtectedClient>
+	<PrinterRedirection>Default</PrinterRedirection>
+	<ClipboardRedirection>Default</ClipboardRedirection>
+	<MemoryInMB></MemoryInMB>
+	<MappedFolders>
+		<MappedFolder>
+			<HostFolder>C:\temp</HostFolder>
+			<ReadOnly>true</ReadOnly>
+		</MappedFolder>
+	</MappedFolders>
+	<LogonCommand>
+		<Command>explorer C:\Users\WDAGUtilityAccount\Desktop\temp</Command>
+	</LogonCommand>
+</Configuration>

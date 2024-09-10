@@ -7,7 +7,7 @@ param(
     $Bcc = @("wpuchinger@rocom-service.de"),
 
     [string[]]
-    $Cc = @("jriedl@rocom.de"),
+    $Cc,
 
     [double]
     $WaitHours
@@ -200,16 +200,6 @@ $branches |
         Set-ExcelColumn -Column 2 -Width 12 -HorizontalAlignment Center -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None
         Set-ExcelColumn -Column 3 -Width 128 -HorizontalAlignment Left -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None -WrapText
         Set-ExcelRow  -Row 2 -Bold -HorizontalAlignment Left
-        $last = $null
-        $ws.Cells["A:A"] |
-            ForEach-Object {
-                if ($null -ne $last -and $_.Value -eq $last.Value) {
-                    Set-ExcelRange  -Range "A$($last.Start.row):A$($_.Start.row)" -Merge
-                    Set-ExcelRange  -Range "B$($last.Start.row):B$($_.Start.row)" -Merge
-                }
-                $last = $_
-            }
-        Set-ExcelRange -Range "A1:C1" -Merge
         $last_commit = ""
         $index = 0
         $color = $null
@@ -234,6 +224,18 @@ $branches |
                 }
                 $last_commit = $_.Value
             }
+        $last = $null
+        $ws.Cells["A:A"] |
+            ForEach-Object {
+                if ($null -ne $last -and $_.Value -eq $last.Value) {
+                    Set-ExcelRange -Range "A$($_.Start.row)" -Value ""
+                    Set-ExcelRange -Range "A$($last.Start.row):A$($_.Start.row)" -Merge
+                    Set-ExcelRange -Range "B$($last.Start.row):B$($_.Start.row)" -Merge
+                } else {
+                    $last = $_
+                }
+            }
+        Set-ExcelRange -Range "A1:C1" -Merge
         Close-ExcelPackage $excel
     }
 Remove-Module ImportExcel
@@ -251,9 +253,9 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 
 # compose mail
 $mail = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
-$Recipient | ForEach-Object { $mail.To.Add($_) }
-$Bcc       | ForEach-Object { $mail.Bcc.Add($_) }
-$Cc        | ForEach-Object { $mail.Cc.Add($_) }
+foreach ($item in $Recipient) { $mail.To.Add($item) }
+foreach ($item in $Bcc)       { $mail.Bcc.Add($item) }
+foreach ($item in $Cc)        { $mail.Cc.Add($item) }
 $mail.ReplyTo = "noreply@rocom.de"
 $mail.Subject = "Release Notes"
 $mail.Body    = @"

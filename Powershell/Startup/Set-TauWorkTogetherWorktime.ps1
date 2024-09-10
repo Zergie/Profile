@@ -38,9 +38,20 @@ param (
                    ValueFromPipelineByPropertyName=$false)]
         [ValidateNotNullOrEmpty()]
         [switch]
-        $OverviewOnly
+        $OverviewOnly,
+
+        [Parameter(Mandatory=$false,
+                   ParameterSetName="DefaultParameterSet",
+                   ValueFromPipeline=$false,
+                   ValueFromPipelineByPropertyName=$false)]
+        [ValidateNotNullOrEmpty()]
+        [switch]
+        $Force
 )
 begin {
+    Set-Alias "Get-LocationHistory" "$PSScriptRoot\Get-LocationHistory.ps1"
+    Set-Alias "Invoke-CefDownloader" "$PSScriptRoot\Invoke-CefDownloader.ps1"
+
     function Add-Day {
         param (
             [Parameter(Mandatory=$true, Position=1)]
@@ -73,14 +84,19 @@ begin {
             " |
             Out-Null
         Start-Sleep -Milliseconds 500
-
     }
 }
 process {
 }
 end {
     # get worktimes from 'Tätigkeitsnachweis'
-    $pkgobj = New-Object -TypeName OfficeOpenXml.ExcelPackage -ArgumentList 'C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx'
+    try {
+        $pkgobj = New-Object -TypeName OfficeOpenXml.ExcelPackage -ArgumentList 'C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx'
+    } catch {
+        Install-Module ImportExcel
+        Import-Module ImportExcel
+        $pkgobj = New-Object -TypeName OfficeOpenXml.ExcelPackage -ArgumentList 'C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx'
+    }
     $WorkTimes = $pkgobj.Workbook.Worksheets["Arbeitszeiten"].Cells |
         Where-Object { $_.Start.Row -ge 3 } |
         Group-Object { $_.Start.Row } |
@@ -97,16 +113,32 @@ end {
                 [pscustomobject]$obj
            }
         } |
-        Where-Object { $_.date.Month -eq $Month }
+        Where-Object { $_.date.Month -eq $Month } |
+        Where-Object { $null -ne $_.start }
     $pkgobj.Dispose()
     Remove-Variable pkgobj, columns
-    # $WorkTimes = Import-Excel -Path $Path -WorksheetName Arbeitszeiten -StartRow 3 |
-    #                 Where-Object { $_.date.Month -eq $Month }
+
+    # add location to worktimes
+    $locations = @{}
+    Get-LocationHistory |
+        Where-Object { $_.date.Year -eq $Year } |
+        Where-Object { $_.date.Month -eq $Month } |
+        Where-Object org -NotLike "KOMRO *" |
+        ForEach-Object { $locations[$_.date.date] = "Büro" }
+    $WorkTimes |
+        ForEach-Object {
+            if ($locations.ContainsKey($_.date.date)) {
+                $_ | Add-Member NoteProperty Location $locations[$_.date.date]
+            } else {
+                $_ | Add-Member NoteProperty Location "Homeoffice"
+            }
+        }
+    Remove-Variable locations
 
     # remove weekends only
     $Days = $Days | Where-Object { $_ -in $WorkTimes.date.Day }
     if (($Days | Measure-Object).Count -lt 10) {
-        if (! $PSBoundParameters.ContainsKey("Days")) {
+        if (! $PSBoundParameters.ContainsKey("Days") -and ! $Force) {
             throw "Less than 10 workdays found: $($Days | ConvertTo-Json -Compress)"
         }
     }
@@ -132,19 +164,18 @@ end {
     Write-Host "open new browser .."
     . "$PSScriptRoot/Get-TauWorkTogetherHolidays.ps1" -Year $Year -Month $Month -KeepBrowser |
         Out-Null # reuse login logic
-    $cefDownloader = Get-Process CefSharpDownloader
 
     try {
         if (! $OverviewOnly) {
             # get the current browser state
-            Invoke-WebRequest -Method Post -Uri http://localhost:8888 | ForEach-Object Out-Null
+            Invoke-CefDownloader
 
             # find days that needs to be created and create them
-            Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body "https://rocom.tau-work-together.de/worktime/month/$Month/$Year/21" | Out-Null
+            Invoke-CefDownloader -Action Get -Body "https://rocom.tau-work-together.de/worktime/month/$Month/$Year/21" | Out-Null
             Start-Sleep -Milliseconds 500
             $Days |
                 Where-Object { $_ -notin (
-                                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/content |
+                                            Invoke-CefDownloader -Action Content |
                                                 ForEach-Object Content |
                                                 Select-String -Pattern "\d{2}\.\d{2}\.$Year" -AllMatches |
                                                 ForEach-Object Matches |
@@ -169,11 +200,13 @@ end {
                                     date = $_.date
                                     start = $_.start
                                     end = $mid
+                                    location = $_.Location
                                 }
                                 [pscustomobject] @{
                                     date = $_.date
-                                    start = $mid.AddMinutes((Get-Random -Minimum 29 -Maximum 32))
+                                    start = $mid.AddMinutes((Get-Random -Minimum 30 -Maximum 35))
                                     end = $_.end
+                                    location = $_.Location
                                 }
                             } else {
                                 $_
@@ -183,11 +216,11 @@ end {
                             Write-Host "add workhours ($($_.start.ToString("HH:mm")) - $($_.end.ToString("HH:mm")))"
 
                             Start-Sleep -Milliseconds 500
-                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
-                                              -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | Out-Null
+                            Invoke-CefDownloader -Action Js `
+                                -Body "Array.from(document.querySelectorAll('.btn')).find(el => el.textContent === 'Arbeitszeit erfassen ').click()" | Out-Null
 
                             Start-Sleep -Milliseconds 500
-                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                            Invoke-CefDownloader -Action Js -Body "
                                 var startTime = document.querySelectorAll('input[type=time]')[0]
                                 startTime.value = '$($_.start.ToString("HH:mm"))';
                                 startTime.dispatchEvent(new Event('change', { bubbles: true }));
@@ -200,13 +233,13 @@ end {
                                 endTime.dispatchEvent(new Event('input', { bubbles: true }));
 
                                 var workType = document.querySelectorAll('select.form-control')[1];
-                                Array.from(workType.options).find(el => el.textContent === 'Homeoffice').selected = true
+                                Array.from(workType.options).find(el => el.textContent === '$($_.location)').selected = true
                                 workType.dispatchEvent(new Event('change', { bubbles: true }));
                                 workType.dispatchEvent(new Event('selectionchange', { bubbles: true }));
                             " | Out-Null
 
                             Start-Sleep -Milliseconds 500
-                            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                            Invoke-CefDownloader -Action Js -Body "
                                 Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Speichern').click()
                             " | Out-Null
                         }
@@ -214,10 +247,10 @@ end {
         }
 
         # create overview for user
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/get `
+        Invoke-CefDownloader -Action Get `
             -Body "https://rocom.tau-work-together.de/worktime/month/$Month/$Year/21" | Out-Null
         Start-Sleep -Milliseconds 1000
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/js `
+        Invoke-CefDownloader -Action Js `
             -Body "Array.from(document.querySelectorAll('tr')).forEach(row => console.log(Array.from(row.children).map(e => e.innerText).join('\t')))" |
             ForEach-Object Content |
             ConvertFrom-Json |
@@ -291,10 +324,10 @@ end {
                 } `
 
         # close browser
-        Invoke-WebRequest -Method Post -Uri http://localhost:8888/quit | Out-Null
+        Invoke-CefDownloader -Action Quit | Out-Null
     }
     catch {
-        $cefDownloader.Kill()
+        Invoke-CefDownloader -Kill
         throw
     }
 }

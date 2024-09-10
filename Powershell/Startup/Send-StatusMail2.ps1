@@ -279,6 +279,14 @@ Process {
                     $ret = [pscustomobject]@{ workitem = $_; ToDo = $null; Doing = $null; Done = $null; }
                 }
 
+                if ($rev.fields.'System.State' -eq 'To Do' -and $null -ne $ret.Doing) {
+                    # ToDo -> Doing -> ToDo
+                    $ret.Done = $rev.fields.'System.ChangedDate'.Date
+                    $ret
+                    $ret = [pscustomobject]@{ workitem = $_; ToDo = $rev.fields.'System.ChangedDate'.Date; Doing = $null; Done = $null; }
+
+                }
+
                 if ($rev.fields.'System.State' -eq 'To Do' -and $null -eq $ret.ToDo) {
                     $ret.ToDo = $rev.fields.'System.ChangedDate'.Date
                 }

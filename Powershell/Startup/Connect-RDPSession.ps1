@@ -1,16 +1,17 @@
+[cmdletbinding()]
 Param
 (
-    [Parameter(
+    [Parameter(ParameterSetName="AddressParameterSetName",
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Address,
 
-    [Parameter(
+    [Parameter(ParameterSetName="AddressParameterSetName",
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Username,
 
-    [Parameter(
+    [Parameter(ParameterSetName="AddressParameterSetName",
                ValueFromPipelineByPropertyName=$true)]
     [string]
     $Password,
@@ -19,7 +20,8 @@ Param
     [string]
     $Name,
 
-    [Parameter(ValueFromPipelineByPropertyName=$true)]
+    [Parameter(ParameterSetName="AddressParameterSetName",
+               ValueFromPipelineByPropertyName=$true)]
     [string]
     $Gateway,
 
@@ -88,29 +90,21 @@ Param
     [string] $AdditionalArguments
 )
 dynamicparam {
-    $RuntimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
-
-    # param Type
-    $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
-    $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
-    $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
-    $ParameterAttribute.ParameterSetName = "TypeParameterSet"
-    $AttributeCollection.Add($ParameterAttribute)
-
-    $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
-            ConvertFrom-Json |
-            ForEach-Object Connect-RDPSession |
-            Get-Member -Type NoteProperty |
-            ForEach-Object Name
-    ))
-    $AttributeCollection.Add($ValidateSetAttribute)
-
-    $RuntimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new("Type", [string], $AttributeCollection)
-    $RuntimeParameterDictionary.Add($RuntimeParameter.Name, $RuntimeParameter)
-
-    return $RuntimeParameterDictionary
+    Set-Alias "New-DynamicParameter" "$PSScriptRoot\New-DynamicParameter.ps1"
+    @(
+        [pscustomobject]@{
+            Mandatory = $true
+            Position = 0
+            Type = [string]
+            Name = "Type"
+            ParameterSetName = "TypeParameterSet"
+            ValidateSet = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
+                ConvertFrom-Json |
+                ForEach-Object Connect-RDPSession |
+                Get-Member -Type NoteProperty |
+                ForEach-Object Name
+        }
+    ) | New-DynamicParameter
 }
 
 Process {

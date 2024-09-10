@@ -6,20 +6,25 @@ param(
     $AsJob
 )
 process {
-    $expression = "`"$dockerScript`" -Start"
     if ($AsJob) {
         $expression = @(
             "Start-ThreadJob {"
-            "pwsh -NoProfile -File"
-            $expression
-            "}"
-        ) | Join-String -Separator " "
+            "pwsh -NoProfile -Command {`n`t"
+            @(
+                "`$dockerScript = '$dockerScript'"
+                "Set-Alias Invoke-Sqlcmd '$PSScriptRoot\Invoke-Sqlcmd.ps2'"
+                ". $PSScriptRoot\$($MyInvocation.MyCommand)"
+            ) | Join-String -Separator `n`t
+            "`n}}"
+        ) | Join-String -Separator ""
     } else {
-        $expression = ". $expression"
+        $expression = ". `"$dockerScript`" -Start"
     }
 
     Write-Host -ForegroundColor Cyan $expression
     Invoke-Expression $expression
+
+    if ($AsJob) { exit }
 
     # docker ps --format json 2> nul |
     #     ConvertFrom-Json |

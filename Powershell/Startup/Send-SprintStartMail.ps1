@@ -32,7 +32,8 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 # get sprint
 $sprint = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=6.0' |
                     ForEach-Object value |
-                    Select-Object -Last 1 |
+                    Where-Object { $_.attributes.finishDate -gt (get-date)} |
+                    Select-Object -First 1 |
                     ForEach-Object {
                         $daysoff = Invoke-RestApi `
                                     -Endpoint "GET https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations/{iterationId}/capacities?api-version=7.1-preview.3" `

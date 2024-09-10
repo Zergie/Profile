@@ -128,11 +128,11 @@ end {
 
                 "\.(ACF|ACR|ACM)$" {
                     git restore "$item"
-                    Start-ThreadJob -ArgumentList $item.FullName {
+                    Start-Job -ArgumentList $item.FullName {
                         param( [string] $item )
                         & "C:\Program Files\Git\usr\bin\patch.exe" "$item" "$item.patch" | Out-Null
                         & "C:\Program Files\Git\usr\bin\unix2dos.exe" "$item" | Out-Null
-                    } | Wait-Job | Remove-Job
+                    } | Wait-Job | Remove-Job # Start-ThreadJob messes with ascii colors
 
                     $lineno = 0
                     $content = Get-Content $item -Encoding 1250 |
@@ -184,7 +184,8 @@ end {
                     } |
                     Out-String |
                     ForEach-Object { $_.Trim() + "`r`n" } |
-                    Set-Content $item -Encoding 1250
+                    Set-Content "$item.new" -Encoding 1250
+                    Move-Item "$item.new" $item -Force
                     break
                 }
 

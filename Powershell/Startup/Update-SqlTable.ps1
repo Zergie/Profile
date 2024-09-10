@@ -84,7 +84,7 @@ Process {
     }
 
     $Query += " SET "
-    $Query += ($Data.psadapted.properties | Where-Object Name -ne $Filter | ForEach-Object {"[$($_.Name)]=@$($_.Name)"} ) -join ","
+    $Query += ($Data.psobject.properties | Where-Object Name -ne $Filter | ForEach-Object {"[$($_.Name)]=@$($_.Name)"} ) -join ","
 
     if ($PSBoundParameters.ContainsKey("Filter")) {
         $Query += " WHERE [$Filter] = @$Filter"
