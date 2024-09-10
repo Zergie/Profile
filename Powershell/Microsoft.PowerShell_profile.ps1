@@ -29,7 +29,11 @@ function Complete-Action {
     $Global:profiler.current.Add($Status, $endtime)
 
     $Global:profiler.runtime = ((Get-Date) - $Global:profiler.start)
-    $percent = [Math]::Max(0, [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds))
+    try {
+        $percent = [Math]::Max(0, [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds))
+    } catch {
+        $percent = 99
+    }
     Write-Progress -Activity "Loading" -Status $Status -PercentComplete $percent
 }
 Write-Progress -Activity "Loading" -Status "Starting" -PercentComplete 1

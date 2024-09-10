@@ -180,8 +180,13 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\OrcaSlicer"
                       destination = "$env:USERPROFILE\AppData\Roaming\OrcaSlicer"}
 
-    # [pscustomobject]@{source      = "$PSScriptRoot\neovim\lua\server_configurations\rsvbalsp.lua"
-    #                   destination = "$PSScriptRoot\neovim\plugged\nvim-lspconfig\lua\lspconfig\server_configurations\rsvbalsp.lua"}
+    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\Library.json"
+                      destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
+
+    if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
+        [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
+                          destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Fusion 360 CAM\Posts\MPCNC.cps"}
+    }
 )
 
 $commands = @(
