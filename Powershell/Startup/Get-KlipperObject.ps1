@@ -26,7 +26,7 @@ dynamicparam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
