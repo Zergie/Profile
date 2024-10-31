@@ -41,8 +41,13 @@ $GitPromptSettings.LocalWorkingStatusSymbol.BackgroundColor         = $GitPrompt
 $GitPromptSettings.AfterStatus.ForegroundColor                      = $GitPromptSettings.BeforeStatus.ForegroundColor
 
 
-$fg1 = 'ffffff'    | Get-RGB
-$bg1 = $palette[0] | Get-RGB
+if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    $fg1 = 'ffffff'    | Get-RGB
+    $bg1 = 'dd0000'    | Get-RGB
+} else {
+    $fg1 = 'ffffff'    | Get-RGB
+    $bg1 = $palette[0] | Get-RGB
+}
 # $fg2 = 'xxxxxx'
 $bg2 = $palette[1] | Get-RGB
 $fg3 = 'ffffff'    | Get-RGB
@@ -54,7 +59,7 @@ $bg4 = $palette[3] | Get-RGB
 $GitPromptSettings.PathStatusSeparator.Text = ""
 $GitPromptSettings.DefaultPromptPrefix.Text = ""
 $GitPromptSettings.DefaultPromptPath.Text   = ("`n┌ a" `
-                                                    -replace ' ', "`e[38;2;$bg1" `
+                                                    -replace ' ',   "`e[38;2;$bg1" `
                                                     -replace '(a)', "`e[38;2;$fg1`e[48;2;$bg1 `$1 `e[38;2;$bg1`e[48;2;$bg2" `
                                                 ).Replace('a' , {$(Get-PromptPath)}
                                                 )

@@ -9,7 +9,7 @@ Param(
                ValueFromPipelineByPropertyName=$false)]
     [ValidateNotNullOrEmpty()]
     [string]
-    $Url = "trident.local"
+    $Url = "klipper-test.local"
 )
 dynamicparam {
     $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter klipper-objects.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
@@ -26,7 +26,7 @@ dynamicparam {
     $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
     $ParameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
     $ParameterAttribute.Position = 0
-    $ParameterAttribute.Mandatory = $true
+    $ParameterAttribute.Mandatory = $false
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(

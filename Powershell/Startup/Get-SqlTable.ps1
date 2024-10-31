@@ -134,7 +134,7 @@ if ($Progress) {
         $props = $result |
             Select-Object -First 1 |
             ForEach-Object psadapted |
-            Get-Member -MemberType Property
+            Get-Member -MemberType Property -ErrorAction SilentlyContinue
 
         $result |
             ForEach-Object {

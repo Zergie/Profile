@@ -29,11 +29,8 @@ function Complete-Action {
     $Global:profiler.current.Add($Status, $endtime)
 
     $Global:profiler.runtime = ((Get-Date) - $Global:profiler.start)
-    try {
-        $percent = [Math]::Max(0, [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds))
-    } catch {
-        $percent = 99
-    }
+    try { $percent = [Math]::Max(0, [Math]::Min(100, 100 * ($Global:profiler.runtime / $Global:profiler.last.runtime).TotalSeconds)) }
+    catch { $percent = 50 }
     Write-Progress -Activity "Loading" -Status $Status -PercentComplete $percent
 }
 Write-Progress -Activity "Loading" -Status "Starting" -PercentComplete 1
@@ -117,14 +114,17 @@ if ($firstUse) {
     Complete-Action
 
     # cache choco outdated
+    $chocolaty_file = "$env:TEMP\chocolaty.json"
     Start-Action "Check chocolaty packages"
-        Start-ThreadJob {
-            . "$using:PSScriptRoot/Startup/Invoke-Chocolatey.ps1" outdated |
-                Where-Object pinned -eq $false |
-                Where-Object name -NotLike "*.install" |
-                ConvertTo-Json -Depth 9 |
-                Out-File $env:TEMP\chocolaty.json -Encoding utf-8
-        } | Out-Null
+    Start-ThreadJob {
+        param([string] $chocolaty_file)
+        . "$using:PSScriptRoot/Startup/Invoke-Chocolatey.ps1" outdated |
+            Where-Object pinned -eq $false |
+            Where-Object name -NotLike "*.install" |
+            ConvertTo-Json -Depth 9 |
+            Out-File "$chocolaty_file.tmp" -Encoding utf-8
+            Move-Item "$chocolaty_file.tmp" $chocolaty_file -Force
+    } -ArgumentList $chocolaty_file | Out-Null
     Complete-Action
 
     Start-Action "Logging location"
@@ -488,8 +488,11 @@ if  ($firstUse) {
         $template = $template.Replace("{0}".PadRight($length), $text)
 
         $text = "up to date"
-        if (Test-Path $env:TEMP\chocolaty.json) {
-            $text = Get-Content $env:TEMP\chocolaty.json -Encoding utf-8 |
+        while (!(Test-Path $chocolaty_file)) {
+            Start-Sleep -Seconds 1
+        }
+        if (Test-Path $chocolaty_file) {
+            $text = Get-Content $chocolaty_file -Encoding utf-8 |
                 ConvertFrom-Json |
                 Measure-Object |
                 ForEach-Object Count

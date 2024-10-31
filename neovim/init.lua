@@ -46,6 +46,21 @@ require("lazy").setup({
     end,
   },
   {
+    "bfredl/nvim-luadev",
+    config = function()
+      local wk = require("which-key")
+
+      wk.register({
+        ["<leader>"] = {
+          m = {
+            l = { "<Plug>(Luadev-RunLine)", "[Luadev] Execute the current line", mode = { "n" } },
+            a = { "<Plug>(Luadev-Run)", "[Luadev] Operator to execute lua code over a movement or text object.", mode = { "v", "n" } },
+          }
+        }
+      })
+    end
+  },
+  {
     "jackMort/ChatGPT.nvim",
     event = "VeryLazy",
     config = function()
@@ -379,7 +394,20 @@ require("lazy").setup({
             l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
             p = {
               function ()
-              vim.cmd("r!git -C %:p:h/.. diff --staged")
+              local path = vim.fn.expand("%:p:h")
+              local file = io.open(path .. "/config", 'r')
+              local match = nil
+              if file then
+                local content = file:read("*a")
+                file:close()
+                match = string.match(content, "worktree = [^ \n]+")
+              end
+              if match then
+                path = path .. "/" .. string.sub(match, 12)
+              else
+                path = path .. "/.."
+              end
+              vim.cmd("r!git -C " .. path .. " diff --staged")
               vim.cmd("normal V'[k")
               vim.cmd("ChatGPTRun commit")
               end

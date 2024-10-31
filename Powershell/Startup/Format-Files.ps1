@@ -45,11 +45,12 @@ process {
         $pathes += @(
                         $InputObject.Working
                         $InputObject.Index
-                    )
-                    | Where-Object { $null -ne $_ }
-                    | ForEach-Object { [System.IO.Path]::Combine($InputObject.GitDir, "..", $_) }
-                    | Where-Object { Test-Path $_ -PathType Leaf }
-                    | Get-ChildItem
+                    ) |
+                    Where-Object { $null -ne $_ } |
+                    ForEach-Object { [System.IO.Path]::Combine((Get-GitStatusFromCache).Path, $_) } |
+                    ForEach-Object { [System.IO.Path]::GetFullPath($_) } |
+                    Where-Object { Test-Path $_ -PathType Leaf } |
+                    Get-ChildItem
     }
 
     function Write-CodeError {
@@ -93,7 +94,9 @@ end {
         }
 
         Write-Progress -Status "Generating patches" -PercentComplete 1
-        Push-Location "$(Get-GitDirectory)/.."
+        Write-Debug "Push-Location $((Get-GitStatusFromCache).Path)"
+        Push-Location "$((Get-GitStatusFromCache).Path)"
+        Write-Host -ForegroundColor Cyan "git difftool --tool=patch"
         git difftool --tool=patch
 
         foreach ($item in $pathes) {
@@ -127,6 +130,7 @@ end {
                 }
 
                 "\.(ACF|ACR|ACM)$" {
+                    Write-Host -ForegroundColor Cyan "git restore $item"
                     git restore "$item"
                     Start-Job -ArgumentList $item.FullName {
                         param( [string] $item )
@@ -169,7 +173,7 @@ end {
 
                         if ($line -match "^\s*Next\s[^ ]+") {
                             $line -replace "Next\s[^ ]+", "Next"
-                        } elseif ($line -match "^\s*Checksum\s*=") {
+                        } elseif ($line -match "^\s*Checksum\s*=-?\d+") {
                             "Checksum =-240186"
                         } elseif ($line -match "Version =\d+") {
                             "Version =20"
@@ -281,7 +285,8 @@ end {
     }
 
     if (!$NoGitAdd) {
-        Push-Location "$(Get-GitDirectory)/.."
+        Push-Location "$((Get-GitStatusFromCache).Path)"
+        Write-Host -ForegroundColor Cyan "git add -p"
         git add -p .
         Pop-Location
     }

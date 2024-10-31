@@ -4,3 +4,6 @@
 [submodule "key-jump-browser-extension"]
 	path = key-jump-browser-extension
 	url = https://github.com/rocom-service/key-jump-browser-extension.git
+[submodule "Fusion360/AddIns/CounterboreBridging"]
+	path = Fusion360/AddIns/CounterboreBridging
+	url = https://github.com/Finn2708/CounterboreBridging.git

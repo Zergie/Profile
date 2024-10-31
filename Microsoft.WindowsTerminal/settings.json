@@ -49,8 +49,7 @@
                 "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
                 "split": "auto"
             },
-            "id": "User.splitPane.1C3C2FAE",
-            "keys": "f4"
+            "id": "User.splitPane.1C3C2FAE"
         },
         {
             "command": 
@@ -60,7 +59,15 @@
                 "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
                 "split": "auto"
             },
-            "id": "User.splitPane.4EE51EDB",
+            "id": "User.splitPane.4EE51EDB"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "split": "auto"
+            },
+            "id": "User.splitPane.4EE51EFF",
             "keys": "f3"
         },
         {
@@ -438,7 +445,7 @@
         {
             "command": 
             {
-                "action": "splitPane"
+                "action": "splitPane",
             }
         },
         {

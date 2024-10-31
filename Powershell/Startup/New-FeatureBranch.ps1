@@ -57,7 +57,7 @@ process {
     $issue = $Name | Select-String -Pattern "^(\d+)" | ForEach-Object { $_.Matches.Value }
 
     $branch = "users/$username/$issue"
-    Write-Host -ForegroundColor Cyan "New branch will be $branch"
+    Write-Host -ForegroundColor Cyan "Branch will be $branch"
 
     if (! $BaseOnThisBranch) {
         git checkout master
@@ -67,9 +67,13 @@ process {
     }
 
     @(
-        "git pull"
-        "git checkout -b $branch"
-        "git push --set-upstream origin $branch"
+        if ($branch -in $(git branch --no-color | ForEach-Object { $_.trim(' ', '*')})) {
+            "git checkout $branch"
+        } else {
+            "git pull"
+            "git checkout -b $branch"
+            "git push --set-upstream origin $branch"
+        }
         if (!$DoNotStart) { "Get-Issues -WorkitemId $issue -Pdf -BeginWork" }
     ) |
         ForEach-Object {

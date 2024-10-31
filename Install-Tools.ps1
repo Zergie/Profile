@@ -77,6 +77,7 @@ $tools = @(
         [pscustomobject]@{name="keepass"}
         [pscustomobject]@{name="nodejs-lts"}
         [pscustomobject]@{name="sql-server-management-studio"}
+        [pscustomobject]@{name="wixtoolset"}
         [pscustomobject]@{name="zoom"}
     }
     if (Test-IsLaptop) {
@@ -105,7 +106,6 @@ $tools = @(
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
     [pscustomobject]@{name="nuget.commandline"}
-    [pscustomobject]@{name="phonerlite"}
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
@@ -151,9 +151,6 @@ $junctions = @(
                           destination = "$PSScriptRoot\Powershell\secrets.json"}
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\Locations.json"
                           destination = "$PSScriptRoot\Powershell\Locations.json"}
-
-        [pscustomobject]@{source      = "$PSScriptRoot\secrets\PhonerLite"
-                          destination = "$env:USERPROFILE\AppData\Roaming\PhonerLite"}
     }
 
     [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
@@ -182,6 +179,9 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\Library.json"
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
+                      destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
 
     if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
         [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"

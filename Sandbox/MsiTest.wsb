@@ -12,8 +12,26 @@
 			<HostFolder>C:\temp</HostFolder>
 			<ReadOnly>true</ReadOnly>
 		</MappedFolder>
+		<MappedFolder>
+			<HostFolder>C:\Program Files (x86)\Tau-Office</HostFolder>
+            <SandboxFolder>C:\Program Files (x86)\Tau-Office</SandboxFolder>
+		</MappedFolder>
+		<MappedFolder>
+			<HostFolder>X:\</HostFolder>
+            <SandboxFolder>C:\temp</SandboxFolder>
+		</MappedFolder>
+		<MappedFolder>
+			<HostFolder>.</HostFolder>
+            <SandboxFolder>C:\Sandbox</SandboxFolder>
+            <ReadOnly>true</ReadOnly>
+		</MappedFolder>
+		<MappedFolder>
+			<HostFolder>C:\GIT\Runtime</HostFolder>
+            <SandboxFolder>C:\Runtime</SandboxFolder>
+            <ReadOnly>true</ReadOnly>
+		</MappedFolder>
 	</MappedFolders>
 	<LogonCommand>
-		<Command>explorer C:\Users\WDAGUtilityAccount\Desktop\temp</Command>
+        <Command>powershell.exe -ExecutionPolicy Bypass -File C:\Sandbox\MsiTest.ps1</Command>
 	</LogonCommand>
 </Configuration>

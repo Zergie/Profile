@@ -47,7 +47,7 @@ dynamicparam {
         [pscustomobject]@{
             Type = [string]
             Name = "Mail"
-            # ParameterSetName = "MailParameterSet"
+            ParameterSetName = "MailParameterSet"
             ValidateSet = Invoke-ExchangeWebServices -Query "nextcloud" -First 3 |
                 ForEach-Object { "$($_.DateTimeSent.ToString("dd.MM.yyyy")) - $($_.Subject)" }
         }
