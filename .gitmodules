@@ -7,3 +7,9 @@
 [submodule "Fusion360/AddIns/CounterboreBridging"]
 	path = Fusion360/AddIns/CounterboreBridging
 	url = https://github.com/Finn2708/CounterboreBridging.git
+[submodule "Fusion360/AddIns/NoComponentWarn"]
+	path = Fusion360/AddIns/NoComponentWarn
+	url = https://github.com/thomasa88/NoComponentWarn.git
+[submodule "Fusion360/AddIns/ThreadKeeper"]
+	path = Fusion360/AddIns/ThreadKeeper
+	url = https://github.com/thomasa88/ThreadKeeper.git

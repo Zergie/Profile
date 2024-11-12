@@ -182,6 +182,10 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
+    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
+                      destination = "$env:USERPROFILE\AppData\Local\Autodesk\webdeploy\production\**\Fusion\Server\Fusion\Configuration\ThreadData"}
+    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
+                      destination = "$env:ProgramFiles\Autodesk\webdeploy\production\**\Fusion\Server\Fusion\Configuration\ThreadData"}
 
     if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
         [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
@@ -270,24 +274,39 @@ function Install-Junction {
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Destination
     )
     process {
-        Remove-Item $Destination -Force -ErrorAction SilentlyContinue | Out-Null
-
-        $directory = [System.IO.Path]::GetDirectoryName($Destination)
-        $filename = [System.IO.Path]::GetFileName($Destination)
-
-        if ((Test-Path $source -PathType Leaf)) {
-            Push-Location $directory | Out-Null
-            "New-Item -Type HardLink -Name `"$filename`" -Value `"$Source`"" |
-                ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
-                Out-Null
-            Pop-Location
+        if ($Source.EndsWith("*")) {
+            Get-ChildItem $Source |
+                ForEach-Object {
+                    Install-Junction -Source $_ -Destination "$Destination\$($_.Name)"
+                }
+        } elseif ($Destination.Contains("*")) {
+            $directory = [System.IO.Path]::GetDirectoryName($Destination)
+            $filename = [System.IO.Path]::GetFileName($Destination)
+            Get-ChildItem $directory |
+                ForEach-Object{
+                    Install-Junction -Source $Source -Destination "$_\$filename"
+                }
         } else {
-            try { mkdir $directory | Out-Null } catch {}
-            Push-Location $directory | Out-Null
-            "New-Item -Type Junction -Name `"$filename`" -Value `"$Source`"" |
-                ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
-                Out-Null
-            Pop-Location
+            Remove-Item $Destination -Force -ErrorAction SilentlyContinue | Out-Null
+
+            $directory = [System.IO.Path]::GetDirectoryName($Destination)
+            $filename = [System.IO.Path]::GetFileName($Destination)
+
+            if ((Test-Path $source -PathType Leaf)) {
+                if (!(Test-Path $directory)) { mkdir $directory }
+                Push-Location $directory | Out-Null
+                "New-Item -Type HardLink -Name `"$filename`" -Value `"$Source`"" |
+                    ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
+                    Out-Null
+                Pop-Location
+            } else {
+                try { mkdir $directory | Out-Null } catch {}
+                Push-Location $directory | Out-Null
+                "New-Item -Type Junction -Name `"$filename`" -Value `"$Source`"" |
+                    ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ } |
+                    Out-Null
+                Pop-Location
+            }
         }
     }
 }
