@@ -1,13 +1,13 @@
 [cmdletbinding()]
 param(
     [string[]]
-    $Recipient = @("fannen@rocom.de"),
+    $Recipient = @("tbaratjuk-dietz@rocom.de"),
 
     [string[]]
     $Bcc = @("wpuchinger@rocom-service.de"),
 
     [string[]]
-    $Cc,
+    $Cc = @("fannen@rocom.de"),
 
     [double]
     $WaitHours
@@ -56,7 +56,8 @@ $branches = git --no-pager branch --remote --list 'origin/release/*' |
                             ForEach-Object { $_.Split(",") } |
                             ForEach-Object { $_.Trim() } |
                             Where-Object   { $_.StartsWith($tag) } |
-                            ForEach-Object { $_.Substring("setup_v".Length) }
+                            ForEach-Object { $_.Substring("setup_v".Length) } |
+                            Select-Object -Last 1
                         message=($a[2].Split("`n") |
                             Where-Object { $_ -notmatch "^(\s*$|Related work items: #\d+|Cherry picked from !\d+)"}) |
                             Join-String -Separator `n
@@ -277,11 +278,6 @@ h1 {
 <p>Im Anhang finden Sie die Release Notes der letzten vier Software-Updates unserer Anwendung als XLSX-Datei.
 Ich bitte Sie, sich ausreichend Zeit zu nehmen, um die detaillierten Änderungen und Verbesserungen sorgfältig zu überprüfen.
 Dies wird Ihnen helfen, bestmöglich auf eventuelle Kundenanfragen vorbereitet zu sein und ein umfassendes Verständnis für die neuesten Entwicklungen in meiner Anwendung zu erlangen.</p>
-
-<p>Bitte beachten Sie, dass die in der XLSX-Datei aufgeführte Revisionsnummer immer an der tau-office.mde orientiert ist.
-Das bedeutet, dass wenn es zwischen zwei Setups keine Änderung an der tau-office.mde gibt, z.B. weil nur ein Bug im Admintool behoben wurde, wird das neue Setup die gleiche Revisionsnummer wie das alte Setup tragen.
-Dieses Prinzip gilt auch für andere wichtige Komponenten wie die Basisstatistik oder Plugins.
-Wenn Änderungen nur in weniger kritischen Teilen des Systems vorgenommen werden, kann dies dazu führen, dass die Revisionsnummer unverändert bleibt, solange die Hauptkomponente (tau-office.mde) unverändert ist.</p>
 
 <p>Ich bitte Sie, das Update so bald wie möglich zu installieren, um sicherzustellen, dass Sie stets von den neuesten Funktionen und Verbesserungen der Software profitieren können.
 Ihre Sicherheit und die optimale Leistung der Anwendung sind uns sehr wichtig.</p>

@@ -1,29 +1,5 @@
 param (
         [Parameter(Mandatory=$true,
-                Position=0,
-                ParameterSetName="RocomParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [switch]
-        $rocom,
-
-        [Parameter(Mandatory=$true,
-                Position=0,
-                ParameterSetName="RocomServiceParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [switch]
-        $rocomservice,
-
-        [Parameter(Mandatory=$true,
-                Position=0,
-                ParameterSetName="AllParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [switch]
-        $All,
-
-        [Parameter(Mandatory=$true,
                    Position=1,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline=$true,
@@ -32,8 +8,7 @@ param (
         [string]
         $Month,
 
-        [Parameter(Mandatory=$true,
-                   Position=2,
+        [Parameter(Position=2,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true)]
@@ -42,19 +17,7 @@ param (
         $Year,
 
         [Parameter(Mandatory=$false,
-                ParameterSetName="RocomParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [Parameter(Mandatory=$false,
-                ParameterSetName="RocomServiceParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [Parameter(Mandatory=$false,
                 ParameterSetName="DefaultParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
-        [Parameter(Mandatory=$false,
-                ParameterSetName="AllParameterSet",
                 ValueFromPipeline=$false,
                 ValueFromPipelineByPropertyName=$false)]
         [switch]
@@ -74,12 +37,10 @@ begin {
 process {
 }
 end {
+    if (!$Year) { $Year = (Get-Date).Year.ToString() }
+    if (!$Month) { $Month = (Get-Date).Month.ToString() }
+    $dat = [datetime]::new($Year, $Month, 1)
     $dates = {
-        if ($rocom -or $rocomservice -or $All) {
-            $dat = (Get-Date)
-        } else {
-            $dat = [datetime]::new($Year, $Month, 1)
-        }
         $dat = $dat.AddDays(-$dat.Day + 1)
         [pscustomobject]@{month = $dat.Month; year = $dat.Year}
         $dat = $dat.AddMonths(1)
@@ -160,43 +121,16 @@ end {
         ForEach-Object color |
         Group-Object |
         ForEach-Object Name
+    $employees  = $response.holidays |
+        Where-Object event -EQ $true |
+        Group-Object Title |
+        ForEach-Object Name
     $response = [pscustomobject]@{
         status   = $response.status
         error    = $response.error
         legend   = $response.legend
         holidays = $response.holidays |
             Where-Object backgroundColor -in $filter
-    }
-
-    if ($rocom) {
-        $response = [pscustomobject]@{
-            status   = $response.status
-            error    = $response.error
-            legend   = $response.legend
-            holidays = $response.holidays |
-                Where-Object {
-                    $_.event -eq $false -or
-                    $_.title -NotIn $rocom_service_employees
-                }
-        }
-    } elseif ($rocomservice) {
-        $response = [pscustomobject]@{
-            status   = $response.status
-            error    = $response.error
-            legend   = $response.legend
-            holidays = $response.holidays |
-                Where-Object {
-                    $_.event -eq $false -or
-                    $_.title -In $rocom_service_employees
-                }
-        }
-    } else {
-        $response = [pscustomobject]@{
-            status   = $response.status
-            error    = $response.error
-            legend   = $response.legend
-            holidays = $response.holidays
-        }
     }
 
     # get holidays
@@ -299,7 +233,7 @@ end {
         Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
         Write-Host "$pad ├─$($columns.lines_3 | Join-String -Separator '')─┤"
 
-        $employees = $response.holidays | Where-Object { $_.event -eq $true } | Group-Object title | ForEach-Object Name
+        # $employees = $response.holidays | Where-Object { $_.event -eq $true } | Group-Object title | ForEach-Object Name
 
         $line_no = 0
         foreach ($employee in $employees) {
