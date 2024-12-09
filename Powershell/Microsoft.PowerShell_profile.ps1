@@ -168,20 +168,21 @@ Complete-Action
 # set alias to my programs
 Start-Action "Set alias to my programs"
     Import-Module 'gsudoModule'
-    Set-Alias sudo    gsudo
+    Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
-    Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
-    Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
-    Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
+    Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gh      "C:\Program Files\GitHub CLI\gh.exe"
+    Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
+    Set-Alias lsssh   "$PSScriptRoot\Startup\Get-ChildItemSsh.ps1"
+    Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
     Set-Alias nf      "$PSScriptRoot\Startup\New-FeatureBranch.ps1"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
-    Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
-    Set-Alias gis     "$PSScriptRoot\Startup\Get-Issues.ps1"
+    Set-Alias sudo    gsudo
+    Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
-    Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
+    Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
 Complete-Action
 
 # set alias to my scripts

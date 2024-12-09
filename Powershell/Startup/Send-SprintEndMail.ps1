@@ -20,7 +20,8 @@ if ($WaitHours -gt 0) {
 }
 
 Push-Location C:\GIT\TauOffice
-git fetch --all
+git checkout master; if ($LASTEXITCODE -ne 0) { exit }
+git fetch --all; if ($LASTEXITCODE -ne 0) { exit }
 $branches = git --no-pager branch --remote --list 'origin/release/*' |
     ForEach-Object { $_.Substring(2) } |
     Sort-Object -Descending |
@@ -57,6 +58,7 @@ $branches = git --no-pager branch --remote --list 'origin/release/*' |
                             ForEach-Object { $_.Trim() } |
                             Where-Object   { $_.StartsWith($tag) } |
                             ForEach-Object { $_.Substring("setup_v".Length) } |
+                            Sort-Object |
                             Select-Object -Last 1
                         message=($a[2].Split("`n") |
                             Where-Object { $_ -notmatch "^(\s*$|Related work items: #\d+|Cherry picked from !\d+)"}) |

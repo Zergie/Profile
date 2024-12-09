@@ -14,7 +14,7 @@ Process {
     Set-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues"
     Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
 
-    $global:holidays = Get-TauWorkTogetherHolidays -rocomservice |
+    $global:holidays = Get-TauWorkTogetherHolidays -Now |
                             ForEach-Object holidays
     $team = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/_apis/projects/{projectId}/teams/{teamId}/members?api-version=6.0' |
                         ForEach-Object value |
@@ -50,44 +50,44 @@ Process {
                             }
     }
 
-    $team_holidays = @( $new_sprint.attributes.startDate, $new_sprint.attributes.finishDate) |
-                        ForEach-Object Year |
-                        Group-Object |
-                        ForEach-Object Name |
+    $team_holidays = @($new_sprint.attributes.startDate, $new_sprint.attributes.finishDate) |
+        ForEach-Object Year |
+        Group-Object |
+        ForEach-Object Name |
+        ForEach-Object {
+            Invoke-RestMethod https://feiertage-api.de/api/?jahr=$_ |
+                ForEach-Object { $_.BY } |
+                ForEach-Object {
+                    $data = $_
+                    $data |
+                        Get-Member -Type NoteProperty |
                         ForEach-Object {
-                            Invoke-RestMethod https://feiertage-api.de/api/?jahr=$_ |
-                                ForEach-Object { $_.BY } |
-                                ForEach-Object {
-                                    $data = $_
-                                    $data |
-                                        Get-Member -Type NoteProperty |
-                                        ForEach-Object {
-                                            $i = $data.$($_.Name)
-                                            [pscustomobject]@{
-                                                name = $_.Name
-                                                datum = [datetime]::Parse($i.datum)
-                                                hinweis = $i.hinweis
-                                            }
-                                        }
-                                }
-                        } |
-                        Where-Object hinweis -NotLike "* nur im Stadtgebiet Augsburg *" |
-                        Where-Object datum -GE $new_sprint.attributes.startDate |
-                        Where-Object datum -LE $new_sprint.attributes.finishDate |
-                        ForEach-Object datum |
-                        ForEach-Object `
-                            -Begin   { $last = $null} `
-                            -Process {
-                                if ($null -eq $last)  {
-                                    $last = @{start=$_ ; end=$_}
-                                } elseif ($last.end -eq $_.AddDays(-1)) {
-                                    $last.end = $_
-                                } else {
-                                    $last
-                                    $last = @{start=$_ ; end=$_}
-                                }
-                            } `
-                            -End { $last }
+                            $i = $data.$($_.Name)
+                            [pscustomobject]@{
+                                name = $_.Name
+                                datum = [datetime]::Parse($i.datum)
+                                hinweis = $i.hinweis
+                            }
+                        }
+                }
+        } |
+        Where-Object hinweis -NotLike "* nur im Stadtgebiet Augsburg *" |
+        Where-Object datum -GE $new_sprint.attributes.startDate |
+        Where-Object datum -LE $new_sprint.attributes.finishDate |
+        ForEach-Object datum |
+        ForEach-Object `
+            -Begin   { $last = $null} `
+            -Process {
+                if ($null -eq $last)  {
+                    $last = @{start=$_ ; end=$_}
+                } elseif ($last.end -eq $_.AddDays(-1)) {
+                    $last.end = $_
+                } else {
+                    $last
+                    $last = @{start=$_ ; end=$_}
+                }
+            } `
+            -End { $last }
 
     $holidays = @()
     foreach ($holiday in $team_holidays) {

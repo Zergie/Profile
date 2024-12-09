@@ -23,12 +23,16 @@ param(
     [switch]
     $Interactive,
 
+    [Parameter(ParameterSetName="WriteEMailResponseParameterSet")]
+    [switch]
+    $WriteEMailResponse,
+
     [Parameter(ParameterSetName="PullRequestParameterSet")]
     [switch]
     $WritePullRequest
 )
 if ($WritePullRequest) {
-    $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summeriazes the given commits"
+    $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
     $Message = @(
                     git blog |
                             Select-String '(?<=[^-]- )[^(]+' -AllMatches |
@@ -36,8 +40,13 @@ if ($WritePullRequest) {
                             Join-String -Separator `n
                     "copy"
                 )
+} elseif ($WriteEMailResponse) {
+    $Role = "Write a friendly and professional e-mail response. Do not thank for the e-mail. Do not summerize the e-mail. Simply respond."
+    $Message = @(
+                    Get-Clipboard |
+                    Join-String -Separator `n
+                )
 }
-
 $ApiEndpoint = "https://api.openai.com/v1/chat/completions"
 $ApiKey = $env:OPENAI_API_KEY
 $userMessage = "reset"

@@ -1,25 +1,29 @@
 param (
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory,
                    Position=1,
                    ParameterSetName="DefaultParameterSet",
-                   ValueFromPipeline=$true,
+                   ValueFromPipeline,
                    ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Month,
 
-        [Parameter(Position=2,
+        [Parameter(Mandatory,
+                   Position=2,
                    ParameterSetName="DefaultParameterSet",
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true)]
+                   ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Year,
 
-        [Parameter(Mandatory=$false,
-                ParameterSetName="DefaultParameterSet",
-                ValueFromPipeline=$false,
-                ValueFromPipelineByPropertyName=$false)]
+        [Parameter(Mandatory,
+                   ParameterSetName="NowParameterSet")]
+        [switch]
+        $Now,
+
+        [Parameter(ParameterSetName="DefaultParameterSet")]
+        [Parameter(ParameterSetName="NowParameterSet")]
         [switch]
         $FormatNice,
 
@@ -117,7 +121,7 @@ end {
     }
 
     $filter = $response.legend |
-        Where-Object Name -Match "(Berufschule|Urlaub)" |
+        Where-Object Name -Match "(Berufschule|Urlaub|Krankheit|Kind krank|Elternzeit|Berufsschule)" |
         ForEach-Object color |
         Group-Object |
         ForEach-Object Name

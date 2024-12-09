@@ -112,6 +112,7 @@
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
 		for file in $FILES; do \
 		PATH=$(echo ./$file); \
-		'C:/Program Files/Microsoft VS Code/bin/code.cmd' \"$PATH\"; \
+		echo $PATH; \
+		'C:/Python311/python.exe' 'C:/Python311/Lib/site-packages/nvr/nvr.py' --servername '127.0.0.1:6789' -cc 'silent !wt focus-tab -t 1' \"$PATH\"; \
 		done; \
 		"

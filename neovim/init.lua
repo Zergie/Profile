@@ -31,7 +31,7 @@ require("lazy").setup({
       -- vim.g.context_add_mappings = 1
       -- vim.g.context_add_autocmds = 1
       -- vim.g.context_presenter = <depends>
-      -- vim.g.context_max_height = 21
+      vim.g.context_max_height = 5
       -- vim.g.context_max_per_indent = 5
       vim.g.context_max_join_parts = 8
       -- vim.g.context_ellipsis_char = '·'
@@ -50,13 +50,10 @@ require("lazy").setup({
     config = function()
       local wk = require("which-key")
 
-      wk.register({
-        ["<leader>"] = {
-          m = {
-            l = { "<Plug>(Luadev-RunLine)", "[Luadev] Execute the current line", mode = { "n" } },
-            a = { "<Plug>(Luadev-Run)", "[Luadev] Operator to execute lua code over a movement or text object.", mode = { "v", "n" } },
-          }
-        }
+      wk.add({
+        { "<leader>m", group="Luadev" },
+        { "<leader>ml", "<Plug>(Luadev-RunLine)", desc = "[Luadev] Execute the current line", mode = { "n" } },
+        { "<leader>ma", "<Plug>(Luadev-Run)", desc = "[Luadev] Operator to execute lua code over a movement or text object.", mode = { "v", "n" } },
       })
     end
   },
@@ -349,6 +346,10 @@ require("lazy").setup({
       vim.o.timeout = true
       vim.o.timeoutlen = 300
     end,
+    dependencies = {
+      { 'echasnovski/mini.nvim', version = false },
+     'nvim-tree/nvim-web-devicons',
+    },
     config = function()
       local wk = require("which-key")
 
@@ -360,77 +361,59 @@ require("lazy").setup({
         },
       }
 
-      wk.register({
-        H = { "<cmd>bp<CR>", "Prev buffer", mode = { "n" } },
-        L = { "<cmd>bn<CR>", "Next buffer", mode = { "n" } },
-        ["<leader>"] = {
-          c = {
-            name = "+workspace",
-            A = { "<cmd>cd C:|cd /GIT/TauOffice/Admintool/|cd<CR>",               "Admintool",                mode = { "n" } },
-            P = { "<cmd>cd C:|cd /GIT/Profile/|cd<CR>",                           "Profile",                  mode = { "n" } },
-            S = { "<cmd>cd C:|cd /GIT/TauServer/|cd<CR>",                         "Tau-Server",               mode = { "n" } },
-            c = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-controls/|cd<CR>",     "tau-office-controls",      mode = { "n" } },
-            d = { "<cmd>cd %:p:h<cr>",                                            "Change working directory", mode = { "n" } },
-            i = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-installer/|cd<CR>",    "tau-office-installer",     mode = { "n" } },
-            p = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-plugins/|cd<CR>",      "tau-office-plugins",       mode = { "n" } },
-            u = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office-utils/source/|cd<CR>", "tau-office-utils",         mode = { "n" } },
-            t = { "<cmd>cd C:|cd /GIT/TauOffice/tau-office/source/|cd<CR>",       "tau-office",               mode = { "n" } },
-            x = { "<cmd>cd C:|cd /GIT/TauOffice/struktur|cd<CR>",                 "struktur",                 mode = { "n" } },
-          },
-          p = {
-            name = "ChatGPT",
-            c = { "<cmd>ChatGPT<CR>",                              "ChatGPT" },
-            e = { "<cmd>ChatGPTEditWithInstruction<CR>",           "Edit with instruction [AI]",     mode = { "n", "v" } },
-            g = { "<cmd>ChatGPTRun grammar_correction<CR>",        "Grammar Correction [AI]",        mode = { "n", "v" } },
-            t = { "<cmd>ChatGPTRun translate<CR>",                 "Translate [AI]",                 mode = { "n", "v" } },
-            k = { "<cmd>ChatGPTRun keywords<CR>",                  "Keywords [AI]",                  mode = { "n", "v" } },
-            d = { "<cmd>ChatGPTRun docstring<CR>",                 "Docstring [AI]",                 mode = { "n", "v" } },
-            a = { "<cmd>ChatGPTRun add_tests<CR>",                 "Add Tests [AI]",                 mode = { "n", "v" } },
-            o = { "<cmd>ChatGPTRun optimize_code<CR>",             "Optimize Code [AI]",             mode = { "n", "v" } },
-            s = { "<cmd>ChatGPTRun summarize<CR>",                 "Summarize [AI]",                 mode = { "n", "v" } },
-            f = { "<cmd>ChatGPTRun fix_bugs<CR>",                  "Fix Bugs [AI]",                  mode = { "n", "v" } },
-            x = { "<cmd>ChatGPTRun explain_code<CR>",              "Explain Code [AI]",              mode = { "n", "v" } },
-            r = { "<cmd>ChatGPTRun roxygen_edit<CR>",              "Roxygen Edit [AI]",              mode = { "n", "v" } },
-            l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis [AI]", mode = { "n", "v" } },
-            p = {
-              function ()
-              local path = vim.fn.expand("%:p:h")
-              local file = io.open(path .. "/config", 'r')
-              local match = nil
-              if file then
-                local content = file:read("*a")
-                file:close()
-                match = string.match(content, "worktree = [^ \n]+")
-              end
-              if match then
-                path = path .. "/" .. string.sub(match, 12)
-              else
-                path = path .. "/.."
-              end
-              vim.cmd("r!git -C " .. path .. " diff --staged")
-              vim.cmd("normal V'[k")
-              vim.cmd("ChatGPTRun commit")
-              end
-              ,
-              "Write a commit message [AI]",
-              mode = { "n", "v" }
-            },
-            i = {
-              function ()
-              vim.cmd("normal Gx.9ggvipyuggP`]I# vip")
-              vim.cmd("ChatGPTRun commit")
-              end
-              ,
-              "Write a simple commit message [AI]",
-              mode = { "n", "v" }
-            },
-          }
-        },
-      })
-
-      wk.register({
-        g = {
-          a = { "<Plug>(EasyAlign)", "Align [EasyAlign]", mode = { "n", "x" } },
+      wk.add({
+        { "<leader>c", group = "workspace" },
+        { "<leader>cA", "<cmd>cd C:|cd /GIT/TauOffice/Admintool/|cd<CR>", desc = "Admintool" },
+        { "<leader>cP", "<cmd>cd C:|cd /GIT/Profile/|cd<CR>", desc = "Profile" },
+        { "<leader>cS", "<cmd>cd C:|cd /GIT/TauServer/|cd<CR>", desc = "Tau-Server" },
+        { "<leader>cc", "<cmd>cd C:|cd /GIT/TauOffice/tau-office-controls/|cd<CR>", desc = "tau-office-controls" },
+        { "<leader>cd", "<cmd>cd %:p:h<cr>", desc = "Change working directory" },
+        { "<leader>ci", "<cmd>cd C:|cd /GIT/TauOffice/tau-office-installer/|cd<CR>", desc = "tau-office-installer" },
+        { "<leader>cp", "<cmd>cd C:|cd /GIT/TauOffice/tau-office-plugins/|cd<CR>", desc = "tau-office-plugins" },
+        { "<leader>ct", "<cmd>cd C:|cd /GIT/TauOffice/tau-office/source/|cd<CR>", desc = "tau-office" },
+        { "<leader>cu", "<cmd>cd C:|cd /GIT/TauOffice/tau-office-utils/source/|cd<CR>", desc = "tau-office-utils" },
+        { "<leader>cx", "<cmd>cd C:|cd /GIT/TauOffice/struktur|cd<CR>", desc = "struktur" },
+        { "<leader>p", group = "ChatGPT" },
+        { "<leader>pc", "<cmd>ChatGPT<CR>", desc = "ChatGPT" },
+        { "H", "<cmd>bp<CR>", desc = "Prev buffer" },
+        { "L", "<cmd>bn<CR>", desc = "Next buffer" },
+        { "<leader>ga", "<Plug>(EasyAlign)", desc = "Align [EasyAlign]", mode = {"n", "x"} },
+        {
+          mode = { "n", "v" },
+          { "<leader>pa", "<cmd>ChatGPTRun add_tests<CR>", desc = "Add Tests [AI]" },
+          { "<leader>pd", "<cmd>ChatGPTRun docstring<CR>", desc = "Docstring [AI]" },
+          { "<leader>pe", "<cmd>ChatGPTEditWithInstruction<CR>", desc = "Edit with instruction [AI]" },
+          { "<leader>pf", "<cmd>ChatGPTRun fix_bugs<CR>", desc = "Fix Bugs [AI]" },
+          { "<leader>pg", "<cmd>ChatGPTRun grammar_correction<CR>", desc = "Grammar Correction [AI]" },
+          { "<leader>pi", function ()
+			      vim.cmd("normal Gx.9ggvipyuggP`]I# vip")
+			      vim.cmd("ChatGPTRun commit")
+		  	  end, desc = "Write a simple commit message [AI]" },
+          { "<leader>pk", "<cmd>ChatGPTRun keywords<CR>", desc = "Keywords [AI]" },
+          { "<leader>pl", "<cmd>ChatGPTRun code_readability_analysis<CR>", desc = "Code Readability Analysis [AI]" },
+          { "<leader>po", "<cmd>ChatGPTRun optimize_code<CR>", desc = "Optimize Code [AI]" },
+          { "<leader>pp", function ()
+			      local path = vim.fn.expand("%:p:h")
+			      local file = io.open(path .. "/config", 'r')
+			      local match = nil
+			      if file then
+				local content = file:read("*a")
+				file:close()
+				match = string.match(content, "worktree = [^ \n]+")
+			      end
+			      if match then
+				path = path .. "/" .. string.sub(match, 12)
+			      else
+				path = path .. "/.."
+			      end
+			      vim.cmd("r!git -C " .. path .. " diff --staged")
+			      vim.cmd("normal V'[k")
+			      vim.cmd("ChatGPTRun commit")
+		  	  end, desc = "Write a commit message [AI]" },
+          { "<leader>pr", "<cmd>ChatGPTRun roxygen_edit<CR>", desc = "Roxygen Edit [AI]" },
+          { "<leader>ps", "<cmd>ChatGPTRun summarize<CR>", desc = "Summarize [AI]" },
+          { "<leader>pt", "<cmd>ChatGPTRun translate<CR>", desc = "Translate [AI]" },
+          { "<leader>px", "<cmd>ChatGPTRun explain_code<CR>", desc = "Explain Code [AI]" },
         }
       })
     end

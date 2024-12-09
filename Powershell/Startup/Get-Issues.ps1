@@ -62,6 +62,20 @@ param (
     [DateTime]
     $End,
 
+    [Parameter(Mandatory=$true,
+               ParameterSetName="PrepareSprintParameterSet",
+               ValueFromPipeline=$true,
+               ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $PrepareSprint,
+
+    [Parameter(Mandatory=$true,
+               ParameterSetName="CloseIssuesWithNoFeedbackParameterSet",
+               ValueFromPipeline=$false,
+               ValueFromPipelineByPropertyName=$false)]
+    [switch]
+    $CloseIssuesWithNoFeedback,
+
     [Parameter(Mandatory=$false,
                ValueFromPipeline=$false,
                ValueFromPipelineByPropertyName=$false)]
@@ -198,6 +212,19 @@ process {
     $Query         = $PSBoundParameters['Query']
     $Name          = $PSBoundParameters['Name']
 
+    if ($PrepareSprint) {
+        ". `"$($MyInvocation.MyCommand.Source)`" -CloseIssuesWithNoFeedback" |
+            ForEach-Object {
+                Write-Host -ForegroundColor Cyan $_
+                Invoke-Expression $_
+            }
+        $New = $true
+        $Update = $true
+        $Assign = $true
+        $PrepareSprint = $false
+        $CloseIssuesWithNoFeedback = $false
+    }
+
     if ($Tag.Length -gt 0) {
         $Update = $true
     }
@@ -261,6 +288,12 @@ process {
                             ForEach-Object{ $_.Matches.Groups[1].Value } |
                             Join-String -Separator ","
                     ))"
+            } elseif ($CloseIssuesWithNoFeedback) {
+                "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue'" +
+                                                   " AND [System.State] <> 'Done'" +
+                                                   " AND [System.TeamProject] = 'TauOffice'" +
+                                                   " AND [System.Tags] Contains 'Needs-Author-Feedback'" +
+                                                   " AND [System.ChangedDate] < '$([System.DateOnly]::FromDateTime((Get-Date).AddDays(-30)).ToString("o"))'"
             } elseif ($null -ne $Query) {
                 . ${Invoke-RestApi} `
                     -Endpoint 'GET https://dev.azure.com/{organization}/{project}/_apis/wit/queries?$depth=1&$expand=wiql&api-version=7.0' |
@@ -297,6 +330,7 @@ process {
         }
     }
 
+    $workitems = @()
     $workitems = $downloaded |
         Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" -or $null -ne $Id } |
         ForEach-Object {
@@ -338,7 +372,7 @@ process {
 
         $workitems |
             ForEach-Object {
-                if ($Update -or $BeginWork) {
+                if ($Update -or $BeginWork -or $CloseIssuesWithNoFeedback) {
                     $subtasks = $_.relations |
                                 Where-Object rel -EQ "System.LinkTypes.Hierarchy-Forward" |
                                 Add-Member -MemberType ScriptProperty `
@@ -379,7 +413,7 @@ process {
                                         -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                         -replace '(Aufgabe siehe Word),?\s*', '' `
                                         -replace '[.!]\s*$', '' `
-                                        -replace ' Fehler$', ' Weiterentwicklung' `
+                        -replace ' Fehler$', ' Weiterentwicklung' `
                                         -replace '(Zusatzschleife|Nachbesserung)\b', 'Weiterentwicklung'
                     }
 
@@ -397,7 +431,65 @@ process {
                                         -replace 'Fehlerbeschreibung ', 'Aufgabenbeschreibung ' `
                                         -replace '(Hallo) Wolfgang', '$1' `
                                         -replace 'Prio \d+', '' `
-                                        -replace 'immer noch nicht', 'noch nicht'
+                                        -replace 'immer noch nicht', 'noch nicht' `
+                                        -replace '<br><br>Aufgenommen durch', '<br>Aufgenommen durch'
+                    }
+
+                    $text = ($_.fields.'System.Description' | Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*(\d{2}\.\d{2}\.\d{4})').Matches |
+                                    ForEach-Object { try {$_.Groups[1].Value} catch {} } |
+                                    Select-Object -First 1
+                    if ($text.Length -gt 0) {
+                        if ($null -eq $revs_master) {
+                            $revs_master = git -C C:\GIT\TauOffice rev-list --first-parent origin/master
+                            $date_branch_lookup = git -C C:\GIT\TauOffice\ branch --remote --list 'origin/release/*' |
+                                Select-String -Pattern "release/(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})" |
+                                Sort-Object Value |
+                                Select-Object -Last 6 |
+                                ForEach-Object Matches |
+                                ForEach-Object {
+                                    [pscustomobject]@{
+                                        branch = $_.Groups[0]
+                                        date   = "$($_.Groups['d']).$($_.Groups['m']).$($_.Groups['y'])"
+                                        tag    = git -C C:\GIT\TauOffice\ rev-list --reverse --first-parent --max-count=255 "origin/$($_.Groups[0])" |
+                                                    Where-Object{ $_ -notin $revs_master } |
+                                                    Select-Object -First 1 |
+                                                    ForEach-Object { git log --pretty=format:"%s" -1 $_ } |
+                                                    ForEach-Object { $_.Replace("Release", "TO") }
+                                    }
+                                }
+                        }
+
+                        $w = $_
+                        $new_tag = $date_branch_lookup |
+                            Where-Object date -eq $text |
+                            ForEach-Object tag |
+                            Where-Object { $_ -notin $w.fields.'System.Tags' }
+                        if ($null -ne $new_tag) {
+                            $patches[$_.Id] += [ordered]@{
+                                op    = "add"
+                                path  = "/fields/System.Tags"
+                                from  = "null"
+                                value = $new_tag
+                            }
+                        }
+                    }
+
+                    $text = $_.fields.'System.Description' | Select-String -Pattern '(?:Umsetzen|Beheben)\s+bis\s*[:]?.*(?<d>\d{2})[,.](?<m>\d{2})[,.](?<y>\d{2,4})' |
+                                    ForEach-Object Matches |
+                                    ForEach-Object Groups |
+                                    Where-Object Name -in @("d","m","y") |
+                                    ForEach-Object `
+                                        -Begin   { $text = @{} } `
+                                        -Process { $text[$_.Name] = [int]$_.Value } `
+                                        -End     { [pscustomobject]$text }
+                    if ($null -ne $text.y) {
+                        if ($text.y -lt 100) { $text.y += 2000 }
+                        $patches[$_.Id] += [ordered]@{
+                            op    = "replace"
+                            path  = "/fields/Microsoft.VSTS.Scheduling.DueDate"
+                            from  = "null"
+                            value = [datetime]::New($text.y, $text.m, $text.d)
+                        }
                     }
 
                     if ($Update -and ($subtasks | Measure-Object).Count -eq 0) {
@@ -488,6 +580,12 @@ process {
                                     }
                                 }
                         }
+                    }
+                }
+                if ($CloseIssuesWithNoFeedback) {
+                    $workitems | Measure-Object
+                    if (($workitems | Measure-Object).Count -gt 0) {
+                        throw "Not Implemented"
                     }
                 }
             }

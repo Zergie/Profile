@@ -114,7 +114,13 @@ begin {
             "Stage 1"= Invoke-RestApi -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/pipelines?api-version=6.0-preview.1" |
                             ForEach-Object { $_.value } |
                             ForEach-Object { [pscustomobject]@{ id= $_.Id; name= $_.name } } |
-                            Where-Object { $_.name -in $PSBoundParameters['Name'] }
+                            Where-Object { $_.name -in $PSBoundParameters['Name'] } |
+                            Where-Object Name -NotLike *setup*
+            "Stage 2"= Invoke-RestApi -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/pipelines?api-version=6.0-preview.1" |
+                            ForEach-Object { $_.value } |
+                            ForEach-Object { [pscustomobject]@{ id= $_.Id; name= $_.name } } |
+                            Where-Object { $_.name -in $PSBoundParameters['Name'] } |
+                            Where-Object Name -Like *setup*
         }
     }
 

@@ -73,11 +73,20 @@
         {
             "command": 
             {
+                "action": "splitPane",
+                "split": "down"
+            },
+            "id": "User.splitPane.4EE51EFF",
+            "keys": "f4"
+        },
+        {
+            "command": 
+            {
                 "action": "resizePane",
                 "direction": "left"
             },
             "id": "User.resizePane.2A0DA8E0",
-            "keys": "win+ctrl+alt+n"
+            "keys": "win+ctrl+alt+left"
         },
         {
             "command": "find",
@@ -601,7 +610,7 @@
                 "direction": "right"
             },
             "id": "User.resizePane.87C324ED",
-            "keys": "win+ctrl+alt+i"
+            "keys": "win+ctrl+alt+right"
         },
         {
             "command": 
@@ -618,7 +627,7 @@
                 "direction": "up"
             },
             "id": "User.resizePane.6CD791B",
-            "keys": "win+ctrl+alt+u"
+            "keys": "win+ctrl+alt+up"
         },
         {
             "command": "openSystemMenu",
@@ -632,7 +641,7 @@
                 "direction": "down"
             },
             "id": "User.resizePane.F747588A",
-            "keys": "win+ctrl+alt+e"
+            "keys": "win+ctrl+alt+down"
         },
         {
             "command": "closePane",

@@ -38,7 +38,7 @@ snippet pscustomobject_dynamicparam
 
 snippet dynamicparam_
 	dynamicparam {
-		Set-Alias "New-DynamicParameter" "$PSScriptRoot\New-DynamicParameter.ps1"
+		Set-Alias "New-DynamicParameter" "$$PSScriptRoot\New-DynamicParameter.ps1"
 		@(
 			[pscustomobject]@{
 				Position = ${1:0}
