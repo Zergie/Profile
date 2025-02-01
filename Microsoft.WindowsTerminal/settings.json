@@ -43,6 +43,11 @@
             "id": "User.splitPane.1C3C2FAE"
         },
         {
+            "command": "find",
+            "id": "User.find",
+            "keys": "win+ctrl+alt+comma"
+        },
+        {
             "command": 
             {
                 "action": "switchToTab",
@@ -717,16 +722,16 @@
                 "name": "Windows PowerShell"
             },
             {
-                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
-                "hidden": true,
-                "name": "Ubuntu",
-                "source": "Windows.Terminal.Wsl"
-            },
-            {
                 "guid": "{51855cb2-8cce-5362-8f54-464b92b32386}",
                 "hidden": false,
                 "name": "Ubuntu",
                 "source": "CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc"
+            },
+            {
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "hidden": true,
+                "name": "Ubuntu",
+                "source": "Windows.Terminal.Wsl"
             }
         ]
     },
