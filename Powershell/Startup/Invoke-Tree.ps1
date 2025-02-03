@@ -17,7 +17,11 @@ param
     #List of wildcard matches. If a directoryname matches one of these, it will be shown.
     [Parameter()]
     [string[]]
-    $Include = $null
+    $Include = $null,
+
+    [Parameter()]
+    [string[]]
+    $Filter = $null
 )
 begin {
     function c {
@@ -39,8 +43,16 @@ begin {
         if ($depth -ge $Global:Depth) { return }
         $depth += 1
 
-        $folders = Get-ChildItem $path |
-            Where-Object Attributes -Contains "Directory" |
+        $folders = Get-ChildItem $path -Directory |
+            Where-Object {
+                if (($Global:Include | Measure-Object).Count -eq 0) {
+                    $true
+                } elseif ($Global:Depth -eq $depth) {
+                    $false
+                } else {
+                    ($_ | Get-ChildItem -Include $Global:Include -Recurse -Depth ($Global:Depth - $depth - 1) | Measure-Object).Count -gt 0
+                }
+            } |
             ForEach-Object -PipelineVariable previous {
                 if ($null -ne $previous) { $previous.IsLast = $false }
 
@@ -76,8 +88,8 @@ begin {
                 [pscustomobject]@{
                     Name       = $_.Name
                     FullName   = $_.FullName
+                    Directory  = $_.Directory.FullName
                     Icon       = switch -Regex ($_.Extension) {
-
                                     "^\.(ps1)$"            { "$(c 236fbd)$([char]0xebc7)`e[0m" }
                                     "^\.(msg)$"            { "$(c 006dc3)$([char]0xf6ed)`e[0m" }
                                     "^\.(md|bmpr|mmd)$"    { "$(c ff2000)$([char]0xe73e)`e[0m" }
@@ -87,7 +99,6 @@ begin {
                                     "^\.xl(s|t|sx|sm|tx)$" { "$(c 207647)$([char]0xf71b)`e[0m" }
                                     "^\.do(c|t|cx|cm|tx)$" { "$(c 2b589c)$([char]0xf72c)`e[0m" }
                                     default                { ' ' }
-
                                 }
                     Char       = if ($null -eq $folders) { '  ' } else { ' │' }
                     IndentChar = if ($_.IsLast) { '  ' } else { '  ' }
@@ -98,7 +109,7 @@ begin {
         if ($files.Count -gt 20) {
             Write-Host "$indent$(' ') $(' ')($($files.Count) files)"
         } else {
-            foreach ($item in $files ) {
+            foreach ($item in $files) {
                 Write-Host "$indent$($item.Char) $($item.Icon) $($item.Name)"
             }
         }
@@ -110,14 +121,13 @@ begin {
 }
 process {
     $Global:Depth = $Depth + 1
-    $Global:Include = $Include
+    $Global:Include = $Include + $Filter
     $Global:Exclude = $Exclude
 
+    Write-Host
     if ([string]::IsNullOrWhiteSpace($Path)) {
         Write-Folder 0 '' (Get-Location)
     } else {
-        Write-Host
-        Write-Host (Resolve-Path $Path).Path
         Write-Folder 0 '' $Path
     }
 

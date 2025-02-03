@@ -38,6 +38,7 @@ begin {
     Set-Alias Invoke-MsAccess C:\GIT\Profile\Powershell\Startup\Invoke-MsAccess.ps1
     Set-Alias Stop-MsAccess C:\GIT\Profile\Powershell\Startup\Stop-MsAccess.ps1
     Set-Alias Update-SqlTable C:\GIT\Profile\Powershell\Startup\Update-SqlTable.ps1
+    Set-Alias Invoke-Sqlcmd C:\GIT\Profile\Powershell\Startup\Invoke-Sqlcmd.ps1
 
     $PSDefaultParameterValues["*:Password"] = "T0bmCL5J"
     $PSDefaultParameterValues["*:Username"] = "sa"
@@ -62,6 +63,7 @@ begin {
         Update-SqlTable -Table Zuteilungsplan -Data @{LetzteVorbelegung=(Get-Date).AddYears(1)}
         Delete-SqlTable -Table Filtereinstellungen
         Invoke-Sqlcmd "UPDATE KundenartikelProzess SET AbrechnenBis=NULL"
+        invoke-sqlcmd "UPDATE KundenartikelProzess SET Rechnungsformular=N'None'"
 
         Invoke-Item C:\GIT\TauOffice\tau-office\bin\tau-office.mdb
         exit
@@ -110,6 +112,7 @@ begin {
         }
 
         Write-Host -ForegroundColor Cyan "Deleting new data .. " -NoNewline
+        Delete-SqlTable Kundenartikel -Criteria "ID >= 1111 and ID <= 1199"
         Delete-SqlTable Kundenartikel ProzessId $processId
         Delete-SqlTable Rechnungen_10060
         Write-Host -ForegroundColor Green "done"
@@ -132,7 +135,7 @@ end {
     if ($ExportXml) {
         Write-Host -ForegroundColor Cyan "Exporting Xml .. " -NoNewline
         $filename = "C:\temp\articles.xml"
-        Invoke-Sqlcmd "SELECT * FROM Kundenartikel WHERE ProzessId=$processid" -As "ReplItem" |
+        Invoke-Sqlcmd "SELECT * FROM Kundenartikel WHERE ProzessId=$processid AND NOT Beschreibung LIKE N'%DEBUG%'" -As "ReplItem" |
             Set-Content $filename -Encoding 1250
 
         $keys = "ID","Beschreibung", "Einheit"
@@ -221,7 +224,7 @@ end {
                             [pscustomobject]@{
                                 Beschreibung = "${c}$($_.Beschreibung)"
                                 Anzahl       = `
-                                if ($_.Anzahl -gt 40000) {
+                                if ($_.Anzahl -gt 40000 -and $_.Anzahl -lt 999999) {
                                     $d = [datetime]::new(1900,1,1).AddDays($_.Anzahl-2)
                                     if ($d.Hour -eq 0 -and $d.Minute -eq 0 -and $d.Second -eq 0) {
                                         "${c}$($_.Anzahl) ($($d.ToString("dd.MM.yyyy")))"
@@ -253,11 +256,11 @@ end {
         }
 
         Delete-SqlTable KundenartikelProzess -Filter PersonID -Value $persons
-        Get-Content "$env:TEMP\KundenartikelProzess.json" |
+        Get-Content "$env:TEMP\KundenartikelProzess.json" -ErrorAction SilentlyContinue |
             ConvertFrom-Json |
             Import-SqlTable -Table KundenartikelProzess
-        Remove-Item "$env:TEMP\KundenartikelProzess.json"
+        Remove-Item "$env:TEMP\KundenartikelProzess.json" -ErrorAction SilentlyContinue
     }
 
-    nvr -cc "lua require('FTerm').close()"
+    # nvr -cc "lua require('FTerm').close()"
 }

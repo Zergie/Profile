@@ -31,7 +31,8 @@ Process {
     $Begin     = if ($Start.Length -gt 0) { [datetime]::Parse($Start) } else { $null }
     $Finish    = if ($End.Length   -gt 0) { [datetime]::Parse($End)   } else { $null }
 
-    $holidays  = (Invoke-RestMethod "https://feiertage-api.de/api/?jahr=$((Get-Date).Year)").BY |
+    $holidays  = (Invoke-RestMethod "https://feiertage-api.de/api/?jahr=$((Get-Date).Year)").BY
+    $holidays  = $holidays |
         Get-Member -Type NoteProperty |
         ForEach-Object{
             $item = $holidays."$($_.name)"

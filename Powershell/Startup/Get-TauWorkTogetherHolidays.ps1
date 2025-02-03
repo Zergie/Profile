@@ -267,8 +267,8 @@ end {
 
         if ($employees.Count -gt 5) {
             Write-Host "$pad ├─$($columns.lines_3 | Join-String -Separator '')─┤"
-            Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
             Write-Host "$pad │ $($columns.lines_1 | Join-String -Separator '') │"
+            Write-Host "$pad │ $($columns.lines_2 | Join-String -Separator '') │"
         } else
         {
             Write-Host "$pad └─$($columns.lines_3 | Join-String -Separator '')─┘"

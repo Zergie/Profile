@@ -48,6 +48,9 @@ param(
     $Value
 )
 Begin {
+    Set-Alias Format-SqlFilterCriteria C:\GIT\Profile\Powershell\Startup\Format-SqlFilterCriteria.ps1
+    Set-Alias Format-SqlValue C:\GIT\Profile\Powershell\Startup\Format-SqlValue.ps1
+
     $connection_string = @(
             "Server=$ServerInstance"
             "Database=$Database"
