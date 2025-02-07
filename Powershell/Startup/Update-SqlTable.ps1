@@ -28,7 +28,7 @@ param(
 
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory, Position=0)]
+    # [Parameter(Mandatory, Position=0)]
     [string]
     $Table,
 
@@ -68,6 +68,15 @@ Process {
     }
     Write-Verbose "data: $($data | ConvertTo-Json -Compress)"
 
+    if ($null -ne $Data.'::Table') {
+        $Table = $Data.'::Table'
+        if ($null -ne $Data.ID) {
+            $Filter = "ID"
+        }
+    }
+
+    $properties = $Data.psobject.properties | Where-Object Name -ne $Filter | Where-Object { -not $_.Name.StartsWith('::') }
+
     $data_types = Invoke-Sqlcmd `
                     -Database $Database `
                     -Query "SELECT column_name, data_type FROM Information_Schema.columns WHERE table_name='$Table' AND NOT data_type IN ('nvarchar','text')"
@@ -84,7 +93,7 @@ Process {
     }
 
     $Query += " SET "
-    $Query += ($Data.psobject.properties | Where-Object Name -ne $Filter | ForEach-Object {"[$($_.Name)]=@$($_.Name)"} ) -join ","
+    $Query += ($properties | ForEach-Object {"[$($_.Name)]=@$($_.Name)"}) -join ","
 
     if ($PSBoundParameters.ContainsKey("Filter")) {
         $Query += " WHERE [$Filter] = @$Filter"
@@ -96,8 +105,9 @@ Process {
 
     $command = $connection.CreateCommand()
     $command.CommandText = $Query
-    foreach ($p in $Data.psobject.properties | Where-Object Name -ne $Filter) {
-        if ($null -eq $p.Value) {
+    foreach ($p in $properties) {
+        if ($p.Name.StartsWith('::')) {
+        } elseif ($null -eq $p.Value) {
             $db_value = [System.DBNull]::Value
         } elseif ( $p.Name -in $data_types.column_name ) {
             if ($p.Value.Length -eq 0) {

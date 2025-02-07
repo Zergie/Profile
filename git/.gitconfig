@@ -111,8 +111,21 @@
 	resolve-merge-conflict = "!\
 		FILES=$(git status --porcelain | grep '^UU ' | cut -c4-); \
 		for file in $FILES; do \
-		PATH=$(echo ./$file); \
-		echo $PATH; \
-		'C:/Python311/python.exe' 'C:/Python311/Lib/site-packages/nvr/nvr.py' --servername '127.0.0.1:6789' -cc 'silent !wt focus-tab -t 1' \"$PATH\"; \
+			PATH=$(echo ./$file); \
+			echo $PATH; \
+			'C:/Python311/python.exe' 'C:/Python311/Lib/site-packages/nvr/nvr.py' --servername '127.0.0.1:6789' -cc 'silent !wt focus-tab -t 1' \"$PATH\"; \
 		done; \
 		"
+	
+	find-file = "!f(){\
+		echo -e '\\E[38;5;14m'\"\\033[1mgit log --all --pretty=format:'%h' -- $1\\033[0m\"; \
+		commits=`git log --all --pretty=format:'%h' -- $1`; \
+		for item in $commits; do echo $item; done; \
+		touch ~/fifo; \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit branch -a --contains ...\\033[0m\"; \
+		for commit in $commits; do \
+			git branch -a --contains $commit | cut -c3- >> ~/fifo; \
+		done; \
+		cat ~/fifo | grep -v 'users/\\|/HEAD' | grep 'remotes/origin/' | cut -c16- | sort | uniq; \
+		rm ~/fifo; \
+		};f"

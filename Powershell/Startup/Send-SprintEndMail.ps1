@@ -29,7 +29,6 @@ $branches = git --no-pager branch --remote --list 'origin/release/*' |
     ForEach-Object {
         $root = git --no-pager rev-list ^origin/master "$_" | Select-Object -Last 1
         $s    = $_.Substring("origin/release/".Length).Split('-')
-        $tag  = "setup_v$($s[0]).$($s[1]).$($s[2])"
         [pscustomobject]@{
             branch     = $_
             given_name = switch ( $_ ){
@@ -41,35 +40,48 @@ $branches = git --no-pager branch --remote --list 'origin/release/*' |
                 }
             }
             root       = $root
-            commits    = git --no-pager log $root..$_ --pretty=format:'%H,,,%d,,,%B;;;' |
-                Out-String |
-                ForEach-Object { $_.Split(";;;") } |
-                ForEach-Object { $_.Trim() } |
-                Where-Object { $_.Length -gt 0 } |
-                ForEach-Object {
-                    $a   = $_.Split(",,,")
-
-                    [pscustomobject]@{
-                        hash=$a[0].Trim()
-                        tags=$a[1] |
-                            ForEach-Object { $_.Trim(' ', '(', ')') } |
-                            ForEach-Object { $_ -replace "tag: ","" } |
-                            ForEach-Object { $_.Split(",") } |
-                            ForEach-Object { $_.Trim() } |
-                            Where-Object   { $_.StartsWith($tag) } |
-                            ForEach-Object { $_.Substring("setup_v".Length) } |
-                            Sort-Object |
-                            Select-Object -Last 1
-                        message=($a[2].Split("`n") |
-                            Where-Object { $_ -notmatch "^(\s*$|Related work items: #\d+|Cherry picked from !\d+)"}) |
-                            Join-String -Separator `n
-                        workitems=($a[2] | Select-String "#\d{3,4}" -AllMatches).Matches.Value |
-                            Group-Object |
-                            ForEach-Object name |
-                            ForEach-Object { $_.TrimStart('#') }
-                    }
-                }
+            tag        = "setup_v$($s[0]).$($s[1]).$($s[2])"
+            commits    = $null
         }
+    }
+$branches += [pscustomobject] @{
+    branch     = 'origin/master'
+    given_name = 'Nightly'
+    root       = git --no-pager log --after 5-1-2021 --reverse --pretty=format:'%H' | Select-Object -First 1
+    tag        = 'setup_v'
+    commits    = $null
+}
+$branches |
+    ForEach-Object {
+        $tag = $_.tag
+        $_.commits = git --no-pager log "$($_.root)..$($_.branch)" --pretty=format:'%H,,,%d,,,%B;;;' |
+            Out-String |
+            ForEach-Object { $_.Split(";;;") } |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_.Length -gt 0 } |
+            ForEach-Object {
+                $a   = $_.Split(",,,")
+
+                [pscustomobject]@{
+                    hash=$a[0].Trim()
+                    tags=$a[1] |
+                        ForEach-Object { $_.Trim(' ', '(', ')') } |
+                        ForEach-Object { $_ -replace "tag: ","" } |
+                        ForEach-Object { $_.Split(",") } |
+                        ForEach-Object { $_.Trim() } |
+                        Where-Object   { $_.StartsWith($tag) } |
+                        ForEach-Object { $_.Substring("setup_v".Length) } |
+                        Sort-Object |
+                        Select-Object -Last 1
+                    message=($a[2].Split("`n") |
+                        Where-Object { $_ -notmatch "^(\s*$|Related work items: #\d+|Cherry picked from !\d+)"}) |
+                        Join-String -Separator `n
+                    workitems=($a[2] | Select-String "#\d{3,4}" -AllMatches).Matches.Value |
+                        Group-Object |
+                        ForEach-Object name |
+                        ForEach-Object { $_.TrimStart('#') }
+                }
+            }
     }
 Pop-Location
 
@@ -155,11 +167,19 @@ $branches |
                         ForEach-Object {
                             $revision = $_.Split(".")[3]
                             if ($msi_files -contains $_) {
-                                $obj = [OfficeOpenXml.ExcelHyperLink]::new("https://u266601-sub2.your-storagebox.de/CD/Tau-Office/Setup$($branch.given_name -replace "[\\/]","_" )/$_")
-                                $obj.Display = [string]::new(9) + $revision.PadLeft(3, '0')
-                                if ($obj.Display.Length -ne 0) { $obj }
+                                if ($branch.given_name -eq "Nightly") {
+                                    $obj = [OfficeOpenXml.ExcelHyperLink]::new("https://u266601-sub2.your-storagebox.de/CD/Tau-Office/$($branch.given_name -replace "[\\/]","_" )/$_")
+                                    $obj.Display = $_.Substring("tauoffice_".Length, 14)
+                                    if ($obj.Display.Length -ne 0) { $obj }
+                                } else {
+                                    $obj = [OfficeOpenXml.ExcelHyperLink]::new("https://u266601-sub2.your-storagebox.de/CD/Tau-Office/Setup$($branch.given_name -replace "[\\/]","_" )/$_")
+                                    $obj.Display = [string]::new(9) + $revision.PadLeft(3, '0')
+                                    if ($obj.Display.Length -ne 0) { $obj }
+                                }
                             } else {
-                                [string]::new(9) + $revision.PadLeft(3, '0')
+                                if ($branch.given_name -ne "Nightly") {
+                                    [string]::new(9) + $revision.PadLeft(3, '0')
+                                }
                             }
                         }
                     # message  = $_.message
@@ -200,7 +220,7 @@ $branches |
         $ws = $excel.Workbook.Worksheets | Select-Object -Last 1
         $PSDefaultParameterValues["*:Worksheet"] = $ws
         Set-ExcelColumn -Column 1 -Width 42 -HorizontalAlignment Left -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None
-        Set-ExcelColumn -Column 2 -Width 12 -HorizontalAlignment Center -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None
+        Set-ExcelColumn -Column 2 -AutoSize -HorizontalAlignment Center -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None
         Set-ExcelColumn -Column 3 -Width 128 -HorizontalAlignment Left -VerticalAlignment Center -FontColor Black -Underline -UnderLineType None -WrapText
         Set-ExcelRow  -Row 2 -Bold -HorizontalAlignment Left
         $last_commit = ""

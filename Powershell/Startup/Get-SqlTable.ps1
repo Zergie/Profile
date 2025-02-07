@@ -130,6 +130,8 @@ if ($Progress) {
             Set-Content $OutFile -Encoding utf-8
 
         Get-ChildItem $OutFile
+    } elseif (-not $PSBoundParameters.ContainsKey("Table")) {
+        $result
     } else {
         $props = $result |
             Select-Object -First 1 |
