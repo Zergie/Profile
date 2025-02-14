@@ -194,10 +194,10 @@ DynamicParam {
     return $RuntimeParameterDictionary
 }
 begin {
-    ${Invoke-RestApi}  = "$PSScriptRoot\Invoke-RestApi.ps1"
-    ${Get-Attachments} = "$PSScriptRoot\Get-Attachments.ps1"
-    ${New-Attachments} = "$PSScriptRoot\New-Attachments.ps1"
-    ${ConvertTo-Pdf}   = "$PSScriptRoot\ConvertTo-Pdf.ps1"
+    ${Invoke-RestApi}      = "$PSScriptRoot\Invoke-RestApi.ps1"
+    ${Get-Attachments}     = "$PSScriptRoot\Get-Attachments.ps1"
+    ${New-Attachments}     = "$PSScriptRoot\New-Attachments.ps1"
+    ${ConvertTo-Pdf}       = "$PSScriptRoot\ConvertTo-Pdf.ps1"
     $PSDefaultParameterValues["ForEach-Object:WhatIf"] = $false
 
     @("User.WorkItem", "User.WorkItemPdf") |
@@ -408,7 +408,7 @@ process {
                             op    = "replace"
                             path  = "/fields/System.Title"
                             value = $_.fields.'System.Title' `
-                                        -replace 'Korrektur (?:auf|aus) Aufgabe (?:ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$1' `
+                                        -replace 'Korrektur (?:auf|aus)?(?:\s*)Aufgabe (?:ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$1' `
                                         -replace 'Korrektur (?:auf|aus)(?: Aufgabe ID:?| Aufgabe)? (\d+)', 'Erweiterung von #$1' `
                                         -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                         -replace '(Aufgabe siehe Word),?\s*', '' `
@@ -421,7 +421,7 @@ process {
                             op    = "replace"
                             path  = "/fields/System.Description"
                             value = $_.fields.'System.Description' `
-                                        -replace 'Korrektur auf Aufgabe ID \d+(?: |&nbsp;)\(DevOpsID: (\d+)\)' `
+                                        -replace 'Korrektur (?:auf )?Aufgabe ID \d+(?: |&nbsp;)\(DevOpsID: (\d+)\)' `
                                                , 'Erweiterung von <a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1" data-vss-mention="version:1.0">#$1</a>' `
                                         -replace 'ID:?(\d+)' `
                                                , '<a href="https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_workitems/edit/$1" data-vss-mention="version:1.0">#$1</a>' `
@@ -435,36 +435,56 @@ process {
                                         -replace '<br><br>Aufgenommen durch', '<br>Aufgenommen durch'
                     }
 
-                    $text = ($_.fields.'System.Description' | Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*(\d{2}\.\d{2}\.\d{4})').Matches |
-                                    ForEach-Object { try {$_.Groups[1].Value} catch {} } |
-                                    Select-Object -First 1
-                    if ($text.Length -gt 0) {
-                        if ($null -eq $revs_master) {
-                            $revs_master = git -C C:\GIT\TauOffice rev-list --first-parent origin/master
-                            $date_branch_lookup = git -C C:\GIT\TauOffice\ branch --remote --list 'origin/release/*' |
-                                Select-String -Pattern "release/(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})" |
-                                Sort-Object Value |
-                                Select-Object -Last 6 |
-                                ForEach-Object Matches |
-                                ForEach-Object {
-                                    [pscustomobject]@{
-                                        branch = $_.Groups[0]
-                                        date   = "$($_.Groups['d']).$($_.Groups['m']).$($_.Groups['y'])"
-                                        tag    = git -C C:\GIT\TauOffice\ rev-list --reverse --first-parent --max-count=255 "origin/$($_.Groups[0])" |
-                                                    Where-Object{ $_ -notin $revs_master } |
-                                                    Select-Object -First 1 |
-                                                    ForEach-Object { git log --pretty=format:"%s" -1 $_ } |
-                                                    ForEach-Object { $_.Replace("Release", "TO") }
-                                    }
-                                }
+                    $UmsetzenIn = $_.fields.'System.Description' |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)\s*(?<year>\d{4}))' |
+                                    ForEach-Object Matches |
+                                    ForEach-Object Groups |
+                                    Where-Object Name -NotIn @(0..9) |
+                                    Where-Object Length -gt 0 |
+                                    ForEach-Object `
+                                        -Begin   {$r=@{}} `
+                                        -Process {$r[$_.Name] = $_.Value} `
+                                        -End     {$r}
+
+                    if ($UmsetzenIn.Count -gt 0) {
+                        if ($null -eq $branch_lookup) {
+                            $branch_lookup = git --no-pager branch --remote --list 'origin/release/*' |
+                                                ForEach-Object { $_.Substring(2) } |
+                                                Sort-Object -Descending |
+                                                Select-Object -First 4 |
+                                                ForEach-Object {
+                                                    $root = git --no-pager rev-list ^origin/master "$_" | Select-Object -Last 1
+                                                    $s    = $_.Substring("origin/release/".Length).Split('-')
+                                                    [pscustomobject]@{
+                                                        branch     = $_
+                                                        given_name = switch ( $_ ){
+                                                            "origin/release/2021-07-16" { "TO 2021/Q2" }
+                                                            default {
+                                                                git --no-pager log $root^1..$root --pretty=format:'%B' |
+                                                                    Select-String "\d{4}[\\/]Q\d" -AllMatches |
+                                                                    ForEach-Object { "TO $($_.Matches.Value)" }
+                                                            }
+                                                        }
+                                                        root       = $root
+                                                        tag        = "setup_v$($s[0]).$($s[1]).$($s[2])"
+                                                        date       = "$($s[2]).$($s[1]).$($s[0])"
+                                                    }
+                                                }
                         }
 
                         $w = $_
-                        $new_tag = $date_branch_lookup |
-                            Where-Object date -eq $text |
-                            ForEach-Object tag |
-                            Where-Object { $_ -notin $w.fields.'System.Tags' }
-                        if ($null -ne $new_tag) {
+                        $new_tag = $null
+                        if ($UmsetzenIn.ContainsKey('date')) {
+                            $new_tag = $branch_lookup |
+                                Where-Object date -eq $UmsetzenIn.date |
+                                ForEach-Object given_name
+                        } elseif ($UmsetzenIn.ContainsKey('q') -and $UmsetzenIn.ContainsKey('year')) {
+                            $new_tag = "TO $($UmsetzenIn.year)\$($UmsetzenIn.q)"
+                        }
+
+                        if ($null -eq $new_tag) {
+                        } elseif ($new_tag -in $w.fields.'System.Tags') {
+                        } else {
                             $patches[$_.Id] += [ordered]@{
                                 op    = "add"
                                 path  = "/fields/System.Tags"
