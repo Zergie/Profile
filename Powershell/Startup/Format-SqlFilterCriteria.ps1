@@ -18,8 +18,8 @@ Process {
     } else {
         switch -Regex ($Value.GetType().FullName) {
             '^(System\.Collections\.ArrayList|System\.Object\[\])$'
-                    { "[$Filter] IN $(Format-SqlValue $Value)" }
-            default { "[$Filter] = $(Format-SqlValue $Value)" }
+                    { "[$Filter] IN $(Format-SqlValue -Field $Filter -Value $Value)" }
+            default { "[$Filter] = $(Format-SqlValue -Field $Filter -Value $Value)" }
         }
     }
 }
