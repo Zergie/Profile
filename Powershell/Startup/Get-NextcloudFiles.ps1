@@ -110,6 +110,10 @@ begin {
         }
     }
 
+    $credentials = Get-Content "$PSScriptRoot\..\secrets.json" |
+                        ConvertFrom-Json |
+                        ForEach-Object NextCloud
+
     if ($DebugParameterBindung) {
         Get-Variable |
             Where-Object { $_.GetType().FullName -in 'System.Management.Automation.LocalVariable' }
@@ -132,11 +136,22 @@ end {
         Invoke-WebRequest -Method Post -Uri http://localhost:8888 | Out-Null
 
         Invoke-WebRequest -Method Post -Uri http://localhost:8888/get -Body $Url | Out-Null
+
         if ($null -ne $password) {
             Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
                 input = document.querySelectorAll('input[name=password]')[0];
-                input.value = 'zkpo1J73zE';
+                input.value = '$password';
                 button = document.querySelectorAll('#password-submit')[0];
+                button.disabled = false;
+                button.click();
+            " | Out-Null
+        } else {
+            Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
+                input = document.querySelectorAll('input[id=user]')[0];
+                input.value = '$($credentials.username)';
+                input = document.querySelectorAll('input[id=password]')[0];
+                input.value = '$($credentials.password)';
+                button = document.querySelectorAll('button[type=submit]')[0];
                 button.disabled = false;
                 button.click();
             " | Out-Null
@@ -150,13 +165,16 @@ end {
             " |
                 ForEach-Object Content
         }
+
         $files = (Invoke-WebRequest -Method Post -Uri http://localhost:8888/js -Body "
             console.log(Array.from(document.querySelectorAll('tr[data-type]')).map(x => x.querySelector('a')).map(x => x.href))
         " |
             ForEach-Object Content |
             ConvertFrom-Json |
             ForEach-Object console).Split(",") |
-            ForEach-Object { $_.Trim() }
+            ForEach-Object { [System.Uri]::UnescapeDataString($_.Trim()) } |
+            ForEach-Object { [System.Uri]::new($_) } |
+            ForEach-Object { $_.AbsoluteUri }
 
         $cookie = Invoke-WebRequest -Method Post -Uri http://localhost:8888/cookies |
             ForEach-Object Content |
@@ -180,10 +198,12 @@ end {
 
         $files |
             ForEach-Object {
-                if ($count -gt 1) {
+                if ($count -eq 1) {
+                    $filename = "NextCloud.zip"
+                } elseif ($_ -match "(\?path|&files)=") {
                     $filename = [System.Uri]::UnescapeDataString($_) -replace ".+(\?path|&files)=/*", ''
                 } else {
-                    $filename = "NextCloud.zip"
+                    $filename = [System.Uri]::new($_).Segments | select -Last 1
                 }
                 $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($DownloadFolder, $filename))
 
@@ -192,7 +212,11 @@ end {
                 }
 
                 Write-Host -ForegroundColor Cyan "Downloding $_ => $path"
-                Invoke-WebRequest $_ -Headers @{Cookie=$cookie} -OutFile $path
+                if ($null -ne $password) {
+                    Invoke-WebRequest $_ -Headers @{Cookie=$cookie} -OutFile $path
+                } else {
+                    Invoke-WebRequest $_ -Headers @{Authorization='Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($credentials.username):$($credentials.Password)"))} -OutFile $path
+                }
 
                 if (![System.IO.Path]::Exists($path)) {
                     Write-Host -ForegroundColor Cyan "Downloding (without cookies) $_ => $path"
