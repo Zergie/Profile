@@ -1,6 +1,7 @@
 {
     "bottom_shell_layers": "5",
     "brim_type": "no_brim",
+    "filename_format": "1001.gcode",
     "from": "User",
     "infill_anchor_max": "15",
     "inherits": "0.20mm Standard @Voron",
