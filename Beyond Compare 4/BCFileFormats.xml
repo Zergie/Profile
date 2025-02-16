@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Produced by Beyond Compare 4 from Scooter Software -->
 <BCFileFormats Version="1">
+	<TPixFormat Value="Stl Dateien">
+		<ConvertKind Value="convertAppAnsi"/>
+		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-StlRender.ps1 -path %o -outfile %t"/>
+		<Mask Value="*.stl"/>
+	</TPixFormat>
 	<TTextFormat Value="&#2;JS">
 		<UseRes Value="True"/>
 	</TTextFormat>

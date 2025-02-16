@@ -2,12 +2,12 @@
     param(
         [Parameter(Mandatory = $true)]
         [ValidateScript({Test-Path $_})]
-        [string] 
+        [string]
         $Path
     )
 
     $FullPath = Resolve-Path $Path
-    
+
     if ((Invoke-SqlCmd -Query "SELECT @@Version AS version").version.Contains(" on Linux"))
     {
         if ($FullPath.Path.ToLower().StartsWith("c:\tau-office_daten\"))
@@ -17,7 +17,7 @@
         else
         {
             Copy-Item $FullPath "C:\tau-office_daten\test.bak"
-            $FullPath = "/var/opt/mssql/tau-office-daten/test.bak" 
+            $FullPath = "/var/opt/mssql/tau-office-daten/test.bak"
         }
     }
 
@@ -56,10 +56,9 @@
     Add-Member -InputObject $result -MemberType NoteProperty -Name "Software" -Value $Software
 
     foreach ($p in $data | Get-Member -Type Property) {
-        Add-Member -InputObject $result -MemberType NoteProperty -Name $p.Name -Value $data.$($p.Name) 
+        Add-Member -InputObject $result -MemberType NoteProperty -Name $p.Name -Value $data.$($p.Name)
     }
 
     Get-ChildItem C:\tau-office_daten\test.bak -ErrorAction SilentlyContinue | Remove-Item -Force
 
     $result
-

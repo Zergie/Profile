@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Produced by Beyond Compare 5 from Scooter Software -->
+<BCFileFormats Version="2" MinVersion="2">
+	<TPixFormat Value="Stl Dateien">
+		<ConvertKind Value="convertAppAnsi"/>
+		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-StlRender.ps1 -path %o -outfile %t"/>
+		<Mask Value="*.stl"/>
+	</TPixFormat>
+	<TTextFormat Value="&#2;CPP">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;COBOL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTableFormat Value="&#2;CSV">
+		<UseRes Value="True"/>
+	</TTableFormat>
+	<TTextFormat Value="&#2;DFM">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PAS">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TVerFormat Value="&#2;EXE">
+		<UseRes Value="True"/>
+	</TVerFormat>
+	<TTextFormat Value="&#2;HTML">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;JAVA">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;JS">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TMediaFormat Value="&#2;MEDIA">
+		<UseRes Value="True"/>
+	</TMediaFormat>
+	<TTableFormat Value="&#2;MSEXCEL">
+		<UseRes Value="True"/>
+	</TTableFormat>
+	<TTextFormat Value="&#2;MSWORD">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PDF">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;PERL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TPixFormat Value="&#2;PIX">
+		<UseRes Value="True"/>
+	</TPixFormat>
+	<TTextFormat Value="&#2;PYTHON">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;REG">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;RTF">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;SORT">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;SQL">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;VB">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<TTextFormat Value="&#2;XML">
+		<UseRes Value="True"/>
+	</TTextFormat>
+	<THexFormat>
+		<ConvertKind Value="convertApp"/>
+		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-StlRender.ps1 -path %o -outfile %t"/>
+		<ConvertNoEdit Value="True"/>
+	</THexFormat>
+</BCFileFormats>

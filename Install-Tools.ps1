@@ -168,6 +168,9 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 4"
                       destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 4"}
 
+    [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 5"
+                      destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 5"}
+
     [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
                       destination = "$env:APPDATA\warpd\warpd.conf"}
 
