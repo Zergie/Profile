@@ -23,13 +23,17 @@ param(
     [switch]
     $Interactive,
 
-    [Parameter(ParameterSetName="WriteEMailResponseParameterSet")]
+    [Parameter(ParameterSetName="EMailResponseParameterSet")]
     [switch]
     $WriteEMailResponse,
 
     [Parameter(ParameterSetName="PullRequestParameterSet")]
     [switch]
-    $WritePullRequest
+    $WritePullRequest,
+
+    [Parameter(ParameterSetName="GitCommitParameterSet")]
+    [switch]
+    $WriteGitCommit
 )
 if ($WritePullRequest) {
     $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
@@ -46,7 +50,17 @@ if ($WritePullRequest) {
                     Get-Clipboard |
                     Join-String -Separator `n
                 )
+} elseif ($WriteGitCommit) {
+    $json =Get-Content C:\git\Profile\neovim\lua\user\chatgpt.json | ConvertFrom-Json
+    $Role = $json.commit.opts.template
+    $Model = $json.commit.opts.params.model
+    $Message = @(
+                    git diff --staged |
+                        Join-String -Separator `n
+                    '!git commit -m "$_"'
+                )
 }
+
 $ApiEndpoint = "https://api.openai.com/v1/chat/completions"
 $ApiKey = $env:OPENAI_API_KEY
 $userMessage = "reset"
@@ -79,6 +93,10 @@ while ($true) {
         "^(c|copy)$" {
             Set-Clipboard $aiResponse
             Write-Host "Copied to clipboard!" -ForegroundColor Magenta
+        }
+        "^[!]" {
+            $cmd = $userMessage.Substring(1).Replace('$_', "$aiResponse")
+            Invoke-Expression $cmd
         }
         default {
             # Add new user prompt to list of messages

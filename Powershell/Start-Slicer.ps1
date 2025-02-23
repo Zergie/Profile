@@ -1,7 +1,15 @@
 $slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\OrcaSlicer\orca-slicer.exe"
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
-
 $path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
+
+$Debug = $false
+if ($Debug) {
+    Write-Host -ForegroundColor Yellow "`$slicer=$slicer"
+    Write-Host -ForegroundColor Yellow "`$slicer_process=$($slicer_process.Id)"
+    Write-Host -ForegroundColor Yellow "`$args=" -NoNewline
+    $args | ConvertTo-Json | Write-Host -ForegroundColor Yellow
+    Write-Host -ForegroundColor Yellow "`$Path=$path"
+}
 
 if ($null -ne $slicer_process) {
     Add-Type @"
@@ -24,11 +32,17 @@ if ($null -ne $slicer_process) {
 
     Start-Sleep -Milliseconds 750
 
+    $old = Get-Clipboard
     Set-Clipboard -Value ${path}
     $wshell.SendKeys("^v")
     $wshell.SendKeys("{Enter}")
+    $wshell.SendKeys("+A")
+
+    Start-Sleep -Seconds 1
+    [NativeMethods]::SetForegroundWindow((Get-Process Fusion360).MainWindowHandle)
+    Set-Clipboard $old
 } else {
     . $slicer "${path}"
 }
 
-# Read-Host
+if ($Debug) { Read-Host }

@@ -183,6 +183,7 @@ Start-Action "Set alias to my programs"
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
+    function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
 Complete-Action
 
 # set alias to my scripts
