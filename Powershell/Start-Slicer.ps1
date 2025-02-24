@@ -1,4 +1,9 @@
-$slicer = "C:\ProgramData\chocolatey\lib\orcaslicer\tools\OrcaSlicer\orca-slicer.exe"
+$slicer = @(
+    "$env:PROGRAMDATA\chocolatey\lib\orcaslicer\tools\OrcaSlicer\orca-slicer.exe"
+    "$env:PROGRAMFILES\OrcaSlicer\orca-slicer.exe"
+    ) | Get-Item -ErrorAction SilentlyContinue |
+        Sort-Object CreationTime |
+        Select-Object -Last 1
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
 $path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
 
@@ -36,6 +41,9 @@ if ($null -ne $slicer_process) {
     Set-Clipboard -Value ${path}
     $wshell.SendKeys("^v")
     $wshell.SendKeys("{Enter}")
+
+    Start-Sleep -Milliseconds 200
+
     $wshell.SendKeys("+A")
 
     Start-Sleep -Seconds 1

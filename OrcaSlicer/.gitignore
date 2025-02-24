@@ -1,3 +1,5 @@
 system/Prusa.json
 system/Prusa
 hms/
+log/
+**/*.bak

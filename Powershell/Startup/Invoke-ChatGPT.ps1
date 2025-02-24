@@ -54,9 +54,12 @@ if ($WritePullRequest) {
     $json =Get-Content C:\git\Profile\neovim\lua\user\chatgpt.json | ConvertFrom-Json
     $Role = $json.commit.opts.template
     $Model = $json.commit.opts.params.model
+    $commit = git diff --staged -B -M | Join-String -Separator `n
+    if ($commit.Length -gt 10000) {
+        $commit = git diff --staged -B -M --num-stat | Join-String -Separator `n
+    }
     $Message = @(
-                    git diff --staged |
-                        Join-String -Separator `n
+                    $commit
                     '!git commit -m "$_"'
                 )
 }
