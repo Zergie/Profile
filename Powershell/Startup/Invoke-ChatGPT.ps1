@@ -56,7 +56,7 @@ if ($WritePullRequest) {
     $Model = $json.commit.opts.params.model
     $commit = git diff --staged -B -M | Join-String -Separator `n
     if ($commit.Length -gt 10000) {
-        $commit = git diff --staged -B -M --num-stat | Join-String -Separator `n
+        $commit = git diff --staged -B -M --numstat | Join-String -Separator `n
     }
     $Message = @(
                     $commit
