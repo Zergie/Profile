@@ -54,9 +54,13 @@ if ($WritePullRequest) {
     $json =Get-Content C:\git\Profile\neovim\lua\user\chatgpt.json | ConvertFrom-Json
     $Role = $json.commit.opts.template
     $Model = $json.commit.opts.params.model
+    $binaryonly = (git diff --staged --name-only |
+        Where-Object { ! $_.EndsWith(".pdf") } |
+        Measure-Object
+        ).Count -eq 0
     $commit = git diff --staged -B -M | Join-String -Separator `n
-    if ($commit.Length -gt 100000) {
-        $commit = git diff --staged -B -M --numstat | Join-String -Separator `n
+    if ($binaryonly -or $commit.Length -gt 100000) {
+        $commit = git diff --staged -B -M --name-status | Join-String -Separator `n
     }
     $Message = @(
                     $commit
