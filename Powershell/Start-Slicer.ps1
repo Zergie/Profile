@@ -5,9 +5,10 @@ $slicer = @(
         Sort-Object CreationTime |
         Select-Object -Last 1
 $slicer_process = Get-Process ([System.IO.Path]::GetFileNameWithoutExtension($slicer))
-$path = Get-ChildItem "$args*" | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
+$path = Get-ChildItem ("$args*" -replace '(\[|\])','``$1') | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object FullName
 
 $Debug = $false
+$Debug = $Debug -or $path.Length -eq 0
 if ($Debug) {
     Write-Host -ForegroundColor Yellow "`$slicer=$slicer"
     Write-Host -ForegroundColor Yellow "`$slicer_process=$($slicer_process.Id)"
