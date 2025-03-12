@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [string[]]
-    $Recipient = @("to_tester@rocom.de", "jriedl@rocom.de"),
+    $Recipient = @("to_tester@rocom.de", "rgumberger@rocom.de"),
 
     [string[]]
     $Bcc = @("wpuchinger@rocom-service.de"),

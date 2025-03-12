@@ -1,24 +1,22 @@
 param (
-    [Parameter(Mandatory=$true,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
     $Editor,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter(ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [string[]]
     $Input,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string[]]
-    $Arguments
+    $Arguments,
+
+    [Parameter()]
+    [switch]
+    $DoNotTransformPaths
 )
 begin {
 }
@@ -59,7 +57,9 @@ process {
 
     $argv = $argv |
         ForEach-Object {
-            if ($_.Contains("/") -and !$_.StartsWith(".") -and !$_.Contains(":")) {
+            if ($DoNotTransformPaths) {
+                $_
+            } elseif ($_.Contains("/") -and !$_.StartsWith(".") -and !$_.Contains(":")) {
                ".\$($_.Replace("/", "\"))" # git status style paths
             }
             else {

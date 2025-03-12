@@ -179,10 +179,12 @@ Start-Action "Set alias to my programs"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
     Set-Alias nf      "$PSScriptRoot\Startup\New-FeatureBranch.ps1"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
+    Set-Alias sjb     Start-ThreadJob
     Set-Alias sudo    gsudo
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
+    function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
 Complete-Action
 
@@ -237,6 +239,20 @@ if ((Test-Path $dockerScript)) {
                     ForEach-Object COLUMN_NAME |
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
+
+        Register-ArgumentCompleter -CommandName "Get-SshFile.ps1" -ParameterName "Path" -ScriptBlock {
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+            if ($fakeBoundParameter.Contains("Path")) {
+                Invoke-Ssh tree -if --noreport -L 1 $($fakeBoundParameter.Path | Select-Object -Last 1) |
+                        Select-Object -Skip 1 |
+                        ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+            } else {
+                Invoke-Ssh tree -if --noreport -L 1 |
+                        Select-Object -Skip 1 |
+                        ForEach-Object { $_.SubString(2) } |
+                        ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+            }
+        }
 
         $credentials =  Get-Content -raw $dockerScript |
                             Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |

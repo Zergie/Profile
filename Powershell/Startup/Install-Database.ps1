@@ -7,28 +7,19 @@ Param(
     $AsJob
 )
 dynamicparam {
+    Set-Alias "Invoke-Ssh" "$PSScriptRoot\Invoke-Ssh.ps1"
     $config = [pscustomobject]@{
-        host = 'u266601-sub2.your-storagebox.de'
-        user = 'u266601-sub2'
-        port = 23
         local_folder = 'C:\Dokumente\Daten'
     }
     $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter databases.json).LastWriteTime).TotalDays -gt 15 } catch { $true }
 
     if ($shouldUpdateJson) {
         @(
-            ssh "$($config.user)@$($config.host)" -p $($config.port) ls -R -T1 Testdatenbanken |
-                ForEach-Object {
-                    if ($_.EndsWith(":")) {
-                        $directory = $_.Trim(":").Substring("Testdatenbanken/".Length)
-                    } elseif ($null -eq $directory) {
-                    } else {
-                        "ssh://$directory/$_"
-                    }
-                } |
-                Where-Object { $_ -like '*.*' }
+            Invoke-Ssh tree -if --noreport -L 2 Testdatenbanken |
+                Where-Object { $_ -like '*.zip' } |
+                ForEach-Object { "ssh://$($_.SubString("Testdatenbanken/".Length))" }
 
-            ssh "$($config.user)@$($config.host)" -p $($config.port) ls Installationsdatenbanken |
+            Invoke-Ssh ls Installationsdatenbanken |
                 ForEach-Object {
                         "ssh://Installationsdatenbanken/$_"
                 } |

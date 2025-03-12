@@ -1,117 +1,99 @@
 #Requires -PSEdition Core
-[cmdletbinding(SupportsShouldProcess=$true)]
+[cmdletbinding(SupportsShouldProcess)]
 param (
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                Position=0,
                ParameterSetName="IdParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [string[]]
     $WorkitemId,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="NewParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [Alias('n')]
     [switch]
     $New,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="BranchesParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [Alias('b')]
     [switch]
     $Branches,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="TodoParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [Alias('t')]
     [switch]
     $ToDo,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="DoingParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [Alias('d')]
     [switch]
     $Doing,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="StartParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [DateTime]
     $Start,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="StartParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [DateTime]
     $End,
 
-    [Parameter(Mandatory=$true,
+    [Parameter(Mandatory,
                ParameterSetName="PrepareSprintParameterSet",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+               ValueFromPipeline)]
     [switch]
     $PrepareSprint,
 
-    [Parameter(Mandatory=$true,
-               ParameterSetName="CloseIssuesWithNoFeedbackParameterSet",
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter(Mandatory,
+               ParameterSetName="CloseIssuesWithNoFeedbackParameterSet")]
     [switch]
     $CloseIssuesWithNoFeedback,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [switch]
     $BeginWork,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [Alias('u')]
     [switch]
     $Update,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [Alias('a')]
     [switch]
     $Assign,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [Alias('o')]
     [switch]
     $Online,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    # [Parameter()]
+    # [string]
+    # $TagRemove,
+
+    [Parameter()]
     [string]
     $Tag,
 
-    [Parameter(Mandatory=$false,
-               ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [Alias('p')]
     [switch]
     $Pdf
@@ -225,7 +207,7 @@ process {
         $CloseIssuesWithNoFeedback = $false
     }
 
-    if ($Tag.Length -gt 0) {
+    if ($Tag.Length -gt 0 -or $TagRemove.Length -gt 0) {
         $Update = $true
     }
 
@@ -436,7 +418,7 @@ process {
                     }
 
                     $UmsetzenIn = $_.fields.'System.Description' |
-                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)\s*(?<year>\d{4}))' |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)\s*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d))' |
                                     ForEach-Object Matches |
                                     ForEach-Object Groups |
                                     Where-Object Name -NotIn @(0..9) |
@@ -484,6 +466,8 @@ process {
 
                         if ($null -eq $new_tag) {
                         } elseif ($new_tag -in $w.fields.'System.Tags') {
+                        } elseif ($Tag.Length -gt 0) {
+                        } elseif ($TagRemove.Length -gt 0) {
                         } else {
                             $patches[$_.Id] += [ordered]@{
                                 op    = "add"
@@ -570,6 +554,16 @@ process {
                             }
                     }
                 }
+                # does not work:
+                # if ($TagRemove.Length -gt 0) {
+                #     $patch = [ordered]@{
+                #         op    = "remove"
+                #         path  = "/fields/System.Tags"
+                #         from  = "null"
+                #         value = $TagRemove
+                #     }
+                #     $patches[$_.Id] += $patch
+                # }
                 if ($Tag.Length -gt 0) {
                     $patch = [ordered]@{
                         op    = "add"

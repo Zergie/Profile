@@ -351,7 +351,7 @@ Process {
                             Closed         = $w.fields.'Microsoft.VSTS.Common.ClosedDate'
                             CompletedWork  = $w.fields.'Microsoft.VSTS.Scheduling.CompletedWork'
                             Oberpunkt      = $parent | ForEach-Object { "$($_.fields.'System.Title') ($($_.fields.'System.WorkItemType') $($_.id))" }
-                            Arbeitsschritt = "$($w.fields.'System.Title') ($($w.fields.'System.WorkItemType') $($w.id))"
+                            Arbeitsschritt = "$($w.fields.'System.Title')"
                             # Mitarbeiter    = switch ($w.fields.'System.AssignedTo'.displayName) {
                             #                     "Wolfgang Puchinger" { "PU" }
                             #                     default { $w.fields.'System.AssignedTo'.displayName }

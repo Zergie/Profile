@@ -115,7 +115,7 @@ end {
                         Set-Content $item.FullName -Encoding utf8
                     break
                 }
-                "\.(ACT|xml)$" {
+                "\.(xml)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
                     $settings = [System.Xml.XmlWriterSettings]::new()
@@ -129,6 +129,26 @@ end {
                     break
                 }
 
+                "\.(ACT)$" {
+                    $xml = ([xml](Get-Content $item -Encoding utf8))
+
+                    $duplicates = $xml.root.dataroot.ChildNodes.id |
+                        Group-Object |
+                        Where-Object count -GT 1 |
+                        ForEach-Object {
+                            Write-Host -ForegroundColor Yellow "ID $($_.Name) is used $($_.Count)! IDs should be unique."
+                        }
+
+                    $settings = [System.Xml.XmlWriterSettings]::new()
+                    $settings.Encoding = [System.Text.Encoding]::UTF8
+                    $settings.Indent = $true
+
+                    $writer = [System.Xml.XmlWriter]::Create($item.FullName, $settings)
+                    $xml.Save($writer)
+                    $writer.Close()
+                    $writer.Dispose()
+                    break
+                }
                 "\.(ACF|ACR|ACM)$" {
                     Write-Host -ForegroundColor Cyan "git restore $item"
                     git restore "$item"
