@@ -7,6 +7,7 @@
         "auto_arrange": true,
         "auto_calculate": true,
         "auto_calculate_when_filament_change": true,
+        "auto_perspective": false,
         "backup_interval": "10",
         "backup_switch": true,
         "camera_navigation_style": "0",
@@ -27,8 +28,8 @@
         "iot_environment": "3",
         "keyboard_supported": "none/alt/control/shift",
         "language": "en_GB",
-        "last_backup_path": "C:\\Users\\user\\AppData\\Local\\Temp/orcaslicer_model/Mon_Feb_24/05_32_56#12184#49",
-        "last_export_path": "C:\\GIT\\YAMMU\\STls\\SpoolCarrier",
+        "last_backup_path": "C:\\Users\\user\\AppData\\Local\\Temp/orcaslicer_model/Sun_Mar_16/05_46_25#17032#49",
+        "last_export_path": "C:\\Users\\user\\Desktop\\to_print",
         "log_severity_level": "warning",
         "max_recent_count": "18",
         "max_send": "3",
@@ -47,8 +48,8 @@
         "print_host_queue_dialog_column_5": "80",
         "print_host_queue_dialog_height": "55",
         "print_host_queue_dialog_width": "27",
-        "print_host_queue_dialog_x": "246",
-        "print_host_queue_dialog_y": "43",
+        "print_host_queue_dialog_x": "152",
+        "print_host_queue_dialog_y": "25",
         "privacy_version": "00.00.00.00",
         "project_load_behaviour": "ask_when_relevant",
         "region": "Europe",
@@ -95,6 +96,16 @@
         "min_object_distance_fff": "5"
     },
     "filaments": [
+        "Generic ABS @System",
+        "Generic ASA @System",
+        "Generic PA @System",
+        "Generic PA-CF @System",
+        "Generic PC @System",
+        "Generic PETG @System",
+        "Generic PLA @System",
+        "Generic PLA-CF @System",
+        "Generic PVA @System",
+        "Generic TPU @System",
         "Prusa Generic ABS @MK4",
         "Prusa Generic ASA @MK4",
         "Prusa Generic PA",
@@ -152,7 +163,7 @@
         "line_height": "10.000000",
         "name": "MODERN"
     },
-    "header": "OrcaSlicer 2.3.0-beta",
+    "header": "OrcaSlicer 2.3.0-rc",
     "models": [
         {
             "model": "MK4IS",
@@ -223,7 +234,7 @@
         {
             "curr_bed_type": "3",
             "filament": "Generic ABS",
-            "filament_01": "Generic ABS",
+            "filament_01": "Generic PLA",
             "filament_colors": "#808080,#80FF00",
             "flush_volumes_matrix": "0.000000|377.000000|163.000000|0.000000",
             "flush_volumes_vector": "140.000000|140.000000|140.000000|140.000000",
@@ -295,29 +306,29 @@
         "timelapse": "1"
     },
     "recent": {
-        "last_opened_folder": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron",
+        "last_opened_folder": "C:\\Users\\user\\Downloads",
         "printhost_path": "",
         "settings_folder": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron"
     },
     "recent_projects": {
-        "01": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_coupler_x2.3mf",
-        "02": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_coupler_x2.stl",
-        "03": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_splitter_x2.3mf",
-        "04": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_splitter_x2.stl",
-        "05": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_din_rail_base_x2.3mf",
-        "06": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_din_rail_base_x2.stl",
-        "07": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\din_rail_clip_x12.3mf",
-        "08": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\din_rail_clip_x12.stl",
-        "09": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body3.3mf",
-        "10": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body3.stl",
-        "11": "C:\\Users\\user\\Desktop\\name tag.3mf",
-        "12": "C:\\Users\\user\\Downloads\\x_frame_V2TR_MGN12_left_sq_nut.3mf",
-        "13": "C:\\Users\\user\\Downloads\\x_frame_V2TR_MGN12_left_sq_nut.stl",
-        "14": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body72.3mf",
-        "15": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body72.stl",
-        "16": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body2.3mf",
-        "17": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body2.stl",
-        "18": "C:\\Users\\user\\Downloads\\[a]_SB_CW2_Latch.3mf"
+        "01": "C:\\Users\\user\\Desktop\\to_print\\yammu.3mf",
+        "02": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_coupler_x2.3mf",
+        "03": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_coupler_x2.stl",
+        "04": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_splitter_x2.3mf",
+        "05": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_splitter_x2.stl",
+        "06": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_din_rail_base_x2.3mf",
+        "07": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\ptfe_din_rail_base_x2.stl",
+        "08": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\din_rail_clip_x12.3mf",
+        "09": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\din_rail_clip_x12.stl",
+        "10": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body3.3mf",
+        "11": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body3.stl",
+        "12": "C:\\Users\\user\\Desktop\\name tag.3mf",
+        "13": "C:\\Users\\user\\Downloads\\x_frame_V2TR_MGN12_left_sq_nut.3mf",
+        "14": "C:\\Users\\user\\Downloads\\x_frame_V2TR_MGN12_left_sq_nut.stl",
+        "15": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body72.3mf",
+        "16": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body72.stl",
+        "17": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body2.3mf",
+        "18": "C:\\Users\\user\\AppData\\Local\\Temp\\Neutron\\Body2.stl"
     }
 }
-# MD5 checksum 2A0B8DF87D88F950C0CE5EE6FDF0E466
+# MD5 checksum C640291409A3E55E06C440295EEDAF71
