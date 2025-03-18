@@ -13,5 +13,6 @@
     "sparse_infill_pattern": "gyroid",
     "top_shell_layers": "5",
     "version": "1.8.0.0",
-    "wall_loops": "4"
+    "wall_loops": "4",
+    "wall_sequence": "inner-outer-inner wall"
 }
