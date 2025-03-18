@@ -197,6 +197,16 @@ $junctions = @(
 )
 
 $commands = @(
+    {
+        (Invoke-WebRequest "https://files.openscad.org/snapshots/").links.href |
+            ForEach-Object { "https://files.openscad.org/snapshots/$_" } |
+            Where-Object { $_ -like "*-Installer.exe" } |
+            Sort-Object -Bottom 1 |
+            ForEach-Object {
+                Invoke-WebRequest $_ -OutFile $env:TEMP\openscad-installer.exe
+            }
+        Start-Process $env:TEMP\openscad-installer.exe -ArgumentList "/S", "/D=C:\Program Files\OpenSCAD (Nightly)" -Wait
+    }
     { . "$env:ProgramData\chocolatey\bin\bat.exe" cache --build                             }
     { Add-MpPreference -ExclusionPath "C:\Program Files\PowerShell\7\"                      }
     {
