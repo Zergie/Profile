@@ -3,3 +3,4 @@ system/Prusa
 hms/
 log/
 **/*.bak
+*.bak
