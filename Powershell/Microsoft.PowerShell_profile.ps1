@@ -240,20 +240,6 @@ if ((Test-Path $dockerScript)) {
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
 
-        Register-ArgumentCompleter -CommandName "Get-SshFile.ps1" -ParameterName "Path" -ScriptBlock {
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-            if ($fakeBoundParameter.Contains("Path")) {
-                Invoke-Ssh tree -if --noreport -L 1 $($fakeBoundParameter.Path | Select-Object -Last 1) |
-                        Select-Object -Skip 1 |
-                        ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-            } else {
-                Invoke-Ssh tree -if --noreport -L 1 |
-                        Select-Object -Skip 1 |
-                        ForEach-Object { $_.SubString(2) } |
-                        ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
-            }
-        }
-
         $credentials =  Get-Content -raw $dockerScript |
                             Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |
                             ForEach-Object Matches |

@@ -54,7 +54,7 @@ $branches += [pscustomobject] @{
 $branches |
     ForEach-Object {
         $tag = $_.tag
-        $_.commits = git --no-pager log "$($_.root)..$($_.branch)" --pretty=format:'%H,,,%d,,,%B;;;' |
+        $_.commits = git --no-pager log "$($_.root)^1..$($_.branch)" --pretty=format:'%H,,,%d,,,%B;;;' |
             Out-String |
             ForEach-Object { $_.Split(";;;") } |
             ForEach-Object { $_.Trim() } |
@@ -100,12 +100,16 @@ $workitems = $branches.commits.workitems |
 $workitems = Get-Issues -WorkitemId $workitems
 $branches = $branches |
     ForEach-Object {
-        $_.commits = $_.commits |
-            ForEach-Object {
-                $item = $_
-                $item.workitems = $workitems | Where-Object ID -In $item.workitems
-                $item
-            }
+        if ($null -eq $_.commits) {
+            $_.commits = @()
+        } else {
+            $_.commits = $_.commits |
+                ForEach-Object {
+                    $item = $_
+                    $item.workitems = $workitems | Where-Object ID -In $item.workitems
+                    $item
+                }
+        }
         $_
     }
 

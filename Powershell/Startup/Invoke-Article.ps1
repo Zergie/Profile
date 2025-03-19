@@ -1,16 +1,34 @@
-[cmdletbinding(DefaultParameterSetName="BillingParameterSet")]
+[cmdletbinding(DefaultParameterSetName="InvokeParameterSet")]
 param(
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, Position=0, ParameterSetName="TemplateParameterSet")]
+    [string]
+    $Template,
+
+    [Parameter(Position=1, ParameterSetName="TemplateParameterSet")]
+    [ValidateNotNullOrEmpty()]
+    [string[]]
+    $TemplateArguments,
+
+    [Parameter(Mandatory, ParameterSetName='PrepareParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='ExportParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='BackupParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='InvokeParameterSet')]
     [ValidateNotNullOrEmpty()]
     [string]
     $Database,
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName='PrepareParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='ExportParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='BackupParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='InvokeParameterSet')]
     [ValidateNotNullOrEmpty()]
     [string[]]
     $Clients,
 
-    [Parameter(Mandatory, ValueFromPipeline)]
+    [Parameter(Mandatory, ParameterSetName='PrepareParameterSet', ValueFromPipeline)]
+    [Parameter(Mandatory, ParameterSetName='ExportParameterSet', ValueFromPipeline)]
+    [Parameter(Mandatory, ParameterSetName='BackupParameterSet', ValueFromPipeline)]
+    [Parameter(Mandatory, ParameterSetName='InvokeParameterSet', ValueFromPipeline)]
     [ValidateNotNullOrEmpty()]
     [pscustomobject[]]
     $Articles,
@@ -31,7 +49,80 @@ param(
     [switch]
     $Bill
 )
+dynamicparam {
+    Register-ArgumentCompleter -CommandName "Invoke-Article.ps1" -ParameterName "Template" -ScriptBlock {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+            Select-String -Path $PSCommandPath -Pattern "^#region template|#endregion$" |
+                ForEach-Object LineNumber |
+                Measure-Object -Minimum -Maximum |
+                ForEach-Object {
+                    Get-Content $PSCommandPath |
+                        Select-Object -Skip ($_.Minimum - 1) -First ($_.Maximum - $_.Minimum - 1)
+                } |
+                Select-String '^\s*"(?<name>[^"]+)"\s*\{'|
+                ForEach-Object Matches |
+                ForEach-Object Groups |
+                Where-Object Name -eq name |
+                ForEach-Object value |
+                ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
+    }
+}
 begin {
+    if ($PSCmdlet.ParameterSetName -eq "TemplateParameterSet") {
+        $(switch ($PSBoundParameters.Template) {
+#region template
+            "IsNotSchlussbescheid" {
+            "    iif(Nz(Dlookup('Bezeichnung', 'KundenartikelProzess', 'ID={ProzessId}') LIKE 'SchlussBescheid *'),0,1)"
+            }
+
+            "PBG" {
+            "    iif(IsNull({StammSatzMainID}),"
+            "        1,"
+            "        DCount2('*',"
+            "                'Betreute Personen',"
+            "                'Betr_von<=' & DatumSQLnew({RechVon}) & ' AND (Betr_Bis IS NULL OR Betr_Bis>=' & DatumSQLnew({RechVon}) & ') AND StammSatzMainId={StammSatzMainId}'"
+            "        )"
+            "    )"
+            }
+
+            "ChecklisteWohnung" {
+            "    Nz("
+            "       Dlookup2('Nz(w.$($TemplateArguments[1]), 0)',"
+            "                '((Stammdaten_Wohnungen AS sw) INNER JOIN (SELECT * FROM weitereInfos WHERE ID_Label=$($TemplateArguments[0])) AS w ON w.ID_Wohnung=sw.WohnungId)',"
+            "                'sw.VON<=' & DatumSQLnew({RechBis}) & ' AND (sw.Bis IS NULL OR sw.Bis>=' & DatumSQLnew({RechBis}) & ') AND sw.PersonId=' & {PersonID}"
+            "       ),"
+            "       0"
+            "    )"
+            }
+
+            "IsEinzug" {
+            "    -("
+            "        Dlookup2('{RechVon} <= [von] AND [von] <= {RechBis} AND [bis] IS NULL',"
+            "                  '[Stammdaten_Wohnungen]',"
+            "                  'VON<=' & DatumSQLnew({RechVon}) & ' AND (Bis IS NULL OR Bis>=' & DatumSQLnew({RechVon}) & ') AND PersonId=' & {PersonID}"
+            "        )"
+            "    )"
+            }
+
+            "IsAuszug" {
+            "    -("
+            "        Dlookup2('{RechVon} <= [bis] AND [bis] <= {RechBis}',"
+            "                  '[Stammdaten_Wohnungen]',"
+            "                  'VON<=' & DatumSQLnew({RechVon}) & ' AND (Bis IS NULL OR Bis>=' & DatumSQLnew({RechVon}) & ') AND PersonId=' & {PersonID}"
+            "        )"
+            "    )"
+            }
+
+            default {
+                Write-Error "unknown template"
+            }
+#endregion
+        }) |
+            Join-String -Separator `n |
+            Out-String
+        exit
+    }
+
     Set-Alias Backup-SqlDatabase C:\GIT\Profile\Powershell\Startup\Backup-SqlDatabase.ps1
     Set-Alias Delete-SqlTable C:\GIT\Profile\Powershell\Startup\Delete-SqlTable.ps1
     Set-Alias Import-SqlTable C:\GIT\Profile\Powershell\Startup\Import-SqlTable.ps1

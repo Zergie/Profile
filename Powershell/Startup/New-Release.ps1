@@ -49,6 +49,9 @@ begin {
     $Quartal = [int]$Name.SubString(6,1)
     Write-Debug "Quartal: $Quartal"
 
+    $symbolicRef = "refs/heads/release/$Year/Q$Quartal"
+    Write-Debug "symbolic-ref: $symbolicRef"
+
     $MasterYear = if ($Quartal -eq 4) { $Year + 1 } else { $Year }
     Write-Debug "Master Year: $MasterYear"
 
@@ -189,6 +192,9 @@ process {
 
         Write-Host -ForegroundColor Cyan "git commit"
         git commit -m "Release $Name"
+
+        Write-Host -ForegroundColor Cyan "git symbolic-ref"
+        git symbolic-ref $symbolicRef refs/heads/$Branch
 
         Write-Host -ForegroundColor Cyan "ssh mkdir CD/Tau-Office/Setup${Year}_Q${Quartal}"
         ssh u266601-sub2@u266601-sub2.your-storagebox.de -p 23 mkdir CD/Tau-Office/Setup${Year}_Q${Quartal}

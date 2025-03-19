@@ -1,6 +1,31 @@
 param(
     # [Parameter(ParameterSetName='CriteriaParameterSet')]
     # [Parameter(ParameterSetName='FilterParameterSet')]
+    # [Parameter(Mandatory, Position=0)]
+    [string]
+    $Table,
+
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
+    [Parameter(Mandatory,
+               ValueFromPipeline = $true)]
+    [pscustomobject]
+    $Data,
+
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    [string]
+    $Criteria,
+
+    # [Parameter(ParameterSetName='FilterParameterSet')]
+    [string]
+    $Filter,
+
+    # [Parameter(ParameterSetName='FilterParameterSet')]
+    [object]
+    $Value,
+
+    # [Parameter(ParameterSetName='CriteriaParameterSet')]
+    # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]
@@ -24,32 +49,7 @@ param(
     # [Parameter(ParameterSetName='FilterParameterSet')]
     [Parameter(Mandatory)]
     [string]
-    $Database,
-
-    # [Parameter(ParameterSetName='CriteriaParameterSet')]
-    # [Parameter(ParameterSetName='FilterParameterSet')]
-    # [Parameter(Mandatory, Position=0)]
-    [string]
-    $Table,
-
-    # [Parameter(ParameterSetName='CriteriaParameterSet')]
-    # [Parameter(ParameterSetName='FilterParameterSet')]
-    [Parameter(Mandatory,
-               ValueFromPipeline = $true)]
-    [pscustomobject]
-    $Data,
-
-    # [Parameter(ParameterSetName='CriteriaParameterSet')]
-    [string]
-    $Criteria,
-
-    # [Parameter(ParameterSetName='FilterParameterSet')]
-    [string]
-    $Filter,
-
-    # [Parameter(ParameterSetName='FilterParameterSet')]
-    [object]
-    $Value
+    $Database
 )
 Begin {
     $connection_string = @(

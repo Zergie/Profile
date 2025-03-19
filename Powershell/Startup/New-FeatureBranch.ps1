@@ -43,6 +43,12 @@ dynamicparam {
                 ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
                 Sort-Object
         }
+        [pscustomobject]@{
+            Position = 1
+            Type = [string]
+            Name = "Branch"
+            ValidateSet = git branch --list | sls "release(/[^/ ]+)+" |ForEach-Object {$_.Matches.Value}
+        }
     ) | New-DynamicParameter
 }
 begin {

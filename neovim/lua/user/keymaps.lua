@@ -110,3 +110,19 @@ map("n", "ZS", "<cmd>w<cr>", "Save file")
 -- map("n", "<F13>",
 -- :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<cr>
 -- ]])
+map({"v", "x", "n"}, "<Leader>ge", function()
+  print([[Press key e.g. "]])
+  local char = vim.fn.getcharstr()
+
+  if vim.fn.mode() == 'v' or vim.fn.mode() == 'V' or vim.fn.mode() == '' then
+    -- Visual modes
+    vim.cmd("'<, '>s/\\(\\w\\|\\d\\)/" .. char .. "\\1/")
+    vim.cmd("'<, '>s/$/" .. char .. "/")
+    vim.cmd("noh")
+  else
+    -- Normal mode
+    vim.cmd("s/\\(\\w\\|\\d\\)/" .. char .. "\\1/")
+    vim.cmd("s/$/" .. char .. "/")
+    vim.cmd("noh")
+  end
+end, "Encapsulte lines which char")

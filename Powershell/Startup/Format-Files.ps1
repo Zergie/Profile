@@ -101,13 +101,21 @@ end {
 
         foreach ($item in $pathes) {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
+            Write-Verbose "Formatting $item."
 
-            switch -regex ($item.Name) {
+            switch -Regex ($item.Name) {
                 "\.(old)$" {
                     Remove-Item $item.FullName
                     Write-Host "$($item.Name) removed."
+                    break
                 }
                 "^schema\.xml$" {
+                    $cmd = ". `"$([System.IO.Path]::GetFullPath(
+                        [System.IO.Path]::Combine($item.DirectoryName, "..", "scripts", "Update-XmlSchema.ps1")
+                    ))`""
+                    Write-Host -ForegroundColor Cyan $cmd
+                    Invoke-Expression $cmd
+
                     $content = Get-Content $item.FullName -Encoding utf8 |
                         ForEach-Object { $_ -replace '="([^"]+)"','=''$1''' } |
                         Out-String
@@ -128,7 +136,6 @@ end {
                     $writer.Dispose()
                     break
                 }
-
                 "\.(ACT)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
@@ -282,14 +289,33 @@ end {
                 }
 
                 default {
+                    break
                 }
             }
 
             $index += 1
         }
 
-        Write-Progress -Status "Removing patches" -PercentComplete 99
+        Write-Progress -Status "Removing patches" -PercentComplete 80
         Get-ChildItem -Recurse -Filter *.patch | Remove-Item
+
+        Write-Progress -Status "Running tests" -PercentComplete 80
+        Write-Verbose "Searching tests.."
+        foreach ($item in $pathes |
+                    Get-ChildItem |
+                    ForEach-Object {
+                        [System.IO.Path]::Combine($_.DirectoryName, "..", "tests", "Run-Tests.ps1")
+                    } |
+                    Sort-Object -Unique |
+                    ForEach-Object { [System.IO.Path]::GetFullPath($_) } |
+                    Where-Object { [System.IO.File]::Exists($_) } |
+                    Where-Object { !$_.EndsWith("tau-office\tests\Run-Tests.ps1") }
+                ) {
+
+            Write-Progress -Status "Running tests $item" -PercentComplete 80
+            Write-Verbose "Running Test $item"
+            pwsh -NoProfile -File $item
+        }
 
         Write-Progress -Completed
         Write-Host "$count files formatted"
