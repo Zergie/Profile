@@ -128,8 +128,8 @@ $npm = @(
 )
 
 $github = @(
-    [pscustomobject]@{repo="rvaiya/warpd";         file="warpd.exe"
-                      folder="$PSScriptRoot\warpd"}
+    # [pscustomobject]@{repo="rvaiya/warpd";         file="warpd.exe"
+    #                   folder="$PSScriptRoot\warpd"}
     [pscustomobject]@{repo="max-niederman/ttyper"; file="ttyper-x86_64-*-windows-*.zip"
                       folder="$PSScriptRoot/ttyper"}
 )
@@ -171,8 +171,8 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 5"
                       destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 5"}
 
-    [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
-                      destination = "$env:APPDATA\warpd\warpd.conf"}
+    # [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
+    #                   destination = "$env:APPDATA\warpd\warpd.conf"}
 
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
