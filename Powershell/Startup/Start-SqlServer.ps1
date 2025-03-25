@@ -12,7 +12,7 @@ process {
             "pwsh -NoProfile -Command {`n`t"
             @(
                 "`$dockerScript = '$dockerScript'"
-                "Set-Alias Invoke-Sqlcmd '$PSScriptRoot\Invoke-Sqlcmd.ps2'"
+                "Set-Alias Invoke-Sqlcmd '$PSScriptRoot\Invoke-Sqlcmd.ps1'"
                 ". $PSScriptRoot\$($MyInvocation.MyCommand)"
             ) | Join-String -Separator `n`t
             "`n}}"

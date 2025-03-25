@@ -62,6 +62,10 @@ if ($WritePullRequest) {
     if ($binaryonly -or $commit.Length -gt 100000) {
         $commit = git diff --staged -B -M --name-status | Join-String -Separator `n
     }
+    if ($commit.Length -eq 0) {
+        Write-Host -ForegroundColor Red "Could not write a commit message. Are there staged files?"
+        exit
+    }
     $Message = @(
                     $commit
                     '!git commit -m "$_"'
@@ -86,7 +90,9 @@ while ($true) {
     # Check if user wants to exit or reset
     switch -Regex ($userMessage){
         "^(r|reset)$" {
-            Write-Host "Enter your prompt to continue. (type 'exit' to quit, 'copy' to copy or 'reset' to start a new chat)"
+            if ($Message.Count -eq 0) {
+                Write-Host "Enter your prompt to continue. (type 'exit' to quit, 'copy' to copy or 'reset' to start a new chat)"
+            }
 
             # Reset the message history so we can start with a clean slate
             $MessageHistory.Clear()

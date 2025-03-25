@@ -47,7 +47,7 @@ process {
                         $InputObject.Index
                     ) |
                     Where-Object { $null -ne $_ } |
-                    ForEach-Object { [System.IO.Path]::Combine((Get-GitStatusFromCache).Path, $_) } |
+                    ForEach-Object { [System.IO.Path]::Combine($InputObject.GitDir, "..", $_) } |
                     ForEach-Object { [System.IO.Path]::GetFullPath($_) } |
                     Where-Object { Test-Path $_ -PathType Leaf } |
                     Get-ChildItem
@@ -110,11 +110,11 @@ end {
                     break
                 }
                 "^schema\.xml$" {
-                    $cmd = ". `"$([System.IO.Path]::GetFullPath(
+                    $cmd = $([System.IO.Path]::GetFullPath(
                         [System.IO.Path]::Combine($item.DirectoryName, "..", "scripts", "Update-XmlSchema.ps1")
-                    ))`""
+                    ))
                     Write-Host -ForegroundColor Cyan $cmd
-                    Invoke-Expression $cmd
+                    Invoke-Expression ". `"$cmd`""
 
                     $content = Get-Content $item.FullName -Encoding utf8 |
                         ForEach-Object { $_ -replace '="([^"]+)"','=''$1''' } |
@@ -139,7 +139,7 @@ end {
                 "\.(ACT)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
 
-                    $duplicates = $xml.root.dataroot.ChildNodes.id |
+                    $xml.root.dataroot.ChildNodes.id |
                         Group-Object |
                         Where-Object count -GT 1 |
                         ForEach-Object {
@@ -297,7 +297,7 @@ end {
         }
 
         Write-Progress -Status "Removing patches" -PercentComplete 80
-        Get-ChildItem -Recurse -Filter *.patch | Remove-Item
+        Get-ChildItem (Get-GitStatusFromCache).WorkingDir -Recurse -Filter *.patch | Remove-Item
 
         Write-Progress -Status "Running tests" -PercentComplete 80
         Write-Verbose "Searching tests.."
@@ -312,9 +312,9 @@ end {
                     Where-Object { !$_.EndsWith("tau-office\tests\Run-Tests.ps1") }
                 ) {
 
-            Write-Progress -Status "Running tests $item" -PercentComplete 80
-            Write-Verbose "Running Test $item"
-            pwsh -NoProfile -File $item
+            Write-Host -ForegroundColor Cyan $item
+            Start-ThreadJob { Set-Location $using:pwd; . $using:item } |
+                Receive-Job -AutoRemoveJob -Wait
         }
 
         Write-Progress -Completed
@@ -331,9 +331,7 @@ end {
     }
 
     if (!$NoGitAdd) {
-        Push-Location "$((Get-GitStatusFromCache).Path)"
         Write-Host -ForegroundColor Cyan "git add -p"
-        git add -p .
-        Pop-Location
+        git add -p
     }
 }
