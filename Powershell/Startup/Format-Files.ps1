@@ -23,6 +23,9 @@ param (
     $InputObject,
 
     [switch]
+    $NoTests,
+
+    [switch]
     $NoGitAdd
 )
 begin {
@@ -69,7 +72,7 @@ process {
             Select-Object -Skip ($LineNumber-5) |
             Select-Object -First 10 |
             ForEach-Object { "$($_.number.ToString().PadRight(6)) `e[38;5;238m│`e[0m $($_.content)" } |
-            ForEach-Object { $_ -replace "('.*)","`e[38;2;89;139;78m`$1`e[0m" } |
+            ForEach-Object { $_ -replace "^(|[^`"\n]+|([^`"\n]+`"[^`"\n]+`"[^`"\n]*)+)('.*)","`$1`e[38;2;89;139;78m`$3`e[0m" } |
             ForEach-Object { $_ -replace "(`"[^`"]+`")","`e[38;2;200;132;88m`$1`e[0m" } |
             ForEach-Object { $_ -replace "\b($KeywordRegex)\b","`e[38;2;86;160;223m`$1`e[0m" } |
             ForEach-Object { $_ -replace "($ErrorRegex)(.*)","`e[48;5;1m`$1`e[0m`$2 `e[38;5;1m<- $ErrorMessage`e[0m" } |
@@ -172,7 +175,7 @@ end {
                     $countNoSaveCTIWhenDisabled = 0
                     $content |
                     ForEach-Object {
-                        $keywords = "If|Then|Else|ElseIf|Not|Do|Loop|While|Wend|For|To|Next|With|New|End|Set|Sub|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean|Select|Case"
+                        $keywords = "If|Then|Else|ElseIf|Not|Do( While| Until|)|Loop|While|Wend|For|To|Next|With|New|End|Set|Sub|Dim|Private|Public|As|On Error (Resume|Goto 0|Goto)|Stop|CStr|Is|Nothing|True|False|String|Long|Integer|Byte|Variant|Boolean| Select|Case|Exit( Sub| Function)"
                         $line = $_
 
                         if ($line.content -match "#TO_BUILD FAIL") {
@@ -183,13 +186,21 @@ end {
                                 -ErrorRegex "'?\s*#TO_BUILD FAIL" `
                                 -ErrorMessage "FAIL marker should not be commited to production!" `
                                 -KeywordRegex $keywords
-                        } elseif ($line.content -match "\btodo\b") {
+                        } elseif ($line.content -match "\b$($regex="todo"; $regex)\b") {
                             Write-CodeError `
                                 -File $item `
                                 -Content $content `
                                 -LineNumber $line.number `
-                                -ErrorRegex "todo" `
+                                -ErrorRegex $regex `
                                 -ErrorMessage "todos should not be commited to production!" `
+                                -KeywordRegex $keywords
+                        } elseif ($line.content -match "$($regex="Bezeichung"; $regex)") {
+                            Write-CodeError `
+                                -File $item `
+                                -Content $content `
+                                -LineNumber $line.number `
+                                -ErrorRegex $regex `
+                                -ErrorMessage "typo? Should this be 'Bezeichnung'?" `
                                 -KeywordRegex $keywords
                         }
 
@@ -299,22 +310,24 @@ end {
         Write-Progress -Status "Removing patches" -PercentComplete 80
         Get-ChildItem (Get-GitStatusFromCache).WorkingDir -Recurse -Filter *.patch | Remove-Item
 
-        Write-Progress -Status "Running tests" -PercentComplete 80
-        Write-Verbose "Searching tests.."
-        foreach ($item in $pathes |
-                    Get-ChildItem |
-                    ForEach-Object {
-                        [System.IO.Path]::Combine($_.DirectoryName, "..", "tests", "Run-Tests.ps1")
-                    } |
-                    Sort-Object -Unique |
-                    ForEach-Object { [System.IO.Path]::GetFullPath($_) } |
-                    Where-Object { [System.IO.File]::Exists($_) } |
-                    Where-Object { !$_.EndsWith("tau-office\tests\Run-Tests.ps1") }
-                ) {
+        if (!$NoTests) {
+            Write-Progress -Status "Running tests" -PercentComplete 80
+            Write-Verbose "Searching tests.."
+            foreach ($item in $pathes |
+                        Get-ChildItem |
+                        ForEach-Object {
+                            [System.IO.Path]::Combine($_.DirectoryName, "..", "tests", "Run-Tests.ps1")
+                        } |
+                        Where-Object { [System.IO.File]::Exists($_) } |
+                        ForEach-Object { [System.IO.Path]::GetFullPath($_) } |
+                        Sort-Object -Unique |
+                        Where-Object { !$_.EndsWith("tau-office\tests\Run-Tests.ps1") }
+                    ) {
 
-            Write-Host -ForegroundColor Cyan $item
-            Start-ThreadJob { Set-Location $using:pwd; . $using:item } |
-                Receive-Job -AutoRemoveJob -Wait
+                Write-Host -ForegroundColor Cyan $item
+                Start-ThreadJob { Set-Location $using:pwd; . $using:item } |
+                    Receive-Job -AutoRemoveJob -Wait
+            }
         }
 
         Write-Progress -Completed
