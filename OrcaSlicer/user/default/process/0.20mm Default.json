@@ -1,0 +1,10 @@
+{
+    "brim_type": "brim_ears",
+    "filename_format": "{if plate_name != \"\"}{plate_name}{else} 1001{endif}.gcode",
+    "from": "User",
+    "inherits": "0.20mm Standard @Voron",
+    "is_custom_defined": "0",
+    "name": "0.20mm Default",
+    "print_settings_id": "0.20mm Default",
+    "version": "2.3.0.3"
+}
