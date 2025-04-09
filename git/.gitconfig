@@ -96,17 +96,26 @@
 
 	# branch management
 	clean-branches = "!\
+		echo -e '\\E[38;5;14m'\"\\033[1mgit checkout master || git checkout main\\033[0m\"; \
 		git checkout master || git checkout main && \
-		git pull ; \
-		git remote update origin --prune && \
-		for branch in $(git branch -vv | grep ': gone]' | awk '{print $1}'); do git branch -D $branch; done && \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit pull --prune\\033[0m\"; \
+		git pull --prune; \
+		for branch in $(git branch -vv | grep ': gone]' | awk '{print $1}'); do \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit branch -D $branch\\033[0m\" && \
+		git branch -D $branch; \
+		done && \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit prune\\033[0m\" && \
 		git prune && \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit gc\\033[0m\" && \
 		git gc && \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit fsck\\033[0m\" && \
 		git fsck && \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit pull\\033[0m\" && \
 		git pull && \
 		echo '' && \
-		echo 'Active branches are:' && \
+		echo -e '\\E[38;5;14m'\"\\033[1mActive branches are:\\033[0m\"; \
 		git branch; \
+		echo -e '\\E[38;5;14m'\"\\033[1mgit checkout -\\033[0m\"; \
 		git checkout -; \
 		"
 

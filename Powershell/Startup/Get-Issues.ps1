@@ -85,6 +85,10 @@ param (
     [switch]
     $Online,
 
+    [Parameter()]
+    [switch]
+    $WithComments,
+
     # [Parameter()]
     # [string]
     # $TagRemove,
@@ -210,6 +214,9 @@ process {
     if ($Tag.Length -gt 0 -or $TagRemove.Length -gt 0) {
         $Update = $true
     }
+    if ($Update) {
+        $WithComments = $true
+    }
 
     $downloaded = @()
     if ($IterationName -eq "@Current Iteration") {
@@ -317,6 +324,17 @@ process {
         Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" -or $null -ne $Id } |
         ForEach-Object {
             $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
+            if ($WithComments) {
+                Add-Member `
+                    -InputObject $_ `
+                    -NotePropertyName "comments" `
+                    -NotePropertyValue (
+                        . ${Invoke-RestApi} `
+                            -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{workItemId}/comments?api-version=7.1-preview.4" `
+                            -Variables @{ workItemId = $_.Id } |
+                                ForEach-Object comments
+                    )
+            }
             $_
         }
 
@@ -418,7 +436,7 @@ process {
                     }
 
                     $UmsetzenIn = $_.fields.'System.Description' |
-                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?\s*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)\s*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d))' |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d))' |
                                     ForEach-Object Matches |
                                     ForEach-Object Groups |
                                     Where-Object Name -NotIn @(0..9) |
@@ -478,21 +496,31 @@ process {
                         }
                     }
 
-                    $text = $_.fields.'System.Description' | Select-String -Pattern '(?:Umsetzen|Beheben)\s+bis\s*[:]?.*(?<d>\d{2})[,.](?<m>\d{2})[,.](?<y>\d{2,4})' |
+                    $UmsetzenBis = @(
+                            $_.fields.'System.Description'
+                            $_.comments.text
+                        ) |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+bis\s*[:]?.*(?<d>\d{2})[,.](?<m>\d{2})[,.](?<y>\d{2,4})' -AllMatches |
                                     ForEach-Object Matches |
-                                    ForEach-Object Groups |
-                                    Where-Object Name -in @("d","m","y") |
-                                    ForEach-Object `
-                                        -Begin   { $text = @{} } `
-                                        -Process { $text[$_.Name] = [int]$_.Value } `
-                                        -End     { [pscustomobject]$text }
-                    if ($null -ne $text.y) {
-                        if ($text.y -lt 100) { $text.y += 2000 }
+                                    ForEach-Object {
+                                        $_.Groups |
+                                        Where-Object Name -in @("d","m","y") |
+                                        ForEach-Object `
+                                            -Begin   { $r = @{} } `
+                                            -Process { $r[$_.Name] = [int]$_.Value } `
+                                            -End     { [pscustomobject]$r }
+                                    } |
+                                    ForEach-Object {
+                                        if ($_.y -lt 100) { $_.y += 2000 }
+                                        $_
+                                    } |
+                                    Select-Object -Last 1
+                    if ($null -ne $UmsetzenBis.y) {
                         $patches[$_.Id] += [ordered]@{
                             op    = "replace"
                             path  = "/fields/Microsoft.VSTS.Scheduling.DueDate"
                             from  = "null"
-                            value = [datetime]::New($text.y, $text.m, $text.d)
+                            value = [datetime]::New($UmsetzenBis.y, $UmsetzenBis.m, $UmsetzenBis.d)
                         }
                     }
 

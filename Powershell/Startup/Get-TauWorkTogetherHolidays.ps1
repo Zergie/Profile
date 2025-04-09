@@ -3,13 +3,12 @@ param (
                    Position=1,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline,
-                   ValueFromPipelineByPropertyName=$true)]
+                   ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Month,
 
-        [Parameter(Mandatory,
-                   Position=2,
+        [Parameter(Position=2,
                    ParameterSetName="DefaultParameterSet",
                    ValueFromPipeline,
                    ValueFromPipelineByPropertyName)]

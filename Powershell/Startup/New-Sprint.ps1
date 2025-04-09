@@ -10,6 +10,8 @@ param (
     $UpdateLast
 )
 Process {
+    $ErrorActionPreference = 'Break'
+    $WarningPreference = 'Break'
     Set-Alias -Name "Invoke-RestApi" -Value "$PSScriptRoot\Invoke-RestApi.ps1"
     Set-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues"
     Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"

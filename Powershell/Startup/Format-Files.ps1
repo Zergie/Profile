@@ -74,8 +74,8 @@ process {
             ForEach-Object { "$($_.number.ToString().PadRight(6)) `e[38;5;238m│`e[0m $($_.content)" } |
             ForEach-Object { $_ -replace "^(|[^`"\n]+|([^`"\n]+`"[^`"\n]+`"[^`"\n]*)+)('.*)","`$1`e[38;2;89;139;78m`$3`e[0m" } |
             ForEach-Object { $_ -replace "(`"[^`"]+`")","`e[38;2;200;132;88m`$1`e[0m" } |
-            ForEach-Object { $_ -replace "\b($KeywordRegex)\b","`e[38;2;86;160;223m`$1`e[0m" } |
-            ForEach-Object { $_ -replace "($ErrorRegex)(.*)","`e[48;5;1m`$1`e[0m`$2 `e[38;5;1m<- $ErrorMessage`e[0m" } |
+            ForEach-Object { $_ -replace "^([^']*)\b($KeywordRegex)\b","`$1`e[38;2;86;160;223m`$2`e[0m" } |
+            ForEach-Object { $_ -replace "($ErrorRegex)(.*)","`e[48;5;1m`$1`e[40m`$2 `e[38;5;1m<- $ErrorMessage`e[0m" } |
             Out-String |
             Write-Host -NoNewline
         Write-Host "`e[38;5;238m───────┴─$([string]::new('─', $host.UI.RawUI.WindowSize.Width-9))`e[0m"
@@ -141,12 +141,22 @@ end {
                 }
                 "\.(ACT)$" {
                     $xml = ([xml](Get-Content $item -Encoding utf8))
+                    $max_id = ($xml.root.dataroot.ChildNodes.id | Measure-Object -Maximum).Maximum
 
+                    if ($null -ne $max_id) {
+                        $xml.root.dataroot.ChildNodes |
+                            Where-Object id -eq "" |
+                            ForEach-Object {
+                                $max_id += 1
+                                $_.id = $max_id
+                                Write-Host -ForegroundColor Yellow "Generated ID $($_.id)."
+                            }
+                    }
                     $xml.root.dataroot.ChildNodes.id |
                         Group-Object |
                         Where-Object count -GT 1 |
                         ForEach-Object {
-                            Write-Host -ForegroundColor Yellow "ID $($_.Name) is used $($_.Count)! IDs should be unique."
+                            Write-Host -ForegroundColor Yellow "ID $($_.Name) is used $($_.Count) times! IDs should be unique."
                         }
 
                     $settings = [System.Xml.XmlWriterSettings]::new()
