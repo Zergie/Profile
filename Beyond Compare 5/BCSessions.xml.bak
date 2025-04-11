@@ -3,9 +3,47 @@
 <BCSessions Version="2" MinVersion="2">
 	<TSessionFolder>
 		<Items>
+			<TSessionFolder>
+				<Items>
+					<TPixCompareSession Value="back_grill.stl &lt;--> back_grill_belay.stl">
+						<LastModified Value="2025-02-16 06:33:24"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
+							<Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
+						</Specs>
+						<State>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<THexCompareSession Value="back_grill.stl &lt;--> back_grill_belay.stl">
+						<Formats>
+							<Left Value=""/>
+						</Formats>
+						<LastModified Value="2025-02-16 06:32:36"/>
+						<NoEdit>
+							<Left Value="True"/>
+							<Right Value="True"/>
+						</NoEdit>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
+							<Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
+						</Specs>
+					</THexCompareSession>
+					<TPixCompareSession Value="before.gif &lt;--> after.gif">
+						<LastModified Value="2025-02-16 05:28:19"/>
+						<Specs>
+							<Left Value="C:\Users\user\Downloads\before.gif"/>
+							<Right Value="C:\Users\user\Downloads\after.gif"/>
+						</Specs>
+						<State>
+							<Tolerance Value="70"/>
+						</State>
+					</TPixCompareSession>
+				</Items>
+			</TSessionFolder>
 			<TPixCompareSession>
 				<State>
-					<Tolerance Value="27"/>
+					<Tolerance Value="71"/>
 				</State>
 			</TPixCompareSession>
 		</Items>

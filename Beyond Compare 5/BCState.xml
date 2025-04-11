@@ -7,12 +7,12 @@
 			<TFileFormatManagerDialog Value="907;336;1652;1056"/>
 			<THexCompareSessionDialog Value="1014;427;1545;964"/>
 			<THexFormatDialog Value="1020;418;1540;973"/>
-			<TView Value="338;33;2846;1392;3"/>
+			<TView Value="52;33;2560;1392;3"/>
 		</FormPositions>
 	</TBcState>
 	<TCheckForUpdatesState>
-		<Build Value="30614"/>
-		<LastChecked Value="2025-02-16 05:27:49"/>
+		<Build Value="30713"/>
+		<LastChecked Value="2025-04-11 10:13:50"/>
 	</TCheckForUpdatesState>
 	<THexCompareState>
 		<LeftMRUSpecs>
@@ -26,7 +26,7 @@
 		</RightMRUSpecs>
 	</THexCompareState>
 	<THomeState>
-		<SessionType Value="TPixCompareSession"/>
+		<SessionType Value="TTextCompareSession"/>
 	</THomeState>
 	<TPixCompareState>
 		<LeftMRUSpecs>
@@ -41,4 +41,15 @@
 			<_1 Value="C:\Users\user\Downloads\after.gif"/>
 		</RightMRUSpecs>
 	</TPixCompareState>
+	<TTextCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\Users\puchinger\Desktop\ohne_haken.pdf"/>
+		</LeftMRUSpecs>
+		<MRUFonts>
+			<_0 Value="Consolas;10;;;F"/>
+		</MRUFonts>
+		<RightMRUSpecs>
+			<_0 Value="C:\Users\puchinger\Desktop\mit_haken.pdf"/>
+		</RightMRUSpecs>
+	</TTextCompareState>
 </BCState>

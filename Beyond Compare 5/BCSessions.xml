@@ -5,6 +5,13 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="ohne_haken.pdf &lt;--> mit_haken.pdf">
+						<LastModified Value="2025-04-11 10:13:57"/>
+						<Specs>
+							<Left Value="C:\Users\puchinger\Desktop\ohne_haken.pdf"/>
+							<Right Value="C:\Users\puchinger\Desktop\mit_haken.pdf"/>
+						</Specs>
+					</TTextCompareSession>
 					<TPixCompareSession Value="back_grill.stl &lt;--> back_grill_belay.stl">
 						<LastModified Value="2025-02-16 06:33:24"/>
 						<Specs>
