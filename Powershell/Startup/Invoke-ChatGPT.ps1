@@ -108,7 +108,7 @@ while ($true) {
             Write-Host "Copied to clipboard!" -ForegroundColor Magenta
         }
         "^[!]" {
-            $aiResponse = $aiResponse.Replace('"','`"')
+            $aiResponse = $aiResponse.Replace('"','`"').Replace('`', '``')
             $cmd = $userMessage.Substring(1).Replace('$_', "$aiResponse")
             Write-Debug $cmd
             Invoke-Expression $cmd

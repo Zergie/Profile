@@ -139,6 +139,7 @@ if ($Progress) {
             Get-Member -MemberType Property -ErrorAction SilentlyContinue
 
         $result |
+            Select-Object -Property $props.Name |
             ForEach-Object {
                 if ("LetzteDbRevision" -in $props.Name) {
                     $_.LetzteDbRevision = ([int]($_.LetzteDbRevision[0])).ToString("000")
@@ -168,10 +169,17 @@ if ($Progress) {
                         }
                     }
 
-                if ($PSBoundParameters.ContainsKey("Table") -and !$PSBoundParameters.ContainsKey("Fields")) {
-                    $_.psadapted |
-                        Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table
-                }
+                # $hiddenProp = New-Object System.Management.Automation.PSNoteProperty('::Table', $Table)
+                # $hiddenAttr = New-Object System.Management.Automation.HiddenAttribute
+                # $hiddenProp.Attributes.Add($hiddenAttr)
+                # $_.psadapted.Properties.Add($hiddenProp)
+
+                # $_.psadapted |
+                    # Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table
+                $Global:Table = $Table
+                Add-Member -InputObject $_ -MemberType ScriptMethod -Name "::Table" -Value { $Global:Table }
+                $Global:Filter = $Filter
+                Add-Member -InputObject $_ -MemberType ScriptMethod -Name "::Filter" -Value { $Global:Filter }
 
                 if (!$PSBoundParameters.ContainsKey('Fields')) {
                     $Fields = @()
@@ -179,11 +187,11 @@ if ($Progress) {
                         -Database $Database `
                         -Query "SELECT column_name FROM Information_Schema.columns WHERE table_name='$Table' ORDER BY ORDINAL_POSITION" |
                         ForEach-Object column_name
-                    if ($PSBoundParameters.ContainsKey("Table")) {
-                        $Fields += "::Table"
-                    }
                 }
-                $_.psadapted | Select-Object -Property $Fields
+                $Fields += "_Table"
+
+                # $_.psadapted | Select-Object -Property $Fields
+                $_
             }
     }
 }

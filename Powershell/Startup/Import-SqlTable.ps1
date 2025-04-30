@@ -49,6 +49,7 @@ Process {
     if ($Data -is [Hashtable]) {
         $Data = [pscustomobject]$Data
     }
+    try { $Table = $data.'::Table'() } catch {}
     $PassThruData = $Data
     $Data = $Data.psextended |
                 ForEach-Object {$_} -PipelineVariable item |

@@ -413,7 +413,8 @@ process {
                                         -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                         -replace '(Aufgabe siehe Word),?\s*', '' `
                                         -replace '[.!]\s*$', '' `
-                        -replace ' Fehler$', ' Weiterentwicklung' `
+                                        -replace ' Fehler$', ' Weiterentwicklung' `
+                                        -replace 'immer noch nicht', 'noch nicht' `
                                         -replace '(Zusatzschleife|Nachbesserung)\b', 'Weiterentwicklung'
                     }
 
@@ -436,7 +437,7 @@ process {
                     }
 
                     $UmsetzenIn = $_.fields.'System.Description' |
-                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d))' |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d)|(?<q>Q\d))' |
                                     ForEach-Object Matches |
                                     ForEach-Object Groups |
                                     Where-Object Name -NotIn @(0..9) |
@@ -480,6 +481,10 @@ process {
                                 ForEach-Object given_name
                         } elseif ($UmsetzenIn.ContainsKey('q') -and $UmsetzenIn.ContainsKey('year')) {
                             $new_tag = "TO $($UmsetzenIn.year)\$($UmsetzenIn.q)"
+                        } elseif ($UmsetzenIn.ContainsKey('q')) {
+                            $new_tag = $branch_lookup |
+                                Where-Object given_name -Like "*$($UmsetzenIn.q)" |
+                                ForEach-Object given_name
                         }
 
                         if ($null -eq $new_tag) {

@@ -327,6 +327,7 @@ end {
                         Get-ChildItem |
                         ForEach-Object {
                             [System.IO.Path]::Combine($_.DirectoryName, "..", "tests", "Run-Tests.ps1")
+                            [System.IO.Path]::Combine($_.DirectoryName, ".", "tests", "Run-Tests.ps1")
                         } |
                         Where-Object { [System.IO.File]::Exists($_) } |
                         ForEach-Object { [System.IO.Path]::GetFullPath($_) } |

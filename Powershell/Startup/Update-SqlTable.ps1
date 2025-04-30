@@ -74,6 +74,8 @@ Process {
             $Filter = "ID"
         }
     }
+    try { $Table = $data.'::Table'() } catch {}
+    try { $PSBoundParameters.Filter = $data.'::Filter'() } catch {}
 
     $properties = $Data.psobject.properties | Where-Object Name -ne $Filter | Where-Object { -not $_.Name.StartsWith('::') }
 

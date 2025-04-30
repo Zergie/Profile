@@ -280,9 +280,6 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 
 # compose mail
 $mail = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
-foreach ($item in $Recipient) { $mail.To.Add($item) }
-foreach ($item in $Bcc)       { $mail.Bcc.Add($item) }
-foreach ($item in $Cc)        { $mail.Cc.Add($item) }
 $mail.ReplyTo = "noreply@rocom.de"
 $mail.Subject = "Release Notes"
 $mail.Body    = @"
@@ -299,9 +296,9 @@ h1 {
 }
 
 </style>
-<p>Sehr geehrter Stackholder,</p>
+<p>Sehr geehrter Stakeholde,</p>
 
-<p>Im Anhang finden Sie die Release Notes der letzten vier Software-Updates unserer Anwendung als XLSX-Datei.
+<p>Im Anhang finden Sie die Release Notes der letzten vier Software-Updates sowie die aktuelle Entwicklungsversion unserer Anwendung als XLSX-Datei.
 Ich bitte Sie, sich ausreichend Zeit zu nehmen, um die detaillierten Änderungen und Verbesserungen sorgfältig zu überprüfen.
 Dies wird Ihnen helfen, bestmöglich auf eventuelle Kundenanfragen vorbereitet zu sein und ein umfassendes Verständnis für die neuesten Entwicklungen in meiner Anwendung zu erlangen.</p>
 
@@ -339,7 +336,13 @@ $mail.Attachments.Add([System.Net.Mail.Attachment]::new($filename))
 $smtp = [System.Net.Mail.SmtpClient]::new('mail.de2.hostedoffice.ag', 587)
 $smtp.Credentials = [System.Net.NetworkCredential]::new($credentials.Username, $credentials.Password)
 $smtp.EnableSsl = $true
-$smtp.Send($mail)
+foreach ($item in $Bcc)       { $mail.Bcc.Add($item) }
+foreach ($item in $Cc)        { $mail.Cc.Add($item) }
+foreach ($item in $Recipient) {
+    $mail.To.Clear()
+    $mail.To.Add($item)
+    $smtp.Send($mail)
+}
 $smtp.Dispose()
 
 $mail.Attachments | ForEach-Object { $_.Dispose() }

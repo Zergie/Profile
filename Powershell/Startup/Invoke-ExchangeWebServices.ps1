@@ -29,7 +29,8 @@ $propset = [Microsoft.Exchange.WebServices.Data.PropertySet]::new(
                 [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::From,
                 [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::ToRecipients,
                 [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::Subject,
-                [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::DateTimeSent
+                [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::DateTimeSent,
+                [Microsoft.Exchange.WebServices.Data.EmailMessageSchema]::Attachments
             )
 $service.findItems([Microsoft.Exchange.WebServices.Data.WellKnownFolderName]::Inbox, $Query, [Microsoft.Exchange.WebServices.Data.ItemView]::new($First)) |
     ForEach-Object {
