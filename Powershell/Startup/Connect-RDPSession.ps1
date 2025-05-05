@@ -201,7 +201,6 @@ Process {
         $AdditionalArguments
         " | Out-File C:\temp\$Name.rdp
 
-        $date = Get-Date
         mstsc C:\temp\$Name.rdp
         (Get-Process -Name mstsc | Select-Object -First 1).WaitForInputIdle() | Out-Null
 
@@ -220,21 +219,6 @@ Process {
 
         Add-Type -AssemblyName System.Windows.Forms
         [System.Windows.Forms.SendKeys]::SendWait("$($Password -replace ".","{`$0}"){Enter}")
-
-        # Start-Sleep 5
-        # try {
-        #     [Microsoft.VisualBasic.Interaction]::AppActivate("Windows-Sicherheit")
-        #     sudo {
-        #         Get-WinEvent `
-        #             -Path $env:SystemRoot\System32\Winevt\Logs\Microsoft-Windows-TerminalServices-RDPClient%4Operational.evtx `
-        #             -Oldest |
-        #                 Where-Object TimeCreated -GT $date |
-        #                 Format-List
-        #     }
-        # }
-        # catch {
-        # }
-
         Remove-Item C:\temp\$Name.rdp
     }
 }
