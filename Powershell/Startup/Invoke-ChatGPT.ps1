@@ -111,6 +111,7 @@ while ($true) {
             $aiResponse = $aiResponse.Replace('"','`"').Replace('`', '``')
             $cmd = $userMessage.Substring(1).Replace('$_', "$aiResponse")
             Write-Debug $cmd
+            Write-Host -ForegroundColor Yellow $cmd
             Invoke-Expression $cmd
         }
         default {

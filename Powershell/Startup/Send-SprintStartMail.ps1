@@ -305,7 +305,7 @@ if ($ExportHtml) {
 }
 
 # send mail via smtp
-$smtp = [System.Net.Mail.SmtpClient]::new('mail.de2.hostedoffice.ag', 587)
+$smtp = [System.Net.Mail.SmtpClient]::new($credentials.Server, $credentials.Port)
 $smtp.Credentials = [System.Net.NetworkCredential]::new($credentials.Username, $credentials.Password)
 $smtp.EnableSsl = $true
 $smtp.Send($mail)

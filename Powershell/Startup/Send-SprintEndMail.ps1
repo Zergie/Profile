@@ -280,7 +280,7 @@ $credentials = Get-Content "$PSScriptRoot/../secrets.json" -Encoding utf8 |
 
 # compose mail
 $mail = [System.Net.Mail.MailMessage]::new($credentials.Username, $credentials.Username)
-$mail.ReplyTo = "noreply@rocom.de"
+$mail.ReplyTo = "noreply@rocom-service.de"
 $mail.Subject = "Release Notes"
 $mail.Body    = @"
 <style>
@@ -333,7 +333,7 @@ $mail.IsBodyHtml = $true
 $mail.Attachments.Add([System.Net.Mail.Attachment]::new($filename))
 
 # send mail via smtp
-$smtp = [System.Net.Mail.SmtpClient]::new('mail.de2.hostedoffice.ag', 587)
+$smtp = [System.Net.Mail.SmtpClient]::new($credentials.Server, $credentials.Port)
 $smtp.Credentials = [System.Net.NetworkCredential]::new($credentials.Username, $credentials.Password)
 $smtp.EnableSsl = $true
 foreach ($item in $Bcc)       { $mail.Bcc.Add($item) }

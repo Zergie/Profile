@@ -408,7 +408,7 @@ process {
                             op    = "replace"
                             path  = "/fields/System.Title"
                             value = $_.fields.'System.Title' `
-                                        -replace 'Korrektur (?:auf|aus)?(?:\s*)Aufgabe (?:ID |ID: )?\d+ \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$1' `
+                                        -replace 'Korrektur (?:auf|aus)?(?:\s*)Aufgabe (?:ID |ID: )?(?:\d+|xxxx) \(DevOpsID:\s*(\d+)\s*\)', 'Erweiterung von #$1' `
                                         -replace 'Korrektur (?:auf|aus)(?: Aufgabe ID:?| Aufgabe)? (\d+)', 'Erweiterung von #$1' `
                                         -replace 'ID:(\d+) .+', 'Erweiterung von #$1' `
                                         -replace '(Aufgabe siehe Word),?\s*', '' `

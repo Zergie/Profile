@@ -47,7 +47,7 @@ dynamicparam {
             Position = 1
             Type = [string]
             Name = "Branch"
-            ValidateSet = git branch --list | sls "release(/[^/ ]+)+" |ForEach-Object {$_.Matches.Value}
+            ValidateSet = git branch --list | Select-String "release(/[^/ ]+)+" |ForEach-Object {$_.Matches.Value}
         }
     ) | New-DynamicParameter
 }
