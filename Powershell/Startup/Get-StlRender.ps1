@@ -43,6 +43,7 @@ Write-Host -ForegroundColor Cyan "Running openscad..."
 $r = [Math]::Sqrt([Math]::Pow($bbox.SizeX / 2, 2) + [Math]::Pow($bbox.SizeY / 2, 2))
 $t = $r / [Math]::Tan(60 / 180 * [Math]::PI)
 $zoom = [Math]::Max(200/88 * ($bbox.SizeZ + $t * 2), 120/24 * $r)
+$zoom = 100
 
 $script = @(
     if ($Color.Length -gt 0) { "color(`"$Color`")" }
@@ -50,6 +51,9 @@ $script = @(
 ) | Join-String -Separator " "
 
 Push-Location $env:TEMP
+". $openscad nul -o output.png -D `"`$vpt = [0, 0, $($bbox.center.z)]; `$vpd = $zoom; `$vpr = [60, 0, 360 * `$t];`" -D  $script --imgsize=$size,$size --animate $($images * $images) --projection ortho --colorscheme BeforeDawn 2>nul" |
+    Write-Host
+
 . $openscad nul `
     -o "output.png" `
     -D "`$vpt = [0, 0, $($bbox.center.z)]; `$vpd = $zoom; `$vpr = [60, 0, 360 * `$t];" `

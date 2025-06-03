@@ -42,7 +42,17 @@ try {
         Write-Host "Starting '$url'"
         Start-Process $url
     }
-    $context = $http.GetContext()
+    if ($http.IsListening) {
+        $context = $http.GetContextAsync()
+        if ($context.Wait(5000)) {
+            $context = $context.Result
+        } else {
+            Write-Host "No connection received within timeout. Closing HttpListener."
+            $http.Stop()
+            $http.Close()
+            throw "No connection received within timeout."
+        }
+    }
     Write-Host ">> $($context.Request.HttpMethod) $($context.Request.Url)"
     $conversation += ">> $($context.Request.HttpMethod) $($context.Request.Url)"
     $fs = [System.IO.File]::OpenRead($item.FullName)

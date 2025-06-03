@@ -1,55 +1,61 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Produced by Beyond Compare 5 from Scooter Software -->
 <BCState Version="2" MinVersion="2">
-	<TBcState>
-		<FirstStartup Value="False"/>
-		<FormPositions>
-			<TFileFormatManagerDialog Value="907;336;1652;1056"/>
-			<THexCompareSessionDialog Value="1014;427;1545;964"/>
-			<THexFormatDialog Value="1020;418;1540;973"/>
-			<TView Value="52;33;2560;1392;3"/>
-		</FormPositions>
-	</TBcState>
-	<TCheckForUpdatesState>
-		<Build Value="30713"/>
-		<LastChecked Value="2025-04-11 10:13:50"/>
-	</TCheckForUpdatesState>
-	<THexCompareState>
-		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
-		</LeftMRUSpecs>
-		<MRUFonts>
-			<_0 Value="Consolas;10;;;F"/>
-		</MRUFonts>
-		<RightMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
-		</RightMRUSpecs>
-	</THexCompareState>
-	<THomeState>
-		<SessionType Value="TTextCompareSession"/>
-	</THomeState>
-	<TPixCompareState>
-		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
-			<_1 Value="C:\Users\user\Downloads\before.gif"/>
-		</LeftMRUSpecs>
-		<MRUFonts>
-			<_0 Value="Segoe UI;9;;1"/>
-		</MRUFonts>
-		<RightMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
-			<_1 Value="C:\Users\user\Downloads\after.gif"/>
-		</RightMRUSpecs>
-	</TPixCompareState>
-	<TTextCompareState>
-		<LeftMRUSpecs>
-			<_0 Value="C:\Users\puchinger\Desktop\ohne_haken.pdf"/>
-		</LeftMRUSpecs>
-		<MRUFonts>
-			<_0 Value="Consolas;10;;;F"/>
-		</MRUFonts>
-		<RightMRUSpecs>
-			<_0 Value="C:\Users\puchinger\Desktop\mit_haken.pdf"/>
-		</RightMRUSpecs>
-	</TTextCompareState>
+  <TBcState>
+    <FirstStartup Value="False" />
+    <FormPositions>
+      <TFileFormatManagerDialog Value="907;336;1652;1056" />
+      <THexCompareSessionDialog Value="1014;427;1545;964" />
+      <THexFormatDialog Value="1020;418;1540;973" />
+      <TView Value="52;33;2560;1392;3" />
+    </FormPositions>
+  </TBcState>
+  <TCheckForUpdatesState>
+    <Build Value="30840" />
+    <LastChecked Value="2025-05-25 05:22:28" />
+  </TCheckForUpdatesState>
+  <THexCompareState>
+    <LeftMRUSpecs>
+      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
+    </LeftMRUSpecs>
+    <MRUFonts>
+      <_0 Value="Consolas;10;;;F" />
+    </MRUFonts>
+    <RightMRUSpecs>
+      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
+    </RightMRUSpecs>
+  </THexCompareState>
+  <THomeState>
+    <SessionType Value="TTextCompareSession" />
+  </THomeState>
+  <TPixCompareState>
+    <LeftMRUSpecs>
+      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
+      <_1 Value="C:\Users\user\Downloads\before.gif" />
+    </LeftMRUSpecs>
+    <MRUFonts>
+      <_0 Value="Segoe UI;9;;1" />
+    </MRUFonts>
+    <RightMRUSpecs>
+      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
+      <_1 Value="C:\Users\user\Downloads\after.gif" />
+    </RightMRUSpecs>
+  </TPixCompareState>
+  <TTextCompareState>
+    <LeftMRUSpecs>
+      <_0 Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json" />
+      <_1 Value="C:\GIT\gridfinity-UltraLight\config.json" />
+      <_2 Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLightGridfinityBins.json" />
+      <_3 Value="C:\Users\puchinger\Desktop\ohne_haken.pdf" />
+    </LeftMRUSpecs>
+    <MRUFonts>
+      <_0 Value="Consolas;10;;;F" />
+    </MRUFonts>
+    <RightMRUSpecs>
+      <_0 Value="C:\GIT\gridfinity-UltraLight\docs\configuration.new.json" />
+      <_1 Value="C:\GIT\gridfinity-UltraLight\config.new.json" />
+      <_2 Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLight\UltraLightGridfinityBins.json" />
+      <_3 Value="C:\Users\puchinger\Desktop\mit_haken.pdf" />
+    </RightMRUSpecs>
+  </TTextCompareState>
 </BCState>

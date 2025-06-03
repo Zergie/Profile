@@ -1,58 +1,79 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Produced by Beyond Compare 5 from Scooter Software -->
 <BCSessions Version="2" MinVersion="2">
-	<TSessionFolder>
-		<Items>
-			<TSessionFolder>
-				<Items>
-					<TTextCompareSession Value="ohne_haken.pdf &lt;--> mit_haken.pdf">
-						<LastModified Value="2025-04-11 10:13:57"/>
-						<Specs>
-							<Left Value="C:\Users\puchinger\Desktop\ohne_haken.pdf"/>
-							<Right Value="C:\Users\puchinger\Desktop\mit_haken.pdf"/>
-						</Specs>
-					</TTextCompareSession>
-					<TPixCompareSession Value="back_grill.stl &lt;--> back_grill_belay.stl">
-						<LastModified Value="2025-02-16 06:33:24"/>
-						<Specs>
-							<Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
-							<Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
-						</Specs>
-						<State>
-							<Tolerance Value="71"/>
-						</State>
-					</TPixCompareSession>
-					<THexCompareSession Value="back_grill.stl &lt;--> back_grill_belay.stl">
-						<Formats>
-							<Left Value=""/>
-						</Formats>
-						<LastModified Value="2025-02-16 06:32:36"/>
-						<NoEdit>
-							<Left Value="True"/>
-							<Right Value="True"/>
-						</NoEdit>
-						<Specs>
-							<Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
-							<Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
-						</Specs>
-					</THexCompareSession>
-					<TPixCompareSession Value="before.gif &lt;--> after.gif">
-						<LastModified Value="2025-02-16 05:28:19"/>
-						<Specs>
-							<Left Value="C:\Users\user\Downloads\before.gif"/>
-							<Right Value="C:\Users\user\Downloads\after.gif"/>
-						</Specs>
-						<State>
-							<Tolerance Value="70"/>
-						</State>
-					</TPixCompareSession>
-				</Items>
-			</TSessionFolder>
-			<TPixCompareSession>
-				<State>
-					<Tolerance Value="71"/>
-				</State>
-			</TPixCompareSession>
-		</Items>
-	</TSessionFolder>
+  <TSessionFolder>
+    <Items>
+      <TSessionFolder>
+        <Items>
+          <TTextCompareSession Value="configurations.json &lt;--&gt; configuration.new.json">
+            <LastModified Value="2025-05-27 05:54:18" />
+            <Specs>
+              <Left Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json" />
+              <Right Value="C:\GIT\gridfinity-UltraLight\docs\configuration.new.json" />
+            </Specs>
+          </TTextCompareSession>
+          <TTextCompareSession Value="config.json &lt;--&gt; config.new.json">
+            <LastModified Value="2025-05-27 05:53:30" />
+            <Specs>
+              <Left Value="C:\GIT\gridfinity-UltraLight\config.json" />
+              <Right Value="C:\GIT\gridfinity-UltraLight\config.new.json" />
+            </Specs>
+          </TTextCompareSession>
+          <TTextCompareSession Value="UltraLightGridfinityBins.json">
+            <LastModified Value="2025-05-25 05:22:34" />
+            <Specs>
+              <Left Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLightGridfinityBins.json" />
+              <Right Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLight\UltraLightGridfinityBins.json" />
+            </Specs>
+          </TTextCompareSession>
+          <TTextCompareSession Value="ohne_haken.pdf &lt;--&gt; mit_haken.pdf">
+            <LastModified Value="2025-04-11 10:13:57" />
+            <Specs>
+              <Left Value="C:\Users\puchinger\Desktop\ohne_haken.pdf" />
+              <Right Value="C:\Users\puchinger\Desktop\mit_haken.pdf" />
+            </Specs>
+          </TTextCompareSession>
+          <TPixCompareSession Value="back_grill.stl &lt;--&gt; back_grill_belay.stl">
+            <LastModified Value="2025-02-16 06:33:24" />
+            <Specs>
+              <Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
+              <Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
+            </Specs>
+            <State>
+              <Tolerance Value="71" />
+            </State>
+          </TPixCompareSession>
+          <THexCompareSession Value="back_grill.stl &lt;--&gt; back_grill_belay.stl">
+            <Formats>
+              <Left Value="" />
+            </Formats>
+            <LastModified Value="2025-02-16 06:32:36" />
+            <NoEdit>
+              <Left Value="True" />
+              <Right Value="True" />
+            </NoEdit>
+            <Specs>
+              <Left Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
+              <Right Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
+            </Specs>
+          </THexCompareSession>
+          <TPixCompareSession Value="before.gif &lt;--&gt; after.gif">
+            <LastModified Value="2025-02-16 05:28:19" />
+            <Specs>
+              <Left Value="C:\Users\user\Downloads\before.gif" />
+              <Right Value="C:\Users\user\Downloads\after.gif" />
+            </Specs>
+            <State>
+              <Tolerance Value="70" />
+            </State>
+          </TPixCompareSession>
+        </Items>
+      </TSessionFolder>
+      <TPixCompareSession>
+        <State>
+          <Tolerance Value="71" />
+        </State>
+      </TPixCompareSession>
+    </Items>
+  </TSessionFolder>
 </BCSessions>
