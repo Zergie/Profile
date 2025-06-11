@@ -1,18 +1,20 @@
-$exception = $null
-$conversation = @()
+$log = [ordered]@{
+    date      = (Get-Date).ToString()
+    args      = $args
+    debug     = @()
+    exception = @{
+    }
+}
 function Write-Log {
-    [ordered]@{
-        date         = (Get-Date).ToString()
-        args         = $args
-        conversation = $conversation
-        exception    = @{
-            FullyQualifiedErrorId = $exception.FullyQualifiedErrorId
-            Message               = $exception.Exception.ErrorRecord.Exception.Message
-            PositionMessage       = $exception.InvocationInfo.PositionMessage
-        }
-    } |
+
+    $log |
         ConvertTo-Json -Depth 2 |
-        Set-Content "$env:TEMP\Start-Slicer.log" -Force
+        Set-Content "$env:TEMP\Start-Slicer.log" -Force -Encoding utf8
+}
+function Write-Debug {
+    param([string] $message)
+    Write-Host $message
+    $log.debug += $message
 }
 try {
     $item = Get-ChildItem ("$args*" -replace '(\[|\])','``$1') | Sort-Object LastWriteTime | Select-Object -Last 1
@@ -27,7 +29,7 @@ try {
         $port = Get-Random -Minimum 49152 -Maximum 65535
         $http.Prefixes.Add("http://localhost:$port/")
         try {
-            Write-Host "Starting on port $port"
+            Write-Debug "Starting on port $port"
             $http.Start()
             break;
         } catch { }
@@ -36,10 +38,12 @@ try {
         $http.Start()
     }
     if ($http.IsListening) {
-        Write-Host "IsListening on port $port"
-        $url = "orcaslicer://open?file=$([System.Web.HttpUtility]::UrlEncode("http://localhost:$port/file.stl"))"
-        $url = "orcaslicer://open?file=$("http://localhost:$port/$file.stl")"
-        Write-Host "Starting '$url'"
+        Write-Debug "IsListening on port $port"
+        # $url = "orcaslicer://open?file=$([System.Web.HttpUtility]::UrlEncode("http://localhost:$port/file.stl"))"
+        $urlFile = "$([System.IO.Path]::GetFileName($args).Trim()).stl"
+        Write-Debug "urlFile: $urlFile"
+        $url = "orcaslicer://open?file=$("http://localhost:$port/$urlFile")"
+        Write-Debug "Starting '$url'"
         Start-Process $url
     }
     if ($http.IsListening) {
@@ -47,14 +51,12 @@ try {
         if ($context.Wait(5000)) {
             $context = $context.Result
         } else {
-            Write-Host "No connection received within timeout. Closing HttpListener."
             $http.Stop()
             $http.Close()
             throw "No connection received within timeout."
         }
     }
-    Write-Host ">> $($context.Request.HttpMethod) $($context.Request.Url)"
-    $conversation += ">> $($context.Request.HttpMethod) $($context.Request.Url)"
+    Write-Debug ">> $($context.Request.HttpMethod) $($context.Request.Url)"
     $fs = [System.IO.File]::OpenRead($item.FullName)
     $context.Response.ContentLength64 = $fs.Length
     $context.Response.SendChunked = $false
@@ -63,17 +65,22 @@ try {
     $fs.CopyTo($context.Response.OutputStream)
     $context.Response.StatusCode = 200
     $context.Response.StatusDescription = "Ok"
-    Write-Host "<< $($context.Response.StatusCode) $($context.Response.StatusDescription)"
-    $conversation += "<< $($context.Response.StatusCode) $($context.Response.StatusDescription)"
+    Write-Debug "<< $($context.Response.StatusCode) $($context.Response.StatusDescription)"
     $context.Response.OutputStream.Close()
+    Write-Debug "Waiting 10 seconds before closing."
+    Write-Log
     Start-Sleep -Seconds 10
     $http.Stop()
     $http.Close()
     $fs.Dispose()
     $http.Dispose()
+    Write-Debug "All done. Bye bye!"
     Pop-Location
 } catch {
-    $exception = $_
+    Write-Host -ForegroundColor Red $_.Message
+    $log.exception.FullyQualifiedErrorId = $exception.FullyQualifiedErrorId
+    $log.exception.Message               = $exception.Message
+    $log.exception.PositionMessage       = $exception.PositionMessage
 } finally {
     Write-Log
 }
