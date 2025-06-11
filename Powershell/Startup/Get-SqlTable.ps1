@@ -155,13 +155,13 @@ if ($Progress) {
                         $v = $item.($_.Name)
                         if ($v -eq [DBNull]::Value) {
                         } elseif ($v.Year -eq 1899 -and $v.Month -eq 12 -and $v.Day -eq 30) {
-                            $item.psadapted |
+                            $item |
                                 Add-Member `
                                     -Force `
                                     -NotePropertyName $_.Name `
                                     -NotePropertyValue ([System.TimeOnly]::FromDateTime($v))
                         } elseif ($v.Hour -eq 0 -and $v.Minute -eq 0 -and $v.Second -eq 0) {
-                            $item.psadapted |
+                            $item |
                                 Add-Member `
                                     -Force `
                                     -NotePropertyName $_.Name `
@@ -169,13 +169,6 @@ if ($Progress) {
                         }
                     }
 
-                # $hiddenProp = New-Object System.Management.Automation.PSNoteProperty('::Table', $Table)
-                # $hiddenAttr = New-Object System.Management.Automation.HiddenAttribute
-                # $hiddenProp.Attributes.Add($hiddenAttr)
-                # $_.psadapted.Properties.Add($hiddenProp)
-
-                # $_.psadapted |
-                    # Add-Member -NotePropertyName "::Table" -NotePropertyValue $Table
                 $Global:Table = $Table
                 Add-Member -InputObject $_ -MemberType ScriptMethod -Name "::Table" -Value { $Global:Table }
                 $Global:Filter = $Filter
@@ -188,10 +181,8 @@ if ($Progress) {
                         -Query "SELECT column_name FROM Information_Schema.columns WHERE table_name='$Table' ORDER BY ORDINAL_POSITION" |
                         ForEach-Object column_name
                 }
-                $Fields += "_Table"
 
-                # $_.psadapted | Select-Object -Property $Fields
-                $_
+                $item | Select-Object $Fields
             }
     }
 }

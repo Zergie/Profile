@@ -115,35 +115,70 @@ $branches = $branches |
 
 # find workitems that still need work
 Write-Host
-Write-Host "Workitems that need work:"
-Get-Issues -Iteration '@Current Iteration' |
-    Where-Object { $_.fields.'System.State' -eq "Done"} |
-    Where-Object { $_.fields.'System.Tags'.Length -gt 0 } |
-    Where-Object { $_.fields.'System.Tags'.Split(";") -like "TO *" } |
+$problems = @()
+$header = $branches.given_name | Sort-Object -Descending
+$workitems = $branches.commits.workitems |
+    Where-Object { -($_.fields.'System.ChangedDate' - (Get-date)).TotalDays -lt 7 }
+$titleLen = [Math]::min(60, ($workitems |
+    ForEach-Object { $_.fields.'System.Title'.Length + 9 } |
+    Measure-Object -Maximum).Maximum)
+$workitems |
     ForEach-Object {
-        $workitem = $_
-        $_.fields.'System.Tags'.Split(";") |
-            Where-Object { $_ -like "TO *" } |
-            ForEach-Object {
-                $search = ($_.Substring("TO ".Length))
-                [pscustomobject]@{
-                    workitem = $workitem.Id
-                    tag      = $_
-                    found    = $branches |
-                            Where-Object given_name -Like $search |
-                            ForEach-Object commits |
-                            ForEach-Object workitems |
-                            Where-Object Id -eq $workitem.Id |
-                            Measure-Object |
-                            ForEach-Object Count
-                }
-            }
+        $id = $_.Id
+        [pscustomobject]@{
+          workitem = $_.Id
+          fields   = $_.fields
+          tags     = @(
+            $_.fields.'System.Tags' -split "; " |
+                Where-Object{ $_ -ne $null -and $_.StartsWith("TO ") } |
+                ForEach-Object { $_.Substring(3)}
+            "Nightly"
+          )
+          branches = $branches |
+            Where-Object { $_.commits.workitems.id -contains $Id } |
+            ForEach-Object given_name |
+            Sort-Object -Unique
+        }
     } |
-    Where-Object found -eq 0 -OutVariable workNeeded
-if ($workNeeded.Count -eq 0) {
-    Write-Host "None" -ForegroundColor Magenta
-}
+    Where-Object workitem -ne $null |
+    ForEach-Object {
+        $i = $_
+        $item = [pscustomobject]@{
+          workitem    = $_.workitem
+          fields      = $_.fields
+          explanation = @()
+          tags        = $_.tags -join ", "
+        }
+        $header |
+            ForEach-Object{ Add-Member -InputObject $item -NotePropertyName $_ -NotePropertyValue $(
+                if ($i.branches -contains $_ -and $i.tags -contains $_) { "`e[32mok`e[0m" }
+                elseif ($i.tags -contains $_)                           { "`e[31m!!`e[0m"; $item.explanation += "missing in $_" ; $problems += $i.workitem }
+                elseif ($i.branches -contains $_)                       { "`e[31m!?`e[0m"; $item.explanation += "present in $_"; $problems += $i.workitem }
+                else                                                    { "  "   }
+            )}
+        $item
+    } |
+    Where-Object workitem -ne $null |
+    Sort-Object workitem -Unique -Descending |
+    Sort-Object { $_.fields.'System.ChangedDate' } -Descending |
+    ForEach-Object `
+        -Begin {
+            "$([string]::new(" ", $titleLen)) | $($header -join " | " ) | "
+            "$([string]::new("-", $titleLen))-|-$(($header |%{[string]::new("-", $_.Length)}) -join "-|-")-|"
+        }`
+        -Process {
+            $item = $_
+            $title = "$($_.workitem) - $($_.fields.'System.Title')"
+            "$($title.PadRight($titleLen, " ").Substring(0, $titleLen)) | $(($header | ForEach-Object {"   " + $item.$_ + "  "}) -join " | ") | `e[31m$($item.explanation -join ", ")`e[0m"
+        }
+
 Write-Host
+if ($problems.Count -gt 0) {
+    Write-Host "It looks like there is a problem with some Issues:"
+    Get-Issues -WorkitemId ($problems | Sort-Object -Unique) | Format-Table
+    Write-Host
+    Read-Host "Press [Enter] to continue, [Ctrl-C] to abort"
+}
 
 # write excel
 $filename = "${env:temp}/release_notes.xlsx"
@@ -255,9 +290,11 @@ $branches |
         $ws.Cells["A:A"] |
             ForEach-Object {
                 if ($null -ne $last -and $_.Value -eq $last.Value) {
-                    Set-ExcelRange -Range "A$($_.Start.row)" -Value ""
-                    Set-ExcelRange -Range "A$($last.Start.row):A$($_.Start.row)" -Merge
-                    Set-ExcelRange -Range "B$($last.Start.row):B$($_.Start.row)" -Merge
+                    if ($_.Start.Row -lt 1000) {
+                        Set-ExcelRange -Range "A$($_.Start.row)" -Value ""
+                        Set-ExcelRange -Range "A$($last.Start.row):A$($_.Start.row)" -Merge
+                        Set-ExcelRange -Range "B$($last.Start.row):B$($_.Start.row)" -Merge
+                    }
                 } else {
                     $last = $_
                 }
