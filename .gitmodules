@@ -13,9 +13,6 @@
 [submodule "Fusion360/AddIns/ThreadKeeper"]
 	path = Fusion360/AddIns/ThreadKeeper
 	url = https://github.com/thomasa88/ThreadKeeper.git
-[submodule "Fusion360/AddIns/AnyShortcut"]
-	path = Fusion360/AddIns/AnyShortcut
-	url = https://github.com/thomasa88/AnyShortcut
 [submodule "Fusion360/AddIns/KeyboardShortcutsSimple"]
 	path = Fusion360/AddIns/KeyboardShortcutsSimple
 	url = https://github.com/thomasa88/KeyboardShortcutsSimple.git
