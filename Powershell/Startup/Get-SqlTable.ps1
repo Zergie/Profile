@@ -58,8 +58,7 @@ if ($Progress) {
 
     if ($PSBoundParameters.ContainsKey("Fields")) {
         $Query += "$(($Fields | ForEach-Object { "[$_]" }) -join ',') "
-    }
-    elseif (-not $PSBoundParameters.ContainsKey("Table")) {
+    } elseif (-not $PSBoundParameters.ContainsKey("Table")) {
         $Query += "name, create_date, modify_date, N'$Database' AS [database] "
     }
     else {
@@ -68,15 +67,18 @@ if ($Progress) {
 
     if (-not $PSBoundParameters.ContainsKey("Table")) {
         $Query += "FROM sys.tables "
-    }
-    elseif ($Table.Contains(".")) {
+    } elseif ($Table.Contains(".")) {
         $Query += "FROM $Table "
     }
     else {
         $Query += "FROM [$($Table.TrimStart("[").TrimEnd("]"))] "
     }
 
-    if ($PSBoundParameters.ContainsKey("Filter")) {
+    if ($PSBoundParameters.ContainsKey("Filter") -and $PSBoundParameters.ContainsKey("Value")) {
+        $Query += " WHERE $(Format-SqlFilterCriteria $Filter $Value)"
+    } elseif ($PSBoundParameters.ContainsKey("Filter")) {
+        $Value = $Filter
+        $Filter = "Id"
         $Query += " WHERE $(Format-SqlFilterCriteria $Filter $Value)"
     }
 
@@ -86,8 +88,7 @@ if ($Progress) {
                     ForEach-Object { if ($_.Contains(' ')) { "[$_]" } else { $_ } } |
                     ForEach-Object { if ($Descending) { "$_ DESC" } else { "$_ ASC" } }
                   ) -join ","
-    }
-    elseif (-not $PSBoundParameters.ContainsKey("Table")) {
+    } elseif (-not $PSBoundParameters.ContainsKey("Table")) {
         $Query += "ORDER BY 1, 2, 3, 4"
     }
 
@@ -171,18 +172,20 @@ if ($Progress) {
 
                 $Global:Table = $Table
                 Add-Member -InputObject $_ -MemberType ScriptMethod -Name "::Table" -Value { $Global:Table }
+
                 $Global:Filter = $Filter
                 Add-Member -InputObject $_ -MemberType ScriptMethod -Name "::Filter" -Value { $Global:Filter }
 
-                if (!$PSBoundParameters.ContainsKey('Fields')) {
-                    $Fields = @()
-                    $Fields += Invoke-Sqlcmd `
-                        -Database $Database `
-                        -Query "SELECT column_name FROM Information_Schema.columns WHERE table_name='$Table' ORDER BY ORDINAL_POSITION" |
-                        ForEach-Object column_name
-                }
-
-                $item | Select-Object $Fields
+                # if (!$PSBoundParameters.ContainsKey('Fields')) {
+                #     $Fields = @()
+                #     $Fields += Invoke-Sqlcmd `
+                #         -Database $Database `
+                #         -Query "SELECT column_name FROM Information_Schema.columns WHERE table_name='$Table' ORDER BY ORDINAL_POSITION" |
+                #         ForEach-Object column_name
+                # }
+                #
+                # $item | Select-Object $Fields
+                $item
             }
     }
 }

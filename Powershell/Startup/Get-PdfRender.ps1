@@ -45,7 +45,7 @@ Process {
                     [System.IO.Path]::GetFileName($OutFile)
                 } else {
                     [System.IO.Path]::ChangeExtension($file.Name, $As)
-                })  
+                })
             Directory = $(
                 if ($OutFile.Length -gt 0) {
                     [System.IO.Path]::GetDirectoryName(
@@ -60,6 +60,8 @@ Process {
                 })
 
         }
+        $fileAs.FullName = [System.IO.Path]::Combine($fileAs.Directory, $fileAs.Name)
+        Write-Debug "fileAs: $($fileAs | ConvertTo-Json)"
         [pscustomobject]@{
             FilePath         = $gs.Source
             WorkingDirectory = $file.Directory
@@ -75,7 +77,7 @@ Process {
                 "-dTextAlphaBits=4"
                 "-r300"
                 "-sPDFPassword=$password"
-                "-o `"$($fileAs.Name)`""  
+                "-o `"$($fileAs.Name)`""
                 " `"$($file.Name)`""
             )
             ArgumentListWithoutPassword = ""

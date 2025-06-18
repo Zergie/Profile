@@ -276,7 +276,7 @@ end {
                     Delete-SqlTable Rechnungen_10060 -Filter ID_Rechnung -Value $null
                     Invoke-MsAccess -Procedure test_clsAbrechnung10060_billIndividuell -Arguments $_.ID | Out-Null
 
-                    $data = Invoke-Sqlcmd "SELECT Beschreibung, Anzahl, Preis FROM Rechnungen_10060 WHERE ID_Rechnung IN (SELECT Nr FROM Steuerdatei WHERE Person_ID=$($_.PersonID)) ORDER BY Position" |
+                    $data = Invoke-Sqlcmd "SELECT Id, Beschreibung, Anzahl, Preis FROM Rechnungen_10060 WHERE ID_Rechnung IN (SELECT Nr FROM Steuerdatei WHERE Person_ID=$($_.PersonID)) ORDER BY Position" |
                                 Sort-Object Beschreibung
 
                     $colors = [pscustomobject]@{
@@ -326,6 +326,7 @@ end {
                                     "${c}$($_.Anzahl.ToString())"
                                 }
                                 Preis        = "${c}$([Math]::Round($_.Preis, 2))${r}"
+                                ID_Rechnung = $_.ID_Rechnung
                             }
                             if ($_.Beschreibung -match ": P_") {
                                 $p_sum += $_.Anzahl
@@ -341,6 +342,8 @@ end {
                             # }
                         } |
                         Format-Table
+
+                    Delete-SqlTable Rechnungen_10060 -Filter ID -Value $data.Id
                 }
         } else {
             throw "MsAccess is not running"

@@ -18,8 +18,7 @@ param(
     [string]
     $Database,
 
-    [Parameter(Mandatory, Position=0, ValueFromPipelineByPropertyName)]
-    [Alias("::Table")]
+    [Parameter(ValueFromPipelineByPropertyName)]
     [string]
     $Table,
 
@@ -50,6 +49,9 @@ Process {
         $Data = [pscustomobject]$Data
     }
     try { $Table = $data.'::Table'() } catch {}
+    if ($Table.Length -eq 0) {
+        throw "Can not bind Table"
+    }
     $PassThruData = $Data
     $Data = $Data.psextended |
                 ForEach-Object {$_} -PipelineVariable item |
