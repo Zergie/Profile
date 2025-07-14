@@ -18,6 +18,7 @@ function Write-Debug {
 }
 try {
     $item = Get-ChildItem ("$args*" -replace '(\[|\])','``$1') | Sort-Object LastWriteTime | Select-Object -Last 1
+    $extension = $item.Extension
     Push-Location $item.Directory
     $file = $item.Name
 
@@ -39,8 +40,8 @@ try {
     }
     if ($http.IsListening) {
         Write-Debug "IsListening on port $port"
-        # $url = "orcaslicer://open?file=$([System.Web.HttpUtility]::UrlEncode("http://localhost:$port/file.stl"))"
-        $urlFile = "$([System.IO.Path]::GetFileName($args).Trim()).stl"
+        # $url = "orcaslicer://open?file=$([System.Web.HttpUtility]::UrlEncode("http://localhost:$port/file.$extension"))"
+        $urlFile = "$([System.IO.Path]::GetFileName($args).Trim()).$extension"
         Write-Debug "urlFile: $urlFile"
         $url = "orcaslicer://open?file=$("http://localhost:$port/$urlFile")"
         Write-Debug "Starting '$url'"

@@ -102,13 +102,15 @@ $tools = @(
     [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
     [pscustomobject]@{name="gsudo"}
     [pscustomobject]@{name="irfanview"}
-    [pscustomobject]@{name="microsoft-windows-terminal"}
+    [pscustomobject]@{name="microsoft-teams-new-bootstrapper"}
+    [pscustomobject]@{name="microsoft-teams"}
     [pscustomobject]@{name="neovim"}
     [pscustomobject]@{name="nerd-fonts-Meslo"}
     [pscustomobject]@{name="nuget.commandline"}
     [pscustomobject]@{name="poshgit"}
     [pscustomobject]@{name="powershell-core"}
     [pscustomobject]@{name="powertoys"}
+    [pscustomobject]@{name="pypy3"}
     [pscustomobject]@{name="python3";version="3.11";reason="neovim-remote does not work with python 3.12"}
     [pscustomobject]@{name="ripgrep"}
     [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
