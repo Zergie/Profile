@@ -134,6 +134,8 @@ $github = @(
     #                   folder="$PSScriptRoot\warpd"}
     [pscustomobject]@{repo="max-niederman/ttyper"; file="ttyper-x86_64-*-windows-*.zip"
                       folder="$PSScriptRoot/ttyper"}
+    [pscustomobject]@{repo="microsoft/WSL"; file="wsl*.x64.msi"
+                      folder="$PSScriptRoot/wsl"}
 )
 
 $patches = @(
@@ -260,6 +262,11 @@ function Get-GithubRelease {
 
                 Microsoft.PowerShell.Archive\Expand-Archive $zip $pwd -Force
                 Remove-Item $zip -Force
+            } elseif ($File.EndsWith(".msi")) {
+                $download = "https://github.com/$Repo/releases/download/$tag/$File"
+                Invoke-WebRequest $download -OutFile $File
+
+                msiexec /i (Get-Item $File).FullName #/quiet /norestart
             } else {
                 $download = "https://github.com/$Repo/releases/download/$tag/$File"
                 Invoke-WebRequest $download -OutFile $File

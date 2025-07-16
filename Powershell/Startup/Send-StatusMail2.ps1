@@ -196,7 +196,7 @@ Process {
                             -Endpoint "GET https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{id}/revisions/{revisionNumber}?api-version=6.0" `
                             -Variables @{ id = $item.id; revisionNumber = $rev }
 
-            if ($workitem_revision.fields.'System.ChangedDate' -lt $end_date) {
+            if ($workitem_revision.fields.'System.ChangedDate' -lt $end_date.AddHours(23)) {
                 $item.revisions += $workitem_revision
 
                 if ($workitem_revision.fields.'System.State' -in 'Done','To Do') {

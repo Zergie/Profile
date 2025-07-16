@@ -333,7 +333,7 @@ h1 {
 }
 
 </style>
-<p>Sehr geehrter Stakeholde,</p>
+<p>Sehr geehrte Stakeholder,</p>
 
 <p>Im Anhang finden Sie die Release Notes der letzten vier Software-Updates sowie die aktuelle Entwicklungsversion unserer Anwendung als XLSX-Datei.
 Ich bitte Sie, sich ausreichend Zeit zu nehmen, um die detaillierten Änderungen und Verbesserungen sorgfältig zu überprüfen.

@@ -35,7 +35,7 @@
                         <TableColumnItems>
 
                             <TableColumnItem>
-                                <PropertyName>id</PropertyName>
+                                <ScriptBlock>"`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/$($_.id)`e\$($_.id)`e]8;;`e\`e[0m"</ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <PropertyName>rev</PropertyName>
@@ -52,7 +52,7 @@ switch ($workitem.fields.'System.State') {
                                 </ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <ScriptBlock>$_.fields.'System.Title'</ScriptBlock>
+                                <ScriptBlock>"`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/$($_.id)`e\$($_.fields.'System.Title')`e]8;;`e\`e[0m"</ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <ScriptBlock>$_.fields.'System.AssignedTo'.DisplayName</ScriptBlock>

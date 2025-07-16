@@ -33,7 +33,18 @@ param(
 
     [Parameter(ParameterSetName="GitCommitParameterSet")]
     [switch]
-    $WriteGitCommit
+    $WriteGitCommit,
+
+    [Parameter(ParameterSetName="JobApplicationParameterSet")]
+    [ValidateScript({
+        if ($_ -match 'https?://www.freelancermap.de') {
+            return $true
+        } else {
+            throw "Please provide a valid freelancermap.de URL."
+        }
+    })]
+    [string]
+    $WriteJobApplication
 )
 if ($WritePullRequest) {
     $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
@@ -59,7 +70,7 @@ if ($WritePullRequest) {
         Measure-Object
         ).Count -eq 0
     $commit = git diff --staged -B -M | Join-String -Separator `n
-    if ($binaryonly -or $commit.Length -gt 100000) {
+    if ($binaryonly -or $commit.Length -gt 30000) {
         $commit = git diff --staged -B -M --name-status | Join-String -Separator `n
     }
     if ($commit.Length -eq 0) {
@@ -70,6 +81,33 @@ if ($WritePullRequest) {
                     $commit
                     '!git commit -m "$_"'
                 )
+} elseif ($WriteJobApplication.Length -gt 0) {
+    $Role = "Wir schreiben eine bewerbung auf ein Projekt als freelancer:"
+    $html = ConvertFrom-HTML -Engine AngleSharp -Url $WriteJobApplication
+
+    $text = $html.QuerySelector(".card").QuerySelectorAll("dt").TextContent | 
+        ForEach-Object { [pscustomobject]@{Name=$_.Trim(@(" ", ":")); Value=$null}}
+    $i  =0
+    $html.QuerySelector(".card").QuerySelectorAll("dd") | 
+        ForEach-Object{
+            $text[$i].Value = $_.TextContent.Split() | Where-Object Length -gt 0 | Join-String -Separator " "
+            $i+=1 
+        }
+    
+
+    $Message = @(
+                    # "Mein Lebenslauf:"
+                    # Get-PdfRender C:\Dokumente\Dokumente\Lebenslauf_2025.pdf -As txt | ForEach-Object Converted
+                    # ""
+                    "Titel:"
+                    $($html.QuerySelector("*[data-translatable=title]").TextContent.Trim())
+                    $text.GetEnumerator() | ForEach-Object { "$($_.Name):`n$($_.Value)`n"}
+                    $html.QuerySelector("*[data-translatable=description]").TextContent.Trim()
+                ) | Out-String
+    
+    $Message | Set-Clipboard
+    Write-Host "Copied to clipboard!" -ForegroundColor Magenta
+    Start-Process "https://chatgpt.com/c/670641eb-0890-800c-80ce-f87c1b0dee69"
 }
 
 $ApiEndpoint = "https://api.openai.com/v1/chat/completions"
@@ -108,7 +146,7 @@ while ($true) {
             Write-Host "Copied to clipboard!" -ForegroundColor Magenta
         }
         "^[!]" {
-            $aiResponse = $aiResponse.Replace('"','`"').Replace('`', '``')
+            $aiResponse = $aiResponse.Replace('`', '``').Replace('"','`"')
             $cmd = $userMessage.Substring(1).Replace('$_', "$aiResponse")
             Write-Debug $cmd
             Write-Host -ForegroundColor Yellow $cmd
