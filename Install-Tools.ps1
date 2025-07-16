@@ -13,6 +13,7 @@ dynamicparam {
             "patches"
             "github-releases"
             "commands"
+            "wsl"
     ) |
         ForEach-Object {
             $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
@@ -58,76 +59,83 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 
 function Test-IsWorkstation { $env:USERNAME -eq "puchinger" }
-function Test-IsLaptop { (Get-Computerinfo -Property CsPCSystemType).CsPCSystemType -ne 3 }
+function Test-IsLaptop {
+    if (![System.IO.File]::Exists("$env:temp\CsPCSystemType.json")) {
+        Get-Computerinfo -Property CsPCSystemType | ConvertTo-Json | Out-File "$env:temp\CsPCSystemType.json" -Force
+    }
+    (Get-Content "$env:temp\CsPCSystemType.json" -ErrorAction SilentlyContinue | ConvertFrom-Json).CsPCSystemType -ne 3
+}
 
 Write-Host -ForegroundColor Cyan "  Test-IsWorkstation: $(Test-IsWorkstation)"
 Write-Host -ForegroundColor Cyan "  Test-IsLaptop: $(Test-IsLaptop)"
 
-$modules = @(
-    "posh-git"
-    "SqlServer"
-    "ImportExcel"
-)
+$tools = [pscustomobject]@{
+    chocolatey = @(
+        if (Test-IsWorkstation) {
+            [pscustomobject]@{name="autohotkey"}
+            [pscustomobject]@{name="azure-cli"}
+            [pscustomobject]@{name="filezilla"}
+            [pscustomobject]@{name="keepass"}
+            [pscustomobject]@{name="nodejs-lts"}
+            [pscustomobject]@{name="sql-server-management-studio"}
+            [pscustomobject]@{name="wixtoolset"}
+            [pscustomobject]@{name="zoom"}
+        }
+        if (Test-IsLaptop) {
+            [pscustomobject]@{name="autohotkey"}
+        }
 
-$tools = @(
-    if (Test-IsWorkstation) {
-        [pscustomobject]@{name="autohotkey"}
-        [pscustomobject]@{name="azure-cli"}
-        [pscustomobject]@{name="filezilla"}
-        [pscustomobject]@{name="keepass"}
-        [pscustomobject]@{name="nodejs-lts"}
-        [pscustomobject]@{name="sql-server-management-studio"}
-        [pscustomobject]@{name="wixtoolset"}
-        [pscustomobject]@{name="zoom"}
-    }
-    if (Test-IsLaptop) {
-        [pscustomobject]@{name="autohotkey"}
-    }
-
-    [pscustomobject]@{name="7zip"}
-    [pscustomobject]@{name="7zip.commandline"}
-    [pscustomobject]@{name="InkScape"}
-    [pscustomobject]@{name="autodesk-fusion360";reason="program has integrated updates";pin=$true}
-    [pscustomobject]@{name="bat"}
-    [pscustomobject]@{name="beyondcompare"}
-    [pscustomobject]@{name="brave";reason="program has integrated updates";pin=$true}
-    [pscustomobject]@{name="delta"}
-    [pscustomobject]@{name="discord"}
-    [pscustomobject]@{name="docker-desktop"}
-    [pscustomobject]@{name="dotnet-6.0-desktopruntime"}
-    [pscustomobject]@{name="gh"}
-    [pscustomobject]@{name="gimp"}
-    [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
-    [pscustomobject]@{name="git-status-cache-posh-client"}
-    [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
-    [pscustomobject]@{name="gsudo"}
-    [pscustomobject]@{name="irfanview"}
-    [pscustomobject]@{name="microsoft-teams-new-bootstrapper"}
-    [pscustomobject]@{name="microsoft-teams"}
-    [pscustomobject]@{name="neovim"}
-    [pscustomobject]@{name="nerd-fonts-Meslo"}
-    [pscustomobject]@{name="nuget.commandline"}
-    [pscustomobject]@{name="poshgit"}
-    [pscustomobject]@{name="powershell-core"}
-    [pscustomobject]@{name="powertoys"}
-    [pscustomobject]@{name="pypy3"}
-    [pscustomobject]@{name="python3";version="3.11";reason="neovim-remote does not work with python 3.12"}
-    [pscustomobject]@{name="ripgrep"}
-    [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
-    [pscustomobject]@{name="vlc"}
-    [pscustomobject]@{name="vscode"}
-    [pscustomobject]@{name="wireshark"}
-    [pscustomobject]@{name="wiztree"}
-    [pscustomobject]@{name="wsl2"}
-
-)
-
-$npm = @(
-    if (Test-IsWorkstation) {
-        [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
-        [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
-    }
-)
+        [pscustomobject]@{name="7zip"}
+        [pscustomobject]@{name="7zip.commandline"}
+        [pscustomobject]@{name="InkScape"}
+        [pscustomobject]@{name="autodesk-fusion360";reason="program has integrated updates";pin=$true}
+        [pscustomobject]@{name="bat"}
+        [pscustomobject]@{name="beyondcompare"}
+        [pscustomobject]@{name="brave";reason="program has integrated updates";pin=$true}
+        [pscustomobject]@{name="delta"}
+        [pscustomobject]@{name="discord"}
+        [pscustomobject]@{name="docker-desktop"}
+        [pscustomobject]@{name="dotnet-6.0-desktopruntime"}
+        [pscustomobject]@{name="gh"}
+        [pscustomobject]@{name="git";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
+        [pscustomobject]@{name="git-status-cache-posh-client"}
+        [pscustomobject]@{name="git.install";version="2.36.0";reason="interative.singlekey does not work in version 2.37.1";pin=$true}
+        [pscustomobject]@{name="gsudo"}
+        [pscustomobject]@{name="irfanview"}
+        [pscustomobject]@{name="microsoft-teams-new-bootstrapper"}
+        [pscustomobject]@{name="microsoft-teams"}
+        [pscustomobject]@{name="neovim"}
+        [pscustomobject]@{name="nerd-fonts-Meslo"}
+        [pscustomobject]@{name="nuget.commandline"}
+        [pscustomobject]@{name="poshgit"}
+        [pscustomobject]@{name="powershell-core"}
+        [pscustomobject]@{name="powertoys"}
+        [pscustomobject]@{name="pypy3"}
+        [pscustomobject]@{name="python3";version="3.11";reason="neovim-remote does not work with python 3.12"}
+        [pscustomobject]@{name="ripgrep"}
+        [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
+        [pscustomobject]@{name="vlc"}
+        [pscustomobject]@{name="vscode"}
+        [pscustomobject]@{name="wireshark"}
+        [pscustomobject]@{name="wiztree"}
+        [pscustomobject]@{name="wsl2"}
+    )
+    wsl = @(
+        [pscustomobject]@{name="gimp"}
+        [pscustomobject]@{name="inkscape"}
+    )
+    npm = @(
+        if (Test-IsWorkstation) {
+            [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
+            [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
+        }
+    )
+    pwsh_modules = @(
+        [pscustomobject]@{name="posh-git"}
+        [pscustomobject]@{name="SqlServer"}
+        [pscustomobject]@{name="ImportExcel"}
+    )
+}
 
 $github = @(
     # [pscustomobject]@{repo="rvaiya/warpd";         file="warpd.exe"
@@ -223,7 +231,14 @@ $commands = @(
 )
 
 
-# functions
+######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
+##       ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ## ##    ##
+##       ##     ## ####  ## ##          ##     ##  ##     ## ####  ## ##
+######   ##     ## ## ## ## ##          ##     ##  ##     ## ## ## ##  ######
+##       ##     ## ##  #### ##          ##     ##  ##     ## ##  ####       ##
+##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
+##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
+
 function Get-GithubRelease {
     param(
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Repo,
@@ -333,24 +348,37 @@ function Install-Junction {
     }
 }
 
-# powershell modules
+########   #######  ##      ## ######## ########   ######  ##     ## ######## ##       ##            ##     ##  #######  ########  ##     ## ##       ########  ######
+##     ## ##     ## ##  ##  ## ##       ##     ## ##    ## ##     ## ##       ##       ##            ###   ### ##     ## ##     ## ##     ## ##       ##       ##    ##
+##     ## ##     ## ##  ##  ## ##       ##     ## ##       ##     ## ##       ##       ##            #### #### ##     ## ##     ## ##     ## ##       ##       ##
+########  ##     ## ##  ##  ## ######   ########   ######  ######### ######   ##       ##            ## ### ## ##     ## ##     ## ##     ## ##       ######    ######
+##        ##     ## ##  ##  ## ##       ##   ##         ## ##     ## ##       ##       ##            ##     ## ##     ## ##     ## ##     ## ##       ##             ##
+##        ##     ## ##  ##  ## ##       ##    ##  ##    ## ##     ## ##       ##       ##            ##     ## ##     ## ##     ## ##     ## ##       ##       ##    ##
+##         #######   ###  ###  ######## ##     ##  ######  ##     ## ######## ######## ########      ##     ##  #######  ########   #######  ######## ########  ######
+
 if ($PSBoundParameters.All -or $PSBoundParameters.'pwsh-modules') {
-    foreach ($tool in $modules) {
+    foreach ($tool in $tools.pwsh_modules) {
         Write-Host -ForegroundColor Cyan "Installing $tool"
-        Install-Module -Name $tool -Force
+        Install-Module -Name $tool.Name -Force
     }
 }
 
+ ######  ##     ##  #######   ######   #######  ##          ###    ######## ######## ##    ##      ########  #######   #######  ##        ######
+##    ## ##     ## ##     ## ##    ## ##     ## ##         ## ##      ##    ##        ##  ##          ##    ##     ## ##     ## ##       ##    ##
+##       ##     ## ##     ## ##       ##     ## ##        ##   ##     ##    ##         ####           ##    ##     ## ##     ## ##       ##
+##       ######### ##     ## ##       ##     ## ##       ##     ##    ##    ######      ##            ##    ##     ## ##     ## ##        ######
+##       ##     ## ##     ## ##       ##     ## ##       #########    ##    ##          ##            ##    ##     ## ##     ## ##             ##
+##    ## ##     ## ##     ## ##    ## ##     ## ##       ##     ##    ##    ##          ##            ##    ##     ## ##     ## ##       ##    ##
+ ######  ##     ##  #######   ######   #######  ######## ##     ##    ##    ########    ##            ##     #######   #######  ########  ######
 
-# chocolatey tools
 if ($PSBoundParameters.All -or $PSBoundParameters.chocolatey) {
     Write-Host -ForegroundColor Cyan "Installing chocolatey"
-    foreach ($tool in $tools | Where-Object version -NE $null) {
+    foreach ($tool in $tools.chocolatey | Where-Object version -NE $null) {
         "choco install $($tool.name) --version $($tool.version) --allow-downgrade -y" |
             ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
     }
 
-    foreach ($tool in $tools | Where-Object pin -EQ $true) {
+    foreach ($tool in $tools.chocolatey | Where-Object pin -EQ $true) {
         if ($null -ne $tool.reason) {
             "choco pin add --name=$($tool.name)" |
                 ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
@@ -376,29 +404,82 @@ if ($PSBoundParameters.All -or $PSBoundParameters.chocolatey) {
         Where-Object 'package name' -NotLike *.install
 }
 
-# npm
-if ($PSBoundParameters.All -or $PSBoundParameters.npm) {
-    "npm install -g $($npm.name)" | ForEach-Object { Write-Host -ForegroundColor Cyan $_; Invoke-Expression $_ }
+##      ##  ######  ##            ########  #######   #######  ##        ######
+##  ##  ## ##    ## ##               ##    ##     ## ##     ## ##       ##    ##
+##  ##  ## ##       ##               ##    ##     ## ##     ## ##       ##
+##  ##  ##  ######  ##               ##    ##     ## ##     ## ##        ######
+##  ##  ##       ## ##               ##    ##     ## ##     ## ##             ##
+##  ##  ## ##    ## ##               ##    ##     ## ##     ## ##       ##    ##
+ ###  ###   ######  ########         ##     #######   #######  ########  ######
+
+if ($PSBoundParameters.All -or $PSBoundParameters.wsl) {
+    foreach ($tool in $tools.wsl) {
+        Write-Host -ForegroundColor Cyan "Installing $tool"
+        wsl --user root snap install $tool.name
+    }
 }
 
-# junctions
+##    ## ########  ##     ##
+###   ## ##     ## ###   ###
+####  ## ##     ## #### ####
+## ## ## ########  ## ### ##
+##  #### ##        ##     ##
+##   ### ##        ##     ##
+##    ## ##        ##     ##
+
+if ($PSBoundParameters.All -or $PSBoundParameters.npm) {
+       foreach ($tool in $tools.wsl) {
+        Write-Host -ForegroundColor Cyan "Installing $tool"
+        npm install -g $tool.name
+    }
+}
+
+      ## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
+      ## ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ## ##    ##
+      ## ##     ## ####  ## ##          ##     ##  ##     ## ####  ## ##
+      ## ##     ## ## ## ## ##          ##     ##  ##     ## ## ## ##  ######
+##    ## ##     ## ##  #### ##          ##     ##  ##     ## ##  ####       ##
+##    ## ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
+ ######   #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
+
 if ($PSBoundParameters.All -or $PSBoundParameters.junctions) {
     $junctions | Install-Junction
 }
 
 
-# patches
+########     ###    ########  ######  ##     ## ########  ######
+##     ##   ## ##      ##    ##    ## ##     ## ##       ##    ##
+##     ##  ##   ##     ##    ##       ##     ## ##       ##
+########  ##     ##    ##    ##       ######### ######    ######
+##        #########    ##    ##       ##     ## ##             ##
+##        ##     ##    ##    ##    ## ##     ## ##       ##    ##
+##        ##     ##    ##     ######  ##     ## ########  ######
+
 if ($PSBoundParameters.All -or $PSBoundParameters.patches) {
     $patches | Update-File
 }
 
 
-# github releases
+ ######   #### ######## ##     ## ##     ## ########       ########  ######## ##       ########    ###     ######  ########  ######
+##    ##   ##     ##    ##     ## ##     ## ##     ##      ##     ## ##       ##       ##         ## ##   ##    ## ##       ##    ##
+##         ##     ##    ##     ## ##     ## ##     ##      ##     ## ##       ##       ##        ##   ##  ##       ##       ##
+##   ####  ##     ##    ######### ##     ## ########       ########  ######   ##       ######   ##     ##  ######  ######    ######
+##    ##   ##     ##    ##     ## ##     ## ##     ##      ##   ##   ##       ##       ##       #########       ## ##             ##
+##    ##   ##     ##    ##     ## ##     ## ##     ##      ##    ##  ##       ##       ##       ##     ## ##    ## ##       ##    ##
+ ######   ####    ##    ##     ##  #######  ########       ##     ## ######## ######## ######## ##     ##  ######  ########  ######
+
 if ($PSBoundParameters.All -or $PSBoundParameters.'github-releases') {
     $github | Get-GithubRelease
 }
 
-# commands
+ ######   #######  ##     ## ##     ##    ###    ##    ## ########   ######
+##    ## ##     ## ###   ### ###   ###   ## ##   ###   ## ##     ## ##    ##
+##       ##     ## #### #### #### ####  ##   ##  ####  ## ##     ## ##
+##       ##     ## ## ### ## ## ### ## ##     ## ## ## ## ##     ##  ######
+##       ##     ## ##     ## ##     ## ######### ##  #### ##     ##       ##
+##    ## ##     ## ##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
+ ######   #######  ##     ## ##     ## ##     ## ##    ## ########   ######
+
 if ($PSBoundParameters.All -or $PSBoundParameters.commands) {
     foreach ($item in $commands) {
         Write-Host -ForegroundColor Cyan "$item"
