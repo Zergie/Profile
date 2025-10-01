@@ -6,6 +6,11 @@
 		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-PdfRender.ps1 -path %o -outfile %t"/>
 		<Mask Value="*.pdf"/>
 	</TPixFormat>
+	<TPixFormat Value="Stl Render">
+		<ConvertKind Value="convertAppAnsi"/>
+		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-StlRender.ps1 -path %o -outfile %t"/>
+		<Mask Value="*.stk"/>
+	</TPixFormat>
 	<TTextFormat Value="&#2;CPP">
 		<UseRes Value="True"/>
 	</TTextFormat>
@@ -70,6 +75,7 @@
 		<UseRes Value="True"/>
 	</TTextFormat>
 	<TTextFormat Value="&#2;XML">
+		<ConvertKind Value="convertXMLSort"/>
 		<UseRes Value="True"/>
 	</TTextFormat>
 </BCFileFormats>

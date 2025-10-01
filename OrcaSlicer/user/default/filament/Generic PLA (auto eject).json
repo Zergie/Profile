@@ -3,14 +3,17 @@
         "Voron Trident 300 0.4 nozzle"
     ],
     "filament_settings_id": [
-        "Generic PLA"
+        "Generic PLA (auto eject)"
     ],
     "from": "User",
+    "hot_plate_temp": [
+        "40"
+    ],
     "hot_plate_temp_initial_layer": [
         "60"
     ],
     "inherits": "Generic PLA @System",
     "is_custom_defined": "0",
-    "name": "Generic PLA",
+    "name": "Generic PLA (auto eject)",
     "version": "2.3.0.3"
 }

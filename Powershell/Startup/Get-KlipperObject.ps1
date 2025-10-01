@@ -1,15 +1,13 @@
 [cmdletbinding()]
 Param(
-    [Parameter(ValueFromPipeline=$false,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [switch]
     $Refresh,
 
-    [Parameter(ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$false)]
+    [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string]
-    $Url = "klipper-test.local"
+    $Url = "trident.local"
 )
 dynamicparam {
     $shouldUpdateJson = try { ((Get-Date) - (Get-ChildItem $env:TEMP -Filter klipper-objects.json).LastWriteTime).TotalDays -gt 15 } catch { $true }

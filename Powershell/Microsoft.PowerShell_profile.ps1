@@ -186,8 +186,10 @@ Start-Action "Set alias to my programs"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
-    function gimp { wsl docker run --rm -it -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v .:/app -w /app gimp/gimp }
-    function inkscape { wsl docker run --rm -it -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v .:/app -w /app minidocks/inkscape }
+    function inkscape {
+        if ($null -eq (Get-Process 'Docker Desktop' -ErrorAction SilentlyContinue)) { Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"; Start-Sleep -Seconds 5 }
+        wsl docker run --rm -it -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v .:/app -w /app minidocks/inkscape
+    }
 Complete-Action
 
 # set alias to my scripts

@@ -6,6 +6,11 @@
 		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-PdfRender.ps1 -path %o -outfile %t"/>
 		<Mask Value="*.pdf"/>
 	</TPixFormat>
+	<TPixFormat Value="Stl Render">
+		<ConvertKind Value="convertAppAnsi"/>
+		<ConvertLoadApp Value="pwsh -nop -f C:\git\Profile\Powershell\Startup\Get-StlRender.ps1 -path %o -outfile %t"/>
+		<Mask Value="*.stl"/>
+	</TPixFormat>
 	<TTextFormat Value="&#2;CPP">
 		<UseRes Value="True"/>
 	</TTextFormat>

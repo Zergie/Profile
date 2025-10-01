@@ -19,6 +19,7 @@ param(
 $images = 4
 $size   = 300
 
+$Verbose = if ($PSBoundParameters['Verbose'].IsPresent) { 'true' } else { 'false' }
 $Path   = (Get-Item $Path).FullName.Replace("\", "/")
 if ($OutFile.Length -eq 0) { $OutFile = "$env:TEMP\output.png" }
 
@@ -35,34 +36,33 @@ Write-Host -ForegroundColor Cyan "Removing `$env:TEMP\output*.png ..."
 Remove-Item "$env:TEMP\output*.png" -ErrorAction SilentlyContinue
 
 Write-Host -ForegroundColor Cyan "Running openscad..."
-# @{X=17,607; Y=17,417; Z=74,147} -> 200
-# @{X=43,67; Y=19,85; Z=6,9} -> 120
-# @{X=143,121; Y=179,777; Z=8,328} -> 540
-# @{X=16,417; Y=17,607; Z=74,147} -> 200
-#
 $r = [Math]::Sqrt([Math]::Pow($bbox.SizeX / 2, 2) + [Math]::Pow($bbox.SizeY / 2, 2))
 $t = $r / [Math]::Tan(60 / 180 * [Math]::PI)
 $zoom = [Math]::Max(200/88 * ($bbox.SizeZ + $t * 2), 120/24 * $r)
-$zoom = 100
 
-$script = @(
+@(
     if ($Color.Length -gt 0) { "color(`"$Color`")" }
-    "import(`"$Path`")"
-) | Join-String -Separator " "
+    "import(`"$Path`");"
+) | 
+    Join-String -Separator " " |
+    Set-Content -Path "$env:TEMP\output.scad"
 
 Push-Location $env:TEMP
-". $openscad nul -o output.png -D `"`$vpt = [0, 0, $($bbox.center.z)]; `$vpd = $zoom; `$vpr = [60, 0, 360 * `$t];`" -D  $script --imgsize=$size,$size --animate $($images * $images) --projection ortho --colorscheme BeforeDawn 2>nul" |
-    Write-Host
-
-. $openscad nul `
-    -o "output.png" `
-    -D "`$vpt = [0, 0, $($bbox.center.z)]; `$vpd = $zoom; `$vpr = [60, 0, 360 * `$t];" `
-    -D  $script `
-    "--imgsize=$size,$size" `
-    --animate $($images * $images) `
-    --projection ortho `
-    --colorscheme BeforeDawn `
-    2>nul
+@(
+    "output.scad"
+    '-o "output.png"'
+    '-D "`$vpt = [0, 0, $($bbox.center.z)]; `$vpd = $zoom; `$vpr = [60, 0, 360 * `$t];"'
+    "--imgsize=$size,$size"
+    "--animate $($images * $images)"
+    "--projection ortho"
+    "--colorscheme BeforeDawn"
+    $(if ($Verbose) { '' } else { '2>nul' })
+) |
+    Join-String -Separator " " |
+    ForEach-Object {
+        Write-Host "openscad $_"
+        Invoke-Expression ". `"$openscad`" $_"
+    }
 Pop-Location
 
 $p = Get-Process openscad

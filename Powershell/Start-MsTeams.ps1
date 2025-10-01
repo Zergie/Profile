@@ -15,5 +15,5 @@ $continue = $(switch ($date.DayOfWeek) {
 $continue = $true
 
 if ($continue) {
-    . "C:\Program Files\WindowsApps\MSTeams_25153.1010.3727.5483_x64__8wekyb3d8bbwe\ms-teams.exe"
+    Start-Process "$env:LOCALAPPDATA\Microsoft\WindowsApps\ms-teams.exe" -WindowStyle Minimized
 }
