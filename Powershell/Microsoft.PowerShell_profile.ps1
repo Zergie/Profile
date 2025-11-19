@@ -52,6 +52,9 @@ Start-Action "Initialize environment "
     $env:POWERSHELL_UPDATECHECK              = "OFF"
     $env:PSModuleAnalysisCachePath           = 'NUL'
     $env:PSDisableModuleAnalysisCacheCleanup = 1
+    ($secrets.nuget| Get-Member -Type NoteProperty).Name |
+        ForEach-Object { "`$env:NuGetPackageSourceCredentials_$_ = `"Username=$($secrets.nuget.$_.UserName);Password=$($secrets.nuget.$_.Password)`"" } |
+        Invoke-Expression
     $OutputEncoding = [System.Text.Encoding]::UTF8
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action

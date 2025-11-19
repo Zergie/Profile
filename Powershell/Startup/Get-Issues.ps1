@@ -76,6 +76,10 @@ param (
     $Update,
 
     [Parameter()]
+    [switch]
+    $NoRelations,
+
+    [Parameter()]
     [Alias('a')]
     [switch]
     $Assign,
@@ -383,24 +387,26 @@ process {
                 }
 
                 if ($Update) {
-                    $patches[$_.Id] += @(
-                                        $_.fields.'System.Description' | Select-String "ID:?(\d{3,5})" -AllMatches
-                                        $_.fields.'System.Title' | Select-String "DevOpsID:\s*(\d+)\s*"
-                                        $_.fields.'System.Title' | Select-String "^ID:\s*(\d+)\s*"
-                        ) |
-                        ForEach-Object Matches |
-                        ForEach-Object {$_.Groups[1].Value} |
-                        Group-Object |
-                        ForEach-Object {[int]$_.name} |
-                        Where-Object { $_ -notin ($_.relations.url | ForEach-Object { [int]($_ -split '/' | Select-Object -last 1)}) } |
-                        ForEach-Object {
-                            [ordered]@{
-                                op    = "add"
-                                path  = "/relations/-"
-                                value = [ordered]@{
-                                    rel = "System.LinkTypes.Related"
-                                    url = "https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_apis/wit/workItems/$_"
-                                    }
+                    if (!$NoRelations) {
+                        $patches[$_.Id] += @(
+                                            $_.fields.'System.Description' | Select-String "ID:?(\d{3,5})" -AllMatches
+                                            $_.fields.'System.Title' | Select-String "DevOpsID:\s*(\d+)\s*"
+                                            $_.fields.'System.Title' | Select-String "^ID:\s*(\d+)\s*"
+                            ) |
+                            ForEach-Object Matches |
+                            ForEach-Object {$_.Groups[1].Value} |
+                            Group-Object |
+                            ForEach-Object {[int]$_.name} |
+                            Where-Object { $_ -notin ($_.relations.url | ForEach-Object { [int]($_ -split '/' | Select-Object -last 1)}) } |
+                            ForEach-Object {
+                                [ordered]@{
+                                    op    = "add"
+                                    path  = "/relations/-"
+                                    value = [ordered]@{
+                                        rel = "System.LinkTypes.Related"
+                                        url = "https://dev.azure.com/rocom-service/22af98ac-669d-4f9a-b415-3eb69c863d24/_apis/wit/workItems/$_"
+                                        }
+                                }
                             }
                         }
 
@@ -415,7 +421,9 @@ process {
                                         -replace '[.!]\s*$', '' `
                                         -replace ' Fehler$', ' Weiterentwicklung' `
                                         -replace 'immer noch nicht', 'noch nicht' `
-                                        -replace '(Zusatzschleife|Nachbesserung)\b', 'Weiterentwicklung'
+                                        -replace '(Zusatzschleife|Nachbesserung)\b', 'Weiterentwicklung' `
+                                        -replace '^\d+\.\s*', '' `
+                                        -replace '(^\s+|\s+$)', ''
                     }
 
                     $patches[$_.Id] += [ordered]@{
@@ -437,7 +445,7 @@ process {
                     }
 
                     $UmsetzenIn = $_.fields.'System.Description' |
-                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in\s+Version[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d)|(?<q>Q\d))' |
+                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in(?:\s+Version)?[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d)|(?<q>Q\d))' |
                                     ForEach-Object Matches |
                                     ForEach-Object Groups |
                                     Where-Object Name -NotIn @(0..9) |

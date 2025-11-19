@@ -97,20 +97,31 @@ end {
         Import-Module ImportExcel
         $pkgobj = New-Object -TypeName OfficeOpenXml.ExcelPackage -ArgumentList 'C:\Dokumente\Dokumente\Tätigkeitsnachweis.xlsx'
     }
+    $columns = $null
     $WorkTimes = $pkgobj.Workbook.Worksheets["Arbeitszeiten"].Cells |
         Where-Object { $_.Start.Row -ge 3 } |
         Group-Object { $_.Start.Row } |
         ForEach-Object {
-            if ($_.Name -eq "3") {
+            if ($_.Name -eq "3" -and $null -eq $columns) {
                 $columns = $_.Group | ForEach-Object { $_.Value.ToString() }
             } else {
                 $i = 0
                 $obj = @{}
-                $_.Group | ForEach-Object {
-                    $obj.Add($columns[$i], $_.Value)
-                    $i += 1
+                $_.Group |
+                    ForEach-Object {
+                        $value = $(if ($null -eq $_.Value) { "" } else { $_.Value })
+                        
+                        if ($null -ne $columns[$i]) {
+                            $obj.Add($columns[$i], $value)
+                        }
+                        $i += 1
+                    }
+                $entry = [pscustomobject]$obj
+                if ($entry.start -eq "" -and $entry.end -eq "") {
+                    Write-Debug "Warning: empty row found at $($entry.date)"
+                } else {
+                    $entry
                 }
-                [pscustomobject]$obj
            }
         } |
         Where-Object { $_.date.Month -eq $Month } |

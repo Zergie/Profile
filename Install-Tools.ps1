@@ -144,6 +144,8 @@ $github = @(
                       folder="$PSScriptRoot/ttyper"}
     [pscustomobject]@{repo="microsoft/WSL"; file="wsl*.x64.msi"
                       folder="$PSScriptRoot/wsl"}
+    [pscustomobject]@{repo="strobejb/winspy"; file="*_Release_x64.zip"
+                      folder="$PSScriptRoot/winspy"}
 )
 
 $patches = @(

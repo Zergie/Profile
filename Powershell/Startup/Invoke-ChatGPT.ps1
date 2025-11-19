@@ -6,9 +6,10 @@
 [cmdletbinding()]
 param(
     [Parameter(ParameterSetName="ChatParameterSet")]
-    [ValidateSet("gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo")]
+    [Parameter(ParameterSetName="GitCommitParameterSet")]
+    [ValidateSet("gpt-5.1", "gpt-5", "gpt-5 mini", "gpt-5-nano", "gpt-4o-mini")]
     [string]
-    $Model = "gpt-4o",
+    $Model = "gpt-5-nano",
 
     [Parameter(ParameterSetName="ChatParameterSet",
                ValueFromPipeline)]
@@ -33,18 +34,7 @@ param(
 
     [Parameter(ParameterSetName="GitCommitParameterSet")]
     [switch]
-    $WriteGitCommit,
-
-    [Parameter(ParameterSetName="JobApplicationParameterSet")]
-    [ValidateScript({
-        if ($_ -match 'https?://www.freelancermap.de') {
-            return $true
-        } else {
-            throw "Please provide a valid freelancermap.de URL."
-        }
-    })]
-    [string]
-    $WriteJobApplication
+    $WriteGitCommit
 )
 if ($WritePullRequest) {
     $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
@@ -62,9 +52,8 @@ if ($WritePullRequest) {
                     Join-String -Separator `n
                 )
 } elseif ($WriteGitCommit) {
-    $json =Get-Content C:\git\Profile\neovim\lua\user\chatgpt.json | ConvertFrom-Json
-    $Role = $json.commit.opts.template
-    $Model = $json.commit.opts.params.model
+    $Model = "gpt-4o-mini"
+    $Role = "Write a commit message for the following git diff. Do not write anything else. Do not include ```. Git diff: {{input}}"
     $binaryonly = (git diff --staged --name-only |
         Where-Object { ! $_.EndsWith(".pdf") } |
         Measure-Object
@@ -81,33 +70,6 @@ if ($WritePullRequest) {
                     $commit
                     '!git commit -m "$_"'
                 )
-} elseif ($WriteJobApplication.Length -gt 0) {
-    $Role = "Wir schreiben eine bewerbung auf ein Projekt als freelancer:"
-    $html = ConvertFrom-HTML -Engine AngleSharp -Url $WriteJobApplication
-
-    $text = $html.QuerySelector(".card").QuerySelectorAll("dt").TextContent | 
-        ForEach-Object { [pscustomobject]@{Name=$_.Trim(@(" ", ":")); Value=$null}}
-    $i  =0
-    $html.QuerySelector(".card").QuerySelectorAll("dd") | 
-        ForEach-Object{
-            $text[$i].Value = $_.TextContent.Split() | Where-Object Length -gt 0 | Join-String -Separator " "
-            $i+=1 
-        }
-    
-
-    $Message = @(
-                    # "Mein Lebenslauf:"
-                    # Get-PdfRender C:\Dokumente\Dokumente\Lebenslauf_2025.pdf -As txt | ForEach-Object Converted
-                    # ""
-                    "Titel:"
-                    $($html.QuerySelector("*[data-translatable=title]").TextContent.Trim())
-                    $text.GetEnumerator() | ForEach-Object { "$($_.Name):`n$($_.Value)`n"}
-                    $html.QuerySelector("*[data-translatable=description]").TextContent.Trim()
-                ) | Out-String
-    
-    $Message | Set-Clipboard
-    Write-Host "Copied to clipboard!" -ForegroundColor Magenta
-    Start-Process "https://chatgpt.com/c/670641eb-0890-800c-80ce-f87c1b0dee69"
 }
 
 $ApiEndpoint = "https://api.openai.com/v1/chat/completions"
@@ -149,8 +111,12 @@ while ($true) {
             $aiResponse = $aiResponse.Replace('`', '``').Replace('"','`"')
             $cmd = $userMessage.Substring(1).Replace('$_', "$aiResponse")
             Write-Debug $cmd
-            Write-Host -ForegroundColor Yellow $cmd
-            Invoke-Expression $cmd
+            try {
+                Invoke-Expression $cmd
+            } catch {
+                Write-Host -ForegroundColor Yellow $cmd
+                throw
+            }
         }
         default {
             # Add new user prompt to list of messages
@@ -167,8 +133,7 @@ while ($true) {
                 -Body (@{
                     "model" = $Model
                     "messages" = $MessageHistory
-                    "max_tokens" = 1000 # Max amount of tokens the AI will respond with
-                    "temperature" = 0.7 # Lower is more coherent and conservative, higher is more creative and diverse.
+                    # "max_completion_tokens" = 1000 # Max amount of tokens the AI will respond with
                 } | ConvertTo-Json)
 
             $aiResponse = $response.choices[0].message.content
@@ -188,7 +153,7 @@ while ($true) {
     # Capture user input
     if ($MessageStack.Count -ne 0) {
         $userMessage = $MessageStack.Pop()
-        Write-Host ">: $userMessage" -ForegroundColor Yellow
+        Write-Debug ">: $userMessage"
     } elseif ($Message.Count -ne 0 -and !$Interactive) {
         exit
     } else {

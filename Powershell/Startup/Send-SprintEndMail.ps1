@@ -7,7 +7,7 @@ param(
     $Bcc = @("wpuchinger@rocom-service.de"),
 
     [string[]]
-    $Cc = @("fannen@rocom.de"),
+    $Cc = @("fannen@rocom.de", "rgumberger@rocom.de"),
 
     [double]
     $WaitHours

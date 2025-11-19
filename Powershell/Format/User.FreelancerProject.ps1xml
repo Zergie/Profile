@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<?xml-model href="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd"?>
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>User.FreelancerProject</Name>
+            <ViewSelectedBy>
+                <TypeName>User.FreelancerProject</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Age</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Title</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Score</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Tags</Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>"$($_.Age.ToString().PadLeft(4)) h"</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>"`e]8;;$($_.Link)`e\$($_.Title)`e]8;;`e\`e[0m"</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Score -ge 80) {
+                                        $color = "5;28"  # Green
+                                    } elseif ($_.Score -ge 50) {
+                                        $color = "5;136" # Darker Yellow
+                                    } else {
+                                        $color = "5;124" # Red
+                                    }
+
+                                    "`e[38;${color}m`e[48;${color}m`e[97m$($_.Score)`e[0m`e[38;${color}m`e[0m"
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    $colors = $env:GetFreelancerProjects_Filter | ConvertFrom-Json
+
+                                    ($_.Tags |
+                                        Sort-Object {
+                                            "$(
+                                                if ($_ -in $colors.green) { 0 }
+                                                elseif ($_ -in $colors.orange) { 1 }
+                                                elseif ($_ -in $colors.red) { 2 }
+                                                else { 9 }
+                                            )-$_"
+                                        } |
+                                        ForEach-Object {
+                                            if ($_ -in $colors.green) {
+                                                $color = "5;28"
+                                            } elseif ($_ -in $colors.orange) {
+                                                $color = "5;136"
+                                            } elseif ($_ -in $colors.red) {
+                                                $color = "5;124"
+                                            } else {
+                                                $color = "5;33"
+                                                return
+                                            }
+
+                                            "`e[38;${color}m`e[48;${color}m`e[97m${_}`e[0m`e[38;${color}m`e[0m"
+
+                                        }) -join " "
+                                </ScriptBlock>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>

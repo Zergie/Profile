@@ -1,61 +1,114 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Produced by Beyond Compare 5 from Scooter Software -->
 <BCState Version="2" MinVersion="2">
-  <TBcState>
-    <FirstStartup Value="False" />
-    <FormPositions>
-      <TFileFormatManagerDialog Value="907;336;1652;1056" />
-      <THexCompareSessionDialog Value="1014;427;1545;964" />
-      <THexFormatDialog Value="1020;418;1540;973" />
-      <TView Value="52;33;2560;1392;3" />
-    </FormPositions>
-  </TBcState>
-  <TCheckForUpdatesState>
-    <Build Value="30840" />
-    <LastChecked Value="2025-05-25 05:22:28" />
-  </TCheckForUpdatesState>
-  <THexCompareState>
-    <LeftMRUSpecs>
-      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
-    </LeftMRUSpecs>
-    <MRUFonts>
-      <_0 Value="Consolas;10;;;F" />
-    </MRUFonts>
-    <RightMRUSpecs>
-      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
-    </RightMRUSpecs>
-  </THexCompareState>
-  <THomeState>
-    <SessionType Value="TTextCompareSession" />
-  </THomeState>
-  <TPixCompareState>
-    <LeftMRUSpecs>
-      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl" />
-      <_1 Value="C:\Users\user\Downloads\before.gif" />
-    </LeftMRUSpecs>
-    <MRUFonts>
-      <_0 Value="Segoe UI;9;;1" />
-    </MRUFonts>
-    <RightMRUSpecs>
-      <_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl" />
-      <_1 Value="C:\Users\user\Downloads\after.gif" />
-    </RightMRUSpecs>
-  </TPixCompareState>
-  <TTextCompareState>
-    <LeftMRUSpecs>
-      <_0 Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json" />
-      <_1 Value="C:\GIT\gridfinity-UltraLight\config.json" />
-      <_2 Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLightGridfinityBins.json" />
-      <_3 Value="C:\Users\puchinger\Desktop\ohne_haken.pdf" />
-    </LeftMRUSpecs>
-    <MRUFonts>
-      <_0 Value="Consolas;10;;;F" />
-    </MRUFonts>
-    <RightMRUSpecs>
-      <_0 Value="C:\GIT\gridfinity-UltraLight\docs\configuration.new.json" />
-      <_1 Value="C:\GIT\gridfinity-UltraLight\config.new.json" />
-      <_2 Value="C:\GIT\gridfinity-rebuilt-openscad\UltraLight\UltraLightGridfinityBins.json" />
-      <_3 Value="C:\Users\puchinger\Desktop\mit_haken.pdf" />
-    </RightMRUSpecs>
-  </TTextCompareState>
+	<TBcState>
+		<FirstStartup Value="False"/>
+		<FormPositions>
+			<TCheckForUpdatesDialog Value="1035;523;1525;869"/>
+			<TFileFormatManagerDialog Value="907;336;1652;1056"/>
+			<THexCompareSessionDialog Value="1014;427;1545;964"/>
+			<THexFormatDialog Value="1020;418;1540;973"/>
+			<TView Value="834;155;2209;959;3"/>
+		</FormPositions>
+	</TBcState>
+	<TCheckForUpdatesState>
+		<Build Value="31185"/>
+		<LastChecked Value="2025-08-26 09:35:25"/>
+	</TCheckForUpdatesState>
+	<TDirCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller"/>
+			<_1 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\bin\x64\Release\cabinet"/>
+			<_2 Value="C:\temp\msi\14_to_15"/>
+			<_3 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+		</LeftMRUSpecs>
+		<RightMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller"/>
+			<_1 Value="C:\temp\msi"/>
+			<_2 Value="C:\temp\msi\15_to_14"/>
+			<_3 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+		</RightMRUSpecs>
+	</TDirCompareState>
+	<THexCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\install.exe.txt"/>
+			<_1 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
+		</LeftMRUSpecs>
+		<MRUFonts>
+			<_0 Value="Consolas;10;;;F"/>
+		</MRUFonts>
+		<RightMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\install.7z.txt"/>
+			<_1 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
+		</RightMRUSpecs>
+	</THexCompareState>
+	<THomeState>
+		<SessionType Value="TDirCompareSession"/>
+	</THomeState>
+	<TPixCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill.stl"/>
+			<_1 Value="C:\Users\user\Downloads\before.gif"/>
+		</LeftMRUSpecs>
+		<MRUFonts>
+			<_0 Value="Segoe UI;9;;1"/>
+		</MRUFonts>
+		<RightMRUSpecs>
+			<_0 Value="C:\GIT\YAMMU\STls\BackGrill\back_grill_belay.stl"/>
+			<_1 Value="C:\Users\user\Downloads\after.gif"/>
+		</RightMRUSpecs>
+	</TPixCompareState>
+	<TTextCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
+			<_1 Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
+			<_2 Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
+			<_3 Value="C:\temp\msi\14_to_15\Synera_20250627015744.log"/>
+			<_4 Value="C:\temp\msi\14_to_15\Synera_20250627015744_001_{E65F688C-576E-4CC8-AA9B-2314356F2CBA}.log"/>
+			<_5 Value="C:\temp\msi\Synera_20250627015744_000_SyneraInstaller.log"/>
+			<_6 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042054.log"/>
+			<_7 Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json"/>
+			<_8 Value="C:\GIT\gridfinity-UltraLight\config.json"/>
+		</LeftMRUSpecs>
+		<MRUFonts>
+			<_0 Value="Consolas;10;;;F"/>
+		</MRUFonts>
+		<RightMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
+			<_1 Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
+			<_2 Value="C:\temp\msi\15_to_14\Synera_20250627051404_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}_000_SyneraInstaller.log"/>
+			<_3 Value="C:\temp\msi\15_to_14\Synera_20250627051404.log"/>
+			<_4 Value="C:\temp\msi\15_to_14\Synera_20250627041727.log"/>
+			<_5 Value="C:\temp\msi\15_to_14\Synera_20250627041730_SyneraUninstaller.log"/>
+			<_6 Value="C:\temp\msi\15_to_14\Synera_20250627041727_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}.log"/>
+			<_7 Value="C:\temp\msi\15_to_14\Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}_000_SyneraInstaller.log"/>
+			<_8 Value="C:\temp\msi\15_to_14\Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}.log"/>
+		</RightMRUSpecs>
+	</TTextCompareState>
+	<TTextFindState>
+		<FindItems>
+			<_0 Value="7 z"/>
+			<_1 Value="synerainst"/>
+			<_2 Value="REINSTALL"/>
+			<_3 Value="re"/>
+			<_4 Value="amus"/>
+		</FindItems>
+		<ReplaceItems>
+			<_0/>
+		</ReplaceItems>
+	</TTextFindState>
+	<TTipState>
+		<DontShowAgain Value="[tipFastRefresh]"/>
+	</TTipState>
+	<TVerCompareState>
+		<LeftMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera-Installer.exe"/>
+		</LeftMRUSpecs>
+		<MRUFonts>
+			<_0 Value="Segoe UI;9;;1"/>
+		</MRUFonts>
+		<RightMRUSpecs>
+			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera-Installer-2.exe"/>
+		</RightMRUSpecs>
+	</TVerCompareState>
 </BCState>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Produced by Beyond Compare 5 from Scooter Software -->
+<BCPreferences Version="2" MinVersion="2">
+	<TBcPrefs>
+		<Workspaces>
+			<Item Value="&#1;">
+				<Windows>
+					<_0>
+						<PosStr Value="834;155;2209;959;3"/>
+						<Tabs>
+							<_0>
+								<TDirCompareSession>
+									<Specs>
+										<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller"/>
+										<Right Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller"/>
+									</Specs>
+								</TDirCompareSession>
+								<ZOrder Value="0"/>
+							</_0>
+							<_1>
+								<TTextCompareSession>
+									<Specs>
+										<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
+										<Right Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
+									</Specs>
+								</TTextCompareSession>
+								<ParentTab Value="0"/>
+								<ParentWindow Value="0"/>
+								<ZOrder Value="1"/>
+							</_1>
+						</Tabs>
+						<ZOrder Value="0"/>
+					</_0>
+				</Windows>
+			</Item>
+		</Workspaces>
+	</TBcPrefs>
+</BCPreferences>

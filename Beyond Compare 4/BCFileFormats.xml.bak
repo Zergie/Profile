@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Produced by Beyond Compare 4 from Scooter Software -->
 <BCFileFormats Version="1">
@@ -79,3 +80,5 @@
 		<UseRes Value="True"/>
 	</TTextFormat>
 </BCFileFormats>
+=======
+>>>>>>> Stashed changes

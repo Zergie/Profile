@@ -62,10 +62,15 @@ process {
     $username = $env:USERNAME
     $issue = $Name | Select-String -Pattern "^(\d+)" | ForEach-Object { $_.Matches.Value }
 
-    $branch = "users/$username/$issue"
+    if ($BaseOnThisBranch) {
+        $branch = "users/$username/$issue-on-$((git rev-parse --abbrev-ref HEAD).Replace('/','-'))"
+    } else {
+        $branch = "users/$username/$issue"
+    }
+
     Write-Host -ForegroundColor Cyan "Branch will be $branch"
 
-    if (! $BaseOnThisBranch) {
+    if (!$BaseOnThisBranch) {
         git checkout master
         if ($LASTEXITCODE -ne 0) {
             git checkout main

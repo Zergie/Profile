@@ -5,6 +5,87 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="install.7z.bin &lt;--> install.exe.bin">
+						<LastModified Value="2025-07-04 11:37:58"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
+							<Right Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
+						</Specs>
+					</TTextCompareSession>
+					<THexCompareSession Value="install.exe.txt &lt;--> install.7z.txt">
+						<Formats>
+							<Left Value=""/>
+							<Right Value=""/>
+						</Formats>
+						<LastModified Value="2025-07-04 09:59:32"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\install.exe.txt"/>
+							<Right Value="C:\GIT\elise-mvp-development\installer\install.7z.txt"/>
+						</Specs>
+					</THexCompareSession>
+					<TDirCompareSession Value="cabinet &lt;--> msi">
+						<LastModified Value="2025-07-03 12:33:30"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\bin\x64\Release\cabinet"/>
+							<Right Value="C:\temp\msi"/>
+						</Specs>
+					</TDirCompareSession>
+					<TVerCompareSession Value="Synera-Installer.exe &lt;--> Synera-Installer-2.exe">
+						<LastModified Value="2025-07-03 12:16:55"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera-Installer.exe"/>
+							<Right Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera-Installer-2.exe"/>
+						</Specs>
+					</TVerCompareSession>
+					<TDirCompareSession Value="14_to_15 &lt;--> 15_to_14">
+						<LastModified Value="2025-06-27 15:22:58"/>
+						<Specs>
+							<Left Value="C:\temp\msi\14_to_15"/>
+							<Right Value="C:\temp\msi\15_to_14"/>
+						</Specs>
+					</TDirCompareSession>
+					<TTextCompareSession Value="Synera_20250627015744_000_SyneraInstaller.log &lt;--> Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}_000_SyneraInstaller.log">
+						<LastModified Value="2025-06-27 12:12:50"/>
+						<Specs>
+							<Left Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
+							<Right Value="C:\temp\msi\15_to_14\Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}_000_SyneraInstaller.log"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Synera_20250627015744_000_SyneraInstaller.log &lt;--> 15_to_14.log">
+						<LastModified Value="2025-06-27 11:11:19"/>
+						<Specs>
+							<Left Value="C:\temp\msi\Synera_20250627015744_000_SyneraInstaller.log"/>
+							<Right Value="C:\temp\msi\15_to_14.log"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="Synera_20250625042054.log &lt;--> Synera_20250625042104.log">
+						<LastModified Value="2025-06-25 13:21:14"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042054.log"/>
+							<Right Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042104.log"/>
+						</Specs>
+					</TTextCompareSession>
+					<TDirCompareSession Value="cab1.cab">
+						<LastModified Value="2025-06-24 10:43:56"/>
+						<Specs>
+							<Left Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+							<Right Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+						</Specs>
+					</TDirCompareSession>
+					<TTextCompareSession Value="configurations.json &lt;--> configuration.new.json">
+						<LastModified Value="2025-05-27 05:54:18"/>
+						<Specs>
+							<Left Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json"/>
+							<Right Value="C:\GIT\gridfinity-UltraLight\docs\configuration.new.json"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="config.json &lt;--> config.new.json">
+						<LastModified Value="2025-05-27 05:53:30"/>
+						<Specs>
+							<Left Value="C:\GIT\gridfinity-UltraLight\config.json"/>
+							<Right Value="C:\GIT\gridfinity-UltraLight\config.new.json"/>
+						</Specs>
+					</TTextCompareSession>
 					<TTextCompareSession Value="UltraLightGridfinityBins.json">
 						<LastModified Value="2025-05-25 05:22:34"/>
 						<Specs>

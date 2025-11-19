@@ -16,12 +16,15 @@ param(
 )
 Begin {
     try {
-        $gs = Get-Command "C:\Program Files\gs\*\bin\gswin64.exe" |
+        $gs = Get-ChildItem "C:\Program Files\gs\*\bin\gswin64.exe" |
+            Get-Command |
             Sort-Object Version -Bottom 1
+        if (-not $gs) { throw "Ghostscript not found" }
     } catch {
         Write-Host -ForegroundColor Red "Ghostscript is not installed! Install it with:"
         Write-Host -ForegroundColor Red ""
         Write-Host -ForegroundColor Red "    choco install Ghostscript"
+        exit 1
     }
 
     if ((Test-Path "$PSScriptRoot\..\secrets.json")) {

@@ -61,8 +61,7 @@ begin {
                     FullName = $_.FullName
                     IsLast   = $true
                 }
-            }
-        $folders = $folders | ForEach-Object {
+            } | ForEach-Object {
                 [pscustomobject]@{
                     Name       = $_.Name
                     FullName   = $_.FullName
@@ -72,7 +71,7 @@ begin {
                 }
             }
 
-        $files = Get-ChildItem $path -Recurse -Depth 0 -Include $Global:Include -Exclude $Global:Exclude |
+        $files = Get-ChildItem $path -File -Recurse -Depth 0 -Include $Global:Include -Exclude $Global:Exclude |
             Where-Object Attributes -NotContains "Directory" |
             ForEach-Object -PipelineVariable previous {
                 if ($null -ne $previous) { $previous.IsLast = $false }
@@ -83,8 +82,7 @@ begin {
                     Extension = $_.Extension
                     IsLast    = $true
                 }
-            }
-        $files = $files | ForEach-Object {
+            } | ForEach-Object {
                 [pscustomobject]@{
                     Name       = $_.Name
                     FullName   = $_.FullName
