@@ -14,10 +14,10 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 0
+                "action": "splitPane",
+                "split": "auto"
             },
-            "id": "User.switchToTab.D3F0B923"
+            "id": "User.splitPane.4EE51EFF"
         },
         {
             "command": 
@@ -30,20 +30,18 @@
         {
             "command": 
             {
-                "action": "splitPane",
-                "split": "auto"
+                "action": "switchToTab",
+                "index": 0
             },
-            "id": "User.splitPane.4EE51EFF"
+            "id": "User.switchToTab.D3F0B923"
         },
         {
             "command": 
             {
-                "action": "splitPane",
-                "commandline": "C:\\tools\\neovim\\nvim-win64\\bin\\nvim.exe +\"cd C:\\GIT\"",
-                "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-                "split": "auto"
+                "action": "switchToTab",
+                "index": 3
             },
-            "id": "User.splitPane.AC2E3015"
+            "id": "User.switchToTab.6CD791B"
         },
         {
             "command": 
@@ -58,10 +56,12 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 3
+                "action": "splitPane",
+                "commandline": "C:\\tools\\neovim\\nvim-win64\\bin\\nvim.exe +\"cd C:\\GIT\"",
+                "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "split": "auto"
             },
-            "id": "User.switchToTab.6CD791B"
+            "id": "User.splitPane.AC2E3015"
         },
         {
             "command": 
@@ -346,19 +346,11 @@
     [
         {
             "id": null,
-            "keys": "ctrl+alt+5"
+            "keys": "ctrl+shift+comma"
         },
         {
             "id": null,
-            "keys": "alt+shift+right"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+c"
-        },
-        {
-            "id": "User.sendInput.817164EE",
-            "keys": "ctrl+backspace"
+            "keys": "ctrl+0"
         },
         {
             "id": null,
@@ -373,16 +365,28 @@
             "keys": "ctrl+shift+5"
         },
         {
-            "id": null,
-            "keys": "ctrl+shift+comma"
+            "id": "User.sendInput.817164EE",
+            "keys": "ctrl+backspace"
         },
         {
             "id": null,
-            "keys": "ctrl+0"
+            "keys": "ctrl+alt+5"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+c"
+        },
+        {
+            "id": null,
+            "keys": "alt+shift+right"
         },
         {
             "id": "User.splitPane.AC2E3015",
             "keys": "f22"
+        },
+        {
+            "id": null,
+            "keys": "alt+down"
         },
         {
             "id": null,
@@ -394,15 +398,11 @@
         },
         {
             "id": null,
-            "keys": "alt+down"
+            "keys": "ctrl+shift+a"
         },
         {
             "id": "User.splitPane.D5151347",
             "keys": "f4"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+a"
         },
         {
             "id": "User.resizePane.2A0DA8E0",
@@ -438,11 +438,15 @@
         },
         {
             "id": null,
+            "keys": "alt+up"
+        },
+        {
+            "id": null,
             "keys": "ctrl+alt+w"
         },
         {
             "id": null,
-            "keys": "alt+up"
+            "keys": "ctrl+alt+1"
         },
         {
             "id": null,
@@ -451,10 +455,6 @@
         {
             "id": "User.adjustFontSize.E04D5229",
             "keys": "ctrl+shift+plus"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+alt+1"
         },
         {
             "id": null,
@@ -474,27 +474,19 @@
         },
         {
             "id": null,
-            "keys": "ctrl+comma"
+            "keys": "ctrl+shift+f"
         },
         {
             "id": null,
-            "keys": "ctrl+shift+f"
+            "keys": "ctrl+comma"
         },
         {
             "id": null,
             "keys": "alt+f4"
         },
         {
-            "id": "User.splitPane.D5151347",
-            "keys": "ctrl+shift+s"
-        },
-        {
             "id": null,
             "keys": "ctrl+alt+left"
-        },
-        {
-            "id": "User.splitPane.864CD510",
-            "keys": "ctrl+shift+v"
         },
         {
             "id": null,
@@ -505,6 +497,10 @@
             "keys": "ctrl+numpad_plus"
         },
         {
+            "id": "User.switchToTab.87C324ED",
+            "keys": "ctrl+shift+3"
+        },
+        {
             "id": null,
             "keys": "ctrl+plus"
         },
@@ -513,20 +509,16 @@
             "keys": "ctrl+minus"
         },
         {
-            "id": "User.switchToTab.87C324ED",
-            "keys": "ctrl+shift+3"
-        },
-        {
             "id": null,
             "keys": "ctrl+numpad_minus"
         },
         {
-            "id": "User.toggleFocusMode",
-            "keys": "f11"
-        },
-        {
             "id": null,
             "keys": "ctrl+numpad0"
+        },
+        {
+            "id": "User.toggleFocusMode",
+            "keys": "f11"
         },
         {
             "id": "User.markMode",
@@ -537,16 +529,20 @@
             "keys": "ctrl+alt+comma"
         },
         {
-            "id": null,
-            "keys": "ctrl+insert"
-        },
-        {
             "id": "User.switchToTab.75247157",
             "keys": "ctrl+shift+6"
         },
         {
             "id": null,
+            "keys": "ctrl+insert"
+        },
+        {
+            "id": null,
             "keys": "enter"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+n"
         },
         {
             "id": null,
@@ -557,16 +553,12 @@
             "keys": "ctrl+alt+4"
         },
         {
-            "id": "User.adjustFontSize.E2698FAA",
-            "keys": "ctrl+shift+minus"
-        },
-        {
             "id": "User.swapPane.787314EB",
             "keys": "ctrl+pgup"
         },
         {
-            "id": null,
-            "keys": "ctrl+shift+n"
+            "id": "User.adjustFontSize.E2698FAA",
+            "keys": "ctrl+shift+minus"
         },
         {
             "id": null,
@@ -578,19 +570,19 @@
         },
         {
             "id": null,
-            "keys": "ctrl+alt+2"
-        },
-        {
-            "id": null,
             "keys": "ctrl+alt+9"
         },
         {
             "id": null,
-            "keys": "ctrl+shift+home"
+            "keys": "ctrl+alt+2"
         },
         {
             "id": "User.switchToTab.787314EB",
             "keys": "ctrl+shift+7"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+home"
         },
         {
             "id": null,
@@ -601,12 +593,12 @@
             "keys": "ctrl+shift+p"
         },
         {
-            "id": "User.closePane",
-            "keys": "ctrl+shift+w"
-        },
-        {
             "id": null,
             "keys": "alt+period"
+        },
+        {
+            "id": "User.closePane",
+            "keys": "ctrl+shift+w"
         },
         {
             "id": "User.resizePane.6CD791B",
@@ -621,16 +613,16 @@
             "keys": "ctrl+shift+m"
         },
         {
+            "id": null,
+            "keys": "ctrl+shift+r"
+        },
+        {
             "id": "User.switchToTab.D7681B66",
             "keys": "ctrl+shift+8"
         },
         {
             "id": null,
             "keys": "f21"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+r"
         },
         {
             "id": "User.switchToTab.D3F0B923",
@@ -647,10 +639,6 @@
         {
             "id": null,
             "keys": "ctrl+\u0003"
-        },
-        {
-            "id": "User.swapPane.D7681B66",
-            "keys": "ctrl+pgdn"
         },
         {
             "id": "User.expandSelectionToWord",
@@ -687,6 +675,18 @@
         {
             "id": "User.splitPane.4EE51EFF",
             "keys": "f2"
+        },
+        {
+            "id": "User.moveFocus.D7681B66",
+            "keys": "ctrl+j"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+v"
+        },
+        {
+            "id": "User.moveFocus.787314EB",
+            "keys": "ctrl+k"
         }
     ],
     "language": "en-US",
@@ -721,17 +721,6 @@
                 "hidden": false,
                 "name": "PowerShell",
                 "source": "Windows.Terminal.PowershellCore"
-            },
-            {
-                "background": "#202020",
-                "backgroundImage": "ms-appdata:///Local/rocom-service2.png",
-                "backgroundImageAlignment": "bottomRight",
-                "backgroundImageOpacity": 0.15,
-                "backgroundImageStretchMode": "none",
-                "commandline": "C:\\Users\\Puchinger.ROCOM.000\\Desktop\\tools\\V1\\getch.bat",
-                "guid": "{0d707173-48f0-45de-894f-0846a5b58a71}",
-                "hidden": false,
-                "name": "getch"
             },
             {
                 "background": "#202020",

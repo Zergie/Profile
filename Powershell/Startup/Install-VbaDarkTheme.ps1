@@ -15,7 +15,7 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
                             "-File"
                             "`"$($MyInvocation.MyCommand.Path)`""
                             $MyInvocation.BoundParameters.GetEnumerator() |
-                                ForEach-Object { "-$($_.Key)" }
+                                ForEach-Object { "-$($_.Key) $(if ($_.Value.GetType().Name -eq 'SwitchParameter' -and $_.Value.IsPresent) { '' } else { $_.Value })" }
             ) | Join-String -Separator " "
     }
     $p | ConvertTo-Json | Write-Debug

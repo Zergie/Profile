@@ -5,7 +5,7 @@
     "machine_start_gcode": "PRINT_START EXTRUDER=[nozzle_temperature_initial_layer] BED=[bed_temperature_initial_layer_single] MATERIAL=[filament_type]",
     "name": "Voron Trident 300 0.4 nozzle - Red",
     "nozzle_type": "hardened_steel",
-    "print_host": "http://trident.local",
+    "print_host": "http://10.0.0.31",
     "printer_settings_id": "Voron Trident 300 0.4 nozzle - Red",
     "version": "1.8.0.0"
 }
