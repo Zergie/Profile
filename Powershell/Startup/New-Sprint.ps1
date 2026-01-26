@@ -16,7 +16,7 @@ Process {
     Set-Alias -Name "Get-Issues" -Value "$PSScriptRoot\Get-Issues"
     Set-Alias -Name "Get-TauWorkTogetherHolidays" -Value "$PSScriptRoot\Get-TauWorkTogetherHolidays.ps1"
 
-    $global:holidays = Get-TauWorkTogetherHolidays -Now |
+    $global:holidays = Get-TauWorkTogetherHolidays -Now -ErrorAction Continue |
                             ForEach-Object holidays
     $team = Invoke-RestApi -Endpoint 'GET https://dev.azure.com/{organization}/_apis/projects/{projectId}/teams/{teamId}/members?api-version=6.0' |
                         ForEach-Object value |

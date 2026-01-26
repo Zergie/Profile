@@ -12,8 +12,8 @@
 		</FormPositions>
 	</TBcState>
 	<TCheckForUpdatesState>
-		<Build Value="31185"/>
-		<LastChecked Value="2025-08-26 09:35:25"/>
+		<Build Value="31527"/>
+		<LastChecked Value="2025-12-09 14:00:20"/>
 	</TCheckForUpdatesState>
 	<TDirCompareState>
 		<LeftMRUSpecs>
@@ -43,7 +43,7 @@
 		</RightMRUSpecs>
 	</THexCompareState>
 	<THomeState>
-		<SessionType Value="TDirCompareSession"/>
+		<SessionType Value="TTextCompareSession"/>
 	</THomeState>
 	<TPixCompareState>
 		<LeftMRUSpecs>
@@ -60,29 +60,29 @@
 	</TPixCompareState>
 	<TTextCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
-			<_1 Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
-			<_2 Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
-			<_3 Value="C:\temp\msi\14_to_15\Synera_20250627015744.log"/>
-			<_4 Value="C:\temp\msi\14_to_15\Synera_20250627015744_001_{E65F688C-576E-4CC8-AA9B-2314356F2CBA}.log"/>
-			<_5 Value="C:\temp\msi\Synera_20250627015744_000_SyneraInstaller.log"/>
-			<_6 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042054.log"/>
-			<_7 Value="C:\GIT\gridfinity-UltraLight\docs\configurations.json"/>
-			<_8 Value="C:\GIT\gridfinity-UltraLight\config.json"/>
+			<_0 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
+			<_1 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
+			<_2 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
+			<_3 Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
+			<_4 Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
+			<_5 Value="C:\temp\msi\14_to_15\Synera_20250627015744.log"/>
+			<_6 Value="C:\temp\msi\14_to_15\Synera_20250627015744_001_{E65F688C-576E-4CC8-AA9B-2314356F2CBA}.log"/>
+			<_7 Value="C:\temp\msi\Synera_20250627015744_000_SyneraInstaller.log"/>
+			<_8 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042054.log"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Consolas;10;;;F"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
-			<_1 Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
-			<_2 Value="C:\temp\msi\15_to_14\Synera_20250627051404_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}_000_SyneraInstaller.log"/>
-			<_3 Value="C:\temp\msi\15_to_14\Synera_20250627051404.log"/>
-			<_4 Value="C:\temp\msi\15_to_14\Synera_20250627041727.log"/>
-			<_5 Value="C:\temp\msi\15_to_14\Synera_20250627041730_SyneraUninstaller.log"/>
-			<_6 Value="C:\temp\msi\15_to_14\Synera_20250627041727_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}.log"/>
-			<_7 Value="C:\temp\msi\15_to_14\Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}_000_SyneraInstaller.log"/>
-			<_8 Value="C:\temp\msi\15_to_14\Synera_20250627023154_000_{659DDF7D-2542-4BF0-8729-B70AC90F1ACB}.log"/>
+			<_0 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
+			<_1 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
+			<_2 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
+			<_3 Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
+			<_4 Value="C:\temp\msi\15_to_14\Synera_20250627051404_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}_000_SyneraInstaller.log"/>
+			<_5 Value="C:\temp\msi\15_to_14\Synera_20250627051404.log"/>
+			<_6 Value="C:\temp\msi\15_to_14\Synera_20250627041727.log"/>
+			<_7 Value="C:\temp\msi\15_to_14\Synera_20250627041730_SyneraUninstaller.log"/>
+			<_8 Value="C:\temp\msi\15_to_14\Synera_20250627041727_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}.log"/>
 		</RightMRUSpecs>
 	</TTextCompareState>
 	<TTextFindState>

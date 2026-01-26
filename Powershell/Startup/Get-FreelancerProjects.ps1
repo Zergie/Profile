@@ -19,6 +19,10 @@ param (
 
     [Parameter()]
     [switch]
+    $NoEvaluate,
+
+    [Parameter()]
+    [switch]
     $All,
 
     [Parameter()]
@@ -30,7 +34,11 @@ $filename = "C:/Dokumente/Dokumente/Freelancer-Projects.xlsx"
 $worksheetName = "Freelancer Projects"
 $ThrottleLimit = 16
 
-if ($All) { $NoExport = $true }
+if ($All) {
+    $NoExport = $true
+    $NoEvaluate = $true
+}
+$Debug = $(if ($PSBoundParameters.Debug.IsPresent) { $true } else { $false })
 
 Import-Module ImportExcel
 $known_projects = $(if ($All) {@()} else {(Import-Excel -Path $filename -WorksheetName $worksheetName -ErrorAction SilentlyContinue).ID})
@@ -49,16 +57,20 @@ function Get-Html {
     param (
         [string]$Uri
     )
-    Write-Debug $Uri
-    $request = Invoke-WebRequest `
-        -Uri $Uri `
-        -TimeoutSec 10 `
-        -UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15" `
-        -UseBasicParsing
-    $html = New-Object -Com "HTMLFile"
-    [string]$htmlBody = $request.Content
-    $html.write([ref]$htmlBody)
-    $html
+    try {
+        $request = Invoke-WebRequest `
+            -Uri $Uri `
+            -TimeoutSec 10 `
+            -UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15" `
+            -SkipHttpErrorCheck `
+            -UseBasicParsing
+        $html = New-Object -Com "HTMLFile"
+        [string]$htmlBody = $request.Content
+        $html.write([ref]$htmlBody)
+        $html
+    } catch {
+        Write-Host -ForegroundColor Red "Failed to get HTML from $Uri : $_"
+    }
 }
 $GetHtmlFunctionDefinition = ${function:Get-Html}.ToString()
 
@@ -67,16 +79,14 @@ if ($null -eq (Get-FormatData -TypeName $typeName -ErrorAction SilentlyContinue)
     Update-FormatData -PrependPath "$PSScriptRoot\..\Format\${typeName}.ps1xml"
 }
 
-Write-Host "Searching for projects with query:" -NoNewline
+Write-Host "Searching for projects with query: $($Include | Sort-Object -Unique | ForEach-Object { "'$_'" } | Join-String -Separator " ")"
+
+$index = 0
 $projects = $Include |
     Sort-Object -Unique |
-    ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
-        ${function:Get-Html} = $using:GetHtmlFunctionDefinition
-
-        # Get the project of listings page
-        Write-Host " '$_'" -NoNewline
-
-        $params = @(
+    ForEach-Object {
+        $query = $_
+        @(
             [ordered]@{
                 'remoteInPercent[0]' = 100
                 'query'       = $_
@@ -94,12 +104,32 @@ $projects = $Include |
                 'sort'        = 1
                 'pagenr'      = 1
             }
-        ).GetEnumerator()  |
-            ForEach-Object { "$([System.Web.HttpUtility]::UrlEncode($_.Name))=$([System.Web.HttpUtility]::UrlEncode($_.Value))" } |
-            Join-String -Separator '&'
-        $uri = "https://www.freelancermap.de/projektboerse.html?$params"
+        ) |
+            ForEach-Object {
+                $params = $_.GetEnumerator() |
+                        ForEach-Object { "$([System.Web.HttpUtility]::UrlEncode($_.Name))=$([System.Web.HttpUtility]::UrlEncode($_.Value))" } |
+                        Join-String -Separator '&'
 
-        $html = Get-Html -Uri $uri
+                [PSCustomObject]@{
+                    Query = $query
+                    Uri   = "https://www.freelancermap.de/projektboerse.html?$params"
+                    Index = ($index++) % $ThrottleLimit
+                }
+            }
+    } |
+    ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
+        # Get the project of listings page
+        ${function:Get-Html} = $using:GetHtmlFunctionDefinition
+
+        if ($using:Debug) {
+            Write-Host "`nFetching URL: $uri" -ForegroundColor Yellow
+        } else {
+            # ($using:host).UI.RawUI.CursorPosition = @{X=0;Y=($using:host).UI.RawUI.CursorPosition.Y-1}
+            # ($using:host).UI.WriteLine("Fetching URL: $($_.Query)".PadRight($host.UI.RawUI.WindowSize))
+        }
+
+        $html = Get-Html -Uri $_.Uri
+
         $html.getElementsByClassName("project-card") |
             ForEach-Object {
                 # Extract basic project info
@@ -127,7 +157,6 @@ $projects = $Include |
     Group-Object Link |
     ForEach-Object {
         # Remove duplicates, keep the most recent
-        $_.Group | Select-Object ProjectId, Title, Link, Date, Age, CreatedBy | ConvertTo-Json | Write-Debug
         $_.Group | Sort-Object Age | Select-Object -First 1
     } |
     Where-Object {
@@ -177,6 +206,12 @@ $projects = $Include |
         if ($_.ProjectId -in $known_projects) {
             return $false
         }
+
+        # Filter empty descriptions
+        if ($_.Description.Length -eq 0) {
+            return $false
+        }
+
         return $true
     }
 
@@ -184,7 +219,8 @@ Write-Host
 $projects = $projects |
     ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
         $tags = $_.Tags | Where-Object { $_ -in $using:Exclude }
-        if ($tags.Count -gt 0) {
+        if ($using:NoEvaluate) {
+        } elseif ($tags.Count -gt 0) {
             # Exclude by tags
             Write-Host -ForegroundColor Red "Excluded project '$($_.Title)' due to tags: $($tags -join ", ")"
             $_.Score = 0

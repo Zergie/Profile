@@ -44,7 +44,7 @@ process {
                     $_
                 }
 
-                if ($_.StartsWith(' Output is package name')) {
+                if ($_.StartsWith(' Output is Id')) {
                     $found_begin = $true
                 }
             }

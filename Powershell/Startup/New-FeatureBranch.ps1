@@ -28,10 +28,10 @@ dynamicparam {
             Name = "Name"
             ParameterSetName = "NameParameterSet"
             ValidateSet = Invoke-RestApi `
-                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=7.0" `
+                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=7.1" `
                 -Body @{
                     ids= @() + (Invoke-RestApi `
-                            -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=7.0" `
+                            -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=7.1" `
                             -Body @{ query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.IterationPath] = @currentIteration('[TauOffice]\TauOffice Team <id:48deb8b1-0e33-40d0-8879-71d5258a79f7>')" }).workItems.id
                     fields= @(
                         "System.Id"

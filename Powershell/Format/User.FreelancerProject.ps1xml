@@ -10,6 +10,9 @@
             <TableControl>
                 <TableHeaders>
                     <TableColumnHeader>
+                        <Label>Id</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
                         <Label>Age</Label>
                     </TableColumnHeader>
                     <TableColumnHeader>
@@ -26,6 +29,9 @@
                     <TableRowEntry>
                         <Wrap/>
                         <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>$_.ProjectId</ScriptBlock>
+                            </TableColumnItem>
                             <TableColumnItem>
                                 <ScriptBlock>"$($_.Age.ToString().PadLeft(4)) h"</ScriptBlock>
                             </TableColumnItem>
@@ -70,7 +76,10 @@
                                                 return
                                             }
 
-                                            "`e[38;${color}m`e[48;${color}m`e[97m${_}`e[0m`e[38;${color}m`e[0m"
+                                            if ($null -eq $_ -or $_.Length -eq 0) {
+                                            } else {
+                                                "`e[38;${color}m`e[48;${color}m`e[97m${_}`e[0m`e[38;${color}m`e[0m"
+                                            }
 
                                         }) -join " "
                                 </ScriptBlock>

@@ -65,7 +65,7 @@ Process {
         }
     }
 
-    1..356 |
+    1..365 |
         ForEach-Object {[datetime]::new($Year,1,1).AddDays($_-1)} |
         Where-Object {$_.ToString("ddd") -notin "Sa","So"} |
         Where-Object { if ($null -eq $Begin)  { $true } else { $_ -ge $Begin  } } |

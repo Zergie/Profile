@@ -5,6 +5,13 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="camt.053.001.02.xsd &lt;--> camt.053.001.08.xsd">
+						<LastModified Value="2025-12-09 14:37:22"/>
+						<Specs>
+							<Left Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
+							<Right Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
+						</Specs>
+					</TTextCompareSession>
 					<TDirCompareSession Value="SyneraInstaller &lt;--> SyneraRunInstaller">
 						<LastModified Value="2025-08-26 09:37:39"/>
 						<Specs>

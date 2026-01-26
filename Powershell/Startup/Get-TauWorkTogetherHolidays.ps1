@@ -84,7 +84,6 @@ end {
                                 $content = $_.Content
                                 $_.Content -replace "^.+<pre[^>]+>|</pre>.+",'' | ConvertFrom-Json
                             } catch {
-                                Write-Host -ForegroundColor Yellow $content
                                 [pscustomobject]@{
                                     logout = $true
                                 }

@@ -5,6 +5,13 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TDirCompareSession Value="SyneraInstaller &lt;--> SyneraRunInstaller">
+						<LastModified Value="2025-08-26 09:37:39"/>
+						<Specs>
+							<Left Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller"/>
+							<Right Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller"/>
+						</Specs>
+					</TDirCompareSession>
 					<TTextCompareSession Value="install.7z.bin &lt;--> install.exe.bin">
 						<LastModified Value="2025-07-04 11:37:58"/>
 						<Specs>
