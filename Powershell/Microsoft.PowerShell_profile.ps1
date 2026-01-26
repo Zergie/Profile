@@ -46,15 +46,15 @@ Complete-Action
 Start-Action "Initialize environment "
     if ((Test-Path "$PSScriptRoot\secrets.json")) {
         $secrets = (Get-Content "$PSScriptRoot/secrets.json" | ConvertFrom-Json)
+        ($secrets.nuget| Get-Member -Type NoteProperty).Name |
+            ForEach-Object { "`$env:NuGetPackageSourceCredentials_$_ = `"Username=$($secrets.nuget.$_.UserName);Password=$($secrets.nuget.$_.Password)`"" } |
+            Invoke-Expression
     }
     $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
     $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
     $env:POWERSHELL_UPDATECHECK              = "OFF"
     $env:PSModuleAnalysisCachePath           = 'NUL'
     $env:PSDisableModuleAnalysisCacheCleanup = 1
-    ($secrets.nuget| Get-Member -Type NoteProperty).Name |
-        ForEach-Object { "`$env:NuGetPackageSourceCredentials_$_ = `"Username=$($secrets.nuget.$_.UserName);Password=$($secrets.nuget.$_.Password)`"" } |
-        Invoke-Expression
     $OutputEncoding = [System.Text.Encoding]::UTF8
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action
@@ -139,6 +139,21 @@ if ($firstUse) {
         } | Out-Null
     Complete-Action
 }
+
+# initialize language
+Start-Action "Initialize language"
+    $languages = Get-WinUserLanguageList
+    Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
+    $languages[0].InputMethodTips.Remove("0407:00000407") | Out-Null
+    $languages[0].InputMethodTips.Remove("0407:00000409") | Out-Null
+    0..1 | ForEach-Object {
+        $languages[$_].InputMethodTips.Add("0409:00000409") | Out-Null
+        while ($languages[$_].InputMethodTips.Count -gt 1) {
+            $languages[$_].InputMethodTips.RemoveAt(0)
+        }
+    }
+    Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
+Complete-Action
 
 # initialize colors
 Start-Action "Initialize colors"

@@ -95,9 +95,9 @@ if ($Mount) {
             Invoke-Action `
                 -Message "Testing connectivity to $_ .. " `
                 -Action {
-                    $status = (Invoke-WebRequest $_ -ConnectionTimeoutSeconds 5).StatusDescription
-                    if ($status -ne "OK") {
-                        throw "$status"
+                    $status = (Test-NetConnection $_).PingSucceeded
+                    if (-not $status) {
+                        throw "Ping failed"
                     }
                 } `
                 -SuccessMessage "OK"

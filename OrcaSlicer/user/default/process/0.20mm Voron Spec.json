@@ -7,6 +7,7 @@
     "initial_layer_line_width": "0.4",
     "is_custom_defined": "0",
     "name": "0.20mm Voron Spec",
+    "only_one_wall_top": "1",
     "print_settings_id": "0.20mm Voron Spec",
     "sparse_infill_density": "40%",
     "sparse_infill_line_width": "0.4",
