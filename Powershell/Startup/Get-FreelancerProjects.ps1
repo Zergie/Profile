@@ -3,11 +3,47 @@ param (
     [Parameter()]
     [string[]]
     $Include = @(
-        "NET", ".NET", "C#", "vba", "vb6", "WiX", "MSI", "NSIS", "Installer", "PowerShell", "CI/CD", "Microsoft Sql-Server"
-        "Software Architect", "Solutions Architect", "Technical Lead", "Lead Developer", "Systemarchitekt", "Enterprise Architecture", "Clean Architecture", "Azure DevOps Engineer",
-        "Build Engineer", "Release Engineer", "Pipeline Engineer", "DevOps Architect", "Configuration Manager", "Infrastructure Automation", "WiX Toolset", "MSI-Entwicklung",
-        "Setup Engineer", "Inno Setup", "Deployment Engineer"
-    ),
+        ".NET"
+        "Azure DevOps Engineer"
+        "Build Engineer"
+        "C#"
+        "CI/CD"
+        "Clean Architecture"
+        "Configuration Manager"
+        "Deployment Engineer"
+        "DevOps Architect"
+        "Enterprise Architecture"
+        "Entity Framework"
+        "Infrastructure Automation"
+        "Inno Setup"
+        "Installer"
+        "Lead Developer"
+        "Microsoft Sql-Server"
+        "MSI-Entwicklung"
+        "MSI"
+        "NET"
+        "NSIS"
+        "Pipeline Engineer"
+        "PowerShell"
+        "Release Engineer"
+        "Scrum"
+        "Setup Engineer"
+        "SOAP"
+        "Software Architect"
+        "Solutions Architect"
+        "Systemarchitekt"
+        "Technical Lead"
+        "Tech Lead"
+        "UWP"
+        "vb6"
+        "VBA Programming Language"
+        "vba"
+        "WCF"
+        "WinForms"
+        "WiX Toolset"
+        "WiX"
+        "WPF"
+        ),
 
     [Parameter()]
     [string[]]
@@ -79,10 +115,55 @@ if ($null -eq (Get-FormatData -TypeName $typeName -ErrorAction SilentlyContinue)
     Update-FormatData -PrependPath "$PSScriptRoot\..\Format\${typeName}.ps1xml"
 }
 
-Write-Host "Searching for projects with query: $($Include | Sort-Object -Unique | ForEach-Object { "'$_'" } | Join-String -Separator " ")"
+#region Crash recovery helpers
+$CheckpointFile = Join-Path $env:TEMP "Get-FreelancerProjects.json"
+
+function Clear-Checkpoint {
+    param()
+    Remove-Item -LiteralPath $CheckpointFile -Force -ErrorAction SilentlyContinue
+    Write-Host -ForegroundColor Yellow "Checkpoint cleared."
+}
+
+function New-Checkpoint {
+    param([string]$Id, [object]$State)
+    $checkpoints = [System.Collections.Generic.Dictionary[string, object]]::new()
+
+    if ((Test-Path $CheckpointFile)) {
+        Get-Content $CheckpointFile -Encoding utf8 |
+            ConvertFrom-Json -AsHashtable |
+            ForEach-Object { $checkpoints.Add($_.Key, $_.Value) }
+    }
+    $checkpoints.Add($Id, $State)
+    $checkpoints | ConvertTo-Json -Depth 10 | Set-Content -Path $CheckpointFile -Encoding utf8
+}
+
+function Invoke-Checkpoint {
+    param([string]$Id, [scriptblock]$Action)
+
+    if ((Test-Path $CheckpointFile)) {
+        $checkpoints = Get-Content $CheckpointFile -Encoding utf8 | ConvertFrom-Json
+        if ($null -ne $checkpoints.$Id) {
+            Write-Host -ForegroundColor Yellow "Restoring checkpoint '$Id'..."
+            return $checkpoints.$Id
+        }
+    }
+
+    $State = & $Action
+    New-Checkpoint -Id $Id -State $State
+    return $State
+}
+
+$typeName = 'User.FreelancerProject'
+if ($null -eq (Get-FormatData -TypeName $typeName -ErrorAction SilentlyContinue)) {
+    Update-FormatData -PrependPath "$PSScriptRoot\..\Format\${typeName}.ps1xml"
+}
+#endregion
 
 $index = 0
-$projects = $Include |
+$projects = Invoke-Checkpoint -Id "FetchProjects" -Action {
+    Write-Host "Searching for projects with query: $($Include | Sort-Object -Unique | ForEach-Object { "'$_'" } | Join-String -Separator " ")"
+
+    $Include |
     Sort-Object -Unique |
     ForEach-Object {
         $query = $_
@@ -174,31 +255,22 @@ $projects = $Include |
     } |
     ForEach-Object -Parallel {
         ${function:Get-Html} = $using:GetHtmlFunctionDefinition
+        #${function:Get-Html} = $GetHtmlFunctionDefinition
 
         # Get detailed project info
         $_.RawDetails = Get-Html -Uri $_.Link
+        $info = $_.RawDetails.getElementsByClassName("js-react-on-rails-component") |
+            Where-Object { $_.innerText.startswith('{"meta"') } |
+            ForEach-Object innerText |
+            ConvertFrom-Json |
+            ForEach-Object project
+
         $_.Tags = $_.RawDetails.getElementsByClassName("badge") |
             ForEach-Object textContent |
             Where-Object { $_ -notin "IT" }
-        $_.Description = $_.RawDetails.getElementsByClassName("project-body-description") | ForEach-Object textContent
-
-        $project_body_infos = $_.RawDetails.getElementsByClassName("project-body-info") |
-            ForEach-Object childNodes |
-            ForEach-Object {
-
-                foreach ($item in $_.childNodes) {
-                    if ($item.className -like "*project-body-info-title*") {
-                        $key = $item.textContent
-                    } else {
-                        [PSCustomObject]@{
-                            Key   = $key
-                            Value = $item.textContent.Trim()
-                        }
-                    }
-                }
-            }
-        $_.Contact = ($project_body_infos | Where-Object { $_.Key -eq "Ansprechpartner" }).Value
-        $_.ProjectId = ($project_body_infos | Where-Object { $_.Key -eq "Projekt-ID" }).Value
+        $_.Description = $info.description
+        $_.Contact = "$($info.firstName) ($($info.lastName))"
+        $_.ProjectId = "$($info.id)"
         $_
     } |
     Where-Object {
@@ -214,30 +286,79 @@ $projects = $Include |
 
         return $true
     }
+}
 
+Write-Host "New projects found: $($projects.Count)"
 Write-Host
-$projects = $projects |
-    ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
-        $tags = $_.Tags | Where-Object { $_ -in $using:Exclude }
-        if ($using:NoEvaluate) {
-        } elseif ($tags.Count -gt 0) {
-            # Exclude by tags
-            Write-Host -ForegroundColor Red "Excluded project '$($_.Title)' due to tags: $($tags -join ", ")"
-            $_.Score = 0
-            $_.ScoreDescription = "Excluded due to tags: $($tags -join ", ")"
-        } else {
-            # Get CV score
-            $response = . "$using:PSScriptRoot\Get-ProjectCvScore.ps1" -ProjectDescription $_.Description -Silent
-            Write-Host "Evaluated project '$($_.Title)' with score $($response.Score) %"
-            $_.Score = $response.Score
-            $_.ScoreDescription = $response.Description
-        }
 
-        $_
+$dict = Invoke-Checkpoint -Id "EvaluateProjects" -Action {
+    $hashmap = @{}
+    foreach ($project in $projects) {
+        $hashmap[$project.ProjectId] = $project
     }
+    [PSCustomObject]$hashmap
+}
+$dict = $dict.PSObject.Properties | ForEach-Object -Begin {$r=@{}} -Process {$r[$_.Name]=$_.Value} -End {$r}
+
+$queue = [System.Collections.Concurrent.BlockingCollection[psobject]]::new()
+$results = [System.Collections.Concurrent.BlockingCollection[psobject]]::new()
+$outItem = $null
+
+$jobs = 1..$ThrottleLimit |
+    ForEach-Object {
+        Start-ThreadJob -ArgumentList $queue, $results -ScriptBlock {
+            param($q, $r)
+            foreach ($item in $q.GetConsumingEnumerable()) {
+                $tags = $item.Tags | Where-Object { $_ -in $using:Exclude }
+                if ($using:NoEvaluate) {
+                } elseif ($item.Score -ne $null) {
+                    $r.Add("`e[32mAlready evaluated project '$($item.Title)' with score $($item.Score) %`e[0m")
+                } elseif ($tags.Count -gt 0) {
+                    # Exclude by tags
+                    $r.Add("`e[31mExcluded project '$($item.Title)' due to tags: $($tags -join ", ")`e[0m")
+                    $item.Score = 0
+                    $item.ScoreDescription = "Excluded due to tags: $($tags -join ", ")"
+                } else {
+                    # Get CV score from OpenAI
+                    # $r.Add("Evaluating project '$($item.Title)'...")
+                    $response = . "$using:PSScriptRoot\Get-ProjectCvScore.ps1" -ProjectDescription "$($item.Description)" -Silent
+                    $r.Add("Evaluated project '$($item.Title)' with score $($response.Score) %")
+                    $item.Score = $response.Score
+                    $item.ScoreDescription = $response.Description
+                }
+                $r.Add($item) # return item with Score
+            }
+            $r.Add($null) # Signal that this worker is done
+        }
+}
+
+foreach ($project in $dict.Values) {
+    $queue.Add($project)
+}
+
+$finishedWorker = 0
+$queue.CompleteAdding()
+while ($finishedWorker -lt $jobs.Count) {
+    while ($results.TryTake([ref]$outItem, 1000)) {
+        if ($null -eq $outItem) {
+            $finishedWorker++
+        } elseif ($outItem -is [string]) {
+            Write-Host $outItem
+        } else {
+            $dict[$outItem.ProjectId] = $outItem
+            New-Checkpoint -Id "EvaluateProjects" -State $dict
+        }
+    }
+}
+Wait-Job $jobs    | Out-Null
+Receive-Job $jobs | Out-Null
+Remove-Job $jobs  | Out-Null
+$results.CompleteAdding()
+
+$projects = $dict.Values
+Write-Host "Projects evaluated: $(($projects | Where-Object { $_.Score -ne $null }).Count)"
 
 # output to console with formatting and sorting
-Write-Host "New projects found: $($projects.Count)"
 $projects |
     ForEach-Object {
         $_.PSObject.TypeNames.Insert(0, $typeName)
@@ -247,6 +368,7 @@ $projects |
 
 if ($projects.Count -gt 0 -and !$NoExport) {
     # output to Excel
+    Write-Host "Exporting to Excel: $filename"
     $excel = $projects |
         ForEach-Object {
             [PSCustomObject]@{
@@ -292,3 +414,4 @@ if ($projects.Count -gt 0 -and !$NoExport) {
 
     Invoke-Item $filename
 }
+Clear-Checkpoint

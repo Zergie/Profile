@@ -61,6 +61,7 @@ Process {
                 ForEach-Object {
                     [pscustomobject]@{
                         Name = $_.Name
+                        VarName = $_.Name -replace "[/.]",""
                         Value = $item.($_.Name)
                     }
                 }
@@ -80,7 +81,7 @@ Process {
 
     $Query += "($(($Data.Name | ForEach-Object { "[$_]" }) -join ","))"
     $Query += " VALUES "
-    $Query += "($(($Data.Name | ForEach-Object { "@$_" }) -join ","))"
+    $Query += "($(($Data.VarName | ForEach-Object { "@$_" }) -join ","))"
     Write-Verbose $Query
 
     $command = $connection.CreateCommand()
@@ -107,6 +108,8 @@ Process {
                             default                      { [Datetime]::Parse($p.Value) }
                         })
                     }
+                } elseif ($sql_data_type -eq "float") {
+                    $db_value = [double]($p.Value.Replace(",","."))
                 } else {
                     $db_value = $p.Value
                 }
@@ -115,20 +118,20 @@ Process {
             $db_value = $p.Value
         }
 
-        Write-Verbose "$($p.Name): $(if ($db_value -eq [System.DBNull]::Value) {"`e[3m__null__`e[0m"} else {$db_value})"
-        $command.Parameters.AddWithValue($p.Name, $db_value) | Out-Null
+        Write-Verbose "$($p.VarName): $(if ($db_value -eq [System.DBNull]::Value) {"`e[3m__null__`e[0m"} else {$db_value})"
+        $command.Parameters.AddWithValue($p.VarName, $db_value) | Out-Null
     }
-    # try {
+    try {
         $command.ExecuteNonQuery() | Out-Null
-    # } catch {
-    #     if ($Table.Contains(".")) {
-    #         $command.CommandText = "SET IDENTITY_INSERT $TABLE ON; $Query;SET IDENTITY_INSERT $TABLE OFF"
-    #     }
-    #     else {
-    #         $command.CommandText = "SET IDENTITY_INSERT [$TABLE] ON; $Query;SET IDENTITY_INSERT [$TABLE] OFF"
-    #     }
-    #     $command.ExecuteNonQuery() | Out-Null
-    # }
+    } catch {
+        if ($Table.Contains(".")) {
+            $command.CommandText = "SET IDENTITY_INSERT $TABLE ON; $Query;SET IDENTITY_INSERT $TABLE OFF"
+        }
+        else {
+            $command.CommandText = "SET IDENTITY_INSERT [$TABLE] ON; $Query;SET IDENTITY_INSERT [$TABLE] OFF"
+        }
+        $command.ExecuteNonQuery() | Out-Null
+    }
     $command.Dispose()
 
     Write-Verbose $Query

@@ -85,12 +85,48 @@ begin {
             "    )"
             }
 
+            "P_belegt" {
+            "    vbMax("
+            "          -1,"
+            "          DCount2('*',"
+            "                  '((Stammdaten_Wohnungen AS sw) INNER JOIN [Betreute Personen] AS bp ON bp.ID=sw.PersonId)',"
+            "                  'sw.VON<=' & DatumSQLnew({RechVon}) & ' AND (sw.Bis IS NULL OR sw.Bis>=' & DatumSQLnew({RechVon}) & ') ' &"
+            "                  ' AND sw.WohnungId=' &"
+            "                  Nz("
+            "                     Dlookup2('sw.WohnungId',"
+            "                               '(Stammdaten_Wohnungen AS sw)',"
+            "                               'sw.VON<=' & DatumSQLnew({RechVon}) & ' AND (sw.Bis IS NULL OR sw.Bis>=' & DatumSQLnew({RechVon}) & ') AND sw.PersonId=' & {PersonID}"
+            "                              ),"
+            "                     0"
+            "                  )"
+            "          )"
+            "    )"
+            }
+
             "ChecklisteWohnung" {
             "    Nz("
-            "       Dlookup2('Nz(w.$($TemplateArguments[1]), 0)',"
-            "                '((Stammdaten_Wohnungen AS sw) INNER JOIN (SELECT * FROM weitereInfos WHERE ID_Label=$($TemplateArguments[0])) AS w ON w.ID_Wohnung=sw.WohnungId)',"
-            "                'sw.VON<=' & DatumSQLnew({RechBis}) & ' AND (sw.Bis IS NULL OR sw.Bis>=' & DatumSQLnew({RechBis}) & ') AND sw.PersonId=' & {PersonID}"
-            "       ),"
+            "        Dlookup2('w.$($TemplateArguments[1])',"
+            "                 '((Stammdaten_Wohnungen AS sw) INNER JOIN (SELECT * FROM weitereInfos WHERE ID_Label=$($TemplateArguments[0])) AS w ON w.ID_Wohnung=sw.WohnungId)',"
+            "                 'sw.von<=' & DatumSQLnew({RechBis}) & ' AND (sw.bis IS NULL OR sw.bis>=' & DatumSQLnew({RechBis}) & ') AND sw.PersonId=' & {PersonID}"
+            "        )"
+            "    , 0)    "
+            }
+
+            "Stammdaten_Wohnungen" {
+            "    Nz("
+            "        Dlookup2('$($TemplateArguments[0])',"
+            "                 'Stammdaten_Wohnungen',"
+            "                 'von<=' & DatumSQLnew({RechVon}) & ' AND (bis IS NULL OR bis>=' & DatumSQLnew({RechVon}) & ') AND PersonId=' & {PersonID}"
+            "        )"
+            "    , 0)"
+            }
+
+            "Nutzfläche" {
+            "    Nz("
+            "       Dlookup2('Nz(wa.Wohnflaeche,0) + Nz(wa.GemeinschaftsFlaeche,0)',"
+            "                '((Stammdaten_Wohnungen AS sw) INNER JOIN Wohnungen_Adresse AS wa ON wa.WohnungId=sw.WohnungId)',"
+            "                'sw.VON<=' & DatumSQLnew({RechVon}) & ' AND (sw.Bis IS NULL OR sw.Bis>=' & DatumSQLnew({RechVon}) & ') AND sw.PersonId=' & {PersonID}"
+            "               ),"
             "       0"
             "    )"
             }
@@ -112,6 +148,24 @@ begin {
             "        )"
             "    )"
             }
+
+            "Tage" {
+            "    vbMax(0,"
+            "          Dlookup2('1+DateDiff(`"d`""
+            "                             , vbMax(sw.von, {RechVon})"
+            "                             , IIF(Day(vbMax(sw.von, {RechVon}))=1 AND Day(vbMin(sw.bis, {RechBis}, MonatEndeDatum2({RechVon}))+1)=1"
+            "                                 , vbMax(sw.von, {RechVon}) + 30 - 1"
+            "                                 , vbMin(sw.bis, {RechBis}, MonatEndeDatum2({RechVon}))"
+            "                               )"
+            "                      )',"
+            "                   '(Stammdaten_Wohnungen AS sw)',"
+            "                   'sw.von<=' & DatumSQLnew({RechVon}) & ' AND (sw.bis IS NULL OR sw.bis>=' & DatumSQLnew({RechVon}) & ') AND sw.PersonId=' & {PersonID}"
+            "          )"
+            "    )"
+            }
+
+            "TM"          { "(1 + DateDiff('d', MonatAnfangsDatum2({RechVon}), MonatEndeDatum2({RechVon})))" }
+            "VollerMonat" { "iif(Day({RechVon})=1 AND Day({RechBis}+1)=1, 1, 0)" }
 
             default {
                 Write-Error "unknown template"
@@ -213,14 +267,23 @@ begin {
     }
 }
 process {
+    $Articles | Add-Member -NotePropertyName "ID"         -NotePropertyValue $($id; $id+=1)
+    $Articles | Add-Member -NotePropertyName "Position"   -NotePropertyValue $($p; $p+=10) -ErrorAction SilentlyContinue
+    $Articles | Add-Member -NotePropertyName "ProzessId"  -NotePropertyValue $processId
+    $Articles | Add-Member -NotePropertyName "ErstelltAm" -NotePropertyValue (Get-Date)
+    $Articles | Add-Member -NotePropertyName "GueltigAb"  -NotePropertyValue ([datetime]::new(2000,1,1))
+    $Articles | Add-Member -NotePropertyName "MwSt"       -NotePropertyValue 3
+
+    $allowedCharacters = 128
     $Articles |
-        Add-Member -PassThru -NotePropertyName "ID"         -NotePropertyValue $($id; $id+=1) |
-        Add-Member -PassThru -NotePropertyName "Position"   -NotePropertyValue $($p; $p+=10) |
-        Add-Member -PassThru -NotePropertyName "ProzessId"  -NotePropertyValue $processId |
-        Add-Member -PassThru -NotePropertyName "ErstelltAm" -NotePropertyValue (Get-Date) |
-        Add-Member -PassThru -NotePropertyName "GueltigAb"  -NotePropertyValue ([datetime]::new(2000,1,1)) |
-        Add-Member -PassThru -NotePropertyName "MwSt"       -NotePropertyValue 3 |
-        Import-SqlTable -Table Kundenartikel
+        Where-Object { $_.Beschreibung.Length -gt $allowedCharacters } |
+        ForEach-Object {
+            Write-Host
+            Write-Host -ForegroundColor Yellow "Beschreibung '$($_.Beschreibung)' is $($_.Beschreibung.Length) characters long, which is longer than the allowed $allowedCharacters characters. Please check if this is intended and if not shorten it to avoid issues with the database."
+            exit(1)
+        }
+
+    $Articles | Import-SqlTable -Table Kundenartikel
 }
 end {
     if ($ExportXml) {
@@ -274,9 +337,11 @@ end {
                     Invoke-Sqlcmd "UPDATE KundenartikelProzess SET AbrechnenBis=Null WHERE ID=$($_.ID)"
 
                     Delete-SqlTable Rechnungen_10060 -Filter ID_Rechnung -Value $null
+                    $old_data = Invoke-Sqlcmd "SELECT Id FROM Rechnungen_10060 WHERE ID_Rechnung IN (SELECT Nr FROM Steuerdatei WHERE Person_ID=$($_.PersonID))" |
+                                    ForEach-Object Id
                     Invoke-MsAccess -Procedure test_clsAbrechnung10060_billIndividuell -Arguments $_.ID | Out-Null
 
-                    $data = Invoke-Sqlcmd "SELECT Id, Beschreibung, Anzahl, Preis FROM Rechnungen_10060 WHERE ID_Rechnung IN (SELECT Nr FROM Steuerdatei WHERE Person_ID=$($_.PersonID)) ORDER BY Position" |
+                    $data = Invoke-Sqlcmd "SELECT Id, Beschreibung, Anzahl, Einheit, Preis FROM Rechnungen_10060 WHERE ID_Rechnung IN (SELECT Nr FROM Steuerdatei WHERE Person_ID=$($_.PersonID)) ORDER BY Position" |
                                 Sort-Object Beschreibung
 
                     $colors = [pscustomobject]@{
@@ -306,6 +371,7 @@ end {
 
                     $data |
                         Where-Object { $_ -ne $null } |
+                        Where-Object { $old_data -notcontains $_.Id } |
                         ForEach-Object {
                             $color_key = if ($_.Beschreibung.Length -gt 13) { $_.Beschreibung.Substring(0, 13) } else { "" }
                             if (!$color_map.ContainsKey($color_key)) { $color_key = "" }
@@ -325,6 +391,7 @@ end {
                                 } else {
                                     "${c}$($_.Anzahl.ToString())"
                                 }
+                                Einheit      = "${c}$($_.Einheit)${r}"
                                 Preis        = "${c}$([Math]::Round($_.Preis, 2))${r}"
                                 ID_Rechnung = $_.ID_Rechnung
                             }
@@ -343,7 +410,7 @@ end {
                         } |
                         Format-Table
 
-                    Delete-SqlTable Rechnungen_10060 -Filter ID -Value $data.Id
+                    # Delete-SqlTable Rechnungen_10060 -Filter ID -Value $data.Id
                 }
         } else {
             throw "MsAccess is not running"

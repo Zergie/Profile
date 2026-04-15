@@ -486,13 +486,15 @@ process {
                         if ($UmsetzenIn.ContainsKey('date')) {
                             $new_tag = $branch_lookup |
                                 Where-Object date -eq $UmsetzenIn.date |
-                                ForEach-Object given_name
+                                ForEach-Object given_name |
+                                Select-Object -First 1
                         } elseif ($UmsetzenIn.ContainsKey('q') -and $UmsetzenIn.ContainsKey('year')) {
                             $new_tag = "TO $($UmsetzenIn.year)\$($UmsetzenIn.q)"
                         } elseif ($UmsetzenIn.ContainsKey('q')) {
                             $new_tag = $branch_lookup |
                                 Where-Object given_name -Like "*$($UmsetzenIn.q)" |
-                                ForEach-Object given_name
+                                ForEach-Object given_name |
+                                Select-Object -First 1
                         }
 
                         if ($null -eq $new_tag) {

@@ -1,36 +1,32 @@
 #Requires -PSEdition Core
 [cmdletbinding()]
 param (
-    [Parameter(Mandatory=$true,
-               ParameterSetName="WorkitemIdParameterSetName",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true)]
+    [Parameter(Mandatory,
+               ParameterSetName="WorkitemIdParameterSetName")]
     [Alias("Id")]
     [ValidateNotNullOrEmpty()]
     [int[]]
     $Workitem,
 
-    [Parameter(Mandatory=$true,
-               ParameterSetName="AllParameterSetName",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true)]
+    [Parameter(Mandatory,
+               ParameterSetName="AllParameterSetName")]
     [switch]
     $All,
 
-    [Parameter(Mandatory=$false,
-               ParameterSetName="AllParameterSetName",
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true)]
+    [Parameter(ParameterSetName="AllParameterSetName")]
     [int[]]
     $Exclude,
 
-    [Parameter(Mandatory=$true,
-               Position=1,
-               ValueFromPipeline=$true,
-               ValueFromPipelineByPropertyName=$true)]
+    [Parameter(Mandatory,
+               Position=1)]
     [ValidateSet(1,2,3,4,5,6,7,8,9,10,11,12)]
     [int]
-    $Month
+    $Month,
+
+    [Parameter(Mandatory,
+               ParameterSetName="AllParameterSetName")]
+    [switch]
+    $Repeat
 )
 DynamicParam {
     $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
@@ -92,6 +88,17 @@ Process {
     if ($null -eq $PSBoundParameters.ErrorAction) { $ErrorActionPreference = 'Stop' }
     $Tag = $PSBoundParameters['Tag']
     $Year = $PSBoundParameters['Year']
+    $TempFile = "$env:temp\report_$Year_$Month.csv"
+
+    if ($Repeat) {
+        if (Test-Path $TempFile) {
+            Get-Content $TempFile | Set-Clipboard
+            "data is copied to clipboard" | Write-Host -ForegroundColor Green
+        } else {
+            "no data to copy, exiting.." | Write-Host -ForegroundColor Red
+        }
+        exit
+    }
 
     $start_date = [datetime]::new($Year, $Month, 1)
     $end_date   = $start_date.AddMonths(1).AddDays(-1)
@@ -367,8 +374,12 @@ Process {
         ForEach-Object { $_.Group[0] } |
         Where-Object { $_.Datum -LE [datetime]::Now } |
         Sort-Object Datum, Oberpunkt, Arbeitsschritt |
-        ConvertTo-Csv -Delimiter `t |
+        ConvertTo-Csv -Delimiter `t -OutVariable csv |
         Set-Clipboard
+
+    $csv |
+        Out-File $TempFile -Encoding UTF8
+
     Write-Progress -Activity $activity -Completed
     Write-Host "$activity.." -NoNewline
     "done" | Write-Host -ForegroundColor Green

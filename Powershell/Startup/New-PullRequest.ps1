@@ -5,6 +5,15 @@ param (
 dynamicparam {
     Set-Alias "New-DynamicParameter" "$PSScriptRoot\New-DynamicParameter.ps1"
     Set-Alias "Invoke-RestApi" "$PSScriptRoot\Invoke-RestApi.ps1"
+
+    $doing = Invoke-RestApi `
+        -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=7.0" `
+        -Body @{
+            query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] == 'Doing' AND [System.WorkItemType] <> 'Task'"
+        }
+    if ($doing.workItems.Count -eq 0) {
+        throw "No work items in 'Doing' state found for the current iteration."
+    }
     @(
         [pscustomobject]@{
             Position = 0
@@ -14,9 +23,7 @@ dynamicparam {
             ValidateSet = Invoke-RestApi `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=7.0" `
                 -Body @{
-                    ids= @() + (Invoke-RestApi `
-                            -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=7.0" `
-                            -Body @{ query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] == 'Doing' AND [System.WorkItemType] <> 'Task' AND [System.IterationPath] = @currentIteration('[TauOffice]\TauOffice Team <id:48deb8b1-0e33-40d0-8879-71d5258a79f7>')" }).workItems.id
+                    ids= @() + $doing.workItems.id
                     fields= @(
                         "System.Id"
                         "System.Title"

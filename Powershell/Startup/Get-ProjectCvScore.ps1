@@ -18,8 +18,8 @@ param (
 
 $ErrorActionPreference = "Break"
 $Model = "gpt-5-nano"
-$PathToCv = "C:\Dokumente\Dokumente\Lebenslauf_2025.pdf"
-$CvFileId = "file-U9H84pJqMGu7j1va454F39"
+$PathToCv = "C:\Dokumente\Dokumente\Lebenslauf_2026.pdf"
+$CvFileId = "file-LmkAwa6jT8sRfeY6s9sMui"
 
 
 if ($UpdateCv) {

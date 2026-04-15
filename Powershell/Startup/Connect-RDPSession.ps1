@@ -218,6 +218,8 @@ Process {
         }
 
         Add-Type -AssemblyName System.Windows.Forms
+        $Password | Set-Clipboard
+        Write-Host "Password copied to clipboard!"
         [System.Windows.Forms.SendKeys]::SendWait("$($Password -replace ".","{`$0}"){Enter}")
         Remove-Item C:\temp\$Name.rdp
     }
