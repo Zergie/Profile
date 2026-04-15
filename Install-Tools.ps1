@@ -188,6 +188,9 @@ $junctions = @(
     # [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
     #                   destination = "$env:APPDATA\warpd\warpd.conf"}
 
+    [pscustomobject]@{source      = "$PSScriptRoot\copilot"
+                      destination = "$env:USERPROFILE\.copilot"}
+
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
 
@@ -196,14 +199,10 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\Library.json"
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
-
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
                       destination = "$env:USERPROFILE\AppData\Local\Autodesk\webdeploy\production\**\Fusion\Server\Fusion\Configuration\ThreadData"}
-    # [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
-    #                   destination = "$env:ProgramFiles\Autodesk\webdeploy\production\**\Fusion\Server\Fusion\Configuration\ThreadData"}
-
     if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
         [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
                           destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Fusion 360 CAM\Posts\MPCNC.cps"}
