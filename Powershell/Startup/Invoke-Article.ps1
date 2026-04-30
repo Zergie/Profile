@@ -13,6 +13,7 @@ param(
     [Parameter(Mandatory, ParameterSetName='ExportParameterSet')]
     [Parameter(Mandatory, ParameterSetName='BackupParameterSet')]
     [Parameter(Mandatory, ParameterSetName='InvokeParameterSet')]
+    [Parameter(Mandatory, ParameterSetName='CleanClientsParameterSet')]
     [ValidateNotNullOrEmpty()]
     [string]
     $Database,
@@ -40,6 +41,10 @@ param(
     [Parameter(Mandatory, ParameterSetName='PrepareParameterSet')]
     [switch]
     $Prepare,
+
+    [Parameter(Mandatory, ParameterSetName='CleanClientsParameterSet')]
+    [object]
+    $CleanClients,
 
     [Parameter(Mandatory, ParameterSetName='ExportParameterSet')]
     [switch]
@@ -121,6 +126,16 @@ begin {
             "    , 0)"
             }
 
+            "WohnungAdresse" {
+            "    Nz("
+            "        Dlookup2('$($TemplateArguments[0])',"
+            "                 '((Wohnungen_Adresse AS wa) INNER JOIN Stammdaten_Wohnungen AS sw ON wa.WohnungId=sw.WohnungId)',"
+            "                 'sw.von<=' & DatumSQLnew({RechVon}) & ' AND (sw.bis IS NULL OR sw.bis>=' & DatumSQLnew({RechVon}) & ') AND sw.PersonId=' & {PersonID}"
+            "        )"
+            "    , 0)"
+            }
+
+
             "Nutzfläche" {
             "    Nz("
             "       Dlookup2('Nz(wa.Wohnflaeche,0) + Nz(wa.GemeinschaftsFlaeche,0)',"
@@ -189,7 +204,8 @@ begin {
     $PSDefaultParameterValues["*:Username"] = "sa"
     $PSDefaultParameterValues["Invoke-Sqlcmd:TrustServerCertificate"] = $true
     $PSDefaultParameterValues["*:ServerInstance"] = "127.0.0.1,1433"
-    $PSDefaultParameterValues["*:Database"] = $Database
+
+    if ($Database.Length -gt 0) { $PSDefaultParameterValues["*:Database"] = $Database }
     $MainDatabase = $Database.Split("_") | Select-Object -SkipLast 1 | Join-String -Separator "_"
 
     if (! $PSBoundParameters.ContainsKey("ErrorAction")) {
@@ -212,7 +228,6 @@ begin {
 
         Invoke-Item C:\GIT\TauOffice\tau-office\bin\tau-office.mdb
         exit
-
     } elseif ($Backup) {
         Get-ChildItem *.zip | Remove-Item
         Backup-SqlDatabase -Database $MainDatabase,$Database
@@ -220,7 +235,32 @@ begin {
         Get-ChildItem *.bak | Remove-Item
         Get-ChildItem *.zip | ForEach-Object FullName
         exit
-
+    } elseif ($CleanClients) {
+                Write-Host -ForegroundColor Cyan "Cleaning clients .. " -NoNewline
+        $candidates = Invoke-Sqlcmd "SELECT ID, Name, Vorname FROM [Betreute Personen] WHERE Ansprechbar=1" |
+                        ForEach-Object { "$($_.Name), $($_.Vorname)" }
+        Write-Host -ForegroundColor Cyan "found $(($candidates | Measure-Object).Count) candidates. "
+        $CleanClients |
+            Where-Object { $_.Length -gt 0 } |
+            ForEach-Object { $_.Trim() } |
+            ForEach-Object { $_ -replace "\s+", " " } |
+            ForEach-Object { $_.Split(";")[0] } |
+            ForEach-Object { $_.Split(" und ")[0] } |
+            ForEach-Object {
+                if ($_.Contains(",")) {
+                    $_
+                } elseif ($_.Contains(" ")) {
+                    $_.Split(" ",2) | Join-String -Separator ", "
+                }
+            } |
+            Sort-Object -Unique |
+            ForEach-Object {
+                [PSCustomObject]@{
+                    Name = $_
+                    Exists = $_ -in $candidates
+                }
+            }
+        exit
     } else {
         Write-Host -ForegroundColor Cyan "Searching for clients .. " -NoNewline
         $persons = Invoke-Sqlcmd "SELECT ID, Name, Vorname, Aktz FROM [Betreute Personen]"

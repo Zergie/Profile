@@ -16,8 +16,8 @@ param (
     $Orientation
 )
 begin {
-    $word = New-Object -ComObject Word.Application
-    # $word.visible = $true
+    $word = $null
+    $powerpoint = $null
 }
 process {
     $Path = (Resolve-Path $Path).ProviderPath
@@ -42,40 +42,65 @@ process {
     if ([System.IO.Path]::GetExtension($Path) -ne ".pdf") {
         Remove-Item $path_pdf -Force -ErrorAction SilentlyContinue
 
-        $document = $word.Documents.Open("$Path")
-        if ($PSBoundParameters.ContainsKey("Orientation")) {
-            $document.PageSetup.Orientation = switch ($Orientation) {
-                "Portrait"  { 0 }
-                "Landscape" { 1 }
+        switch -Regex ([System.IO.Path]::GetExtension($Path))
+        {
+            "\.(doc|docx|html)$"  {
+                if (-not $word) { $word = New-Object -ComObject Word.Application }
+
+                $document = $word.Documents.Open("$Path")
+                if ($PSBoundParameters.ContainsKey("Orientation")) {
+                    $document.PageSetup.Orientation = switch ($Orientation) {
+                        "Portrait"  { 0 }
+                        "Landscape" { 1 }
+                    }
+                }
+
+                $params = @{
+                    OutputFileName = $path_pdf
+                    ExportFormat = 17 ## wdExportFormatPDF
+                    Item = if ($document.Comments.Count -gt 0) {
+                                7 ## wdExportDocumentWithMarkup
+                            } else {
+                                0 ## wdExportDocumentContent
+                            }
+                }
+                try {
+                    $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
+                        $null,     ## Binder
+                        $document, ## Target
+                        ([Object[]]($params.Values)), ## providedArgs
+                        $null,  ## Modifiers
+                        $null,  ## Culture
+                        ([String[]]($params.Keys))  ## NamedParameters
+                    ) | Out-Null
+                } catch {
+                }
+
+                $document.Close($false) | Out-Null
+
+            }
+            "\.(ppt|pptx)$" {
+                if (-not $powerpoint) { $powerpoint = New-Object -ComObject PowerPoint.Application }
+                $presentation = $powerpoint.Presentations.Open("$Path", $false, $false, $false)
+                if ($PSBoundParameters.ContainsKey("Orientation")) {
+                    $presentation.PageSetup.SlideOrientation = switch ($Orientation) {
+                        "Portrait"  { 2 } ## ppSlideOrientationPortrait
+                        "Landscape" { 1 } ## ppSlideOrientationLandscape
+                    }
+                }
+                $presentation.SaveAs($path_pdf, 32) ## ppSaveAsPDF
+                $presentation.Close()
+            }
+            default {
+                Write-Warning "Unsupported file type: $Path"
+                return
             }
         }
 
-        $params = @{
-            OutputFileName = $path_pdf
-            ExportFormat = 17 ## wdExportFormatPDF
-            Item = if ($document.Comments.Count -gt 0) {
-                        7 ## wdExportDocumentWithMarkup
-                    } else {
-                        0 ## wdExportDocumentContent
-                    }
-        }
-        try {
-            $document.GetType().InvokeMember("ExportAsFixedFormat", [System.Reflection.BindingFlags]::InvokeMethod,
-                $null,     ## Binder
-                $document, ## Target
-                ([Object[]]($params.Values)), ## providedArgs
-                $null,  ## Modifiers
-                $null,  ## Culture
-                ([String[]]($params.Keys))  ## NamedParameters
-            ) | Out-Null
-        } catch {
-        }
-
-        $document.Close($false) | Out-Null
-
-        Get-ChildItem $path_pdf
+        Get-ChildItem $path_pdf -ErrorAction SilentlyContinue
     }
 }
 end {
-    $word.Quit()
+    if ($word) { $word.Quit() }
+    if ($powerpoint) { $powerpoint.Quit() }
 }

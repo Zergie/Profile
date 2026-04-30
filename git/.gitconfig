@@ -11,7 +11,7 @@
 	; pager = less --raw-control-chars
 	pager = delta --features decorations
 	autocrlf = true
-	editore = nvim
+	editor = nvim
 	; editor = C:/Python311/python.exe C:/Python311/Lib/site-packages/nvr/nvr.py \
 	; 	--servername 127.0.0.1:6789 \
 	; 	-cc \"lua require('FTerm').close()\" \
