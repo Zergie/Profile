@@ -14,6 +14,14 @@
         {
             "command": 
             {
+                "action": "splitPane",
+                "split": "auto"
+            },
+            "id": "User.splitPane.4EE51EFF"
+        },
+        {
+            "command": 
+            {
                 "action": "switchToTab",
                 "index": 1
             },
@@ -30,10 +38,10 @@
         {
             "command": 
             {
-                "action": "splitPane",
-                "split": "auto"
+                "action": "switchToTab",
+                "index": 3
             },
-            "id": "User.splitPane.4EE51EFF"
+            "id": "User.switchToTab.6CD791B"
         },
         {
             "command": 
@@ -58,24 +66,16 @@
         {
             "command": 
             {
-                "action": "switchToTab",
-                "index": 3
-            },
-            "id": "User.switchToTab.6CD791B"
-        },
-        {
-            "command": "toggleFocusMode",
-            "id": "User.toggleFocusMode"
-        },
-        {
-            "command": 
-            {
                 "action": "splitPane",
                 "commandline": "C:\\GIT\\Profile\\ttyper\\ttyper.exe",
                 "profile": "{c5bcb3e2-60dc-470d-b27e-9432a0454585}",
                 "split": "auto"
             },
             "id": "User.splitPane.4EE51EDB"
+        },
+        {
+            "command": "toggleFocusMode",
+            "id": "User.toggleFocusMode"
         },
         {
             "command": "find",
@@ -127,6 +127,14 @@
         {
             "command": 
             {
+                "action": "sendInput",
+                "input": "\u001b\r"
+            },
+            "id": "User.sendInput.8F63D3A9"
+        },
+        {
+            "command": 
+            {
                 "action": "splitPane",
                 "commandline": "C:\\Program Files\\Tau-Server\\tauServer_Service.exe",
                 "profile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -150,16 +158,16 @@
             "id": "User.closeTab.0"
         },
         {
+            "command": "markMode",
+            "id": "User.markMode"
+        },
+        {
             "command": 
             {
                 "action": "switchToTab",
                 "index": 4
             },
             "id": "User.switchToTab.F747588A"
-        },
-        {
-            "command": "markMode",
-            "id": "User.markMode"
         },
         {
             "command": 
@@ -179,10 +187,9 @@
         {
             "command": 
             {
-                "action": "findMatch",
-                "direction": "next"
+                "action": "newTab"
             },
-            "id": "User.findMatch.2A0DA8E0"
+            "id": "User.newTab.5DEADB41"
         },
         {
             "command": "paste",
@@ -191,9 +198,10 @@
         {
             "command": 
             {
-                "action": "newTab"
+                "action": "findMatch",
+                "direction": "next"
             },
-            "id": "User.newTab.5DEADB41"
+            "id": "User.findMatch.2A0DA8E0"
         },
         {
             "command": 
@@ -242,18 +250,18 @@
         {
             "command": 
             {
-                "action": "resizePane",
-                "direction": "down"
-            },
-            "id": "User.resizePane.F747588A"
-        },
-        {
-            "command": 
-            {
                 "action": "swapPane",
                 "direction": "previousInOrder"
             },
             "id": "User.swapPane.787314EB"
+        },
+        {
+            "command": 
+            {
+                "action": "resizePane",
+                "direction": "down"
+            },
+            "id": "User.resizePane.F747588A"
         },
         {
             "command": 
@@ -345,6 +353,30 @@
     "keybindings": 
     [
         {
+            "id": "User.sendInput.8F63D3A9",
+            "keys": "shift+enter"
+        },
+        {
+            "id": "User.switchToTab.F747588A",
+            "keys": "ctrl+shift+5"
+        },
+        {
+            "id": "User.copy.644BA8F2",
+            "keys": "ctrl+shift+g"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+2"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+comma"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+0"
+        },
+        {
             "id": "User.resizePane.87C324ED",
             "keys": "alt+shift+right"
         },
@@ -361,28 +393,16 @@
             "keys": "ctrl+shift+c"
         },
         {
-            "id": null,
-            "keys": "ctrl+shift+comma"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+0"
-        },
-        {
-            "id": "User.switchToTab.F747588A",
-            "keys": "ctrl+shift+5"
-        },
-        {
-            "id": "User.copy.644BA8F2",
-            "keys": "ctrl+shift+g"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+2"
-        },
-        {
             "id": "User.splitPane.AC2E3015",
             "keys": "f22"
+        },
+        {
+            "id": null,
+            "keys": "alt+down"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+4"
         },
         {
             "id": "User.newTab.5DEADB41",
@@ -390,11 +410,7 @@
         },
         {
             "id": null,
-            "keys": "ctrl+shift+4"
-        },
-        {
-            "id": null,
-            "keys": "alt+down"
+            "keys": "ctrl+shift+a"
         },
         {
             "id": "User.splitPane.D5151347",
@@ -402,31 +418,27 @@
         },
         {
             "id": null,
-            "keys": "ctrl+shift+a"
-        },
-        {
-            "id": "User.adjustFontSize.E04D5229",
-            "keys": "ctrl+shift+plus"
+            "keys": "alt+shift+left"
         },
         {
             "id": null,
             "keys": "ctrl+alt+1"
         },
         {
-            "id": null,
-            "keys": "alt+shift+left"
+            "id": "User.adjustFontSize.E04D5229",
+            "keys": "ctrl+shift+plus"
         },
         {
             "id": "User.moveFocus.787314EB",
             "keys": "alt+left"
         },
         {
-            "id": "User.findMatch.87C324ED",
-            "keys": "ctrl+shift+l"
-        },
-        {
             "id": null,
             "keys": "ctrl+shift+9"
+        },
+        {
+            "id": "User.findMatch.87C324ED",
+            "keys": "ctrl+shift+l"
         },
         {
             "id": "User.splitPane.BA55AA6C",
@@ -434,11 +446,11 @@
         },
         {
             "id": null,
-            "keys": "alt+space"
+            "keys": "alt+shift+plus"
         },
         {
             "id": null,
-            "keys": "alt+shift+plus"
+            "keys": "alt+space"
         },
         {
             "id": null,
@@ -446,11 +458,11 @@
         },
         {
             "id": null,
-            "keys": "ctrl+alt+w"
+            "keys": "alt+up"
         },
         {
             "id": null,
-            "keys": "alt+up"
+            "keys": "ctrl+alt+w"
         },
         {
             "id": "User.resizePane.6CD791B",
@@ -461,20 +473,20 @@
             "keys": "ctrl+shift+space"
         },
         {
+            "id": null,
+            "keys": "ctrl+shift+d"
+        },
+        {
             "id": "User.scrollUp.0",
             "keys": "ctrl+shift+k"
         },
         {
             "id": null,
-            "keys": "ctrl+shift+d"
+            "keys": "ctrl+shift+f"
         },
         {
             "id": null,
             "keys": "ctrl+comma"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+f"
         },
         {
             "id": null,
@@ -493,24 +505,20 @@
             "keys": "ctrl+numpad_plus"
         },
         {
-            "id": null,
-            "keys": "ctrl+minus"
+            "id": "User.switchToTab.87C324ED",
+            "keys": "ctrl+shift+3"
         },
         {
             "id": null,
             "keys": "ctrl+plus"
         },
         {
-            "id": "User.switchToTab.87C324ED",
-            "keys": "ctrl+shift+3"
+            "id": null,
+            "keys": "ctrl+minus"
         },
         {
             "id": null,
             "keys": "ctrl+numpad_minus"
-        },
-        {
-            "id": "User.markMode",
-            "keys": "ctrl+shift+period"
         },
         {
             "id": null,
@@ -521,12 +529,12 @@
             "keys": "f11"
         },
         {
-            "id": null,
-            "keys": "ctrl+alt+comma"
+            "id": "User.markMode",
+            "keys": "ctrl+shift+period"
         },
         {
             "id": null,
-            "keys": "ctrl+insert"
+            "keys": "ctrl+alt+comma"
         },
         {
             "id": "User.switchToTab.75247157",
@@ -534,7 +542,23 @@
         },
         {
             "id": null,
+            "keys": "ctrl+insert"
+        },
+        {
+            "id": null,
             "keys": "enter"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+n"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+alt+7"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+alt+4"
         },
         {
             "id": "User.swapPane.787314EB",
@@ -546,18 +570,6 @@
         },
         {
             "id": null,
-            "keys": "ctrl+alt+4"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+alt+7"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+n"
-        },
-        {
-            "id": null,
             "keys": "ctrl+alt+6"
         },
         {
@@ -566,19 +578,19 @@
         },
         {
             "id": null,
-            "keys": "ctrl+alt+2"
-        },
-        {
-            "id": null,
             "keys": "ctrl+alt+9"
         },
         {
             "id": null,
-            "keys": "ctrl+shift+home"
+            "keys": "ctrl+alt+2"
         },
         {
             "id": "User.switchToTab.787314EB",
             "keys": "ctrl+shift+7"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+home"
         },
         {
             "id": null,
@@ -589,12 +601,12 @@
             "keys": "ctrl+shift+p"
         },
         {
-            "id": "User.closePane",
-            "keys": "ctrl+shift+w"
-        },
-        {
             "id": null,
             "keys": "alt+period"
+        },
+        {
+            "id": "User.closePane",
+            "keys": "ctrl+shift+w"
         },
         {
             "id": "User.resizePane.F747588A",
@@ -609,12 +621,12 @@
             "keys": "ctrl+shift+r"
         },
         {
-            "id": null,
-            "keys": "f21"
-        },
-        {
             "id": "User.switchToTab.D7681B66",
             "keys": "ctrl+shift+8"
+        },
+        {
+            "id": null,
+            "keys": "f21"
         },
         {
             "id": "User.switchToTab.D3F0B923",

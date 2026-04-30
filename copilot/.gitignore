@@ -1,0 +1,5 @@
+config.json
+command-history-state.json
+ide/
+logs/
+session-state/
