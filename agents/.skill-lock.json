@@ -1,0 +1,68 @@
+{
+  "version": 3,
+  "skills": {
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
+      "installedAt": "2026-04-11T07:20:19.716Z",
+      "updatedAt": "2026-04-11T07:20:19.716Z"
+    },
+    "eval-faq": {
+      "source": "microsoft/eval-guide",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/microsoft/eval-guide.git",
+      "skillPath": "skills/eval-faq/SKILL.md",
+      "skillFolderHash": "cdb009c8d18b13de3081a1dd71aac15729c305a9",
+      "installedAt": "2026-07-01T03:02:36.535Z",
+      "updatedAt": "2026-07-01T03:02:36.535Z"
+    },
+    "eval-generator": {
+      "source": "microsoft/eval-guide",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/microsoft/eval-guide.git",
+      "skillPath": "skills/eval-generator/SKILL.md",
+      "skillFolderHash": "4ff1a86f5942526ccb6a143b5eed6ad105670b48",
+      "installedAt": "2026-07-01T03:02:36.538Z",
+      "updatedAt": "2026-07-01T03:02:36.538Z"
+    },
+    "eval-result-interpreter": {
+      "source": "microsoft/eval-guide",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/microsoft/eval-guide.git",
+      "skillPath": "skills/eval-result-interpreter/SKILL.md",
+      "skillFolderHash": "be2131f68894cfecd5c2f5ea5a6ca5816162d167",
+      "installedAt": "2026-07-01T03:02:36.541Z",
+      "updatedAt": "2026-07-01T03:02:36.541Z"
+    },
+    "eval-triage-and-improvement": {
+      "source": "microsoft/eval-guide",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/microsoft/eval-guide.git",
+      "skillPath": "skills/eval-triage-and-improvement/SKILL.md",
+      "skillFolderHash": "a90dc3b93a368a18d3fa2ab35023b48023bb1404",
+      "installedAt": "2026-07-01T03:02:36.543Z",
+      "updatedAt": "2026-07-01T03:02:36.543Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "antigravity-cli",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-code-cli",
+    "opencode",
+    "warp",
+    "zed"
+  ]
+}

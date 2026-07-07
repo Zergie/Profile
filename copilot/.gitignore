@@ -5,3 +5,8 @@ command-history-state.json
 ide/
 logs/
 session-state/
+run/
+
+*.db
+*.db-*
+vscode.session.metadata.cache.json

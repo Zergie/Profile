@@ -1,0 +1,14 @@
+{
+    "from": "User",
+    "inherits": "Voron Trident 300 0.4 nozzle",
+    "name": "Voron Trident 300 0.4 nozzle - Copy",
+    "print_host": "10.0.0.31",
+    "printer_extruder_id": [
+        "1"
+    ],
+    "printer_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "printer_settings_id": "Voron Trident 300 0.4 nozzle - Copy",
+    "version": "2.3.2.60"
+}

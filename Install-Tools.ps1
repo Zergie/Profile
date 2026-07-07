@@ -129,6 +129,7 @@ $tools = [pscustomobject]@{
             [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
             [pscustomobject]@{name="@github/copilot-cli"}     # github copilot cli
             [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
+
         }
     )
     pwsh_modules = @(
@@ -147,6 +148,9 @@ $github = @(
                       folder="$PSScriptRoot/wsl"}
     [pscustomobject]@{repo="strobejb/winspy"; file="*_Release_x64.zip"
                       folder="$PSScriptRoot/winspy"}
+    [pscustomobject]@{repo="openai/tunnel-client"; file="*-windows-amd64.zip"
+                      folder="$PSScriptRoot/tunnel-client"}
+
 )
 
 $patches = @(
@@ -189,8 +193,8 @@ $junctions = @(
     # [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
     #                   destination = "$env:APPDATA\warpd\warpd.conf"}
 
-    [pscustomobject]@{source      = "$PSScriptRoot\copilot"
-                      destination = "$env:USERPROFILE\.copilot"}
+    [pscustomobject]@{source      = "$PSScriptRoot\agents"
+                      destination = "$env:USERPROFILE\.agents"}
 
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
@@ -241,6 +245,7 @@ $commands = @(
 ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
 ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 
+# use python -m lastversion instead
 function Get-GithubRelease {
     param(
         [Parameter(ValueFromPipelineByPropertyName=$true)] [string] $Repo,

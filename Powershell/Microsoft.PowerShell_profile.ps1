@@ -51,6 +51,7 @@ Start-Action "Initialize environment "
             Invoke-Expression
     }
     $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
+    $env:CONTROL_PLANE_API_KEY               = $env:OPENAI_API_KEY
     $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
     $env:POWERSHELL_UPDATECHECK              = "OFF"
     $env:PSModuleAnalysisCachePath           = 'NUL'
@@ -202,6 +203,8 @@ Start-Action "Set alias to my programs"
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
+    # Set-Alias tunnel-client (Resolve-Path "C:\GIT\Profile\tunnel-client\tunnel-client.exe").Path
+    Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path
     function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
     function inkscape {
