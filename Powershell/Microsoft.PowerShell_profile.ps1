@@ -316,7 +316,9 @@ Start-Action "Set GIT_EDITOR"
 Complete-Action
 
 Start-Action "Configure PSReadLine"
-    Set-PSReadLineOption -PredictionSource History
+    if ($host.UI.SupportsVirtualTerminal) {
+        Set-PSReadLineOption -PredictionSource History
+    }
     Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
     Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
     # Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
