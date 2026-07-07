@@ -5,6 +5,123 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TTextCompareSession Value="asdf.py &lt;--> update_markdown_timestamps.py">
+						<LastModified Value="2026-06-01 10:16:55"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\tools\asdf.py"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.py"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="update_markdown_timestamps.prototyp.py &lt;--> update_markdown_timestamps.py">
+						<LastModified Value="2026-06-01 10:12:01"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.prototyp.py"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.py"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AZ-204T00-01.md.bak &lt;--> AZ-204T00-01.md">
+						<LastModified Value="2026-06-01 10:12:00"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md.bak"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md"/>
+						</Specs>
+					</TTextCompareSession>
+					<TPixCompareSession Value="0.01mm.png &lt;--> 5mm.png">
+						<BlendPct Value="0"/>
+						<LastModified Value="2026-02-09 13:35:49"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\0.01mm.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\5mm.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="1x4.png &lt;--> 2x4.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 13:35:49"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\duct_exit\1x4.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\duct_exit\2x4.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="08_0.png &lt;--> 010_0.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 07:14:26"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\08_0.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\010_0.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="01_0.png &lt;--> 05_0.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 06:39:21"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\fin_angle\01_0.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\fin_angle\05_0.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="old.png &lt;--> new.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 06:39:21"/>
+						<Specs>
+							<Left Value="C:\Users\user\Downloads\old.png"/>
+							<Right Value="C:\Users\user\Downloads\new.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="10_0.png &lt;--> 04_0.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 05:21:44"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\fin_angle\10_0.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\fin_angle\04_0.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="09_0.png &lt;--> 11_5.png">
+						<BlendPct Value="0"/>
+						<LastModified Value="2026-02-09 04:59:41"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\fin_angle\09_0.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\fin_height\11_5.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="09_0.png &lt;--> 02_0.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 04:58:45"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\fin_angle\09_0.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\fin_angle\02_0.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
 					<TTextCompareSession Value="camt.053.001.02.xsd &lt;--> camt.053.001.08.xsd">
 						<LastModified Value="2025-12-09 14:37:22"/>
 						<Specs>
@@ -152,6 +269,7 @@
 			</TSessionFolder>
 			<TPixCompareSession>
 				<State>
+					<DiffMode Value="diffBlend"/>
 					<Tolerance Value="71"/>
 				</State>
 			</TPixCompareSession>

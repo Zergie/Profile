@@ -12,21 +12,23 @@
 		</FormPositions>
 	</TBcState>
 	<TCheckForUpdatesState>
-		<Build Value="31736"/>
-		<LastChecked Value="2026-02-09 04:57:07"/>
+		<Build Value="32209"/>
+		<LastChecked Value="2026-06-10 10:18:55"/>
 	</TCheckForUpdatesState>
 	<TDirCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller"/>
-			<_1 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\bin\x64\Release\cabinet"/>
-			<_2 Value="C:\temp\msi\14_to_15"/>
-			<_3 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+			<_0 Value="C:\GIT\basler\bpd\new"/>
+			<_1 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller"/>
+			<_2 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\bin\x64\Release\cabinet"/>
+			<_3 Value="C:\temp\msi\14_to_15"/>
+			<_4 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
 		</LeftMRUSpecs>
 		<RightMRUSpecs>
-			<_0 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller"/>
-			<_1 Value="C:\temp\msi"/>
-			<_2 Value="C:\temp\msi\15_to_14"/>
-			<_3 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
+			<_0 Value="C:\GIT\basler\bpd\old"/>
+			<_1 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller"/>
+			<_2 Value="C:\temp\msi"/>
+			<_3 Value="C:\temp\msi\15_to_14"/>
+			<_4 Value="C:\ProgramData\Package Cache\{DDA2EDEF-7BF1-4963-814A-DBCD54016EF1}v15.0.0.0\cab1.cab"/>
 		</RightMRUSpecs>
 	</TDirCompareState>
 	<THexCompareState>
@@ -43,60 +45,62 @@
 		</RightMRUSpecs>
 	</THexCompareState>
 	<THomeState>
-		<SessionType Value="TPixCompareSession"/>
+		<SessionType Value="TDirCompareSession"/>
 	</THomeState>
 	<TPixCompareState>
+		<CenterRatio Value="294"/>
 		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\CFD\export\fin_angle\02_0.png"/>
-			<_1 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\01_0.png"/>
-			<_2 Value="C:\GIT\YAMMU\CFD\0.01mm.png"/>
-			<_3 Value="C:\GIT\YAMMU\CFD\export\duct_exit\1x4.png"/>
-			<_4 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\08_0.png"/>
-			<_5 Value="C:\GIT\YAMMU\CFD\export\fin_angle\01_0.png"/>
-			<_6 Value="C:\Users\user\Downloads\old.png"/>
-			<_7 Value="C:\GIT\YAMMU\CFD\export\fin_angle\10_0.png"/>
-			<_8 Value="C:\GIT\YAMMU\CFD\export\fin_angle\09_0.png"/>
+			<_0 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
+			<_1 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_expected.png"/>
+			<_2 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_actual.png"/>
+			<_3 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_actual.png"/>
+			<_4 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_expected.png"/>
+			<_5 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0002_actual.png"/>
+			<_6 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
+			<_7 Value="C:\GIT\basler\bpd\new\page-005.png"/>
+			<_8 Value="C:\GIT\basler\bpd\new\page-006.png"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Segoe UI;9;;1"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\GIT\YAMMU\CFD\export\fin_angle\010_0.png"/>
-			<_1 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\14_0.png"/>
-			<_2 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\09_0.png"/>
-			<_3 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\08_0.png"/>
-			<_4 Value="C:\GIT\YAMMU\CFD\5mm.png"/>
-			<_5 Value="C:\GIT\YAMMU\CFD\export\duct_exit\2x4.png"/>
-			<_6 Value="C:\GIT\YAMMU\CFD\export\duct_exit_radius\010_0.png"/>
-			<_7 Value="C:\GIT\YAMMU\CFD\export\fin_angle\05_0.png"/>
-			<_8 Value="C:\GIT\YAMMU\CFD\export\fin_angle\04_0.png"/>
+			<_0 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
+			<_1 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_actual.png"/>
+			<_2 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_expected.png"/>
+			<_3 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_expected.png"/>
+			<_4 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_actual.png"/>
+			<_5 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0002_expected.png"/>
+			<_6 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
+			<_7 Value="C:\GIT\basler\bpd\old\page-005.png"/>
+			<_8 Value="C:\GIT\basler\bpd\old\page-006.png"/>
 		</RightMRUSpecs>
+		<ZoomPct Value="29"/>
 	</TPixCompareState>
 	<TTextCompareState>
 		<LeftMRUSpecs>
-			<_0 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
-			<_1 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
-			<_2 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
-			<_3 Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
-			<_4 Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
-			<_5 Value="C:\temp\msi\14_to_15\Synera_20250627015744.log"/>
-			<_6 Value="C:\temp\msi\14_to_15\Synera_20250627015744_001_{E65F688C-576E-4CC8-AA9B-2314356F2CBA}.log"/>
-			<_7 Value="C:\temp\msi\Synera_20250627015744_000_SyneraInstaller.log"/>
-			<_8 Value="C:\GIT\elise-mvp-development\installer\SyneraInstallerBootstrapper\bin\x64\Release\Synera_20250625042054.log"/>
+			<_0 Value="C:\GIT\basler\bpd\new.pdf"/>
+			<_1 Value="C:\Dokumente\Projekte\ppdev---20260415\tools\asdf.py"/>
+			<_2 Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.prototyp.py"/>
+			<_3 Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md.bak"/>
+			<_4 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
+			<_5 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
+			<_6 Value="C:\GIT\elise-mvp-development\installer\SyneraInstaller\SyneraInstaller.wixproj"/>
+			<_7 Value="C:\GIT\elise-mvp-development\installer\install.7z.bin"/>
+			<_8 Value="C:\temp\msi\14_to_15\Synera_20250627015744_000_SyneraInstaller.log"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Consolas;10;;;F"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
-			<_1 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
-			<_2 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
-			<_3 Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
-			<_4 Value="C:\temp\msi\15_to_14\Synera_20250627051404_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}_000_SyneraInstaller.log"/>
-			<_5 Value="C:\temp\msi\15_to_14\Synera_20250627051404.log"/>
-			<_6 Value="C:\temp\msi\15_to_14\Synera_20250627041727.log"/>
-			<_7 Value="C:\temp\msi\15_to_14\Synera_20250627041730_SyneraUninstaller.log"/>
-			<_8 Value="C:\temp\msi\15_to_14\Synera_20250627041727_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}.log"/>
+			<_0 Value="C:\GIT\basler\bpd\old.pdf"/>
+			<_1 Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.py"/>
+			<_2 Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md"/>
+			<_3 Value="C:\Users\puchinger\Downloads\camt.053.001.08.xsd"/>
+			<_4 Value="C:\Users\puchinger\Downloads\camt.053.001.02.xsd"/>
+			<_5 Value="C:\GIT\elise-mvp-development\installer\SyneraRunInstaller\SyneraRunInstaller.wixproj"/>
+			<_6 Value="C:\GIT\elise-mvp-development\installer\install.exe.bin"/>
+			<_7 Value="C:\temp\msi\15_to_14\Synera_20250627051404_001_{2EBC0558-2134-4E78-8ED2-A30FAA7A87F5}_000_SyneraInstaller.log"/>
+			<_8 Value="C:\temp\msi\15_to_14\Synera_20250627051404.log"/>
 		</RightMRUSpecs>
 	</TTextCompareState>
 	<TTextFindState>
@@ -111,6 +115,15 @@
 			<_0/>
 		</ReplaceItems>
 	</TTextFindState>
+	<TTextPatchState>
+		<MRUFonts>
+			<_0 Value="Consolas;10;;;F"/>
+		</MRUFonts>
+	</TTextPatchState>
+	<TTextReportState>
+		<Layout Value="layoutPatch"/>
+		<OutputFormat Value="ofPlainText"/>
+	</TTextReportState>
 	<TTipState>
 		<DontShowAgain Value="[tipFastRefresh]"/>
 	</TTipState>

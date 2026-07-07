@@ -50,7 +50,7 @@ DynamicParam {
     $AttributeCollection.Add($ParameterAttribute)
 
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute((
-        git branch --remote --list |
+        git -C C:\GIT\TauOffice branch --remote --list |
             ForEach-Object { $_ -split '/' | Select-Object -Skip 1 | Join-String -Separator '/'  }
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
@@ -68,7 +68,7 @@ begin {
         $PSBoundParameters['Name'] = @("TauOffice Setup")
 
         $Branch = @("master")
-        $Branch += git branch --remote --list |
+        $Branch += git -C C:\GIT\TauOffice branch --remote --list |
                     ForEach-Object { $_ -split '/' | Select-Object -Skip 1 | Join-String -Separator '/'  } |
                     Where-Object { $_ -like "release/*" } |
                     Sort-Object -Descending |
@@ -76,7 +76,9 @@ begin {
     } else {
         $Branch = $PsBoundParameters['Branch']
         if ($null -eq $Branch) {
+            Push-Location "C:\GIT\TauOffice"
             $Branch = (Get-GitStatus).Branch
+            Pop-Location
         }
     }
 

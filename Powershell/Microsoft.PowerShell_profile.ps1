@@ -7,14 +7,17 @@ if ((Get-ExecutionPolicy) -ne "ByPass") {
 $firstUse = (Get-Process pwsh | Measure-Object).Count -eq 1 -or
     ((Get-Date)- $pwsh.StartTime).TotalSeconds -gt 10
 
+try { $last = Get-Content $env:TEMP\Profile.json -ErrorAction SilentlyContinue | ConvertFrom-Json }
+catch { $last = $null }
 $profiler = [pscustomobject]@{
     start     = Get-Date
     runtime   = $null
     status    = $null
     variables = [pscustomobject]@{}
     current   = [Hashtable]::new()
-    last      = Get-Content $env:TEMP\Profile.json -ErrorAction SilentlyContinue | ConvertFrom-Json
+    last      = $last
 }
+
 function Start-Action {
     param (
         $Status

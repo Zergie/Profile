@@ -5,24 +5,98 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
-					<TPixCompareSession Value="1x4.png &lt;--> 2x4.png">
-						<BlendPct Value="100"/>
-						<LastModified Value="2026-02-09 13:35:49"/>
+					<TDirCompareSession Value="new &lt;--> old">
+						<LastModified Value="2026-06-10 14:06:41"/>
 						<Specs>
-							<Left Value="C:\GIT\YAMMU\CFD\export\duct_exit\1x4.png"/>
-							<Right Value="C:\GIT\YAMMU\CFD\export\duct_exit\2x4.png"/>
+							<Left Value="C:\GIT\basler\bpd\new"/>
+							<Right Value="C:\GIT\basler\bpd\old"/>
+						</Specs>
+					</TDirCompareSession>
+					<TPixCompareSession Value="slides.001.png &lt;--> slides.002.png">
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.001.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
 						</Specs>
 						<State>
 							<DiffMode Value="diffBlend"/>
 							<Tolerance Value="71"/>
 						</State>
 					</TPixCompareSession>
+					<TPixCompareSession Value="slides.png &lt;--> 8912cce5-a91f-4ebf-a1f4-8753de3d365b.png">
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<OffsetX Value="-15"/>
+						<OffsetY Value="-19"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\8912cce5-a91f-4ebf-a1f4-8753de3d365b.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TTextCompareSession Value="new.pdf &lt;--> old.pdf">
+						<Formats>
+							<Left Value="&#2;PDF"/>
+							<Right Value="&#2;PDF"/>
+						</Formats>
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<Specs>
+							<Left Value="C:\GIT\basler\bpd\new.pdf"/>
+							<Right Value="C:\GIT\basler\bpd\old.pdf"/>
+						</Specs>
+					</TTextCompareSession>
+					<TPixCompareSession Value="slides.png &lt;--> slides.002.png">
+						<LastModified Value="2026-06-10 10:19:13"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TTextCompareSession Value="asdf.py &lt;--> update_markdown_timestamps.py">
+						<LastModified Value="2026-06-01 10:16:55"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\tools\asdf.py"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.py"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="update_markdown_timestamps.prototyp.py &lt;--> update_markdown_timestamps.py">
+						<LastModified Value="2026-06-01 10:12:01"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.prototyp.py"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\tools\update_markdown_timestamps.py"/>
+						</Specs>
+					</TTextCompareSession>
+					<TTextCompareSession Value="AZ-204T00-01.md.bak &lt;--> AZ-204T00-01.md">
+						<LastModified Value="2026-06-01 10:12:00"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md.bak"/>
+							<Right Value="C:\Dokumente\Projekte\ppdev---20260415\azure\markdown\AZ-204T00-01.md"/>
+						</Specs>
+					</TTextCompareSession>
 					<TPixCompareSession Value="0.01mm.png &lt;--> 5mm.png">
 						<BlendPct Value="0"/>
 						<LastModified Value="2026-02-09 13:35:49"/>
 						<Specs>
 							<Left Value="C:\GIT\YAMMU\CFD\0.01mm.png"/>
 							<Right Value="C:\GIT\YAMMU\CFD\5mm.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="1x4.png &lt;--> 2x4.png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-02-09 13:35:49"/>
+						<Specs>
+							<Left Value="C:\GIT\YAMMU\CFD\export\duct_exit\1x4.png"/>
+							<Right Value="C:\GIT\YAMMU\CFD\export\duct_exit\2x4.png"/>
 						</Specs>
 						<State>
 							<DiffMode Value="diffBlend"/>

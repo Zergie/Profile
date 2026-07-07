@@ -276,7 +276,7 @@ process {
                                                    " AND [System.TeamProject] = 'TauOffice'"
             } elseif ($Branches) {
                 "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Issue' AND [System.Id] IN ($(
-                    git branch |
+                    git -C C:\GIT\TauOffice branch |
                             Select-String -pattern "users/.*/(\d+)" |
                             ForEach-Object{ $_.Matches.Groups[1].Value } |
                             Join-String -Separator ","
@@ -457,19 +457,19 @@ process {
 
                     if ($UmsetzenIn.Count -gt 0) {
                         if ($null -eq $branch_lookup) {
-                            $branch_lookup = git --no-pager branch --remote --list 'origin/release/*' |
+                            $branch_lookup = git -C C:\GIT\TauOffice --no-pager branch --remote --list 'origin/release/*' |
                                                 ForEach-Object { $_.Substring(2) } |
                                                 Sort-Object -Descending |
                                                 Select-Object -First 4 |
                                                 ForEach-Object {
-                                                    $root = git --no-pager rev-list ^origin/master "$_" | Select-Object -Last 1
+                                                    $root = git -C C:\GIT\TauOffice --no-pager rev-list ^origin/master "$_" | Select-Object -Last 1
                                                     $s    = $_.Substring("origin/release/".Length).Split('-')
                                                     [pscustomobject]@{
                                                         branch     = $_
                                                         given_name = switch ( $_ ){
                                                             "origin/release/2021-07-16" { "TO 2021/Q2" }
                                                             default {
-                                                                git --no-pager log $root^1..$root --pretty=format:'%B' |
+                                                                git -C C:\GIT\TauOffice --no-pager log $root^1..$root --pretty=format:'%B' |
                                                                     Select-String "\d{4}[\\/]Q\d" -AllMatches |
                                                                     ForEach-Object { "TO $($_.Matches.Value)" }
                                                             }

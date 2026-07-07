@@ -23,8 +23,7 @@ param (
     [int]
     $Month,
 
-    [Parameter(Mandatory,
-               ParameterSetName="AllParameterSetName")]
+    [Parameter(ParameterSetName="AllParameterSetName")]
     [switch]
     $Repeat
 )
@@ -118,7 +117,7 @@ Process {
                         ForEach-Object { $start_date.AddDays($_) } |
                         Group-Object {"$($_.Year)-$($_.Month)"} |
                         ForEach-Object { $_.Group[0] } |
-                        ForEach-Object { Get-TauWorkTogetherHolidays -Month $_.Month -Year $_.Year }
+                        ForEach-Object { Get-TauWorkTogetherHolidays -Month $_.Month -Year $_.Year -KeepBrowser }
     $tauWorkTogether.holidays |
         Where-Object { $_.event -eq $false -or ($_.event -eq $true -and $_.title -EQ "Wolfgang Puchinger") } |
         ForEach-Object Start |

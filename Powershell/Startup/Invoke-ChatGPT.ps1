@@ -24,13 +24,19 @@ param(
     [switch]
     $Interactive,
 
-    [Parameter(ParameterSetName="EMailResponseParameterSet")]
-    [switch]
-    $WriteEMailResponse,
-
     [Parameter(ParameterSetName="PullRequestParameterSet")]
     [switch]
     $WritePullRequest,
+
+    [Parameter(ParameterSetName="TranslationParameterSet")]
+    [switch]
+    $WriteTranslation,
+
+    [Parameter(ParameterSetName="TranslationParameterSet",
+               ValueFromPipeline)]
+    [string[]]
+    $Text,
+
 
     [Parameter(ParameterSetName="GitCommitParameterSet")]
     [switch]
@@ -45,11 +51,14 @@ if ($WritePullRequest) {
                             Join-String -Separator `n
                     "copy"
                 )
-} elseif ($WriteEMailResponse) {
-    $Role = "Write a friendly and professional e-mail response. Do not thank for the e-mail. Do not summerize the e-mail. Simply respond."
+} elseif ($WriteTranslation) {
+    $Role = @(
+                "You are a helpful assistant that translates text to English."
+                "Only respond with the translation and nothing else. Do not include 'Translation:' or any other text."
+    )
     $Message = @(
-                    Get-Clipboard |
-                    Join-String -Separator `n
+                    "Translate the following text to English: " + $Text
+                    "copy"
                 )
 } elseif ($WriteGitCommit) {
     $Model = "gpt-4o-mini"

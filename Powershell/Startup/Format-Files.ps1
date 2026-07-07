@@ -102,6 +102,7 @@ end {
         Write-Host -ForegroundColor Cyan "git difftool --tool=patch"
         git difftool --tool=patch
 
+
         foreach ($item in $pathes) {
             Write-Progress -Status $item.Name -PercentComplete (1 + 99 * $index / $count)
             Write-Verbose "Formatting $item."
