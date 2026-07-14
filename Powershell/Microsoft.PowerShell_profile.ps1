@@ -1,3 +1,12 @@
+# --- START OF AGENT SAFETY CHECK ---
+try {
+    $isAgent = $Host.Name -ne "ConsoleHost" `
+        -or $env:CODEX -eq "1" `
+        -or [Console]::IsInputRedirected `
+        -or [Console]::IsOutputRedirected
+    if ($isAgent) { return }
+} catch {}
+# --- END OF AGENT SAFETY CHECK ---
 $pwsh = Get-Process -PID $PID
 
 if ((Get-ExecutionPolicy) -ne "ByPass") {
@@ -59,6 +68,7 @@ Start-Action "Initialize environment "
     $env:POWERSHELL_UPDATECHECK              = "OFF"
     $env:PSModuleAnalysisCachePath           = 'NUL'
     $env:PSDisableModuleAnalysisCacheCleanup = 1
+    $env:EDITOR                              = "nvim"
     $OutputEncoding = [System.Text.Encoding]::UTF8
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Complete-Action
@@ -319,9 +329,7 @@ Start-Action "Set GIT_EDITOR"
 Complete-Action
 
 Start-Action "Configure PSReadLine"
-    if ($host.UI.SupportsVirtualTerminal) {
-        Set-PSReadLineOption -PredictionSource History
-    }
+    Set-PSReadLineOption -PredictionSource History
     Set-PSReadLineKeyHandler -Key "Tab" -Function MenuComplete
     Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
     # Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion

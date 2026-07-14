@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "discord": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "DISCORD_TOKEN=MTQ4OTQ2MjUxMDU4MjEwODIyMA.GdbUvC.wVzogQN-jEN-rVAQXxYLPgjxfGdpebmHUD81CQ",
+        "-e",
+        "DISCORD_GUILD_ID=1461823136172609548",
+        "discord-mcp"
+      ]
+    },
+    "fusionHeadless": {
+      "type": "http",
+      "url": "http://localhost:5000/mcp"
+    }
+  }
+}

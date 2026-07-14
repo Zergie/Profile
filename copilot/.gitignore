@@ -1,5 +1,6 @@
 settings.json
 config.json
+permissions-config.json
 
 command-history-state.json
 ide/
