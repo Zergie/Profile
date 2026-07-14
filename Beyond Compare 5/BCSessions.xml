@@ -5,6 +5,44 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TDirCompareSession Value="CopilotLab-Teilnehmer &lt;--> CopilotLab-Trainer">
+						<LastModified Value="2026-07-13 16:14:46"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\AI-Workshop-Walter-Machines---20260710\labs\CopilotLab-Teilnehmer"/>
+							<Right Value="C:\Dokumente\Projekte\AI-Workshop-Walter-Machines---20260710\labs\CopilotLab-Trainer"/>
+						</Specs>
+						<State>
+							<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+						</State>
+					</TDirCompareSession>
+					<TPixCompareSession Value="Foto.png &lt;--> Foto2 (Benutzerdefiniert).png">
+						<BlendPct Value="100"/>
+						<LastModified Value="2026-07-13 13:31:19"/>
+						<OffsetX Value="-13"/>
+						<OffsetY Value="4"/>
+						<Specs>
+							<Left Value="C:\Users\puchinger\Dropbox\Bewerbungen\Foto.png"/>
+							<Right Value="C:\Users\puchinger\Dropbox\Bewerbungen\Foto2 (Benutzerdefiniert).png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="Foto.png &lt;--> Foto2.png">
+						<Formats>
+							<Left Value="&#2;PIX"/>
+						</Formats>
+						<LastModified Value="2026-07-13 13:31:19"/>
+						<Specs>
+							<Left Value="C:\Users\puchinger\Dropbox\Bewerbungen\Foto.png"/>
+							<Right Value="C:\Users\puchinger\Dropbox\Bewerbungen\Foto2.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
 					<TDirCompareSession Value="new &lt;--> old">
 						<LastModified Value="2026-06-10 14:06:41"/>
 						<Specs>
@@ -320,6 +358,11 @@
 					</TPixCompareSession>
 				</Items>
 			</TSessionFolder>
+			<TDirCompareSession>
+				<State>
+					<DisplayFilter Value="[showLeftAdded, showRightAdded, showLeftChanged, showRightChanged, showConflict]"/>
+				</State>
+			</TDirCompareSession>
 			<TPixCompareSession>
 				<State>
 					<DiffMode Value="diffBlend"/>

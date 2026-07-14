@@ -5,6 +5,59 @@
 		<Items>
 			<TSessionFolder>
 				<Items>
+					<TDirCompareSession Value="new &lt;--> old">
+						<LastModified Value="2026-06-10 14:06:41"/>
+						<Specs>
+							<Left Value="C:\GIT\basler\bpd\new"/>
+							<Right Value="C:\GIT\basler\bpd\old"/>
+						</Specs>
+					</TDirCompareSession>
+					<TPixCompareSession Value="slides.001.png &lt;--> slides.002.png">
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.001.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TPixCompareSession Value="slides.png &lt;--> 8912cce5-a91f-4ebf-a1f4-8753de3d365b.png">
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<OffsetX Value="-15"/>
+						<OffsetY Value="-19"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\8912cce5-a91f-4ebf-a1f4-8753de3d365b.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
+					<TTextCompareSession Value="new.pdf &lt;--> old.pdf">
+						<Formats>
+							<Left Value="&#2;PDF"/>
+							<Right Value="&#2;PDF"/>
+						</Formats>
+						<LastModified Value="2026-06-10 12:31:26"/>
+						<Specs>
+							<Left Value="C:\GIT\basler\bpd\new.pdf"/>
+							<Right Value="C:\GIT\basler\bpd\old.pdf"/>
+						</Specs>
+					</TTextCompareSession>
+					<TPixCompareSession Value="slides.png &lt;--> slides.002.png">
+						<LastModified Value="2026-06-10 10:19:13"/>
+						<Specs>
+							<Left Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.png"/>
+							<Right Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
+						</Specs>
+						<State>
+							<DiffMode Value="diffBlend"/>
+							<Tolerance Value="71"/>
+						</State>
+					</TPixCompareSession>
 					<TTextCompareSession Value="asdf.py &lt;--> update_markdown_timestamps.py">
 						<LastModified Value="2026-06-01 10:16:55"/>
 						<Specs>

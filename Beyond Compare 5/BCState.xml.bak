@@ -48,33 +48,33 @@
 		<SessionType Value="TDirCompareSession"/>
 	</THomeState>
 	<TPixCompareState>
-		<CenterRatio Value="682"/>
+		<CenterRatio Value="294"/>
 		<LeftMRUSpecs>
-			<_0 Value="C:\GIT\basler\bpd\new\page-005.png"/>
-			<_1 Value="C:\GIT\basler\bpd\new\page-006.png"/>
-			<_2 Value="C:\GIT\basler\bpd\new\page-004.png"/>
-			<_3 Value="C:\GIT\basler\bpd\new\page-003.png"/>
-			<_4 Value="C:\GIT\basler\bpd\new\page-002.png"/>
-			<_5 Value="C:\GIT\basler\bpd\new\page-001.png"/>
-			<_6 Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.png"/>
-			<_7 Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.001.png"/>
-			<_8 Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
+			<_0 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
+			<_1 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_expected.png"/>
+			<_2 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_actual.png"/>
+			<_3 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_actual.png"/>
+			<_4 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_expected.png"/>
+			<_5 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0002_actual.png"/>
+			<_6 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
+			<_7 Value="C:\GIT\basler\bpd\new\page-005.png"/>
+			<_8 Value="C:\GIT\basler\bpd\new\page-006.png"/>
 		</LeftMRUSpecs>
 		<MRUFonts>
 			<_0 Value="Segoe UI;9;;1"/>
 		</MRUFonts>
 		<RightMRUSpecs>
-			<_0 Value="C:\GIT\basler\bpd\old\page-005.png"/>
-			<_1 Value="C:\GIT\basler\bpd\old\page-006.png"/>
-			<_2 Value="C:\GIT\basler\bpd\old\page-004.png"/>
-			<_3 Value="C:\GIT\basler\bpd\old\page-003.png"/>
-			<_4 Value="C:\GIT\basler\bpd\old\page-002.png"/>
-			<_5 Value="C:\GIT\basler\bpd\old\page-001.png"/>
-			<_6 Value="C:\Dokumente\Projekte\youtube---20260608\generated\8912cce5-a91f-4ebf-a1f4-8753de3d365b.png"/>
-			<_7 Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.002.png"/>
-			<_8 Value="C:\Dokumente\Projekte\youtube---20260608\generated\slides.001.png"/>
+			<_0 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_expected.png"/>
+			<_1 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_actual.png"/>
+			<_2 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_expected.png"/>
+			<_3 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0002_expected.png"/>
+			<_4 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_Record_WithIncompleteConfiguration_ReturnsFilledForm\0001_actual.png"/>
+			<_5 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0002_expected.png"/>
+			<_6 Value="C:\Users\puchinger\AppData\Local\Temp\Gateway.Testing\Report.Reports.Billing.BillingBmNrw_1Record_WithData_ReturnsFilledForm\0001_actual.png"/>
+			<_7 Value="C:\GIT\basler\bpd\old\page-005.png"/>
+			<_8 Value="C:\GIT\basler\bpd\old\page-006.png"/>
 		</RightMRUSpecs>
-		<ZoomPct Value="50"/>
+		<ZoomPct Value="29"/>
 	</TPixCompareState>
 	<TTextCompareState>
 		<LeftMRUSpecs>

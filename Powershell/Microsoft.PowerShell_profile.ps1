@@ -217,7 +217,7 @@ Start-Action "Set alias to my programs"
     Set-Alias tshark  "$PSScriptRoot\Startup\Invoke-TShark.ps1"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     # Set-Alias tunnel-client (Resolve-Path "C:\GIT\Profile\tunnel-client\tunnel-client.exe").Path
-    Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path
+    try { Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path } catch { }
     function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
     function inkscape {
@@ -491,7 +491,6 @@ if  ($firstUse) {
                                 $item | ConvertTo-Json
                                 ""
                             ) | Join-String -Separator "`n" | Write-Host -ForegroundColor Red
-                            throw $_
                         }
                     }
                 Stop-Job $_
