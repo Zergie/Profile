@@ -36,10 +36,18 @@ begin {
     }
 
     $pathes = @()
+    $gitRoot = $null
 }
 process {
     if (($null -eq $Path) -and ($null -eq $InputObject)) {
-        $InputObject = Get-GitStatus
+        if ($null -eq $gitRoot) {
+            $gitRoot = (git rev-parse --show-toplevel 2>$null).Trim()
+        }
+        $InputObject = [PSCustomObject]@{
+            GitDir  = [System.IO.Path]::Combine($gitRoot, ".git")
+            Working = @(git -C "$gitRoot" diff --name-only)
+            Index   = @(git -C "$gitRoot" diff --cached --name-only)
+        }
     }
 
     if ($null -ne $Path) {
@@ -97,8 +105,11 @@ end {
         }
 
         Write-Progress -Status "Generating patches" -PercentComplete 1
-        Write-Debug "Push-Location $((Get-GitStatusFromCache).Path)"
-        Push-Location "$((Get-GitStatusFromCache).Path)"
+        if ($null -eq $gitRoot) {
+            $gitRoot = (git rev-parse --show-toplevel 2>$null).Trim()
+        }
+        Write-Debug "Push-Location $gitRoot"
+        Push-Location "$gitRoot"
         Write-Host -ForegroundColor Cyan "git difftool --tool=patch"
         git difftool --tool=patch
 
@@ -319,7 +330,7 @@ end {
         }
 
         Write-Progress -Status "Removing patches" -PercentComplete 80
-        Get-ChildItem (Get-GitStatusFromCache).WorkingDir -Recurse -Filter *.patch | Remove-Item
+        Get-ChildItem $gitRoot -Recurse -Filter *.patch | Remove-Item
 
         if (!$NoTests) {
             Write-Progress -Status "Running tests" -PercentComplete 80

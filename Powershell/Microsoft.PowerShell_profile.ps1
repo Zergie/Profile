@@ -200,6 +200,7 @@ Complete-Action
 # set alias to my programs
 Start-Action "Set alias to my programs"
     Import-Module 'gsudoModule'
+    Import-Module git-completion
     Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"

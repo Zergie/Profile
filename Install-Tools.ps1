@@ -133,7 +133,8 @@ $tools = [pscustomobject]@{
         }
     )
     pwsh_modules = @(
-        [pscustomobject]@{name="posh-git"}
+        # [pscustomobject]@{name="posh-git"}
+        [pscustomobject]@{name="git-completion"}
         [pscustomobject]@{name="SqlServer"}
         [pscustomobject]@{name="ImportExcel"}
     )
