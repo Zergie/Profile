@@ -186,11 +186,13 @@ function Update-GitPromptCache {
         return
     }
 
-    $staged = 0
-    $modified = 0
-    $deleted = 0
+    $stagedAdded = 0
+    $stagedModified = 0
+    $stagedDeleted = 0
+    $untrackedAdded = 0
+    $untrackedModified = 0
+    $untrackedDeleted = 0
     $conflicts = 0
-    $untracked = 0
     $ahead = 0
     $behind = 0
     $hasUpstream = $false
@@ -218,7 +220,7 @@ function Update-GitPromptCache {
         }
 
         if ($line.StartsWith('? ')) {
-            $untracked++
+            $untrackedAdded++
             continue
         }
 
@@ -246,16 +248,17 @@ function Update-GitPromptCache {
         $indexStatus = $xy[0]
         $workingTreeStatus = $xy[1]
 
-        if ($indexStatus -ne '.') {
-            $staged++
+        switch ($indexStatus) {
+            'A' { $stagedAdded++ }
+            'D' { $stagedDeleted++ }
+            '.' { }
+            default { $stagedModified++ }
         }
 
-        if ($workingTreeStatus -match '^[MTRC]$') {
-            $modified++
-        }
-
-        if ($indexStatus -eq 'D' -or $workingTreeStatus -eq 'D') {
-            $deleted++
+        switch ($workingTreeStatus) {
+            'D' { $untrackedDeleted++ }
+            '.' { }
+            default { $untrackedModified++ }
         }
     }
 
@@ -265,7 +268,7 @@ function Update-GitPromptCache {
         $branch_text = $branch -replace '(\d+)$', "`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/`$1`e\`$1`e]8;;`e\"
         $text = " `e[38;5;29m$branch_text"
     } else {
-        $text = " `e[38;5;33m$branch"
+        $text = " `e[38;5;32m$branch"
     }
 
     $upstreamGone = $hasUpstream -and -not $hasAheadBehind
@@ -279,26 +282,31 @@ function Update-GitPromptCache {
         $text += " `e[31m$behind"
     } elseif ($ahead -gt 0) {
         $text += " `e[32m$ahead"
+    } else {
+        $text += " "
     }
 
-    if ($staged -gt 0) {
-        $text += " `e[32m+$staged"
+    $hasStaged =
+        $stagedAdded -gt 0 -or
+        $stagedModified -gt 0 -or
+        $stagedDeleted -gt 0
+
+    $hasUntracked =
+        $untrackedAdded -gt 0 -or
+        $untrackedModified -gt 0 -or
+        $untrackedDeleted -gt 0 -or
+        $conflicts -gt 0
+
+    if ($hasStaged) {
+        $text += " `e[32m+$stagedAdded ~$stagedModified -$stagedDeleted"
     }
 
-    if ($modified -gt 0) {
-        $text += " `e[33m~$modified"
+    if ($hasStaged -and $hasUntracked) {
+        $text += " `e[38;5;8m|"
     }
 
-    if ($deleted -gt 0) {
-        $text += " `e[31m-$deleted"
-    }
-
-    if ($conflicts -gt 0) {
-        $text += " `e[31m!$conflicts"
-    }
-
-    if ($untracked -gt 0) {
-        $text += " ?$untracked"
+    if ($hasUntracked) {
+        $text += " `e[31m+$untrackedAdded ~$untrackedModified -$untrackedDeleted"
     }
 
 
