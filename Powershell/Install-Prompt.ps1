@@ -83,10 +83,11 @@ function Initialize-GitPromptWatcher {
         foreach ($changedPath in $changedPaths) {
             # Only Git index lock updates should invalidate the prompt cache.
             $fileName = [IO.Path]::GetFileName($changedPath)
-            $isIndexLock = $fileName.Equals('index.lock', [StringComparison]::OrdinalIgnoreCase)
+
+            $isGitFile = $fileName -match '(\.lock|HEAD)$'
             $isInsideGitDirectory = $changedPath -match '(^|[\\/])\.git([\\/]|$)'
 
-            if (-not ($isIndexLock -and $isInsideGitDirectory)) {
+            if (-not ($isGitFile -and $isInsideGitDirectory)) {
                 continue
             }
 
