@@ -201,15 +201,15 @@ For this iteration:
    ticket, changes, checks and results, and useful context for the next iteration.
 6. If all tickets in the selected feature are now implemented and verified, append
    exactly 'FEATURE_COMPLETE: <feature-slug>' to .scratch/progress.txt.
-7. Create one Git commit containing the implementation and progress update.
+7. Leave staging and committing to Ralph after the iteration succeeds.
 
 Do not work on more than one ticket in this iteration. Do not modify ticket or spec
-files merely to track status; progress.txt is the source of truth. Do not push,
-rewrite history, reset, clean, discard unrelated work, use destructive Git commands,
-or change anything outside this repository.
+files merely to track status; progress.txt is the source of truth. Do not stage,
+commit, push, rewrite history, reset, clean, discard unrelated work, use destructive
+Git commands, or change anything outside this repository.
 
 If the entire requested scope was already complete at the start, do not invent work
-or create an empty commit. Ensure progress.txt contains any required feature
+or request an empty commit. Ensure progress.txt contains any required feature
 completion entry, then emit <promise>COMPLETE</promise>.
 "@
 
@@ -222,8 +222,81 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
     Write-Host "Iteration $iteration of $Iterations"
     Write-Host ('-' * 40)
 
+    $progressBeforeIteration = [System.IO.File]::ReadAllText($progressFile)
     $result = Invoke-Agent -Name $Agent -CommandPath $agentCommand.Source -Prompt $prompt
-    if ($result.Contains('<promise>COMPLETE</promise>', [System.StringComparison]::Ordinal)) {
+    $scopeComplete = $result.Contains(
+        '<promise>COMPLETE</promise>',
+        [System.StringComparison]::Ordinal
+    )
+    $progressAfterIteration = [System.IO.File]::ReadAllText($progressFile)
+    $progressChanged = -not [string]::Equals(
+        $progressBeforeIteration,
+        $progressAfterIteration,
+        [System.StringComparison]::Ordinal
+    )
+    $gitStatus = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
+        'status',
+        '--porcelain',
+        '--untracked-files=all'
+    )
+    $hasChanges = $progressChanged -or -not [string]::IsNullOrWhiteSpace($gitStatus)
+
+    if (-not $hasChanges) {
+        if (-not $scopeComplete) {
+            throw 'The agent completed successfully but produced no changes.'
+        }
+
+        Write-Host 'Requested scope complete.'
+        exit 0
+    }
+
+    if (-not $progressChanged) {
+        throw 'The agent changed the repository without updating .scratch/progress.txt.'
+    }
+
+    $changeEntriesBefore = [regex]::Matches(
+        $progressBeforeIteration,
+        '(?m)^changes: (.*)$'
+    )
+    $changeEntries = [regex]::Matches(
+        $progressAfterIteration,
+        '(?m)^changes: (.*)$'
+    )
+    if ($changeEntries.Count -eq 0) {
+        throw "The updated progress file does not contain a 'changes: ' entry."
+    }
+
+    $finalChangeValue = $changeEntries[$changeEntries.Count - 1].Groups[1].Value
+    $hasNewChangeEntry = $changeEntries.Count -ne $changeEntriesBefore.Count
+    if (-not $hasNewChangeEntry -and $changeEntriesBefore.Count -gt 0) {
+        $previousChangeValue = $changeEntriesBefore[
+            $changeEntriesBefore.Count - 1
+        ].Groups[1].Value
+        $hasNewChangeEntry = $finalChangeValue -cne $previousChangeValue
+    }
+    if (-not $hasNewChangeEntry) {
+        throw "The updated progress file reuses a stale 'changes: ' entry."
+    }
+
+    $commitSubject = $finalChangeValue.Trim()
+    if ([string]::IsNullOrWhiteSpace($commitSubject)) {
+        throw "The final 'changes: ' value in the progress file is empty."
+    }
+
+    Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null
+    Invoke-NativeText -FilePath $git.Source -ArgumentList @(
+        'add',
+        '--force',
+        '--',
+        $progressFile
+    ) | Out-Null
+    Invoke-NativeText -FilePath $git.Source -ArgumentList @(
+        'commit',
+        '--message',
+        $commitSubject
+    ) | Out-Null
+
+    if ($scopeComplete) {
         Write-Host 'Requested scope complete.'
         exit 0
     }
