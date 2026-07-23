@@ -80,10 +80,16 @@ function Invoke-Agent {
 
     $arguments = switch ($Name) {
         'codex' {
-            @('exec', '--sandbox', 'workspace-write', $Prompt)
+            @(
+                'exec',
+                '--model', 'gpt-5.6-sol',
+                '--config', 'model_reasoning_effort="low"',
+                '--sandbox', 'workspace-write',
+                $Prompt
+            )
         }
         'copilot' {
-            @('-p', $Prompt, '-s', '--allow-tool=read,write,shell')
+            @('-p', $Prompt, '--model', 'auto', '-s', '--allow-tool=read,write,shell')
         }
     }
 
