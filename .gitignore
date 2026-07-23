@@ -1,3 +1,5 @@
+.scratch/
+
 Powershell/Modules
 neovim/plugin
 neovim/lazy-lock.json

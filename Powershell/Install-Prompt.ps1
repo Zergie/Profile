@@ -370,6 +370,10 @@ function Get-RGB {
 function prompt {
 
     $cwd = (Get-Location).Path
+    if ($cwd.StartsWith("Microsoft.PowerShell.Core\FileSystem::")) {
+        $cwd = $cwd.Substring("Microsoft.PowerShell.Core\FileSystem::".Length)
+    }
+
 
     # colors
     $palette = "395B64,2C3333,404258,474E68,50577A,6B728E" -split ","
