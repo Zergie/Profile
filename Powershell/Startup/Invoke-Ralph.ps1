@@ -24,10 +24,10 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory, Position = 0)]
+    [Parameter()]
     [ValidateSet('codex', 'copilot')]
     [string]
-    $Agent,
+    $Agent = 'codex',
 
     [Parameter()]
     [ValidateRange(1, [int]::MaxValue)]
