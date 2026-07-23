@@ -36,3 +36,10 @@ ticket: 01-archive-completed-features
 changes: Added validated automatic archival for exactly one newly appended feature-completion record, direct moves into a created done area, and exclusion of archived features from discovery, with command-level end-to-end coverage.
 checks: PASS on PowerShell 7.6.3 - complete Invoke-Ralph end-to-end suite for archival, preservation, non-completion, multiple markers, unsafe or missing sources, existing destinations, and discovery exclusion; parser validation; git diff --check.
 next: Implement ticket 02-clean-up-archived-features; ticket 01 is complete and now unblocks explicit cleanup mode.
+
+feature: ralph-cleanup
+ticket: 02-clean-up-archived-features
+changes: Added standalone validated cleanup mode that deletes direct archived feature directories, removes matching completion markers and feature progress blocks case-insensitively, repairs orphaned history, preserves active and unrelated work, rejects inconsistent or unsafe state and task-scoped options, and exits before agent lookup.
+checks: PASS on PowerShell 7.6.3 - complete Invoke-Ralph end-to-end suite covering deletion, progress preservation, orphan repair, repeated and case-varied history, active-directory conflict, unsafe full-set validation, dirty-worktree operation, incompatible options, no-agent execution, reporting, and no-op behavior; parser validation; git diff --check.
+next: Feature complete; both ralph-cleanup tickets are implemented and verified.
+FEATURE_COMPLETE: ralph-cleanup

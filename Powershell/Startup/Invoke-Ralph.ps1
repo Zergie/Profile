@@ -25,6 +25,10 @@
 [CmdletBinding()]
 param(
     [Parameter()]
+    [switch]
+    $Cleanup,
+
+    [Parameter()]
     [ValidateSet('codex', 'copilot')]
     [string]
     $Agent = 'codex',
@@ -172,8 +176,102 @@ function Move-CompletedFeature {
     Move-Item -LiteralPath $source -Destination $destination
 }
 
+function Invoke-RalphCleanup {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [string]
+        $ProgressFile
+    )
+
+    $doneDirectory = Join-Path $ScratchDirectory 'done'
+    $archiveDirectories = if (Test-Path -LiteralPath $doneDirectory -PathType Container) {
+        @(Get-ChildItem -LiteralPath $doneDirectory -Directory)
+    }
+    else {
+        @()
+    }
+    $progress = [System.IO.File]::ReadAllText($ProgressFile)
+    $completionMatches = [regex]::Matches(
+        $progress,
+        '(?m)^FEATURE_COMPLETE: ([^\r\n]+)\r?$'
+    )
+
+    $candidateSlugs = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
+    foreach ($archive in $archiveDirectories) {
+        if ($archive.Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+            throw "Unsafe archived feature directory: '$($archive.Name)'."
+        }
+        [void] $candidateSlugs.Add($archive.Name)
+    }
+    foreach ($match in $completionMatches) {
+        $slug = $match.Groups[1].Value
+        if ($slug -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+            throw "Unsafe feature slug in FEATURE_COMPLETE record: '$slug'."
+        }
+        [void] $candidateSlugs.Add($slug)
+    }
+
+    foreach ($slug in $candidateSlugs) {
+        $activePath = Join-Path $ScratchDirectory $slug
+        if (Test-Path -LiteralPath $activePath -PathType Container) {
+            throw "Completed feature still has an active directory: $activePath"
+        }
+    }
+
+    $newline = if ($progress.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $hadTrailingNewline = $progress.EndsWith("`n", [System.StringComparison]::Ordinal)
+    $blocks = [regex]::Split($progress.TrimEnd("`r", "`n"), '\r?\n\r?\n')
+    $remainingBlocks = [System.Collections.Generic.List[string]]::new()
+    foreach ($block in $blocks) {
+        $featureMatch = [regex]::Match($block, '(?m)^feature:\s*([^\r\n]+?)\s*\r?$')
+        if ($featureMatch.Success -and $candidateSlugs.Contains($featureMatch.Groups[1].Value)) {
+            continue
+        }
+
+        $remainingLines = @(
+            [regex]::Split($block, '\r?\n') | Where-Object {
+                $marker = [regex]::Match($_, '^FEATURE_COMPLETE: ([^\r\n]+)\r?$')
+                -not ($marker.Success -and $candidateSlugs.Contains($marker.Groups[1].Value))
+            }
+        )
+        if ($remainingLines.Count -gt 0 -and -not (
+            $remainingLines.Count -eq 1 -and $remainingLines[0] -eq ''
+        )) {
+            $remainingBlocks.Add($remainingLines -join $newline)
+        }
+    }
+    $updatedProgress = $remainingBlocks -join ($newline + $newline)
+    if ($hadTrailingNewline -and $updatedProgress.Length -gt 0) {
+        $updatedProgress += $newline
+    }
+
+    foreach ($archive in $archiveDirectories) {
+        Remove-Item -LiteralPath $archive.FullName -Recurse -Force
+    }
+    if (-not [string]::Equals(
+        $progress,
+        $updatedProgress,
+        [System.StringComparison]::Ordinal
+    )) {
+        [System.IO.File]::WriteAllText($ProgressFile, $updatedProgress)
+    }
+
+    if ($candidateSlugs.Count -eq 0) {
+        Write-Host 'Cleanup complete: nothing to remove.'
+    }
+    else {
+        $removed = @($candidateSlugs) | Sort-Object
+        Write-Host "Cleanup complete: removed $($removed -join ', ')."
+    }
+}
+
 $git = Get-Command git -ErrorAction Stop
-$agentCommand = Get-Command $Agent -ErrorAction Stop
 
 $repositoryRoot = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
     'rev-parse',
@@ -187,14 +285,6 @@ if ([string]::IsNullOrWhiteSpace($repositoryRoot)) {
 
 Set-Location -LiteralPath $repositoryRoot
 
-$gitStatus = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
-    'status',
-    '--porcelain'
-)
-if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
-    throw 'The Git working tree is not clean. Commit or stash all changes before running Invoke-Ralph.'
-}
-
 $scratchDirectory = Join-Path $repositoryRoot '.scratch'
 if (-not (Test-Path -LiteralPath $scratchDirectory -PathType Container)) {
     throw "Local issue tracker directory not found: $scratchDirectory"
@@ -203,6 +293,27 @@ if (-not (Test-Path -LiteralPath $scratchDirectory -PathType Container)) {
 $progressFile = Join-Path $scratchDirectory 'progress.txt'
 if (-not (Test-Path -LiteralPath $progressFile -PathType Leaf)) {
     New-Item -ItemType File -Path $progressFile | Out-Null
+}
+
+if ($Cleanup) {
+    $incompatibleOptions = @(
+        @('Agent', 'Iterations', 'TaskFile') |
+            Where-Object { $PSBoundParameters.ContainsKey($_) }
+    )
+    if ($incompatibleOptions.Count -gt 0) {
+        throw "-Cleanup cannot be combined with: $($incompatibleOptions -join ', ')."
+    }
+    Invoke-RalphCleanup -ScratchDirectory $scratchDirectory -ProgressFile $progressFile
+    exit 0
+}
+
+$agentCommand = Get-Command $Agent -ErrorAction Stop
+$gitStatus = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
+    'status',
+    '--porcelain'
+)
+if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
+    throw 'The Git working tree is not clean. Commit or stash all changes before running Invoke-Ralph.'
 }
 
 $scopeInstruction = if ($PSBoundParameters.ContainsKey('TaskFile')) {

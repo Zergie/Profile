@@ -192,6 +192,36 @@ switch ($env:RALPH_TEST_SCENARIO) {
     }
 }
 
+function Invoke-CleanupCase {
+    param(
+        [string] $Name,
+        [int] $ExpectedExitCode = 0,
+        [string[]] $Arguments = @(),
+        [scriptblock] $Arrange
+    )
+
+    $repository = New-TestRepository $Name
+    if ($Arrange) {
+        & $Arrange $repository
+    }
+    try {
+        Push-Location -LiteralPath $repository
+        $output = & pwsh -NoProfile -File $ralphScript -Cleanup @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        Pop-Location
+    }
+    Assert-Equal $ExpectedExitCode $exitCode (
+        "$Name returned the wrong exit code.`n" +
+        (($output | ForEach-Object { $_.ToString() }) -join "`n")
+    )
+    [pscustomobject]@{
+        Repository = $repository
+        Output = ($output | ForEach-Object { $_.ToString() }) -join "`n"
+    }
+}
+
 try {
     New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
 
@@ -338,6 +368,124 @@ try {
         'Automatic discovery did not include the active feature.'
     Assert-True ($prompt -notmatch [regex]::Escape('.scratch\done')) `
         'Automatic discovery included the done area.'
+
+    $result = Invoke-CleanupCase 'cleanup-success' -Arrange {
+        param($repository)
+        Remove-Item -LiteralPath (Join-Path $repository '.scratch\feature') -Recurse -Force
+        foreach ($slug in 'finished', 'Second-Feature') {
+            New-Item -ItemType Directory -Path (
+                Join-Path $repository ".scratch\done\$slug"
+            ) -Force | Out-Null
+        }
+        Set-Content -LiteralPath (Join-Path $repository 'dirty.txt') -Value 'unrelated'
+        Set-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') -Value @'
+unrelated preface
+
+feature: FINISHED
+ticket: 01
+changes: completed once
+
+FEATURE_COMPLETE: finished
+
+feature: second-feature
+ticket: 02
+changes: completed twice
+FEATURE_COMPLETE: Second-Feature
+
+feature: unfinished
+ticket: 01
+changes: preserve me
+
+unrelated tail
+FEATURE_COMPLETE: FINISHED
+'@
+    }
+    Assert-True (-not (Test-Path (Join-Path $result.Repository '.scratch\done\finished'))) `
+        'Cleanup did not delete the first archive.'
+    Assert-True (-not (Test-Path (Join-Path $result.Repository '.scratch\done\Second-Feature'))) `
+        'Cleanup did not delete the second archive.'
+    $cleanedProgress = Get-Content -Raw (Join-Path $result.Repository '.scratch\progress.txt')
+    Assert-True (
+        $cleanedProgress -notmatch '(?im)^(?:feature: |FEATURE_COMPLETE: )finished$' -and
+        $cleanedProgress -notmatch '(?im)^(?:feature: |FEATURE_COMPLETE: )second-feature$'
+    ) `
+        'Cleanup retained matching repeated or differently cased history.'
+    Assert-True (
+        $cleanedProgress -match 'feature: unfinished' -and
+        $cleanedProgress -match 'unrelated preface' -and
+        $cleanedProgress -match 'unrelated tail'
+    ) 'Cleanup did not preserve unfinished progress and unrelated text.'
+    Assert-True (Test-Path (Join-Path $result.Repository 'dirty.txt')) `
+        'Cleanup disturbed an unrelated dirty-worktree change.'
+    Assert-True ($result.Output -match 'finished' -and $result.Output -match 'Second-Feature') `
+        'Cleanup did not report removed features.'
+
+    $result = Invoke-CleanupCase 'cleanup-orphan' -Arrange {
+        param($repository)
+        Remove-Item -LiteralPath (Join-Path $repository '.scratch\feature') -Recurse -Force
+        Add-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') -Value @'
+
+feature: orphan
+changes: completed
+FEATURE_COMPLETE: orphan
+'@
+    }
+    Assert-True ((Get-Content -Raw (
+        Join-Path $result.Repository '.scratch\progress.txt'
+    )) -notmatch 'orphan') 'Cleanup did not repair orphaned completion history.'
+
+    $result = Invoke-CleanupCase 'cleanup-active-conflict' -ExpectedExitCode 1 -Arrange {
+        param($repository)
+        New-Item -ItemType Directory -Path (
+            Join-Path $repository '.scratch\done\archived'
+        ) -Force | Out-Null
+        Add-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') `
+            -Value "`nFEATURE_COMPLETE: feature"
+    }
+    Assert-True ($result.Output -match 'still has an active directory') `
+        'Cleanup did not report an active/completed conflict.'
+    Assert-True (Test-Path (Join-Path $result.Repository '.scratch\done\archived')) `
+        'Cleanup deleted an archive before validating the full candidate set.'
+    Assert-True ((Get-Content -Raw (
+        Join-Path $result.Repository '.scratch\progress.txt'
+    )) -match 'FEATURE_COMPLETE: feature') `
+        'Cleanup rewrote progress before validating the full candidate set.'
+
+    $result = Invoke-CleanupCase 'cleanup-unsafe' -ExpectedExitCode 1 -Arrange {
+        param($repository)
+        Remove-Item -LiteralPath (Join-Path $repository '.scratch\feature') -Recurse -Force
+        New-Item -ItemType Directory -Path (
+            Join-Path $repository '.scratch\done\safe'
+        ) -Force | Out-Null
+        Add-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') `
+            -Value "`nFEATURE_COMPLETE: ../unsafe"
+    }
+    Assert-True (Test-Path (Join-Path $result.Repository '.scratch\done\safe')) `
+        'Unsafe history did not prevent all archive deletion.'
+
+    foreach ($arguments in @(
+        @('-TaskFile', '.scratch\feature\spec.md'),
+        @('-Agent', 'codex'),
+        @('-Iterations', '2')
+    )) {
+        $result = Invoke-CleanupCase (
+            'cleanup-options-' + ($arguments[0] -replace '^-', '').ToLowerInvariant()
+        ) -ExpectedExitCode 1 -Arguments $arguments
+        Assert-True ($result.Output -match 'cannot be combined') `
+            "Cleanup did not reject $($arguments[0])."
+    }
+
+    $result = Invoke-CleanupCase 'cleanup-noop'
+    Assert-True ($result.Output -match 'nothing to remove') `
+        'Cleanup did not report a successful no-op.'
+    $result = Invoke-CleanupCase 'cleanup-no-agent' -Arrange {
+        param($repository)
+        Remove-Item -LiteralPath (Join-Path $repository '.scratch\feature') -Recurse -Force
+        Add-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') `
+            -Value "`nFEATURE_COMPLETE: orphan"
+    }
+    Assert-True ($result.Output -match 'removed orphan') `
+        'Cleanup did not run independently of agent resolution.'
 
     Write-Host 'PASS: Invoke-Ralph end-to-end tests'
 }
