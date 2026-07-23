@@ -5,12 +5,12 @@ param(
     [ValidateNotNull()]
     [ValidateScript({
         if ($_.Ast.EndBlock.Statements.Count -eq 0) {
-            throw 'Command must contain at least one statement.'
+            throw 'ScriptBlock must contain at least one statement.'
         }
         $true
     })]
     [scriptblock]
-    $Command,
+    $ScriptBlock,
 
     [Parameter(ParameterSetName = 'Seconds')]
     [ValidateRange(0, [double]::MaxValue)]
@@ -50,6 +50,7 @@ $intervalText = if ($interval.TotalSeconds -ge 1) {
 
 try {
     $rawUI = $Host.UI.RawUI
+    $cursorSize = $rawUI.CursorSize
     $windowSize = $rawUI.WindowSize
     $initialCursor = $rawUI.CursorPosition
     $rawUI.CursorPosition = $initialCursor
@@ -63,6 +64,7 @@ try {
 function Limit-WatchLines {
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
         [string[]]
         $Lines,
 
@@ -121,7 +123,7 @@ $renderedLineCount = 0
 try {
     while ($true) {
         $output = try {
-            & $Command *>&1
+            & $ScriptBlock *>&1
         } catch {
             $_
         }
@@ -166,6 +168,7 @@ try {
 
         if ($null -eq $anchor) {
             $rawUI.CursorPosition = $initialCursor
+            $rawUI.CursorSize = 0
             foreach ($line in $lines) {
                 $Host.UI.WriteLine([string]$line)
             }
@@ -234,4 +237,5 @@ try {
             # Cancellation cleanup is best effort; preserve the original exit.
         }
     }
+    $rawUI.CursorSize = $cursorSize
 }
