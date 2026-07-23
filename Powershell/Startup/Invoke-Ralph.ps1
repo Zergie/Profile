@@ -115,7 +115,7 @@ function Invoke-Agent {
                                     $item.item.text
                                 }
                                 '^command_execution$' {
-                                    Write-Host "`n`e[38;5;8m$($item.item.command.trim())`e[0m`n"
+                                    Write-Host "`n`e[38;5;8m$($item.item.command.Replace("\\", "\"))`e[0m`n"
                                 }
                             }
                         }
