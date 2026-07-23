@@ -66,7 +66,7 @@ Start-Action "Initialize environment "
     $env:CONTROL_PLANE_API_KEY               = $env:OPENAI_API_KEY
     $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
     $env:POWERSHELL_UPDATECHECK              = "OFF"
-    $env:PSModuleAnalysisCachePath           = 'NUL'
+    # $env:PSModuleAnalysisCachePath           = 'NUL'
     $env:PSDisableModuleAnalysisCacheCleanup = 1
     $env:EDITOR                              = "nvim"
     $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -199,8 +199,6 @@ Complete-Action
 
 # set alias to my programs
 Start-Action "Set alias to my programs"
-    Import-Module 'gsudoModule'
-    Import-Module git-completion
     Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
@@ -278,6 +276,17 @@ if ((Test-Path $dockerScript)) {
                     ForEach-Object COLUMN_NAME |
                     ForEach-Object { New-Object System.Management.Automation.CompletionResult($_,$_,'ParameterValue', $_) }
         }}
+
+        # Lazy-load Git completion on the first completion request:
+        Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
+            param($wordToComplete, $commandAst, $cursorPosition)
+
+            Import-Module git-completion -Global
+
+            Complete-Git `
+                -CommandAst $commandAst `
+                -CursorPosition $cursorPosition
+        }
 
         $credentials =  Get-Content -raw $dockerScript |
                             Select-String -Pattern "\n\s*\`$Global:credentials = (@\{[^}]+})" -AllMatches |
@@ -468,94 +477,6 @@ Start-Action "Configure PSReadLine"
         }
     }
 Complete-Action
-
-if  ($firstUse) {
-    # finish jobs
-    Start-Action "Finish job"
-        $variables = @{}
-        Get-Job |
-            Where-Object Name -EQ DevOps |
-            ForEach-Object {
-                Wait-Job $_ | Out-Null
-                Receive-Job $_ |
-                    ConvertFrom-Json |
-                    Group-Object Type |
-                    ForEach-Object {
-                        $item = $_
-                        try {
-                            $variables.Add($_.Name, $_.Group)
-                        } catch {
-                            @(
-                                "`n== `$variables =="
-                                $variables | ConvertTo-Json
-                                "`n== `$item =="
-                                $item | ConvertTo-Json
-                                ""
-                            ) | Join-String -Separator "`n" | Write-Host -ForegroundColor Red
-                        }
-                    }
-                Stop-Job $_
-                Remove-Job $_
-            }
-        # ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
-        # ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
-        # ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
-        # ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
-        $variables = [pscustomobject]$variables
-        $length = 12
-        $template = "
-╔═════════════════$([string]::new('═', $length))╗
-║ DevOps Agents : $('{0}'.PadRight($length))║
-║ Chocolaty     : $('{1}'.PadRight($length))║
-╚═════════════════$([string]::new('═', $length))╝
-"
-        $text = $variables.'DevOps Agents' |
-            Where-Object Status -eq "offline" |
-            Measure-Object |
-            ForEach-Object Count
-
-        if ($text -gt 0) {
-            $text = "$text offline"
-        } else {
-            $text = $variables.'DevOps Agents' |
-                Where-Object Status -eq "online" |
-                Measure-Object |
-                ForEach-Object Count
-            $text = "$text online"
-        }
-        if ($text.Length -gt $length) { $text = $text.Substring(0, $length) }
-        $text = $text.PadRight($length) `
-              -replace "(2)( on)","`e[32m`$1`e[0m`$2" `
-              -replace "(\d+)( off)","`e[31m`$1`e[0m`$2"
-        $template = $template.Replace("{0}".PadRight($length), $text)
-
-        $text = "up to date"
-        while (!(Test-Path $chocolaty_file)) {
-            Start-Sleep -Seconds 1
-        }
-        if (Test-Path $chocolaty_file) {
-            $text = Get-Content $chocolaty_file -Encoding utf-8 |
-                ConvertFrom-Json |
-                Measure-Object |
-                ForEach-Object Count
-
-            if ($text-gt 0) {
-                $text = "$text outdated"
-            } else {
-                $text = "up to date"
-            }
-        }
-        if ($text.Length -gt $length) { $text = $text.Substring(0, $length) }
-        $text = $text.PadRight($length) `
-              -replace "(up to date)","`e[32m`$1`e[0m" `
-              -replace "(\d+)( outdated)","`e[31m`$1`e[0m`$2"
-        $template = $template.Replace("{1}".PadRight($length), $text)
-        Remove-Variable text
-
-        Write-Host $template.Trim()
-        Remove-Variable template, length
-    Complete-Action
-}
 
 if ($profiler.current.Length -gt 0) {
     $profiler.variables = $variables
