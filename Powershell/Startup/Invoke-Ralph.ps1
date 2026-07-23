@@ -401,7 +401,9 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
 
     $progressBeforeIteration = [System.IO.File]::ReadAllText($progressFile)
     $result = Invoke-Agent -Name $Agent -CommandPath $agentCommand.Source -Prompt $prompt
-    $scopeComplete = $result.Contains(
+    $completionTailStart = [Math]::Max(0, $result.Length - 1000)
+    $completionTail = $result.Substring($completionTailStart)
+    $scopeComplete = $completionTail.Contains(
         '<promise>COMPLETE</promise>',
         [System.StringComparison]::Ordinal
     )

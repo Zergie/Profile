@@ -64,13 +64,16 @@ function Invoke-TestCase {
         [ValidateSet('codex', 'copilot')]
         [string] $Agent = 'codex',
         [int] $ExpectedExitCode = 0,
+        [int] $Iterations = 1,
         [switch] $AutomaticDiscovery,
+        [string] $Scenario,
         [scriptblock] $Arrange
     )
 
     $repository = New-TestRepository $Name
     $agentDirectory = Join-Path $temporaryRoot "$Name.fake-agent"
     $agentLog = Join-Path $temporaryRoot "$Name.arguments.txt"
+    $agentCount = Join-Path $temporaryRoot "$Name.count.txt"
     New-Item -ItemType Directory -Path $agentDirectory | Out-Null
     $fakeAgent = @'
 param([Parameter(ValueFromRemainingArguments)] [string[]] $AgentArguments)
@@ -78,6 +81,14 @@ $ErrorActionPreference = 'Stop'
 [System.IO.File]::WriteAllLines($env:RALPH_AGENT_LOG, $AgentArguments)
 $root = (& git rev-parse --show-toplevel).Trim()
 $progress = Join-Path $root '.scratch\progress.txt'
+$invocation = if (Test-Path $env:RALPH_AGENT_COUNT) {
+    [int] (Get-Content -Raw $env:RALPH_AGENT_COUNT)
+}
+else {
+    0
+}
+$invocation++
+Set-Content $env:RALPH_AGENT_COUNT $invocation
 switch ($env:RALPH_TEST_SCENARIO) {
     'success' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
@@ -152,6 +163,38 @@ switch ($env:RALPH_TEST_SCENARIO) {
     'discovery-excludes-done' {
         '<promise>COMPLETE</promise>'
     }
+    { $_ -in @(
+        'promise-outside-tail',
+        'promise-partial-at-cutoff',
+        'promise-wrong-case',
+        'promise-partial-token'
+    ) } {
+        Set-Content (Join-Path $root "work-$invocation.txt") 'implemented'
+        Add-Content $progress "changes: iteration $invocation"
+        if ($invocation -gt 1) {
+            '<promise>COMPLETE</promise>'
+        }
+        elseif ($_ -eq 'promise-outside-tail') {
+            '<promise>COMPLETE</promise>' + ('x' * 1000)
+        }
+        elseif ($_ -eq 'promise-partial-at-cutoff') {
+            'x<promise>COMPLETE</promise>' + (
+                'x' * (1001 - '<promise>COMPLETE</promise>'.Length)
+            )
+        }
+        elseif ($_ -eq 'promise-wrong-case') {
+            '<promise>complete</promise>'
+        }
+        else {
+            '<promise>COMPLETE</promise'
+        }
+    }
+    'promise-exact-boundary' {
+        '<promise>COMPLETE</promise>' + ('x' * (1000 - '<promise>COMPLETE</promise>'.Length))
+    }
+    'promise-embedded-epilogue' {
+        'prefix<promise>COMPLETE</promise>short epilogue'
+    }
 }
 '@
     Set-Content -LiteralPath (Join-Path $agentDirectory "$Agent.ps1") -Value $fakeAgent
@@ -162,10 +205,18 @@ switch ($env:RALPH_TEST_SCENARIO) {
 
     $env:PATH = "$agentDirectory;$originalPath"
     $env:RALPH_AGENT_LOG = $agentLog
-    $env:RALPH_TEST_SCENARIO = $Name -replace '^(codex|copilot)-', ''
+    $env:RALPH_AGENT_COUNT = $agentCount
+    $env:RALPH_TEST_SCENARIO = if ($Scenario) {
+        $Scenario
+    }
+    else {
+        $Name -replace '^(codex|copilot)-', ''
+    }
     try {
         Push-Location -LiteralPath $repository
-        $ralphArguments = @('-NoProfile', '-File', $ralphScript, '-Agent', $Agent)
+        $ralphArguments = @(
+            '-NoProfile', '-File', $ralphScript, '-Agent', $Agent, '-Iterations', $Iterations
+        )
         if (-not $AutomaticDiscovery) {
             $ralphArguments += @(
                 '-TaskFile',
@@ -178,7 +229,8 @@ switch ($env:RALPH_TEST_SCENARIO) {
     finally {
         Pop-Location
         $env:PATH = $originalPath
-        Remove-Item Env:RALPH_AGENT_LOG, Env:RALPH_TEST_SCENARIO -ErrorAction SilentlyContinue
+        Remove-Item Env:RALPH_AGENT_LOG, Env:RALPH_AGENT_COUNT, Env:RALPH_TEST_SCENARIO `
+            -ErrorAction SilentlyContinue
     }
 
     Assert-Equal $ExpectedExitCode $exitCode (
@@ -189,6 +241,7 @@ switch ($env:RALPH_TEST_SCENARIO) {
         Repository = $repository
         Output = ($output | ForEach-Object { $_.ToString() }) -join "`n"
         AgentArguments = if (Test-Path $agentLog) { Get-Content $agentLog } else { @() }
+        AgentCount = if (Test-Path $agentCount) { [int] (Get-Content -Raw $agentCount) } else { 0 }
     }
 }
 
@@ -264,6 +317,29 @@ try {
     $result = Invoke-TestCase 'complete-no-changes'
     Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
         'Completion without changes must not create an empty commit.'
+
+    foreach ($scenario in 'promise-exact-boundary', 'promise-embedded-epilogue') {
+        $result = Invoke-TestCase $scenario
+        Assert-Equal 1 $result.AgentCount `
+            "$scenario should recognize a marker fully contained in the output tail."
+    }
+
+    foreach ($scenario in @(
+        'promise-outside-tail',
+        'promise-partial-at-cutoff',
+        'promise-wrong-case',
+        'promise-partial-token'
+    )) {
+        foreach ($automaticDiscovery in $false, $true) {
+            $caseName = if ($automaticDiscovery) { "$scenario-auto" } else { $scenario }
+            $result = Invoke-TestCase $caseName -Scenario $scenario -Iterations 2 `
+                -AutomaticDiscovery:$automaticDiscovery
+            Assert-Equal 2 $result.AgentCount `
+                "$caseName should ignore the first marker and continue to a later iteration."
+            Assert-Equal 3 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
+                "$caseName should commit both completed iterations."
+        }
+    }
 
     $result = Invoke-TestCase 'no-changes' -ExpectedExitCode 1
     Assert-True ($result.Output -match 'produced no changes') `
