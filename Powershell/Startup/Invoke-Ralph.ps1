@@ -86,6 +86,7 @@ function Invoke-Agent {
         'codex' {
             @(
                 'exec',
+                '--json',
                 '--model', 'gpt-5.6-sol',
                 '--config', 'model_reasoning_effort="low"',
                 '--sandbox', 'workspace-write',
@@ -98,11 +99,43 @@ function Invoke-Agent {
     }
 
     $lines = [System.Collections.Generic.List[string]]::new()
-    & $CommandPath @arguments 2>&1 | ForEach-Object {
-        $line = $_.ToString()
-        $lines.Add($line)
-        Write-Host $line
-    }
+    & $CommandPath @arguments 2>&1 |
+        ForEach-Object {
+            $text = $_
+
+            if ($Name -eq "codex") {
+                try {
+                    $item = $_ | ConvertFrom-Json
+
+                    switch -Regex ($item.type) {
+                        '^item\.completed$' {
+                            switch -Regex ($item.item.type) {
+                                '^agent_message$' {
+                                    Write-Host "$($item.item.text)"
+                                    $item.item.text
+                                }
+                                '^command_execution$' {
+                                    Write-Host "`n`e[38;5;8m$($item.item.command.trim())`e[0m`n"
+                                }
+                            }
+                        }
+                        '^item\.started$' {
+                        }
+                        '^((thread|turn)\.started)$' {
+                            Write-Host "`e[38;5;239m$($item.type)`e[0m"
+                        }
+                    }
+                } catch {
+                }
+
+            } else {
+                $text
+                Write-Host $text
+            }
+        } |
+        ForEach-Object {
+            $lines.Add($_.ToString())
+        }
 
     if ($LASTEXITCODE -ne 0) {
         throw "$Name failed with exit code $LASTEXITCODE."
