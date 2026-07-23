@@ -107,6 +107,71 @@ function Invoke-Agent {
     return $lines -join [Environment]::NewLine
 }
 
+function Get-NewFeatureCompletion {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Before,
+
+        [Parameter(Mandatory)]
+        [string]
+        $After
+    )
+
+    $appendedContent = if ($After.StartsWith($Before, [System.StringComparison]::Ordinal)) {
+        $After.Substring($Before.Length)
+    }
+    else {
+        ''
+    }
+    $completionMatches = [regex]::Matches(
+        $appendedContent,
+        '(?m)^FEATURE_COMPLETE: ([^\r\n]+)\r?$'
+    )
+
+    if ($completionMatches.Count -gt 1) {
+        throw 'The iteration appended more than one FEATURE_COMPLETE record.'
+    }
+    if ($completionMatches.Count -eq 0) {
+        return $null
+    }
+
+    $slug = $completionMatches[0].Groups[1].Value
+    if ($slug -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw "Unsafe feature slug in FEATURE_COMPLETE record: '$slug'."
+    }
+
+    return $slug
+}
+
+function Move-CompletedFeature {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Slug
+    )
+
+    $source = Join-Path $ScratchDirectory $Slug
+    if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+        throw "Completed feature directory not found: $source"
+    }
+
+    $doneDirectory = Join-Path $ScratchDirectory 'done'
+    $destination = Join-Path $doneDirectory $Slug
+    if (Test-Path -LiteralPath $destination) {
+        throw "Completed feature archive already exists: $destination"
+    }
+
+    if (-not (Test-Path -LiteralPath $doneDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $doneDirectory | Out-Null
+    }
+    Move-Item -LiteralPath $source -Destination $destination
+}
+
 $git = Get-Command git -ErrorAction Stop
 $agentCommand = Get-Command $Agent -ErrorAction Stop
 
@@ -157,6 +222,7 @@ implemented and verified.
 else {
     $issueDirectories = @(
         Get-ChildItem -LiteralPath $scratchDirectory -Directory |
+            Where-Object { $_.Name -cne 'done' } |
             ForEach-Object {
                 $issues = Join-Path $_.FullName 'issues'
                 if (Test-Path -LiteralPath $issues -PathType Container) {
@@ -281,6 +347,13 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
     $commitSubject = $finalChangeValue.Trim()
     if ([string]::IsNullOrWhiteSpace($commitSubject)) {
         throw "The final 'changes: ' value in the progress file is empty."
+    }
+
+    $completedFeature = Get-NewFeatureCompletion `
+        -Before $progressBeforeIteration `
+        -After $progressAfterIteration
+    if ($null -ne $completedFeature) {
+        Move-CompletedFeature -ScratchDirectory $scratchDirectory -Slug $completedFeature
     }
 
     Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null

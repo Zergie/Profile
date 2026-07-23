@@ -30,3 +30,9 @@ changes: Bounded formatted output to the current RawUI viewport without wrapping
 checks: PASS on PowerShell 7.6.3 — parser and structural checks; width, height, and first-line-offset bounding checks; redirected unsupported-host diagnostic; hidden console-backed multi-redraw smoke with 80 lines of 300-character output and final cursor validation; git diff --check. PSScriptAnalyzer was not installed locally.
 next: Feature complete; all three watch-command tickets are implemented and verified.
 FEATURE_COMPLETE: watch-command
+
+feature: ralph-cleanup
+ticket: 01-archive-completed-features
+changes: Added validated automatic archival for exactly one newly appended feature-completion record, direct moves into a created done area, and exclusion of archived features from discovery, with command-level end-to-end coverage.
+checks: PASS on PowerShell 7.6.3 - complete Invoke-Ralph end-to-end suite for archival, preservation, non-completion, multiple markers, unsafe or missing sources, existing destinations, and discovery exclusion; parser validation; git diff --check.
+next: Implement ticket 02-clean-up-archived-features; ticket 01 is complete and now unblocks explicit cleanup mode.

@@ -64,6 +64,7 @@ function Invoke-TestCase {
         [ValidateSet('codex', 'copilot')]
         [string] $Agent = 'codex',
         [int] $ExpectedExitCode = 0,
+        [switch] $AutomaticDiscovery,
         [scriptblock] $Arrange
     )
 
@@ -118,6 +119,39 @@ switch ($env:RALPH_TEST_SCENARIO) {
         Add-Content $progress 'changes: commit failure'
         'done'
     }
+    'archive-success' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "feature: feature`nchanges: archive feature`nFEATURE_COMPLETE: feature"
+        'done'
+    }
+    'promise-without-marker' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "feature: feature`nchanges: scoped ticket complete"
+        '<promise>COMPLETE</promise>'
+    }
+    'multiple-completions' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "changes: ambiguous completion`nFEATURE_COMPLETE: feature`nFEATURE_COMPLETE: other"
+        'done'
+    }
+    'missing-active-feature' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "changes: missing active feature`nFEATURE_COMPLETE: missing"
+        'done'
+    }
+    'existing-archive' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "changes: archive already exists`nFEATURE_COMPLETE: feature"
+        'done'
+    }
+    'unsafe-completion' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "changes: unsafe completion`nFEATURE_COMPLETE: ../feature"
+        'done'
+    }
+    'discovery-excludes-done' {
+        '<promise>COMPLETE</promise>'
+    }
 }
 '@
     Set-Content -LiteralPath (Join-Path $agentDirectory "$Agent.ps1") -Value $fakeAgent
@@ -131,8 +165,14 @@ switch ($env:RALPH_TEST_SCENARIO) {
     $env:RALPH_TEST_SCENARIO = $Name -replace '^(codex|copilot)-', ''
     try {
         Push-Location -LiteralPath $repository
-        $output = & pwsh -NoProfile -File $ralphScript -Agent $Agent `
-            -TaskFile (Join-Path $repository '.scratch\feature\spec.md') 2>&1
+        $ralphArguments = @('-NoProfile', '-File', $ralphScript, '-Agent', $Agent)
+        if (-not $AutomaticDiscovery) {
+            $ralphArguments += @(
+                '-TaskFile',
+                (Join-Path $repository '.scratch\feature\spec.md')
+            )
+        }
+        $output = & pwsh @ralphArguments 2>&1
         $exitCode = $LASTEXITCODE
     }
     finally {
@@ -226,6 +266,78 @@ try {
     ) 'Ralph should preserve staged state after commit failure.'
     Assert-True ($result.Output -notmatch 'Requested scope complete') `
         'Ralph reported completion after a failed commit.'
+
+    $result = Invoke-TestCase 'archive-success' -Arrange {
+        param($repository)
+        New-Item -ItemType Directory -Path (
+            Join-Path $repository '.scratch\unfinished\issues'
+        ) -Force | Out-Null
+        Set-Content -LiteralPath (
+            Join-Path $repository '.scratch\feature\notes.txt'
+        ) -Value 'feature-local content'
+    }
+    $archive = Join-Path $result.Repository '.scratch\done\feature'
+    Assert-True (Test-Path -LiteralPath $archive -PathType Container) `
+        'A newly completed feature was not moved into the done area.'
+    Assert-True (-not (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\feature'
+    ))) 'The completed feature remained active.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $archive 'spec.md') -PathType Leaf) `
+        'Archival did not preserve the feature specification.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $archive 'issues\01.md') -PathType Leaf) `
+        'Archival did not preserve the feature tickets.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $archive 'notes.txt') -PathType Leaf) `
+        'Archival did not preserve other feature-local content.'
+    Assert-True (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\unfinished'
+    ) -PathType Container) 'Archival moved an unfinished feature.'
+
+    $result = Invoke-TestCase 'promise-without-marker'
+    Assert-True (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\feature'
+    ) -PathType Container) 'A completion promise incorrectly archived the active feature.'
+    Assert-True (-not (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\done'
+    ))) 'A completion promise incorrectly created the done area.'
+
+    foreach ($scenario in 'multiple-completions', 'missing-active-feature', 'unsafe-completion') {
+        $result = Invoke-TestCase $scenario -ExpectedExitCode 1
+        Assert-True (Test-Path -LiteralPath (
+            Join-Path $result.Repository '.scratch\feature'
+        ) -PathType Container) "$scenario moved an active feature before validation completed."
+        Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
+            "$scenario must not create a commit."
+    }
+
+    $result = Invoke-TestCase 'existing-archive' -ExpectedExitCode 1 -Arrange {
+        param($repository)
+        New-Item -ItemType Directory -Path (
+            Join-Path $repository '.scratch\done\feature'
+        ) -Force | Out-Null
+        Set-Content -LiteralPath (
+            Join-Path $repository '.scratch\done\feature\existing.txt'
+        ) -Value 'preserve'
+    }
+    Assert-True (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\feature'
+    ) -PathType Container) 'An existing archive destination caused the source to move.'
+    Assert-True (Test-Path -LiteralPath (
+        Join-Path $result.Repository '.scratch\done\feature\existing.txt'
+    ) -PathType Leaf) 'An existing archive destination was overwritten.'
+    Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
+        'An existing archive destination must not create a commit.'
+
+    $result = Invoke-TestCase 'discovery-excludes-done' -AutomaticDiscovery -Arrange {
+        param($repository)
+        New-Item -ItemType Directory -Path (
+            Join-Path $repository '.scratch\done\archived\issues'
+        ) -Force | Out-Null
+    }
+    $prompt = $result.AgentArguments -join "`n"
+    Assert-True ($prompt -match [regex]::Escape('.scratch\feature\issues')) `
+        'Automatic discovery did not include the active feature.'
+    Assert-True ($prompt -notmatch [regex]::Escape('.scratch\done')) `
+        'Automatic discovery included the done area.'
 
     Write-Host 'PASS: Invoke-Ralph end-to-end tests'
 }
