@@ -1,0 +1,32 @@
+feature: watch-command
+ticket: 01-command-and-interval-control
+changes: Added the automatically loaded Powershell/Startup/Watch-Command.ps1 with positional ScriptBlock validation, mutually exclusive seconds/milliseconds/duration intervals and aliases, a 500 ms default post-run delay, combined redirectable stream rendering, transient-error recovery, and a timestamp/interval/Ctrl+C header.
+checks: PASS on PowerShell 7.6.3 — parser and parameter metadata; bounded manual runs for default, -Seconds, -Milliseconds/-ms, -Duration/-ts, post-invocation timing, all redirectable streams, terminating-error recovery, header, and invalid inputs; git diff --check. PSScriptAnalyzer was not installed locally.
+next: Implement ticket 02-stable-output-region using RawUI anchoring and stale-line cleanup; ticket 03 remains blocked by 02.
+
+feature: watch-command
+ticket: 02-stable-output-region
+changes: Captured the invocation cursor, allowed the first frame to scroll normally, derived a stable visible RawUI anchor, redrew later frames without clearing the terminal, and padded shorter lines plus removed stale extra lines.
+checks: PASS on PowerShell 7.6.3 — parser; RawUI redraw seam/no Clear-Host inspection; console-backed three-iteration smoke run alternating longer/two-line and shorter/one-line output; git diff --check. PSScriptAnalyzer was not installed locally.
+next: Implement ticket 03-terminal-bounds-and-cleanup; add width/height truncation, unsupported-host diagnostics, and best-effort final cursor placement.
+
+feature: ralph-agent-model-defaults
+ticket: 01-set-fixed-agent-model-defaults
+changes: Fixed Codex invocations to gpt-5.6-sol with low model reasoning effort and Copilot invocations to automatic model selection without an effort argument; preserved the existing public parameters and unrelated invocation arguments.
+checks: PASS on PowerShell 7.6.3 — complete Invoke-Ralph.ps1 runs in clean temporary Git repositories with controlled codex/copilot command shims; exact received arguments for both branches; parser and AST public-parameter check; git diff --check. PSScriptAnalyzer was not installed locally.
+next: Feature complete; no remaining tickets.
+FEATURE_COMPLETE: ralph-agent-model-defaults
+
+feature: ralph-script-owned-commits
+ticket: 01-move-iteration-commits-into-ralph
+changes: Moved successful-iteration staging and committing into Invoke-Ralph with fresh progress validation, exact final changes-subject extraction, safe no-change completion handling, preserved Git failure state, and complete-script tests for both agents and failure paths.
+checks: PASS on PowerShell 7.6.3 - parser checks; complete Invoke-Ralph end-to-end suite in temporary real Git repositories for Codex and Copilot, exact subjects, stale or invalid progress, no-change cases, agent failure, staging failure, and commit failure; git diff --check. PSScriptAnalyzer was not installed locally.
+next: Feature complete; no remaining tickets.
+FEATURE_COMPLETE: ralph-script-owned-commits
+
+feature: watch-command
+ticket: 03-terminal-bounds-and-cleanup
+changes: Bounded formatted output to the current RawUI viewport without wrapping, reserved the last usable line for a visible truncation indicator, added actionable unsupported-host diagnostics, adapted redraw bounds to viewport movement or resizing, and placed the cursor below the watched region through best-effort finally cleanup.
+checks: PASS on PowerShell 7.6.3 — parser and structural checks; width, height, and first-line-offset bounding checks; redirected unsupported-host diagnostic; hidden console-backed multi-redraw smoke with 80 lines of 300-character output and final cursor validation; git diff --check. PSScriptAnalyzer was not installed locally.
+next: Feature complete; all three watch-command tickets are implemented and verified.
+FEATURE_COMPLETE: watch-command
