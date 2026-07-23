@@ -79,6 +79,25 @@ function Invoke-TestCase {
 param([Parameter(ValueFromRemainingArguments)] [string[]] $AgentArguments)
 $ErrorActionPreference = 'Stop'
 [System.IO.File]::WriteAllLines($env:RALPH_AGENT_LOG, $AgentArguments)
+$usesJsonOutput = $AgentArguments -contains '--json'
+
+function Write-AgentMessage {
+    param([string] $Text)
+
+    if ($usesJsonOutput) {
+        [pscustomobject] @{
+            type = 'item.completed'
+            item = [pscustomobject] @{
+                type = 'agent_message'
+                text = $Text
+            }
+        } | ConvertTo-Json -Compress
+    }
+    else {
+        $Text
+    }
+}
+
 $root = (& git rev-parse --show-toplevel).Trim()
 $progress = Join-Path $root '.scratch\progress.txt'
 $invocation = if (Test-Path $env:RALPH_AGENT_COUNT) {
@@ -89,7 +108,7 @@ else {
 }
 $invocation++
 Set-Content $env:RALPH_AGENT_COUNT $invocation
-switch ($env:RALPH_TEST_SCENARIO) {
+$scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
     'success' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
         Add-Content $progress "changes: stale subject`nchanges:   Exact Subject: Keep CASE, punctuation!   "
@@ -116,7 +135,7 @@ switch ($env:RALPH_TEST_SCENARIO) {
         'done'
     }
     'agent-failure' {
-        [Console]::Error.WriteLine('controlled agent failure')
+        Write-AgentMessage 'controlled agent failure'
         exit 17
     }
     'stage-failure' {
@@ -195,6 +214,10 @@ switch ($env:RALPH_TEST_SCENARIO) {
     'promise-embedded-epilogue' {
         'prefix<promise>COMPLETE</promise>short epilogue'
     }
+}
+
+$scenarioOutput | ForEach-Object {
+    Write-AgentMessage $_
 }
 '@
     Set-Content -LiteralPath (Join-Path $agentDirectory "$Agent.ps1") -Value $fakeAgent
