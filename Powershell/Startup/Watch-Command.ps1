@@ -48,6 +48,11 @@ $intervalText = if ($interval.TotalSeconds -ge 1) {
     '{0:0.###} ms' -f $interval.TotalMilliseconds
 }
 
+$rawUI = $Host.UI.RawUI
+$initialCursor = $rawUI.CursorPosition
+$anchor = $null
+$previousLineWidths = @()
+
 while ($true) {
     $output = try {
         & $Command *>&1
@@ -56,10 +61,45 @@ while ($true) {
     }
 
     $updatedAt = Get-Date -Format 'HH:mm:ss'
-    Write-Host "[$updatedAt] every $intervalText | Ctrl+C to stop"
+    $lines = @("[$updatedAt] every $intervalText | Ctrl+C to stop")
     if ($null -ne $output) {
-        $output | Out-String -Stream | Write-Host
+        $lines += @($output | Out-String -Stream)
     }
 
+    if ($null -eq $anchor) {
+        $rawUI.CursorPosition = $initialCursor
+        foreach ($line in $lines) {
+            $Host.UI.WriteLine([string]$line)
+        }
+
+        $cursorAfterFirstRender = $rawUI.CursorPosition
+        $anchor = [System.Management.Automation.Host.Coordinates]::new(
+            $initialCursor.X,
+            [Math]::Max(0, $cursorAfterFirstRender.Y - $lines.Count)
+        )
+    } else {
+        $lineCount = [Math]::Max($lines.Count, $previousLineWidths.Count)
+        for ($index = 0; $index -lt $lineCount; $index++) {
+            $line = if ($index -lt $lines.Count) {
+                [string]$lines[$index]
+            } else {
+                ''
+            }
+            $previousWidth = if ($index -lt $previousLineWidths.Count) {
+                $previousLineWidths[$index]
+            } else {
+                0
+            }
+            $column = if ($index -eq 0) { $anchor.X } else { 0 }
+
+            $rawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new(
+                $column,
+                $anchor.Y + $index
+            )
+            $Host.UI.Write($line.PadRight([Math]::Max($line.Length, $previousWidth)))
+        }
+    }
+
+    $previousLineWidths = @($lines | ForEach-Object { ([string]$_).Length })
     Start-Sleep -Duration $interval
 }
