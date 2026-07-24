@@ -98,6 +98,8 @@ function Invoke-Agent {
         }
     }
 
+    $AgentIcon   = "`e[1m$([char]::ConvertFromUtf32(0xEE0D))`e[0m"
+    $CommandIcon = "`e[1m$([char]::ConvertFromUtf32(0xF489))`e[0m"
     $lines = [System.Collections.Generic.List[string]]::new()
     & $CommandPath @arguments 2>&1 |
         ForEach-Object {
@@ -111,11 +113,11 @@ function Invoke-Agent {
                         '^item\.completed$' {
                             switch -Regex ($item.item.type) {
                                 '^agent_message$' {
-                                    Write-Host "$($item.item.text)"
+                                    Write-Host "$AgentIcon $($item.item.text)"
                                     $item.item.text
                                 }
                                 '^command_execution$' {
-                                    Write-Host "`n`e[38;5;8m$($item.item.command.Replace("\\", "\"))`e[0m`n"
+                                    Write-Host "`n$CommandIcon `e[38;5;8m$($item.item.command.Replace("\\", "\"))`e[0m`n"
                                 }
                             }
                         }
