@@ -50,3 +50,10 @@ changes: Restricted exact ordinal completion-marker detection to the final 1,000
 checks: PASS on PowerShell 7.6.3 - full Invoke-Ralph end-to-end suite; parser validation; git diff --check. PSScriptAnalyzer was not installed locally.
 next: Feature complete; its only ticket is implemented and verified.
 FEATURE_COMPLETE: ralph-completion-promise-tail
+
+feature: include-terminal-output
+ticket: 01-add-terminal-context
+changes: Added the chat-only -IncludeTerminal switch, captured the complete visible RawUI window as plain text at message submission, prepended labelled terminal context, and failed actionably before API calls when the screen buffer is unavailable; added automated coverage for one-shot, pipeline, interactive, unavailable-host, long-context, prompt/partial-input, and opt-out behavior.
+checks: PASS on PowerShell 7.6.3 - end-to-end Invoke-ChatGPT terminal-context harness; parser validation for implementation and tests; git diff --check; new-test whitespace check. PSScriptAnalyzer was not installed locally.
+next: Feature complete; its only ticket is implemented and verified.
+FEATURE_COMPLETE: include-terminal-output

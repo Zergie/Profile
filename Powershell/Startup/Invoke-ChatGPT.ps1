@@ -24,6 +24,10 @@ param(
     [switch]
     $Interactive,
 
+    [Parameter(ParameterSetName="ChatParameterSet")]
+    [switch]
+    $IncludeTerminal,
+
     [Parameter(ParameterSetName="PullRequestParameterSet")]
     [switch]
     $WritePullRequest,
@@ -42,6 +46,64 @@ param(
     [switch]
     $WriteGitCommit
 )
+
+function Get-VisibleTerminalText {
+    [CmdletBinding()]
+    param()
+
+    try {
+        $rawUi = $Host.UI.RawUI
+        if ($null -eq $rawUi) {
+            throw "The active PowerShell host does not expose RawUI."
+        }
+
+        $windowPosition = $rawUi.WindowPosition
+        $windowSize = $rawUi.WindowSize
+        if ($windowSize.Width -le 0 -or $windowSize.Height -le 0) {
+            throw "The active PowerShell host reported an invalid visible window size."
+        }
+
+        $rectangle = [System.Management.Automation.Host.Rectangle]::new(
+            $windowPosition.X,
+            $windowPosition.Y,
+            $windowPosition.X + $windowSize.Width - 1,
+            $windowPosition.Y + $windowSize.Height - 1
+        )
+        $cells = $rawUi.GetBufferContents($rectangle)
+        if ($null -eq $cells) {
+            throw "The active PowerShell host returned no screen-buffer contents."
+        }
+
+        $lines = for ($row = 0; $row -lt $windowSize.Height; $row++) {
+            $characters = [char[]]::new($windowSize.Width)
+            for ($column = 0; $column -lt $windowSize.Width; $column++) {
+                $characters[$column] = $cells[$row, $column].Character
+            }
+            (-join $characters).TrimEnd()
+        }
+
+        return $lines -join [Environment]::NewLine
+    } catch {
+        throw [System.InvalidOperationException]::new(
+            "Cannot include terminal context because this PowerShell host cannot read its visible screen buffer. Run the command in a console host that supports RawUI.GetBufferContents(), or omit -IncludeTerminal. No API request was sent.",
+            $_.Exception
+        )
+    }
+}
+
+function Add-VisibleTerminalContext {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $UserMessage
+    )
+
+    $terminalText = Get-VisibleTerminalText
+    return "[TERMINAL OUTPUT - VISIBLE SCREEN]$([Environment]::NewLine)$terminalText$([Environment]::NewLine)[END TERMINAL OUTPUT]$([Environment]::NewLine)$([Environment]::NewLine)$UserMessage"
+}
+
 if ($WritePullRequest) {
     $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
     $Message = @(
@@ -128,6 +190,10 @@ while ($true) {
             }
         }
         default {
+            if ($IncludeTerminal) {
+                $userMessage = Add-VisibleTerminalContext -UserMessage $userMessage
+            }
+
             # Add new user prompt to list of messages
             $MessageHistory.Add(@{"role"="user"; "content"=$userMessage})
 
