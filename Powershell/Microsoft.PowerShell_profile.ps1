@@ -200,6 +200,7 @@ Complete-Action
 # set alias to my programs
 Start-Action "Set alias to my programs"
     Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
+    Set-Alias claude  "C:/Users/puchinger/.local/bin/claude.exe"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
@@ -478,8 +479,7 @@ Start-Action "Configure PSReadLine"
     }
 Complete-Action
 
-if ($profiler.current.Length -gt 0) {
-    $profiler.variables = $variables
+if ($profiler.current.Count -gt 0) {
     $profiler.last = $profiler.current
     $profiler.current = $null
     $profiler.runtime = ((Get-Date) - $profiler.start).TotalSeconds
