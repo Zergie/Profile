@@ -145,13 +145,12 @@ $github = @(
     #                   folder="$PSScriptRoot\warpd"}
     [pscustomobject]@{repo="max-niederman/ttyper"; file="ttyper-x86_64-*-windows-*.zip"
                       folder="$PSScriptRoot/ttyper"}
-    [pscustomobject]@{repo="microsoft/WSL"; file="wsl*.x64.msi"
-                      folder="$PSScriptRoot/wsl"}
     [pscustomobject]@{repo="strobejb/winspy"; file="*_Release_x64.zip"
                       folder="$PSScriptRoot/winspy"}
-    [pscustomobject]@{repo="openai/tunnel-client"; file="*-windows-amd64.zip"
-                      folder="$PSScriptRoot/tunnel-client"}
-
+    # [pscustomobject]@{repo="openai/tunnel-client"; file="*-windows-amd64.zip"
+    #                   folder="$PSScriptRoot/tunnel-client"}
+    # [pscustomobject]@{repo="Aetherinox/ntfy-desktop"; file="*-win32-amd64.zip"
+    #                   folder="$PSScriptRoot/ntfy-desktop"}
 )
 
 $patches = @(

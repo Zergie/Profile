@@ -445,7 +445,7 @@ process {
                     }
 
                     $UmsetzenIn = $_.fields.'System.Description' |
-                                    Select-String -Pattern '(?:Umsetzen|Beheben)\s+in(?:\s+Version)?[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{4})|(?<year>\d{4})\s*(?<q>Q\d)|(?<q>Q\d))' |
+                                    Select-String -Pattern '(?:(?:Umsetzen|Beheben)\s+in(?:\s+Version)?[:]?(?:&nbsp;|\s)*((?<date>\d{2}\.\d{2}\.\d{4})|(?<q>Q\d)[ -]*(?<year>\d{2,4})|(?<year>\d{4})\s*(?<q>Q\d)|(?<q>Q\d))|in\s+der(?:\s+Version)?[:]?(?:&nbsp;|\s)*(?<q>Q\d)[ -]*(?<year>\d{2,4})(?:&nbsp;|\s)+(?:umsetzen|beheben))' |
                                     ForEach-Object Matches |
                                     ForEach-Object Groups |
                                     Where-Object Name -NotIn @(0..9) |
@@ -489,7 +489,9 @@ process {
                                 ForEach-Object given_name |
                                 Select-Object -First 1
                         } elseif ($UmsetzenIn.ContainsKey('q') -and $UmsetzenIn.ContainsKey('year')) {
-                            $new_tag = "TO $($UmsetzenIn.year)\$($UmsetzenIn.q)"
+                            $year = [int]$UmsetzenIn.year
+                            if ($year -lt 100) { $year += 2000 }
+                            $new_tag = "TO $year\$($UmsetzenIn.q)"
                         } elseif ($UmsetzenIn.ContainsKey('q')) {
                             $new_tag = $branch_lookup |
                                 Where-Object given_name -Like "*$($UmsetzenIn.q)" |
