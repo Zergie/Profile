@@ -146,7 +146,7 @@ function Invoke-Agent {
     return $lines -join [Environment]::NewLine
 }
 
-function Get-NewFeatureCompletion {
+function Get-NewProgressEntry {
     param(
         [Parameter(Mandatory)]
         [string]
@@ -157,30 +157,51 @@ function Get-NewFeatureCompletion {
         $After
     )
 
-    $appendedContent = if ($After.StartsWith($Before, [System.StringComparison]::Ordinal)) {
-        $After.Substring($Before.Length)
+    if (-not $After.StartsWith($Before, [System.StringComparison]::Ordinal)) {
+        throw 'The iteration must only append to .scratch/progress.txt.'
     }
-    else {
+
+    $appendedContent = $After.Substring($Before.Length)
+    $separatorPattern = if ($Before.Length -eq 0) {
         ''
     }
-    $completionMatches = [regex]::Matches(
-        $appendedContent,
-        '(?m)^FEATURE_COMPLETE: ([^\r\n]+)\r?$'
+    elseif ($Before.EndsWith("`n", [System.StringComparison]::Ordinal)) {
+        '\r?\n'
+    }
+    else {
+        '\r?\n\r?\n'
+    }
+    $valuePattern = '(\S(?:[^\r\n]*\S)?)'
+    $entryPattern = (
+        '\A' + $separatorPattern +
+        'feature: ' + $valuePattern + '\r?\n' +
+        'ticket: ' + $valuePattern + '\r?\n' +
+        'changes: ' + $valuePattern + '\r?\n' +
+        'checks: ' + $valuePattern +
+        '(?:\r?\nFEATURE_COMPLETE: ' + $valuePattern + ')?' +
+        '\r?\n?\z'
     )
-
-    if ($completionMatches.Count -gt 1) {
-        throw 'The iteration appended more than one FEATURE_COMPLETE record.'
-    }
-    if ($completionMatches.Count -eq 0) {
-        return $null
-    }
-
-    $slug = $completionMatches[0].Groups[1].Value
-    if ($slug -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
-        throw "Unsafe feature slug in FEATURE_COMPLETE record: '$slug'."
+    $entryMatch = [regex]::Match($appendedContent, $entryPattern)
+    if (-not $entryMatch.Success) {
+        throw (
+            'The iteration must append exactly one blank-line-separated progress entry ' +
+            'with non-empty feature, ticket, changes, and checks fields in that order, ' +
+            'followed only by an optional FEATURE_COMPLETE field.'
+        )
     }
 
-    return $slug
+    $completion = $entryMatch.Groups[5].Value
+    if ($completion.Length -gt 0 -and $completion -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw "Unsafe feature slug in FEATURE_COMPLETE record: '$completion'."
+    }
+
+    return [pscustomobject] @{
+        Feature = $entryMatch.Groups[1].Value
+        Ticket = $entryMatch.Groups[2].Value
+        Changes = $entryMatch.Groups[3].Value
+        Checks = $entryMatch.Groups[4].Value
+        FeatureCompletion = if ($completion.Length -gt 0) { $completion } else { $null }
+    }
 }
 
 function Move-CompletedFeature {
@@ -411,8 +432,16 @@ For this iteration:
    build checks. Do not claim completion if a relevant check fails.
 5. Append a concise handoff note to .scratch/progress.txt. Record the feature slug,
    ticket, changes, checks and results, and useful context for the next iteration.
-6. If all tickets in the selected feature are now implemented and verified, append
-   exactly 'FEATURE_COMPLETE: <feature-slug>' to .scratch/progress.txt.
+   Append exactly one blank-line-separated entry in this format, with a non-empty
+   single-line value after every label:
+
+feature: <feature-slug>
+ticket: <ticket-id>
+changes: <concise changes and handoff context>
+checks: <checks and results>
+6. If and only if all tickets in the selected feature are now implemented and
+   verified, add exactly 'FEATURE_COMPLETE: <feature-slug>' as the final line of
+   that entry. Omit this line while any feature ticket remains unfinished.
 7. Leave staging and committing to Ralph after the iteration succeeds.
 
 Do not work on more than one ticket in this iteration. Do not modify ticket or spec
@@ -468,38 +497,11 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
         throw 'The agent changed the repository without updating .scratch/progress.txt.'
     }
 
-    $changeEntriesBefore = [regex]::Matches(
-        $progressBeforeIteration,
-        '(?m)^changes: (.*)$'
-    )
-    $changeEntries = [regex]::Matches(
-        $progressAfterIteration,
-        '(?m)^changes: (.*)$'
-    )
-    if ($changeEntries.Count -eq 0) {
-        throw "The updated progress file does not contain a 'changes: ' entry."
-    }
-
-    $finalChangeValue = $changeEntries[$changeEntries.Count - 1].Groups[1].Value
-    $hasNewChangeEntry = $changeEntries.Count -ne $changeEntriesBefore.Count
-    if (-not $hasNewChangeEntry -and $changeEntriesBefore.Count -gt 0) {
-        $previousChangeValue = $changeEntriesBefore[
-            $changeEntriesBefore.Count - 1
-        ].Groups[1].Value
-        $hasNewChangeEntry = $finalChangeValue -cne $previousChangeValue
-    }
-    if (-not $hasNewChangeEntry) {
-        throw "The updated progress file reuses a stale 'changes: ' entry."
-    }
-
-    $commitSubject = $finalChangeValue.Trim()
-    if ([string]::IsNullOrWhiteSpace($commitSubject)) {
-        throw "The final 'changes: ' value in the progress file is empty."
-    }
-
-    $completedFeature = Get-NewFeatureCompletion `
+    $progressEntry = Get-NewProgressEntry `
         -Before $progressBeforeIteration `
         -After $progressAfterIteration
+    $commitSubject = $progressEntry.Changes
+    $completedFeature = $progressEntry.FeatureCompletion
     if ($null -ne $completedFeature) {
         Move-CompletedFeature -ScratchDirectory $scratchDirectory -Slug $completedFeature
     }

@@ -57,3 +57,9 @@ changes: Added the chat-only -IncludeTerminal switch, captured the complete visi
 checks: PASS on PowerShell 7.6.3 - end-to-end Invoke-ChatGPT terminal-context harness; parser validation for implementation and tests; git diff --check; new-test whitespace check. PSScriptAnalyzer was not installed locally.
 next: Feature complete; its only ticket is implemented and verified.
 FEATURE_COMPLETE: include-terminal-output
+
+feature: structured-ralph-progress
+ticket: 01-enforce-structured-ralph-progress-entries
+changes: Added exact append-only parsing for one ordered blank-line-separated progress entry, used its changes value for commits and optional completion for archival, clarified the agent format, and expanded malformed-entry coverage.
+checks: PASS on PowerShell 7.6.3 - complete Invoke-Ralph end-to-end suite; parser validation; git diff --check. PSScriptAnalyzer was not installed locally.
+FEATURE_COMPLETE: structured-ralph-progress

@@ -45,7 +45,9 @@ function New-TestRepository {
     Set-Content -LiteralPath (Join-Path $repository 'baseline.txt') -Value "baseline`n"
     Set-Content -LiteralPath (Join-Path $repository '.scratch\progress.txt') -Value @'
 feature: previous
+ticket: 00
 changes: previous iteration
+checks: passed
 '@
     Set-Content -LiteralPath (Join-Path $repository '.scratch\feature\spec.md') -Value '# Spec'
     Set-Content -LiteralPath (Join-Path $repository '.scratch\feature\issues\01.md') -Value '# Ticket'
@@ -100,6 +102,25 @@ function Write-AgentMessage {
 
 $root = (& git rev-parse --show-toplevel).Trim()
 $progress = Join-Path $root '.scratch\progress.txt'
+function Add-ProgressEntry {
+    param(
+        [string] $Feature = 'feature',
+        [string] $Ticket = '01',
+        [string] $Changes = 'implemented',
+        [string] $Checks = 'passed',
+        [string] $Completion
+    )
+    $entry = (
+        "`nfeature: $Feature`n" +
+        "ticket: $Ticket`n" +
+        "changes: $Changes`n" +
+        "checks: $Checks"
+    )
+    if ($Completion) {
+        $entry += "`nFEATURE_COMPLETE: $Completion"
+    }
+    Add-Content $progress $entry
+}
 $invocation = if (Test-Path $env:RALPH_AGENT_COUNT) {
     [int] (Get-Content -Raw $env:RALPH_AGENT_COUNT)
 }
@@ -111,7 +132,7 @@ Set-Content $env:RALPH_AGENT_COUNT $invocation
 $scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
     'success' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "changes: stale subject`nchanges:   Exact Subject: Keep CASE, punctuation!   "
+        Add-ProgressEntry -Changes 'Exact Subject: Keep CASE, punctuation!'
         '<promise>COMPLETE</promise>'
     }
     'stale-progress' {
@@ -120,12 +141,64 @@ $scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
     }
     'missing-changes' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress 'feature: test'
+        Add-Content $progress "`nfeature: test`nticket: 01`nchecks: passed"
         'done'
     }
     'empty-changes' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress 'changes:    '
+        Add-Content $progress "`nfeature: test`nticket: 01`nchanges:    `nchecks: passed"
+        'done'
+    }
+    'missing-feature' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "`nticket: 01`nchanges: implemented`nchecks: passed"
+        'done'
+    }
+    'missing-ticket' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "`nfeature: feature`nchanges: implemented`nchecks: passed"
+        'done'
+    }
+    'missing-checks' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "`nfeature: feature`nticket: 01`nchanges: implemented"
+        'done'
+    }
+    'empty-required-field' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "`nfeature: feature`nticket:   `nchanges: implemented`nchecks: passed"
+        'done'
+    }
+    'reordered-fields' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "`nfeature: feature`nchanges: implemented`nticket: 01`nchecks: passed"
+        'done'
+    }
+    'repeated-field' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress (
+            "`nfeature: feature`nticket: 01`nchanges: implemented`n" +
+            "changes: repeated`nchecks: passed"
+        )
+        'done'
+    }
+    'multiline-field' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress (
+            "`nfeature: feature`nticket: 01`nchanges: implemented`n" +
+            "continued text`nchecks: passed"
+        )
+        'done'
+    }
+    'missing-blank-separator' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-Content $progress "feature: feature`nticket: 01`nchanges: implemented`nchecks: passed"
+        'done'
+    }
+    'extra-field' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        Add-ProgressEntry
+        Add-Content $progress 'next: unexpected'
         'done'
     }
     'complete-no-changes' {
@@ -140,43 +213,44 @@ $scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
     }
     'stage-failure' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress 'changes: stage failure'
+        Add-ProgressEntry -Changes 'stage failure'
         Set-Content (Join-Path $root '.git\index.lock') 'controlled lock'
         'done'
     }
     'commit-failure' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress 'changes: commit failure'
+        Add-ProgressEntry -Changes 'commit failure'
         'done'
     }
     'archive-success' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "feature: feature`nchanges: archive feature`nFEATURE_COMPLETE: feature"
+        Add-ProgressEntry -Changes 'archive feature' -Completion 'feature'
         'done'
     }
     'promise-without-marker' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "feature: feature`nchanges: scoped ticket complete"
+        Add-ProgressEntry -Changes 'scoped ticket complete'
         '<promise>COMPLETE</promise>'
     }
     'multiple-completions' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "changes: ambiguous completion`nFEATURE_COMPLETE: feature`nFEATURE_COMPLETE: other"
+        Add-ProgressEntry -Changes 'ambiguous completion' -Completion 'feature'
+        Add-Content $progress 'FEATURE_COMPLETE: other'
         'done'
     }
     'missing-active-feature' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "changes: missing active feature`nFEATURE_COMPLETE: missing"
+        Add-ProgressEntry -Changes 'missing active feature' -Completion 'missing'
         'done'
     }
     'existing-archive' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "changes: archive already exists`nFEATURE_COMPLETE: feature"
+        Add-ProgressEntry -Changes 'archive already exists' -Completion 'feature'
         'done'
     }
     'unsafe-completion' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress "changes: unsafe completion`nFEATURE_COMPLETE: ../feature"
+        Add-ProgressEntry -Changes 'unsafe completion' -Completion '../feature'
         'done'
     }
     'discovery-excludes-done' {
@@ -189,7 +263,7 @@ $scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
         'promise-partial-token'
     ) } {
         Set-Content (Join-Path $root "work-$invocation.txt") 'implemented'
-        Add-Content $progress "changes: iteration $invocation"
+        Add-ProgressEntry -Changes "iteration $invocation"
         if ($invocation -gt 1) {
             '<promise>COMPLETE</promise>'
         }
@@ -329,8 +403,23 @@ try {
     Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
         'Stale progress must not create a commit.'
 
-    foreach ($scenario in 'missing-changes', 'empty-changes') {
+    foreach ($scenario in @(
+        'missing-changes',
+        'empty-changes',
+        'missing-feature',
+        'missing-ticket',
+        'missing-checks',
+        'empty-required-field',
+        'reordered-fields',
+        'repeated-field',
+        'multiline-field',
+        'missing-blank-separator',
+        'extra-field',
+        'multiple-completions'
+    )) {
         $result = Invoke-TestCase $scenario -ExpectedExitCode 1
+        Assert-True ($result.Output -match 'exactly one blank-line-separated progress entry') `
+            "$scenario did not report the structured-entry requirement."
         Assert-Equal '' (Invoke-Git $result.Repository @('diff', '--cached', '--name-only')) `
             "$scenario must fail before staging."
         Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
@@ -429,7 +518,7 @@ try {
         Join-Path $result.Repository '.scratch\done'
     ))) 'A completion promise incorrectly created the done area.'
 
-    foreach ($scenario in 'multiple-completions', 'missing-active-feature', 'unsafe-completion') {
+    foreach ($scenario in 'missing-active-feature', 'unsafe-completion') {
         $result = Invoke-TestCase $scenario -ExpectedExitCode 1
         Assert-True (Test-Path -LiteralPath (
             Join-Path $result.Repository '.scratch\feature'
