@@ -157,12 +157,16 @@ function Get-NewProgressEntry {
         $After
     )
 
-    if (-not $After.StartsWith($Before, [System.StringComparison]::Ordinal)) {
+    # Agents may rewrite a text file while normalizing CRLF/LF. Treat that as
+    # formatting only; content before the appended entry must remain identical.
+    $normalizedBefore = $Before -replace "`r`n", "`n"
+    $normalizedAfter = $After -replace "`r`n", "`n"
+    if (-not $normalizedAfter.StartsWith($normalizedBefore, [System.StringComparison]::Ordinal)) {
         throw 'The iteration must only append to .scratch/progress.txt.'
     }
 
-    $appendedContent = $After.Substring($Before.Length)
-    $separatorPattern = if ($Before.Length -eq 0) {
+    $appendedContent = $normalizedAfter.Substring($normalizedBefore.Length)
+    $separatorPattern = if ($normalizedBefore.Length -eq 0) {
         ''
     }
     elseif ($Before.EndsWith("`n", [System.StringComparison]::Ordinal)) {

@@ -139,6 +139,16 @@ $scenarioOutput = switch ($env:RALPH_TEST_SCENARIO) {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
         'done'
     }
+    'normalized-progress' {
+        Set-Content (Join-Path $root 'work.txt') 'implemented'
+        $existingProgress = Get-Content -LiteralPath $progress -Raw
+        $normalizedProgress = $existingProgress -replace "`r`n", "`n"
+        Set-Content -LiteralPath $progress -Value (
+            $normalizedProgress.TrimEnd("`r", "`n") +
+            "`n`nfeature: feature`nticket: 01`nchanges: normalized progress`nchecks: passed`n"
+        ) -NoNewline
+        'done'
+    }
     'missing-changes' {
         Set-Content (Join-Path $root 'work.txt') 'implemented'
         Add-Content $progress "`nfeature: test`nticket: 01`nchecks: passed"
@@ -402,6 +412,11 @@ try {
         'Validation must happen before staging.'
     Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
         'Stale progress must not create a commit.'
+
+    $result = Invoke-TestCase 'normalized-progress'
+    Assert-Equal 'normalized progress' (
+        Invoke-Git $result.Repository @('log', '-1', '--format=%s')
+    ) 'Line-ending normalization must not reject an otherwise appended entry.'
 
     foreach ($scenario in @(
         'missing-changes',
