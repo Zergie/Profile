@@ -5,13 +5,12 @@
     Implements local-tracker features iteratively with Codex or GitHub Copilot CLI.
 
 .DESCRIPTION
-    Runs one bounded agent invocation per iteration. Without TaskFile, the agent
+    Runs one bounded agent invocation per iteration. Without Feature, the agent
     selects and continues the highest-priority unfinished feature below
-    .scratch/<feature>/issues. With TaskFile, only that spec or ticket is handled.
+    .scratch/<feature>/issues. With Feature, only that active feature is handled.
 
-    Progress is shared through .scratch/progress.txt. The agent records completed
-    features as "FEATURE_COMPLETE: <slug>" and emits
-    "<promise>COMPLETE</promise>" when the entire requested scope is complete.
+    Progress is shared through the append-only .scratch/progress.jsonl handoff log.
+    Ralph validates each new record and marks its ticket complete.
 
 .EXAMPLE
     Invoke-Ralph.ps1 -Agent codex
@@ -20,10 +19,14 @@
     Invoke-Ralph.ps1 -Agent copilot -Iterations 5
 
 .EXAMPLE
-    Invoke-Ralph.ps1 -Agent codex -TaskFile .scratch/watch-command/spec.md
+    Invoke-Ralph.ps1 -Agent codex -Feature watch-command
 #>
 [CmdletBinding()]
 param(
+    [Parameter()]
+    [switch]
+    $List,
+
     [Parameter()]
     [switch]
     $Cleanup,
@@ -36,12 +39,54 @@ param(
     [Parameter()]
     [ValidateRange(1, [int]::MaxValue)]
     [int]
-    $Iterations = 1,
+    $Iterations = 32,
 
     [Parameter()]
+    [ArgumentCompleter({
+        param($commandName, $parameterName, $wordToComplete)
+
+        $scratch = Join-Path (Get-Location) '.scratch'
+        if (-not (Test-Path -LiteralPath $scratch -PathType Container)) {
+            return
+        }
+
+        Get-ChildItem -LiteralPath $scratch -Directory |
+            Where-Object {
+                $_.Name -cne 'done' -and
+                (Test-Path -LiteralPath (
+                    Join-Path $_.FullName 'spec.md'
+                ) -PathType Leaf) -and
+                $_.Name.StartsWith(
+                    $wordToComplete,
+                    [System.StringComparison]::OrdinalIgnoreCase
+                )
+            } |
+            Sort-Object Name |
+            ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new(
+                    $_.Name,
+                    $_.Name,
+                    [System.Management.Automation.CompletionResultType]::ParameterValue,
+                    $_.Name
+                )
+            }
+    })]
     [ValidateNotNullOrEmpty()]
+    [ValidateScript({
+        $scratch = Join-Path (Get-Location) '.scratch'
+        $candidate = Join-Path $scratch $_
+        if ($_ -ceq 'done' -or
+            [System.IO.Path]::GetFileName($_) -cne $_ -or
+            -not (Test-Path -LiteralPath $candidate -PathType Container) -or
+            -not (Test-Path -LiteralPath (
+                Join-Path $candidate 'spec.md'
+            ) -PathType Leaf)) {
+            throw "Feature must name a direct active tracker folder containing spec.md: $_"
+        }
+        $true
+    })]
     [string]
-    $TaskFile
+    $Feature
 )
 
 Set-StrictMode -Version Latest
@@ -79,61 +124,38 @@ function Invoke-Agent {
 
         [Parameter(Mandatory)]
         [string]
-        $Prompt
+        $Prompt,
+
+        [Parameter()]
+        [int]
+        $FrameInnerWidth = 0
     )
 
     $arguments = switch ($Name) {
         'codex' {
             @(
                 'exec',
-                '--json',
-                '--model', 'gpt-5.6-sol',
-                '--config', 'model_reasoning_effort="low"',
+                '--model', "$model",
+                '--config', "model_reasoning_effort=`"$effort`"",
                 '--sandbox', 'workspace-write',
                 $Prompt
             )
         }
         'copilot' {
-            @('-p', $Prompt, '--model', 'auto', '-s', '--allow-tool=read,write,shell')
+            @('-p', $Prompt, '--model', "$model", '-s', '--allow-tool=read,write,shell')
         }
     }
 
-    $AgentIcon   = "`e[1m$([char]::ConvertFromUtf32(0xEE0D))`e[0m"
-    $CommandIcon = "`e[1m$([char]::ConvertFromUtf32(0xF489))`e[0m"
     $lines = [System.Collections.Generic.List[string]]::new()
     & $CommandPath @arguments 2>&1 |
         ForEach-Object {
-            $text = $_
-
-            if ($Name -eq "codex") {
-                try {
-                    $item = $_ | ConvertFrom-Json
-
-                    switch -Regex ($item.type) {
-                        '^item\.completed$' {
-                            switch -Regex ($item.item.type) {
-                                '^agent_message$' {
-                                    Write-Host "$AgentIcon $($item.item.text)"
-                                    $item.item.text
-                                }
-                                '^command_execution$' {
-                                    Write-Host "`n$CommandIcon `e[38;5;8m$($item.item.command.Replace("\\", "\"))`e[0m`n"
-                                }
-                            }
-                        }
-                        '^item\.started$' {
-                        }
-                        '^((thread|turn)\.started)$' {
-                            Write-Host "`e[38;5;239m$($item.type)`e[0m"
-                        }
-                    }
-                } catch {
-                }
-
-            } else {
-                $text
-                Write-Host $text
+            if ($FrameInnerWidth -gt 0) {
+                Write-AgentOutputRow -Content $_.ToString() -InnerWidth $FrameInnerWidth
             }
+            else {
+                Write-Host $_
+            }
+            $_
         } |
         ForEach-Object {
             $lines.Add($_.ToString())
@@ -149,6 +171,7 @@ function Invoke-Agent {
 function Get-NewProgressEntry {
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
         [string]
         $Before,
 
@@ -157,58 +180,89 @@ function Get-NewProgressEntry {
         $After
     )
 
-    # Agents may rewrite a text file while normalizing CRLF/LF. Treat that as
-    # formatting only; content before the appended entry must remain identical.
-    $normalizedBefore = $Before -replace "`r`n", "`n"
-    $normalizedAfter = $After -replace "`r`n", "`n"
-    if (-not $normalizedAfter.StartsWith($normalizedBefore, [System.StringComparison]::Ordinal)) {
-        throw 'The iteration must only append to .scratch/progress.txt.'
+    if (-not $After.StartsWith($Before, [System.StringComparison]::Ordinal)) {
+        throw 'The iteration must only append to .scratch/progress.jsonl.'
     }
 
-    $appendedContent = $normalizedAfter.Substring($normalizedBefore.Length)
-    $separatorPattern = if ($normalizedBefore.Length -eq 0) {
-        ''
-    }
-    elseif ($Before.EndsWith("`n", [System.StringComparison]::Ordinal)) {
-        '\r?\n'
-    }
-    else {
-        '\r?\n\r?\n'
-    }
-    $valuePattern = '(\S(?:[^\r\n]*\S)?)'
-    $entryPattern = (
-        '\A' + $separatorPattern +
-        'feature: ' + $valuePattern + '\r?\n' +
-        'ticket: ' + $valuePattern + '\r?\n' +
-        'changes: ' + $valuePattern + '\r?\n' +
-        'checks: ' + $valuePattern +
-        '(?:\r?\nFEATURE_COMPLETE: ' + $valuePattern + ')?' +
-        '\r?\n?\z'
-    )
-    $entryMatch = [regex]::Match($appendedContent, $entryPattern)
-    if (-not $entryMatch.Success) {
-        throw (
-            'The iteration must append exactly one blank-line-separated progress entry ' +
-            'with non-empty feature, ticket, changes, and checks fields in that order, ' +
-            'followed only by an optional FEATURE_COMPLETE field.'
-        )
+    if ($Before.Length -gt 0 -and -not $Before.EndsWith(
+        "`n",
+        [System.StringComparison]::Ordinal
+    )) {
+        throw '.scratch/progress.jsonl must end with a newline before appending a record.'
     }
 
-    $completion = $entryMatch.Groups[5].Value
-    if ($completion.Length -gt 0 -and $completion -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
-        throw "Unsafe feature slug in FEATURE_COMPLETE record: '$completion'."
+    $appendedContent = $After.Substring($Before.Length)
+    $lines = @($appendedContent -split '\r?\n' | Where-Object { $_.Length -gt 0 })
+    if ($lines.Count -ne 1) {
+        throw 'The iteration must append exactly one JSONL record to .scratch/progress.jsonl.'
     }
 
-    return [pscustomobject] @{
-        Feature = $entryMatch.Groups[1].Value
-        Ticket = $entryMatch.Groups[2].Value
-        Changes = $entryMatch.Groups[3].Value
-        Checks = $entryMatch.Groups[4].Value
-        FeatureCompletion = if ($completion.Length -gt 0) { $completion } else { $null }
+    try {
+        $entry = $lines[0] | ConvertFrom-Json -ErrorAction Stop
     }
+    catch {
+        throw "The appended progress record is not valid JSON: $($_.Exception.Message)"
+    }
+
+    $properties = @($entry.PSObject.Properties.Name)
+    foreach ($required in 'feature', 'ticket', 'changes', 'checks') {
+        if ($properties -cnotcontains $required -or
+            $entry.$required -isnot [string] -or
+            [string]::IsNullOrWhiteSpace($entry.$required)) {
+            throw "The appended progress record requires a non-empty string '$required' field."
+        }
+    }
+
+    return $entry
 }
 
-function Move-CompletedFeature {
+function Complete-TrackerTicket {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [psobject]
+        $ProgressEntry
+    )
+
+    if ($ProgressEntry.feature -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw "Unsafe feature slug in progress record: '$($ProgressEntry.feature)'."
+    }
+    if ($ProgressEntry.ticket -cnotmatch '^[a-zA-Z0-9][a-zA-Z0-9._-]*$') {
+        throw "Unsafe ticket id in progress record: '$($ProgressEntry.ticket)'."
+    }
+
+    $issuesDirectory = Join-Path (
+        Join-Path $ScratchDirectory $ProgressEntry.feature
+    ) 'issues'
+    if (-not (Test-Path -LiteralPath $issuesDirectory -PathType Container)) {
+        throw "Active feature issues directory not found: $issuesDirectory"
+    }
+
+    $ticketName = $ProgressEntry.ticket
+    if ($ticketName.EndsWith('.md', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $ticketName = $ticketName.Substring(0, $ticketName.Length - 3)
+    }
+    if ($ticketName.EndsWith('.done', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Ticket is already completed: $($ProgressEntry.ticket)"
+    }
+
+    $source = Join-Path $issuesDirectory "$ticketName.md"
+    $destination = Join-Path $issuesDirectory "$ticketName.done.md"
+    if (Test-Path -LiteralPath $destination -PathType Leaf) {
+        throw "Ticket is already completed: $($ProgressEntry.feature)/$ticketName"
+    }
+    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+        throw "Unfinished tracker ticket not found: $($ProgressEntry.feature)/$ticketName"
+    }
+
+    Move-Item -LiteralPath $source -Destination $destination
+    return $ticketName
+}
+
+function Move-CompletedTrackerFeature {
     param(
         [Parameter(Mandatory)]
         [string]
@@ -216,117 +270,1000 @@ function Move-CompletedFeature {
 
         [Parameter(Mandatory)]
         [string]
-        $Slug
+        $Feature
     )
 
-    $source = Join-Path $ScratchDirectory $Slug
-    if (-not (Test-Path -LiteralPath $source -PathType Container)) {
-        throw "Completed feature directory not found: $source"
+    $featureDirectory = Join-Path $ScratchDirectory $Feature
+    $issuesDirectory = Join-Path $featureDirectory 'issues'
+    $unfinishedTickets = @(
+        Get-ChildItem -LiteralPath $issuesDirectory -File -Filter '*.md' |
+            Where-Object {
+                -not $_.Name.EndsWith(
+                    '.done.md',
+                    [System.StringComparison]::OrdinalIgnoreCase
+                )
+            }
+    )
+    if ($unfinishedTickets.Count -gt 0) {
+        return $null
     }
 
     $doneDirectory = Join-Path $ScratchDirectory 'done'
-    $destination = Join-Path $doneDirectory $Slug
-    if (Test-Path -LiteralPath $destination) {
-        throw "Completed feature archive already exists: $destination"
-    }
-
     if (-not (Test-Path -LiteralPath $doneDirectory -PathType Container)) {
         New-Item -ItemType Directory -Path $doneDirectory | Out-Null
     }
-    Move-Item -LiteralPath $source -Destination $destination
+
+    $archiveName = $Feature
+    $suffix = 2
+    while (Test-Path -LiteralPath (
+        Join-Path $doneDirectory $archiveName
+    )) {
+        $archiveName = "$Feature-$suffix"
+        $suffix++
+    }
+
+    $archivePath = Join-Path $doneDirectory $archiveName
+    Move-Item -LiteralPath $featureDirectory -Destination $archivePath
+    return $archivePath
+}
+
+function Get-UnfinishedTrackerTickets {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $FeatureDirectory
+    )
+
+    $issuesDirectory = Join-Path $FeatureDirectory 'issues'
+    if (-not (Test-Path -LiteralPath $issuesDirectory -PathType Container)) {
+        return @()
+    }
+
+    return @(
+        Get-ChildItem -LiteralPath $issuesDirectory -File -Filter '*.md' |
+            Where-Object {
+                -not $_.Name.EndsWith(
+                    '.done.md',
+                    [System.StringComparison]::OrdinalIgnoreCase
+                )
+            }
+    )
+}
+
+function Get-ActiveTrackerFeatures {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory
+    )
+
+    return @(
+        Get-ChildItem -LiteralPath $ScratchDirectory -Directory |
+            Where-Object {
+                $_.Name -cne 'done' -and
+                @(
+                    Get-UnfinishedTrackerTickets -FeatureDirectory $_.FullName
+                ).Count -gt 0
+            }
+    )
+}
+
+function Get-MarkdownHeading {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Fallback
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return $Fallback
+    }
+
+    $match = [regex]::Match(
+        [System.IO.File]::ReadAllText($Path),
+        '(?m)^#\s+(.+?)\s*$'
+    )
+    if (-not $match.Success) {
+        return $Fallback
+    }
+
+    return $match.Groups[1].Value
+}
+
+function Get-NaturalSortKey {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Value
+    )
+
+    return [regex]::Replace(
+        $Value.ToLowerInvariant(),
+        '\d+',
+        { param($match) $match.Value.PadLeft(20, '0') }
+    )
+}
+
+function Format-TrackerMetadataRow {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Label,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Value
+    )
+
+    $muted = $PSStyle.Foreground.BrightBlack
+    $valueColor = $PSStyle.Foreground.BrightWhite
+    $reset = $PSStyle.Reset
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        $Value = '-'
+    }
+
+    return "${muted}${Label}:${reset} ${valueColor}${Value}${reset}"
+}
+
+function Format-TrackerHeaderRow {
+    param(
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Repository = '',
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $AgentSummary = '',
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $InnerWidth = 0
+    )
+
+    $repositoryText = Format-TrackerMetadataRow -Label 'Repository' -Value $Repository
+    if ([string]::IsNullOrWhiteSpace($AgentSummary)) {
+        return $repositoryText
+    }
+
+    $dimAgent = "`e[2;38;5;8m${AgentSummary}$($PSStyle.Reset)"
+    $gap = 2
+    if ($InnerWidth -gt 0) {
+        $gap = [Math]::Max(
+            2,
+            $InnerWidth -
+                (Get-DisplayCellWidth -Text $repositoryText) -
+                (Get-DisplayCellWidth -Text $dimAgent)
+        )
+    }
+
+    return "$repositoryText$(' ' * $gap)$dimAgent"
+}
+
+function Get-TrackerLines {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        # Feature directory names that were active at startup and must remain
+        # visible after they complete and are archived.
+        [Parameter()]
+        [string[]]
+        $RetainedFeatureNames = @(),
+
+        # When set, render only these feature directory names. This keeps a
+        # selected-feature workboard focused while allowing automatic runs to
+        # continue showing every active feature.
+        [Parameter()]
+        [string[]]
+        $DisplayFeatureNames = @(),
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Repository = '',
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $AgentSummary = '',
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $InnerWidth = 0,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $CurrentIteration = 0,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $TotalIterations = 0,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $CompletedIterations = 0
+    )
+
+    $displayFeatureNameSet = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::Ordinal
+    )
+    foreach ($displayFeatureName in $DisplayFeatureNames) {
+        if (-not [string]::IsNullOrWhiteSpace($displayFeatureName)) {
+            [void] $displayFeatureNameSet.Add($displayFeatureName)
+        }
+    }
+
+    $activeFeatureNameSet = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::Ordinal
+    )
+    $activeFeatures = @(
+        Get-ChildItem -LiteralPath $ScratchDirectory -Directory |
+            Where-Object {
+                $_.Name -cne 'done' -and
+                ($displayFeatureNameSet.Count -eq 0 -or
+                    $displayFeatureNameSet.Contains($_.Name))
+            } |
+            ForEach-Object {
+                [void] $activeFeatureNameSet.Add($_.Name)
+                $_
+            } |
+            Sort-Object { $_.Name.ToLowerInvariant() }
+    )
+
+    # Find retained features that have since been archived into done/.
+    $doneDirectory = Join-Path $ScratchDirectory 'done'
+    $displayEntries = [System.Collections.Generic.List[pscustomobject]]::new()
+    foreach ($f in $activeFeatures) {
+        $displayEntries.Add([pscustomobject]@{
+            Directory   = $f
+            DisplayName = $f.Name
+            IsRetained  = $false
+        })
+    }
+    foreach ($retainedName in $RetainedFeatureNames) {
+        if ($activeFeatureNameSet.Contains($retainedName)) { continue }
+        if (-not (Test-Path -LiteralPath $doneDirectory -PathType Container)) { continue }
+        $archivedDir = @(
+            Get-ChildItem -LiteralPath $doneDirectory -Directory |
+                Where-Object {
+                    $_.Name -ceq $retainedName -or
+                    $_.Name -cmatch ('^' + [regex]::Escape($retainedName) + '-\d+$')
+                } |
+                Sort-Object Name
+        ) | Select-Object -First 1
+        if ($archivedDir) {
+            $displayEntries.Add([pscustomobject]@{
+                Directory   = $archivedDir
+                DisplayName = $retainedName
+                IsRetained  = $true
+            })
+        }
+    }
+    $features = @($displayEntries | Sort-Object { $_.DisplayName.ToLowerInvariant() })
+
+    $featureRows = [System.Collections.Generic.List[object]]::new()
+    $unfinishedCount = 0
+    foreach ($entry in $features) {
+        $featureDir = $entry.Directory
+        $issuesDirectory = Join-Path $featureDir.FullName 'issues'
+        $tickets = @(
+            if (Test-Path -LiteralPath $issuesDirectory -PathType Container) {
+                Get-ChildItem -LiteralPath $issuesDirectory -File -Filter '*.md' |
+                    ForEach-Object {
+                        $completed = $entry.IsRetained -or $_.Name.EndsWith(
+                            '.done.md',
+                            [System.StringComparison]::OrdinalIgnoreCase
+                        )
+                        [pscustomobject]@{
+                            File      = $_
+                            Completed = $completed
+                            SortKey   = Get-NaturalSortKey -Value $_.Name
+                        }
+                    } |
+                    Sort-Object SortKey
+            }
+        )
+        $unfinishedCount += @($tickets | Where-Object { -not $_.Completed }).Count
+        $featureRows.Add([pscustomobject]@{
+            Directory = $featureDir
+            Heading   = Get-MarkdownHeading `
+                -Path (Join-Path $featureDir.FullName 'spec.md') `
+                -Fallback $entry.DisplayName
+            Tickets   = $tickets
+        })
+    }
+
+    $accent  = $PSStyle.Foreground.BrightCyan
+    $muted   = $PSStyle.Foreground.BrightBlack
+    $success = $PSStyle.Foreground.BrightGreen
+    $reset   = $PSStyle.Reset
+
+    $cappedTotal = if ($TotalIterations -gt 0 -and $CurrentIteration -gt 0) {
+        [Math]::Min($TotalIterations, $CompletedIterations + $unfinishedCount)
+    } else { 0 }
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    $lines.Add((Format-TrackerHeaderRow -Repository $Repository `
+        -AgentSummary $AgentSummary -InnerWidth $InnerWidth))
+    $iterationValue = if ($cappedTotal -gt 0) {
+        "$CurrentIteration of $cappedTotal"
+    } else { '' }
+    $lines.Add((Format-TrackerMetadataRow -Label 'Iteration' -Value $iterationValue))
+
+    if ($features.Count -eq 0) {
+        $lines.Add('')
+        $lines.Add("${muted}No active features.${reset}")
+        return $lines
+    }
+
+    foreach ($featureRow in $featureRows) {
+        $lines.Add('')
+        $lines.Add(
+            "${accent}$($featureRow.Heading)${reset} " +
+            "${muted}($($featureRow.Directory.Name))${reset}"
+        )
+        if ($featureRow.Tickets.Count -eq 0) {
+            $lines.Add("${muted}└─ no tickets${reset}")
+            continue
+        }
+
+        for ($index = 0; $index -lt $featureRow.Tickets.Count; $index++) {
+            $ticket   = $featureRow.Tickets[$index]
+            $branch   = if ($index -eq $featureRow.Tickets.Count - 1) { '└─' } else { '├─' }
+            $ticketId = $ticket.File.BaseName
+            if ($ticketId.EndsWith('.done', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $ticketId = $ticketId.Substring(0, $ticketId.Length - 5)
+            }
+            $heading = Get-MarkdownHeading `
+                -Path $ticket.File.FullName `
+                -Fallback $ticketId
+            if ($ticket.Completed) {
+                $lines.Add("${muted}$branch [✓] $heading${reset}")
+            }
+            else {
+                $lines.Add("$branch ${success}[ ]${reset} $heading")
+            }
+        }
+    }
+
+    return $lines
+}
+
+function Format-PanelTopBorder {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Label,
+
+        [Parameter(Mandatory)]
+        [int]
+        $Width
+    )
+
+    if ($Width -lt 2) { $Width = 2 }
+
+    # Intensity alone inherits the current foreground colour. Select grey
+    # explicitly so a coloured label cannot bleed into either frame border.
+    $frame  = "`e[2;38;5;8m"
+    $accent = $PSStyle.Foreground.BrightCyan
+    $reset  = $PSStyle.Reset
+
+    # Top border: ╭─ <label> ─...─╮  (total printable width = $Width)
+    # Structure: ╭─(2) + space(1) + label + space(1) + fill + ╮(1)
+    $fillLen = [Math]::Max(0, $Width - 4 - $Label.Length - 1)
+    return "${frame}╭─ ${accent}${Label}${frame} $('─' * $fillLen)╮${reset}"
+}
+
+function Format-PanelBottomBorder {
+    param(
+        [Parameter(Mandatory)]
+        [int]
+        $Width
+    )
+
+    if ($Width -lt 2) { $Width = 2 }
+
+    $frame = "`e[2;38;5;8m"
+    $reset = $PSStyle.Reset
+    return "${frame}╰$('─' * ($Width - 2))╯${reset}"
+}
+
+function Get-AgentOutputBlankRow {
+    param(
+        [Parameter(Mandatory)]
+        [int]
+        $InnerWidth
+    )
+
+    $frame = "`e[2;38;5;8m"
+    $reset = $PSStyle.Reset
+    return "${frame}│${reset}$(' ' * ($InnerWidth + 2))${frame}│${reset}"
+}
+
+function Get-DisplayCellWidth {
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [string]
+        $Text
+    )
+
+    if ($null -eq $Text -or $Text.Length -eq 0) { return 0 }
+
+    $width = 0
+    $index = 0
+    while ($index -lt $Text.Length) {
+        if (
+            $Text[$index] -eq [char]27 -and
+            ($index + 1) -lt $Text.Length -and
+            $Text[$index + 1] -eq '['
+        ) {
+            $sequenceEnd = $index + 2
+            while ($sequenceEnd -lt $Text.Length) {
+                $value = [int][char]$Text[$sequenceEnd]
+                if ($value -ge 0x40 -and $value -le 0x7E) { break }
+                $sequenceEnd++
+            }
+            if ($sequenceEnd -lt $Text.Length) {
+                $index = $sequenceEnd + 1
+                continue
+            }
+        }
+
+        $codePoint = [char]::ConvertToUtf32($Text, $index)
+        $charLen = if ($codePoint -gt 0xFFFF) { 2 } else { 1 }
+        $category = [System.Globalization.CharUnicodeInfo]::GetUnicodeCategory($Text, $index)
+        $cellWidth = switch ($category) {
+            ([System.Globalization.UnicodeCategory]::Control) { 0; break }
+            ([System.Globalization.UnicodeCategory]::NonSpacingMark) { 0; break }
+            ([System.Globalization.UnicodeCategory]::SpacingCombiningMark) { 0; break }
+            ([System.Globalization.UnicodeCategory]::EnclosingMark) { 0; break }
+            default {
+                if (
+                    $codePoint -eq 0x200D -or
+                    ($codePoint -ge 0xFE00 -and $codePoint -le 0xFE0F)
+                ) {
+                    0
+                }
+                elseif (
+                    ($codePoint -ge 0x1100 -and $codePoint -le 0x115F) -or
+                    ($codePoint -ge 0x2329 -and $codePoint -le 0x232A) -or
+                    ($codePoint -ge 0x2E80 -and $codePoint -le 0xA4CF) -or
+                    ($codePoint -ge 0xAC00 -and $codePoint -le 0xD7A3) -or
+                    ($codePoint -ge 0xF900 -and $codePoint -le 0xFAFF) -or
+                    ($codePoint -ge 0xFE10 -and $codePoint -le 0xFE19) -or
+                    ($codePoint -ge 0xFE30 -and $codePoint -le 0xFE6F) -or
+                    ($codePoint -ge 0xFF00 -and $codePoint -le 0xFF60) -or
+                    ($codePoint -ge 0xFFE0 -and $codePoint -le 0xFFE6) -or
+                    ($codePoint -ge 0x1F300 -and $codePoint -le 0x1FAFF) -or
+                    ($codePoint -ge 0x20000 -and $codePoint -le 0x3FFFD)
+                ) {
+                    2
+                }
+                else {
+                    1
+                }
+            }
+        }
+
+        $width += $cellWidth
+        $index += $charLen
+    }
+
+    return $width
+}
+
+function Split-AgentOutputContent {
+    param(
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Content = '',
+
+        [Parameter(Mandatory)]
+        [int]
+        $InnerWidth
+    )
+
+    if ($InnerWidth -lt 0) { $InnerWidth = 0 }
+    if ($null -eq $Content) { $Content = '' }
+
+    $rows = [System.Collections.Generic.List[pscustomobject]]::new()
+    $builder = [System.Text.StringBuilder]::new()
+    $rowWidth = 0
+    $index = 0
+    while ($index -lt $Content.Length) {
+        if (
+            $Content[$index] -eq [char]27 -and
+            ($index + 1) -lt $Content.Length -and
+            $Content[$index + 1] -eq '['
+        ) {
+            $sequenceEnd = $index + 2
+            while ($sequenceEnd -lt $Content.Length) {
+                $value = [int][char]$Content[$sequenceEnd]
+                if ($value -ge 0x40 -and $value -le 0x7E) { break }
+                $sequenceEnd++
+            }
+            if ($sequenceEnd -lt $Content.Length) {
+                [void]$builder.Append($Content.Substring($index, $sequenceEnd - $index + 1))
+                $index = $sequenceEnd + 1
+                continue
+            }
+        }
+
+        $codePoint = [char]::ConvertToUtf32($Content, $index)
+        $charLen = if ($codePoint -gt 0xFFFF) { 2 } else { 1 }
+        $textElement = $Content.Substring($index, $charLen)
+        $elementWidth = Get-DisplayCellWidth -Text $textElement
+        if (
+            $InnerWidth -gt 0 -and
+            $elementWidth -gt 0 -and
+            $rowWidth -gt 0 -and
+            ($rowWidth + $elementWidth -gt $InnerWidth)
+        ) {
+            $rows.Add([pscustomobject]@{
+                    Text  = $builder.ToString()
+                    Width = $rowWidth
+                })
+            $builder.Clear() | Out-Null
+            $rowWidth = 0
+        }
+
+        [void]$builder.Append($textElement)
+        $rowWidth += $elementWidth
+        $index += $charLen
+    }
+
+    if ($builder.Length -gt 0 -or $rows.Count -eq 0) {
+        $rows.Add([pscustomobject]@{
+                Text  = $builder.ToString()
+                Width = $rowWidth
+            })
+    }
+
+    return @($rows)
+}
+
+function Write-AgentOutputRow {
+    param(
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Content = '',
+
+        [Parameter(Mandatory)]
+        [int]
+        $InnerWidth
+    )
+
+    $frame = "`e[2;38;5;8m"
+    $reset = $PSStyle.Reset
+    $rows = Split-AgentOutputContent -Content $Content -InnerWidth $InnerWidth
+    foreach ($row in $rows) {
+        $pad = ' ' * [Math]::Max(0, $InnerWidth - [int]$row.Width)
+        [Console]::WriteLine("${frame}│${reset} $($row.Text)$pad ${frame}│${reset}")
+    }
+}
+
+function Compact-AgentOutputPanel {
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]
+        $State
+    )
+
+    $oldBottomRow = if ($State.ContainsKey('BottomRow')) { [int]$State.BottomRow } else { 0 }
+    if ($oldBottomRow -le 0) { return }
+
+    $windowWidth = try { [Console]::WindowWidth } catch { 0 }
+    if ($windowWidth -lt 1) {
+        $windowWidth = [Math]::Max(2, (4 + [int]$State.InnerWidth))
+    }
+    $windowHeight = try { [Console]::WindowHeight } catch { 0 }
+    if ($windowHeight -lt 1) {
+        $windowHeight = if ($State.ContainsKey('WindowHeight')) {
+            [int]$State.WindowHeight
+        }
+        else {
+            $oldBottomRow
+        }
+    }
+
+    $newBottomRow = try { [Console]::CursorTop + 1 } catch { $oldBottomRow }
+    if ($newBottomRow -lt 1) { $newBottomRow = $oldBottomRow }
+    $newBottomRow = [Math]::Min($windowHeight, $newBottomRow)
+
+    if ($oldBottomRow -gt $newBottomRow) {
+        $blankLine = ' ' * $windowWidth
+        for ($row = $newBottomRow; $row -le $oldBottomRow; $row++) {
+            [Console]::Write("`e[${row};1H$blankLine")
+        }
+    }
+
+    [Console]::Write("`e[${newBottomRow};1H")
+    [Console]::Write((Format-PanelBottomBorder -Width $windowWidth))
+    $State.BottomRow = $newBottomRow
+}
+
+function Get-AgentOutputPanelLayout {
+    param(
+        [Parameter(Mandatory)]
+        [int]
+        $TrackerPanelHeight,
+
+        [Parameter(Mandatory)]
+        [int]
+        $WindowWidth,
+
+        [Parameter(Mandatory)]
+        [int]
+        $WindowHeight
+    )
+
+    if ($WindowWidth -lt 1) { $WindowWidth = 120 }
+    if ($WindowHeight -lt 1) { $WindowHeight = 24 }
+
+    $messageTop = [Math]::Min(
+        [Math]::Max(1, $TrackerPanelHeight + 2),
+        $WindowHeight
+    )
+    $messageBottom = [Math]::Max($messageTop, $WindowHeight - 1)
+    $topRow = [Math]::Max(1, $messageTop - 1)
+    $bottomRow = [Math]::Min($WindowHeight, $messageBottom + 1)
+
+    return @{
+        TopRow      = $topRow
+        BottomRow   = $bottomRow
+        MessageTop  = $messageTop
+        MessageBottom = $messageBottom
+        InnerWidth  = [Math]::Max(0, $WindowWidth - 4)
+        TopBorder   = Format-PanelTopBorder -Label 'Agent output' -Width $WindowWidth
+        BottomBorder = Format-PanelBottomBorder -Width $WindowWidth
+    }
+}
+
+function Format-TrackerPanel {
+    param(
+        [string[]]
+        $TrackerLines,
+
+        [Parameter(Mandatory)]
+        [int]
+        $Width
+    )
+
+    if ($Width -lt 2) { $Width = 2 }
+    $frame       = "`e[2;38;5;8m"
+    $reset       = $PSStyle.Reset
+    $topBorder   = Format-PanelTopBorder -Label 'Ralph tracker' -Width $Width
+    $bottomBorder = Format-PanelBottomBorder -Width $Width
+
+    # Inner content area width: Width - │(1) - space(1) - space(1) - │(1) = Width - 4
+    $innerWidth = [Math]::Max(0, $Width - 4)
+
+    $result = [System.Collections.Generic.List[string]]::new()
+    $result.Add($topBorder)
+    foreach ($line in $TrackerLines) {
+        # Strip ANSI sequences to calculate visible length for right-padding.
+        $visible  = $line -replace "`e\[[^m]*m", ''
+        $padCount = [Math]::Max(0, $innerWidth - $visible.Length)
+        $result.Add("${frame}│${reset} ${line}$(' ' * $padCount) ${frame}│${reset}")
+    }
+    $result.Add($bottomBorder)
+
+    return $result
+}
+
+function Show-RalphTracker {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory
+    )
+
+    foreach ($line in Get-TrackerLines -ScratchDirectory $ScratchDirectory) {
+        Write-Host $line
+    }
+}
+
+function Enter-RalphWorkboard {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Repository,
+
+        [Parameter(Mandatory)]
+        [string]
+        $AgentSummary,
+
+        [Parameter(Mandatory)]
+        [int]
+        $CurrentIteration,
+
+        [Parameter(Mandatory)]
+        [int]
+        $TotalIterations,
+
+        [Parameter()]
+        [string[]]
+        $DisplayFeatureNames = @()
+    )
+
+    $displayFeatureNameSet = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::Ordinal
+    )
+    foreach ($displayFeatureName in $DisplayFeatureNames) {
+        if (-not [string]::IsNullOrWhiteSpace($displayFeatureName)) {
+            [void] $displayFeatureNameSet.Add($displayFeatureName)
+        }
+    }
+    $normalizedDisplayFeatureNames = @($displayFeatureNameSet)
+
+    # Snapshot active features at startup so they can be retained after archival.
+    $startupFeatureNames = @(
+        Get-ActiveTrackerFeatures -ScratchDirectory $ScratchDirectory |
+            Where-Object {
+                $displayFeatureNameSet.Count -eq 0 -or
+                $displayFeatureNameSet.Contains($_.Name)
+            } |
+            ForEach-Object { $_.Name }
+    )
+
+    $windowWidth   = try { [Console]::WindowWidth } catch { 0 }
+    if ($windowWidth -lt 1) { $windowWidth = 120 }
+    $lines         = Get-TrackerLines `
+        -ScratchDirectory $ScratchDirectory `
+        -DisplayFeatureNames $normalizedDisplayFeatureNames `
+        -Repository $Repository `
+        -AgentSummary $AgentSummary `
+        -InnerWidth ([Math]::Max(0, $windowWidth - 4)) `
+        -CurrentIteration $CurrentIteration `
+        -TotalIterations $TotalIterations
+    $trackerHeight = $lines.Count
+    $windowHeight  = try { [Console]::WindowHeight } catch { 0 }
+    if ($windowHeight -lt 1) { $windowHeight = 24 }
+
+    $panelLines   = Format-TrackerPanel -TrackerLines $lines -Width $windowWidth
+    $panelHeight  = $panelLines.Count  # trackerHeight + 2 borders
+    $outputLayout = Get-AgentOutputPanelLayout `
+        -TrackerPanelHeight $panelHeight `
+        -WindowWidth $windowWidth `
+        -WindowHeight $windowHeight
+
+    # Hide the cursor for the duration of the interactive workboard.
+    [Console]::Write("`e[?25l")
+    # Clear the screen and draw the tracker panel at the top.
+    [Console]::Write("`e[2J`e[1;1H")
+    foreach ($panelLine in $panelLines) {
+        [Console]::WriteLine($panelLine)
+    }
+    [Console]::Write("`e[$($outputLayout.TopRow);1H")
+    [Console]::WriteLine($outputLayout.TopBorder)
+    # Draw blank rows explicitly before establishing the scroll region. Without
+    # these rows, vertical frame edges appear only after the agent emits output.
+    $blankOutputRow = Get-AgentOutputBlankRow -InnerWidth $outputLayout.InnerWidth
+    for ($row = $outputLayout.MessageTop; $row -le $outputLayout.MessageBottom; $row++) {
+        [Console]::Write("`e[${row};1H$blankOutputRow")
+    }
+    [Console]::Write("`e[$($outputLayout.BottomRow);1H")
+    [Console]::Write($outputLayout.BottomBorder)
+
+    # Confine scrolling to the agent-output region between fixed borders.
+    [Console]::Write(
+        "`e[$($outputLayout.MessageTop);$($outputLayout.MessageBottom)r"
+    )
+    [Console]::Write("`e[$($outputLayout.MessageTop);1H")
+
+    return @{
+        Height               = $trackerHeight
+        ScrollTop            = $outputLayout.MessageTop
+        BottomRow            = $outputLayout.BottomRow
+        InnerWidth           = $outputLayout.InnerWidth
+        WindowHeight         = $windowHeight
+        RetainedFeatureNames = $startupFeatureNames
+        DisplayFeatureNames  = $normalizedDisplayFeatureNames
+        Repository           = $Repository
+        AgentSummary         = $AgentSummary
+        CurrentIteration     = $CurrentIteration
+        TotalIterations      = $TotalIterations
+        CompletedIterations  = 0
+    }
+}
+
+function Update-RalphWorkboard {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [hashtable]
+        $State
+    )
+
+    $retainedNames = if ($State.ContainsKey('RetainedFeatureNames')) {
+        $State.RetainedFeatureNames
+    }
+    else {
+        @()
+    }
+    $displayNames = if ($State.ContainsKey('DisplayFeatureNames')) {
+        $State.DisplayFeatureNames
+    }
+    else {
+        @()
+    }
+    $repository = if ($State.ContainsKey('Repository')) {
+        [string] $State.Repository
+    }
+    else {
+        ''
+    }
+    $agentSummary = if ($State.ContainsKey('AgentSummary')) {
+        [string] $State.AgentSummary
+    }
+    else {
+        ''
+    }
+    $currentIteration = if ($State.ContainsKey('CurrentIteration')) {
+        [int] $State.CurrentIteration
+    }
+    else {
+        0
+    }
+    $totalIterations = if ($State.ContainsKey('TotalIterations')) {
+        [int] $State.TotalIterations
+    }
+    else {
+        0
+    }
+    $completedIterations = if ($State.ContainsKey('CompletedIterations')) {
+        [int] $State.CompletedIterations
+    }
+    else {
+        0
+    }
+    $lineWidth = try { [Console]::WindowWidth } catch { 0 }
+    if ($lineWidth -lt 1) { $lineWidth = 120 }
+    $lines = Get-TrackerLines -ScratchDirectory $ScratchDirectory `
+        -RetainedFeatureNames $retainedNames `
+        -DisplayFeatureNames $displayNames `
+        -Repository $repository `
+        -AgentSummary $agentSummary `
+        -InnerWidth ([Math]::Max(0, $lineWidth - 4)) `
+        -CurrentIteration $currentIteration `
+        -TotalIterations $totalIterations `
+        -CompletedIterations $completedIterations
+    $trackerHeight = $lines.Count
+    $currentHeight = if ($State.ContainsKey('Height')) { [int]$State.Height } else { 0 }
+
+    $panelLines  = Format-TrackerPanel -TrackerLines $lines -Width $lineWidth
+    $panelHeight = $panelLines.Count  # trackerHeight + 2 borders
+
+    if ($trackerHeight -ne $currentHeight) {
+        # Tracker-height changes must reposition both adjacent panels and recreate
+        # the message scroll region so borders and content remain coherent.
+        $windowHeight = try { [Console]::WindowHeight } catch { 0 }
+        if ($windowHeight -lt 1) {
+            if ($State.ContainsKey('WindowHeight')) {
+                $windowHeight = [int]$State.WindowHeight
+            }
+            else {
+                $windowHeight = 24
+            }
+        }
+        $outputLayout = Get-AgentOutputPanelLayout `
+            -TrackerPanelHeight $panelHeight `
+            -WindowWidth $lineWidth `
+            -WindowHeight $windowHeight
+
+        [Console]::Write("`e[2J`e[1;1H")
+        foreach ($panelLine in $panelLines) {
+            [Console]::WriteLine($panelLine)
+        }
+        [Console]::Write("`e[$($outputLayout.TopRow);1H")
+        [Console]::WriteLine($outputLayout.TopBorder)
+        $blankOutputRow = Get-AgentOutputBlankRow -InnerWidth $outputLayout.InnerWidth
+        for ($row = $outputLayout.MessageTop; $row -le $outputLayout.MessageBottom; $row++) {
+            [Console]::Write("`e[${row};1H$blankOutputRow")
+        }
+        [Console]::Write("`e[$($outputLayout.BottomRow);1H")
+        [Console]::Write($outputLayout.BottomBorder)
+        [Console]::Write(
+            "`e[$($outputLayout.MessageTop);$($outputLayout.MessageBottom)r"
+        )
+        [Console]::Write("`e[$($outputLayout.MessageTop);1H")
+
+        $State.Height = $trackerHeight
+        $State.ScrollTop = $outputLayout.MessageTop
+        $State.BottomRow = $outputLayout.BottomRow
+        $State.InnerWidth = $outputLayout.InnerWidth
+        $State.WindowHeight = $windowHeight
+        return $State
+    }
+
+    # Save the current scroll-region cursor position, redraw the panel, then restore.
+    [Console]::Write("`e[s`e[1;1H")
+    $blankLine       = ' ' * $lineWidth
+    $oldPanelHeight  = $currentHeight + 2
+    $rowsToRedraw    = [Math]::Max($oldPanelHeight, $panelHeight)
+    for ($index = 0; $index -lt $rowsToRedraw; $index++) {
+        if ($index -lt $panelHeight) {
+            [Console]::WriteLine($panelLines[$index])
+        }
+        else {
+            [Console]::WriteLine($blankLine)
+        }
+    }
+    [Console]::Write("`e[u")
+
+    return $State
+}
+
+function Exit-RalphWorkboard {
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]
+        $State
+    )
+
+    # Restore the terminal's full-screen scrolling region.
+    [Console]::Write("`e[r")
+    # Position cursor at the bottom border row so the prompt appears below the frame.
+    $bottomRow = if ($State.ContainsKey('BottomRow')) { [int]$State.BottomRow } else { 0 }
+    if ($bottomRow -gt 0) {
+        [Console]::Write("`e[${bottomRow};1H")
+        [Console]::WriteLine()
+    }
+    # Make the cursor visible again after tearing down the interactive workboard.
+    [Console]::Write("`e[?25h")
 }
 
 function Invoke-RalphCleanup {
     param(
         [Parameter(Mandatory)]
         [string]
-        $ScratchDirectory,
-
-        [Parameter(Mandatory)]
-        [string]
-        $ProgressFile
+        $ScratchDirectory
     )
 
     $doneDirectory = Join-Path $ScratchDirectory 'done'
-    $archiveDirectories = if (Test-Path -LiteralPath $doneDirectory -PathType Container) {
-        @(Get-ChildItem -LiteralPath $doneDirectory -Directory)
-    }
-    else {
-        @()
-    }
-    $progress = [System.IO.File]::ReadAllText($ProgressFile)
-    $completionMatches = [regex]::Matches(
-        $progress,
-        '(?m)^FEATURE_COMPLETE: ([^\r\n]+)\r?$'
-    )
-
-    $candidateSlugs = [System.Collections.Generic.HashSet[string]]::new(
-        [System.StringComparer]::OrdinalIgnoreCase
+    $archiveDirectories = @(
+        if (Test-Path -LiteralPath $doneDirectory -PathType Container) {
+            Get-ChildItem -LiteralPath $doneDirectory -Directory
+        }
     )
     foreach ($archive in $archiveDirectories) {
         if ($archive.Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
             throw "Unsafe archived feature directory: '$($archive.Name)'."
         }
-        [void] $candidateSlugs.Add($archive.Name)
-    }
-    foreach ($match in $completionMatches) {
-        $slug = $match.Groups[1].Value
-        if ($slug -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
-            throw "Unsafe feature slug in FEATURE_COMPLETE record: '$slug'."
-        }
-        [void] $candidateSlugs.Add($slug)
-    }
-
-    foreach ($slug in $candidateSlugs) {
-        $activePath = Join-Path $ScratchDirectory $slug
-        if (Test-Path -LiteralPath $activePath -PathType Container) {
-            throw "Completed feature still has an active directory: $activePath"
-        }
-    }
-
-    $newline = if ($progress.Contains("`r`n")) { "`r`n" } else { "`n" }
-    $hadTrailingNewline = $progress.EndsWith("`n", [System.StringComparison]::Ordinal)
-    $blocks = [regex]::Split($progress.TrimEnd("`r", "`n"), '\r?\n\r?\n')
-    $remainingBlocks = [System.Collections.Generic.List[string]]::new()
-    foreach ($block in $blocks) {
-        $featureMatch = [regex]::Match($block, '(?m)^feature:\s*([^\r\n]+?)\s*\r?$')
-        if ($featureMatch.Success -and $candidateSlugs.Contains($featureMatch.Groups[1].Value)) {
-            continue
-        }
-
-        $remainingLines = @(
-            [regex]::Split($block, '\r?\n') | Where-Object {
-                $marker = [regex]::Match($_, '^FEATURE_COMPLETE: ([^\r\n]+)\r?$')
-                -not ($marker.Success -and $candidateSlugs.Contains($marker.Groups[1].Value))
-            }
-        )
-        if ($remainingLines.Count -gt 0 -and -not (
-            $remainingLines.Count -eq 1 -and $remainingLines[0] -eq ''
-        )) {
-            $remainingBlocks.Add($remainingLines -join $newline)
-        }
-    }
-    $updatedProgress = $remainingBlocks -join ($newline + $newline)
-    if ($hadTrailingNewline -and $updatedProgress.Length -gt 0) {
-        $updatedProgress += $newline
     }
 
     foreach ($archive in $archiveDirectories) {
         Remove-Item -LiteralPath $archive.FullName -Recurse -Force
     }
-    if (-not [string]::Equals(
-        $progress,
-        $updatedProgress,
-        [System.StringComparison]::Ordinal
-    )) {
-        [System.IO.File]::WriteAllText($ProgressFile, $updatedProgress)
-    }
 
-    if ($candidateSlugs.Count -eq 0) {
+    if ($archiveDirectories.Count -eq 0) {
         Write-Host 'Cleanup complete: nothing to remove.'
     }
     else {
-        $removed = @($candidateSlugs) | Sort-Object
+        $removed = @($archiveDirectories.Name) | Sort-Object
         Write-Host "Cleanup complete: removed $($removed -join ', ')."
     }
 }
@@ -350,20 +1287,33 @@ if (-not (Test-Path -LiteralPath $scratchDirectory -PathType Container)) {
     throw "Local issue tracker directory not found: $scratchDirectory"
 }
 
-$progressFile = Join-Path $scratchDirectory 'progress.txt'
+if ($List) {
+    $incompatibleOptions = @(
+        @('Cleanup', 'Agent', 'Iterations', 'Feature') |
+            Where-Object { $PSBoundParameters.ContainsKey($_) }
+    )
+    if ($incompatibleOptions.Count -gt 0) {
+        throw "-List cannot be combined with: $($incompatibleOptions -join ', ')."
+    }
+
+    Show-RalphTracker -ScratchDirectory $scratchDirectory
+    exit 0
+}
+
+$progressFile = Join-Path $scratchDirectory 'progress.jsonl'
 if (-not (Test-Path -LiteralPath $progressFile -PathType Leaf)) {
     New-Item -ItemType File -Path $progressFile | Out-Null
 }
 
 if ($Cleanup) {
     $incompatibleOptions = @(
-        @('Agent', 'Iterations', 'TaskFile') |
+        @('Agent', 'Iterations', 'Feature') |
             Where-Object { $PSBoundParameters.ContainsKey($_) }
     )
     if ($incompatibleOptions.Count -gt 0) {
         throw "-Cleanup cannot be combined with: $($incompatibleOptions -join ', ')."
     }
-    Invoke-RalphCleanup -ScratchDirectory $scratchDirectory -ProgressFile $progressFile
+    Invoke-RalphCleanup -ScratchDirectory $scratchDirectory
     exit 0
 }
 
@@ -376,34 +1326,36 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     throw 'The Git working tree is not clean. Commit or stash all changes before running Invoke-Ralph.'
 }
 
-$scopeInstruction = if ($PSBoundParameters.ContainsKey('TaskFile')) {
-    $resolvedTask = Resolve-Path -LiteralPath $TaskFile -ErrorAction Stop
-    $taskPath = [System.IO.Path]::GetRelativePath(
+$scopeKind = 'automatic'
+$scopeFeature = $null
+$scopeInstruction = if ($PSBoundParameters.ContainsKey('Feature')) {
+    $scopeFeature = $Feature
+    $scopeKind = 'feature'
+    $specPath = [System.IO.Path]::GetRelativePath(
         $repositoryRoot,
-        $resolvedTask.Path
+        (Join-Path (Join-Path $scratchDirectory $Feature) 'spec.md')
     )
 
     @"
-Work only on the explicit task file '$taskPath'.
-If it is a spec, complete only that feature. If it is one ticket, complete only
-that ticket. Emit <promise>COMPLETE</promise> once this explicit scope is fully
-implemented and verified.
+Work only on the selected feature '$Feature', whose specification is '$specPath'.
+Complete successive unfinished tickets for that feature until it archives.
+Ralph determines completion from the resulting tracker state.
 "@
 }
 else {
     $issueDirectories = @(
-        Get-ChildItem -LiteralPath $scratchDirectory -Directory |
-            Where-Object { $_.Name -cne 'done' } |
+        Get-ActiveTrackerFeatures -ScratchDirectory $scratchDirectory |
             ForEach-Object {
-                $issues = Join-Path $_.FullName 'issues'
-                if (Test-Path -LiteralPath $issues -PathType Container) {
-                    [System.IO.Path]::GetRelativePath($repositoryRoot, $issues)
-                }
+                [System.IO.Path]::GetRelativePath(
+                    $repositoryRoot,
+                    (Join-Path $_.FullName 'issues')
+                )
             }
     )
 
     if ($issueDirectories.Count -eq 0) {
-        throw "No feature issue directories found below $scratchDirectory."
+        Write-Host 'Requested scope complete.'
+        exit 0
     }
 
     $issueDirectoryList = $issueDirectories -join [Environment]::NewLine
@@ -411,14 +1363,9 @@ else {
 Choose the highest-priority unfinished feature from these local issue directories:
 $issueDirectoryList
 
-Use the specs, tickets, dependencies, and .scratch/progress.txt to decide priority.
+Use the specs, tickets, dependencies, and tracker filenames to decide priority.
 If a feature was started in an earlier iteration, continue it until it is complete
-before selecting another feature. When one feature is complete, append exactly
-'FEATURE_COMPLETE: <feature-slug>' to .scratch/progress.txt and choose another
-unfinished feature in a later iteration.
-
-Emit <promise>COMPLETE</promise> only when every listed feature is fully implemented,
-verified, and recorded as complete in .scratch/progress.txt.
+before selecting another feature.
 "@
 }
 
@@ -429,52 +1376,117 @@ $scopeInstruction
 
 For this iteration:
 1. Read the relevant spec, every ticket for the selected feature, repository
-   instructions, and .scratch/progress.txt.
+   instructions, and .scratch/progress.jsonl.
 2. Select exactly one unblocked ticket that is not already recorded as completed.
 3. Implement only that ticket as an end-to-end, verifiable slice.
 4. Determine and run the repository's relevant tests, type checks, linters, or
    build checks. Do not claim completion if a relevant check fails.
-5. Append a concise handoff note to .scratch/progress.txt. Record the feature slug,
-   ticket, changes, checks and results, and useful context for the next iteration.
-   Append exactly one blank-line-separated entry in this format, with a non-empty
-   single-line value after every label:
-
-feature: <feature-slug>
-ticket: <ticket-id>
-changes: <concise changes and handoff context>
-checks: <checks and results>
-6. If and only if all tickets in the selected feature are now implemented and
-   verified, add exactly 'FEATURE_COMPLETE: <feature-slug>' as the final line of
-   that entry. Omit this line while any feature ticket remains unfinished.
-7. Leave staging and committing to Ralph after the iteration succeeds.
+5. Append exactly one JSON object on one line to .scratch/progress.jsonl with
+   non-empty string fields "feature", "ticket", "changes", and "checks".
+6. Leave ticket renaming, staging, and committing to Ralph after success.
 
 Do not work on more than one ticket in this iteration. Do not modify ticket or spec
-files merely to track status; progress.txt is the source of truth. Do not stage,
+files merely to track status. Do not rename tickets or stage,
 commit, push, rewrite history, reset, clean, discard unrelated work, use destructive
 Git commands, or change anything outside this repository.
 
 If the entire requested scope was already complete at the start, do not invent work
-or request an empty commit. Ensure progress.txt contains any required feature
-completion entry, then emit <promise>COMPLETE</promise>.
+or request an empty commit.
 "@
 
-Write-Host "Repository: $repositoryRoot"
-Write-Host "Agent: $($agentCommand.Name)"
-Write-Host "Progress: $progressFile"
+$isInteractive = (
+    -not [Console]::IsOutputRedirected -and
+    $host.Name -ceq 'ConsoleHost'
+)
+if ($env:RALPH_FORCE_INTERACTIVE -eq '1') { $isInteractive = $true }
+
+$model = if ($Agent -ceq 'codex') { 'gpt-5.6-sol' } else { 'auto' }
+$effort = if ($Agent -ceq 'codex') { 'low' } else { '' }
+$agentSummary = "$Agent / $model$(if ($effort) { " ($effort)" } else { '' })"
+
+$workboardState = $null
+$compactOutputPanelOnExit = $false
+if ($isInteractive) {
+    $workboardParameters = @{
+        ScratchDirectory = $scratchDirectory
+        Repository       = $repositoryRoot
+        AgentSummary      = $agentSummary
+        CurrentIteration  = 1
+        TotalIterations   = $Iterations
+    }
+    if ($scopeKind -eq 'feature') {
+        $workboardParameters.DisplayFeatureNames = @($scopeFeature)
+    }
+    $workboardState = Enter-RalphWorkboard @workboardParameters
+}
+
+try {
+
+if (-not $workboardState) {
+    Write-Host "Repository: $repositoryRoot"
+    Write-Host "Agent: $agentSummary"
+}
 
 for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
-    Write-Host ''
-    Write-Host "Iteration $iteration of $Iterations"
-    Write-Host ('-' * 40)
+    if ($workboardState -and $workboardState.CurrentIteration -ne $iteration) {
+        $workboardState.CurrentIteration = $iteration
+        $workboardState = Update-RalphWorkboard `
+            -ScratchDirectory $scratchDirectory `
+            -State $workboardState
+    }
+
+    if ($workboardState) {
+        $frameWidth = [int]$workboardState.InnerWidth
+        Write-AgentOutputRow -Content '' -InnerWidth $frameWidth
+        Write-AgentOutputRow -Content "`e[2mIteration $iteration of $Iterations`e[0m" `
+            -InnerWidth $frameWidth
+        Write-AgentOutputRow `
+            -Content "`e[2m$('─' * [Math]::Min(40, $frameWidth))`e[0m" `
+            -InnerWidth $frameWidth
+    }
+    else {
+        Write-Host ''
+        Write-Host "Iteration $iteration of $Iterations"
+        Write-Host ('-' * 40)
+    }
+
+    if ($scopeKind -eq 'automatic') {
+        $currentIssueDirectories = @(
+            Get-ActiveTrackerFeatures -ScratchDirectory $scratchDirectory |
+                ForEach-Object {
+                    [System.IO.Path]::GetRelativePath(
+                        $repositoryRoot,
+                        (Join-Path $_.FullName 'issues')
+                    )
+                }
+        )
+        if ($currentIssueDirectories.Count -eq 0) {
+            if ($workboardState) {
+                Write-AgentOutputRow -Content 'Requested scope complete.' `
+                    -InnerWidth ([int]$workboardState.InnerWidth)
+                $compactOutputPanelOnExit = $true
+            }
+            else {
+                Write-Host 'Requested scope complete.'
+            }
+            exit 0
+        }
+        $currentScopeInstruction = @"
+Choose the highest-priority unfinished feature from these local issue directories:
+$($currentIssueDirectories -join [Environment]::NewLine)
+
+Use the specs, tickets, dependencies, and tracker filenames to decide priority.
+If a feature was started in an earlier iteration, continue it until it is complete
+before selecting another feature.
+"@
+        $prompt = $prompt.Replace($scopeInstruction, $currentScopeInstruction)
+        $scopeInstruction = $currentScopeInstruction
+    }
 
     $progressBeforeIteration = [System.IO.File]::ReadAllText($progressFile)
-    $result = Invoke-Agent -Name $Agent -CommandPath $agentCommand.Source -Prompt $prompt
-    $completionTailStart = [Math]::Max(0, $result.Length - 1000)
-    $completionTail = $result.Substring($completionTailStart)
-    $scopeComplete = $completionTail.Contains(
-        '<promise>COMPLETE</promise>',
-        [System.StringComparison]::Ordinal
-    )
+    $frameWidth = if ($workboardState) { [int]$workboardState.InnerWidth } else { 0 }
+    Invoke-Agent -Name $Agent -CommandPath $agentCommand.Source -Prompt $prompt `
+        -FrameInnerWidth $frameWidth | Out-Null
     $progressAfterIteration = [System.IO.File]::ReadAllText($progressFile)
     $progressChanged = -not [string]::Equals(
         $progressBeforeIteration,
@@ -489,45 +1501,95 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
     $hasChanges = $progressChanged -or -not [string]::IsNullOrWhiteSpace($gitStatus)
 
     if (-not $hasChanges) {
-        if (-not $scopeComplete) {
-            throw 'The agent completed successfully but produced no changes.'
-        }
-
-        Write-Host 'Requested scope complete.'
-        exit 0
+        throw 'The agent completed successfully but produced no changes.'
     }
 
     if (-not $progressChanged) {
-        throw 'The agent changed the repository without updating .scratch/progress.txt.'
+        throw 'The agent changed the repository without updating .scratch/progress.jsonl.'
     }
 
     $progressEntry = Get-NewProgressEntry `
         -Before $progressBeforeIteration `
         -After $progressAfterIteration
-    $commitSubject = $progressEntry.Changes
-    $completedFeature = $progressEntry.FeatureCompletion
-    if ($null -ne $completedFeature) {
-        Move-CompletedFeature -ScratchDirectory $scratchDirectory -Slug $completedFeature
+    if ($scopeKind -ne 'automatic' -and $progressEntry.feature -cne $scopeFeature) {
+        throw "Progress record does not match requested feature '$scopeFeature'."
+    }
+    $completedTicket = Complete-TrackerTicket `
+        -ScratchDirectory $scratchDirectory `
+        -ProgressEntry $progressEntry
+    $archivePath = Move-CompletedTrackerFeature `
+        -ScratchDirectory $scratchDirectory `
+        -Feature $progressEntry.feature
+    $featureCompleted = $null -ne $archivePath
+    $commitSubject = "ralph: $($progressEntry.feature)/$completedTicket"
+    if ($featureCompleted) {
+        $commitSubject += ', FEATURE completed'
     }
 
     Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null
+    $trackerStatePath = if ($featureCompleted) {
+        $archivePath
+    }
+    else {
+        Join-Path $scratchDirectory (
+            "$($progressEntry.feature)\issues\$completedTicket.done.md"
+        )
+    }
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
         'add',
         '--force',
         '--',
-        $progressFile
+        $progressFile,
+        $trackerStatePath
     ) | Out-Null
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
         'commit',
         '--message',
         $commitSubject
     ) | Out-Null
+    if ($workboardState) {
+        $workboardState.CurrentIteration = $iteration
+        $workboardState.CompletedIterations = [int]$workboardState.CompletedIterations + 1
+        $workboardState = Update-RalphWorkboard `
+            -ScratchDirectory $scratchDirectory `
+            -State $workboardState
+    }
 
+    $scopeComplete = switch ($scopeKind) {
+        'feature' { $featureCompleted }
+        'automatic' {
+            @(
+                Get-ActiveTrackerFeatures -ScratchDirectory $scratchDirectory
+            ).Count -eq 0
+        }
+    }
     if ($scopeComplete) {
-        Write-Host 'Requested scope complete.'
+        if ($workboardState) {
+            Write-AgentOutputRow -Content 'Requested scope complete.' `
+                -InnerWidth ([int]$workboardState.InnerWidth)
+            $compactOutputPanelOnExit = $true
+        }
+        else {
+            Write-Host 'Requested scope complete.'
+        }
         exit 0
     }
 }
 
-Write-Host "Reached the iteration limit ($Iterations)."
+if ($workboardState) {
+    Write-AgentOutputRow -Content "Reached the iteration limit ($Iterations)." `
+        -InnerWidth ([int]$workboardState.InnerWidth)
+}
+else {
+    Write-Host "Reached the iteration limit ($Iterations)."
+}
 exit 0
+
+} finally {
+    if ($workboardState) {
+        if ($compactOutputPanelOnExit) {
+            Compact-AgentOutputPanel -State $workboardState
+        }
+        Exit-RalphWorkboard -State $workboardState
+    }
+}

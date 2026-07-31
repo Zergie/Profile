@@ -1,0 +1,122 @@
+schema_version: 3
+language: en
+subtitle: HEAD OF TECH | PLATFORM STRATEGY & ENGINEERING LEADERSHIP
+profile:
+  items:
+    - Engineering leader and software architect with 18+ years of experience, including more than ten years in technical and people leadership. I combine hands-on platform architecture with delivery accountability, KPI-driven engineering management and stakeholder alignment in regulated environments.
+    - My focus is building reliable and maintainable software platforms, developing engineers and translating business goals into clear technical execution.
+    - I am motivated to apply this experience to platforms supporting energy-storage commercialisation and the energy transition.
+competencies:
+  items:
+    - heading: Engineering Leadership
+      points:
+        - More than ten years of technical and organisational leadership, including personnel responsibility for a five-person engineering team and KPI and outcome accountability
+        - Coaching and development of engineers; vocational training responsibility for application development
+        - Engineering standards, code reviews and structured development processes
+    - heading: Platform & System Architecture
+      points:
+        - Architecture and evolution of complex enterprise applications
+        - Modular platform architectures, plugin systems and integration solutions
+        - Data modelling and scalable data-structure design
+    - heading: Delivery & Stakeholder Alignment
+      points:
+        - Translation of business and customer requirements into technical priorities, architecture decisions and executable initiatives
+        - Alignment of technology priorities across management, customers, development and operational requirements
+        - CI/CD delivery with Azure DevOps, Git and automated quality checks
+        - Agile product development with Scrum, testing and cross-functional collaboration
+technology:
+  items:
+    - heading: Languages
+      points: [C#, Python, VBA, VB6, C/C++]
+    - heading: Frameworks
+      points: [.NET, WPF, Entity Framework, ReactiveUI]
+    - heading: Data
+      points: [Microsoft SQL Server, MariaDB, SQLite]
+    - heading: Integration
+      points: [REST, SOAP, CMIS, AtomPub]
+    - heading: DevOps
+      points: [Azure DevOps, Git, TFS, CI/CD]
+    - heading: Reliability, Security & Traceability
+      points: [Operational monitoring, structured logging, automated alerting, traceable data histories]
+    - heading: Azure Platform & Identity
+      points: [Azure Functions, Azure Service Bus, Azure Event Grid, Azure Key Vault, Microsoft Entra ID]
+cover_letter:
+  recipient:
+    - The Mobility House GmbH
+    - Vanessa Endres
+    - Munich, Germany
+  subject: Application for Head of Tech
+  salutation: Dear Vanessa
+  text:
+    - "I see climate change as one of the defining challenges of our generation, and I want my work to contribute to addressing it. The opportunity to shape the technology platform behind the commercialisation of battery energy storage systems therefore strongly appeals to me: it combines my experience in building dependable software platforms with the possibility of supporting a more sustainable energy system. With more than 18 years of software-engineering experience and over ten years in technical and organisational leadership, I bring the hands-on architecture expertise, delivery accountability and stakeholder orientation needed to lead engineering teams in a complex product environment."
+    - "As Managing Director and Lead Software Architect at rocom service GmbH, I lead software development, set technical priorities and remain directly involved in the architecture and implementation of business-critical components. Previously, as Head of Software Development, I led a five-person engineering team, coached developers, served as Scrum Master and introduced structured practices including code reviews, test-driven development and continuous delivery."
+    - "My experience is rooted in complex and regulated software environments. For the Tau-Office enterprise platform, used by public authorities and social-service organisations, I helped evolve a modular architecture with more than 1,000 modules, numerous external integrations and a bi-temporal data model that enables traceable reconstruction of historical data. In a business-critical integration service, I designed operational monitoring, structured error reporting and automated alerting. I also led the migration from TFS to Azure DevOps and established automated build and release processes, strengthening delivery reliability and engineering quality."
+    - "Although my professional background is not directly in BESS, I am accustomed to entering complex domains quickly and translating business and operational requirements into robust technical execution. A personal software project for integrating and analysing trading, transaction and market data has additionally given me practical insight into heterogeneous market interfaces, concurrent processing, retry strategies, rate limits and profit-and-loss reporting."
+    - "The Mobility House would gain an engineering leader who can connect Technology, Product, Trading, Operations and Management, turn strategic goals into clear technical priorities and preserve reliability, security and maintainability while teams deliver business value. My leadership approach is based on clear direction, trust and ownership: I remove impediments, support engineers in developing their strengths and create an environment in which technical excellence and commercial outcomes reinforce one another. For me, this role would also provide the opportunity to apply my experience to a purpose I consider genuinely important: helping build the technological foundation for a more sustainable energy future."
+employment:
+  items:
+    - period: 2020-01 – Present
+      title: Managing Director & Lead Software Architect
+      points:
+        - Technical and organisational leadership of software development, including personnel responsibility, KPI-based management and delivery accountability
+        - Responsibility for software architecture, CI/CD with Azure DevOps and engineering quality standards
+        - Translation of complex customer requirements into technical priorities, solution design and implementation of central components
+        - Alignment of technology priorities with management, customers and operational requirements
+    - period: 2015-05 – 2019-12
+      title: Head of Software Development
+      points:
+        - Technical and organisational leadership of a five-person engineering team, including personnel responsibility, KPI-based management and delivery accountability
+        - Architecture responsibility, developer coaching and introduction of structured development processes
+        - Vocational training responsibility for application development and cross-functional collaboration with other departments
+    - period: 2007-11 – 2015-05
+      title: Software Developer
+      points:
+        - Continued development and programming of specialist applications for customers
+        - Created extensive technical documentation and manuals
+        - Handled direct customer support, requirements clarification and technical problem resolution in a client-facing service environment
+selected_projects:
+  items:
+    - title: Tau-Office Enterprise Platform
+      role: Tech Lead / Software Architect
+      text: "Architecture and continued development of a business application platform for social-service organisations and public authorities, with more than 1,000 modules, integrations, a bi-temporal data model and reporting."
+      points:
+        - "Provided technical and functional leadership, Scrum Master responsibility, architecture, process and requirements management"
+        - "Introduced KPI-based engineering management with Power BI, agile methods and test-driven development"
+        - "Designed traceable data modelling for regulated public-sector processes and historical data reconstruction"
+      technologies: ["C#", ".NET", "Microsoft SQL Server", "Microsoft Access", "VBA", "Power BI", "Scrum", "TDD"]
+    - title: "Business-Critical Data Processing & Integration Service"
+      role: "Software Architect / Developer"
+      text: "Windows service for synchronisation, document import, QR-code evaluation and database transfer between business systems."
+      points:
+        - "Designed operational monitoring, structured error reporting and automated alerting for business-critical processes"
+        - "Automated data synchronisation, document processing and database transfer"
+      technologies: ["C#", ".NET Framework 4.8", "XML", "FTP", "SMTP", "MSTest"]
+    - title: "Azure DevOps Migration"
+      role: "DevOps Lead"
+      text: "Migrated projects, repositories, work items and pipelines from TFS to Azure DevOps."
+      points:
+        - "Built dedicated build agents for Access and VB6, plus PowerShell refactoring and static VBA analysis"
+        - "Automated build and release processes and enabled the development team through training"
+      technologies: ["Azure DevOps", "TFS", "Git", "PowerShell", "CI/CD"]
+    - title: "Synera Run/Server Deployment Architecture"
+      role: "Software Architect"
+      text: "Architecture and implementation of an installation process for complex server configurations, including a WPF application, MSI, EXE bootstrapper and Azure Pipelines."
+      points:
+        - "Implemented a reactive, testable architecture with validation and structured logging"
+        - "Migrated from WiX v3 to WiX v6 with controlled upgrade and downgrade scenarios"
+      technologies: ["C#", ".NET 8", "WPF", "ReactiveUI", "WiX Toolset v6", "Serilog", "Azure Pipelines", "PostgreSQL"]
+    - title: "Digital-Asset Trading Data & Blockchain Analytics"
+      role: "Personal Software Project / Solution Designer"
+      text: "Designed and developed a personal software solution for collecting, normalising and analysing trading and blockchain data across multiple external platforms."
+      points:
+        - "Integrated trading, transaction, position, funding-fee and market data through REST and Web3 interfaces"
+        - "Implemented concurrent worker pipelines, retry and timeout handling, rate-limit awareness and structured data processing"
+        - "Automated currency conversion, profit-and-loss calculations and reporting across heterogeneous data sources"
+      technologies: [Python, C#, PowerShell, REST APIs, Web3, Google Sheets]
+    - title: "Azure DevOps Training"
+      role: "Trainer"
+      text: "Designed and delivered a multi-day, practice-oriented training course on Azure DevOps Services for developers, testers and project stakeholders."
+      points:
+        - "Covered Boards and backlogs, Git-based version control, CI/CD pipelines and test management with Azure Test Plans"
+        - "Demonstrated an integrated approach to improving collaboration, quality, traceability and software delivery"
+      technologies: ["Azure DevOps", "Azure Repos", "Azure Boards", "Azure Pipelines", "Azure Test Plans", "Git", "Scrum", "Kanban"]

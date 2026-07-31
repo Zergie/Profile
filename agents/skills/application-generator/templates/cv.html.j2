@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="{{ document.language }}">
+<head>
+<meta charset="utf-8">
+<title>{{ document.title }} – {{ document.subtitle }}</title>
+<style>
+{{ css_content | safe }}
+</style>
+</head>
+<body>
+<div class="cv-page page-1"
+     style="background-image: url('{{ portrait_data_uri }}'), linear-gradient(to right, #434345 0, #434345 64.77mm, #ffffff 64.77mm, #ffffff 100%);">
+
+  <!--
+    Semantic reading order (matches PDF structure tree / ATS extraction):
+      1. Portrait (decorative — excluded from reading flow)
+      2. Name and target position
+      3. Contact details
+      4. Profile
+      5. Core competencies
+      6. Technology stack
+      7. Links
+      8. Languages
+    Selected projects, when present, begin on page 2. Career history and
+    education follow in semantic order.
+  -->
+
+  <!-- 1. Decorative portrait — rendered as CSS (not part of the tag tree) -->
+  <div class="photo-area"
+       role="presentation"
+       aria-hidden="true"></div>
+
+  <!-- 2. Candidate identity -->
+  <header class="cv-header">
+    <h1 class="cv-name">{{ document.title }}</h1>
+    <p class="cv-subtitle">{{ document.subtitle }}</p>
+  </header>
+
+  <!-- 3. Contact details -->
+  <address class="contact-area">
+    {% for item in contact_items %}
+    <span class="contact-item">
+      {%- set _href = contact_href(item.key, item.value) %}
+      {%- if _href %}
+      <a class="contact-link" href="{{ _href }}">{{ item.value }}</a>
+      {%- else %}
+      <span class="contact-value">{{ item.value }}</span>
+      {%- endif %}
+    </span>
+    {% endfor %}
+  </address>
+
+  <!-- Sidebar content flows vertically so profile length determines link placement. -->
+  <aside class="sidebar-content">
+  <!-- 4. Profile (visually in sidebar) -->
+  <section class="sidebar-profile">
+    <h2>{{ profile.heading }}</h2>
+    {% for para in profile.paragraphs %}
+    <p>{{ keep_hyphenated_words(para) }}</p>
+    {% endfor %}
+  </section>
+
+  <!-- Sidebar links follow the rendered profile height. -->
+  {% if links %}
+  <section class="sidebar-links">
+    <h2>{{ links_heading }}</h2>
+    <ul>
+      {% for item in links %}
+      <li>
+        <span class="link-label">{{ item.label }}:</span>
+        {%- set _href = contact_href(item.label, item.value) %}
+        {%- if _href %}
+        <a class="link-value" href="{{ _href }}">{{ item.value }}</a>
+        {%- else %}
+        <span class="link-value">{{ item.value }}</span>
+        {%- endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if languages %}
+  <section class="sidebar-languages">
+    <h2>{{ languages_heading }}</h2>
+    <ul>
+      {% for lang_entry in languages %}
+      <li><span class="language-name">{{ lang_entry }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  </aside>
+
+  <!-- 5. Core competencies -->
+  <section class="section competencies-section">
+    <h2>{{ competencies_heading }}</h2>
+    {% for group in competencies %}
+    <div class="competency-group">
+      {%- set _heading_parts = group.heading.split(" & ", 1) %}
+      <h3 class="competency-heading{% if _heading_parts | length > 1 %} multi-line{% endif %}">{{ _heading_parts[0] }}{% if _heading_parts | length > 1 %} <span class="keep-together">&amp; {{ _heading_parts[1] }}</span>{% endif %}</h3>
+      <span class="timeline-anchor" role="presentation" aria-hidden="true"></span>
+      <ul class="competency-list">
+        {% for item in group['items'] %}
+        <li>{{ keep_hyphenated_words(item) }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- 6. Technology stack -->
+  <section class="section technology-section technology-groups-{{ technology.groups | length }}">
+    <h2>{{ technology.heading }}</h2>
+    {% for group in technology.groups %}
+    <div class="tech-group">
+      {%- set _label_parts = group.label.split("&", 1) %}
+      <span class="tech-label">{{ _label_parts[0] | trim }}{% if _label_parts | length > 1 %}<span class="tech-label-continuation"> &amp; {{ _label_parts[1] | trim }}</span>{% endif %}</span>
+      <span class="timeline-anchor" role="presentation" aria-hidden="true"></span>
+      <span class="tech-items">{{ group['items'] | join(", ") }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+</div><!-- /.cv-page.page-1 -->
+
+{% if selected_projects %}
+<!-- Selected projects use ordinary paged flow; history begins after their final page. -->
+<main class="cv-page project-page">
+  <section class="section selected-projects-section">
+    <h2>{{ selected_projects.heading }}</h2>
+    {% for project in selected_projects['items'] %}
+    <article class="selected-project">
+      <h3 class="project-title">{{ project.title }}{% if project.role %} – {{ project.role }}{% endif %}</h3>
+      <p class="project-summary">{{ keep_hyphenated_words(project.summary) }}</p>
+      {% if project['bullets'] %}
+      <ul class="project-bullets">
+        {% for bullet in project['bullets'] %}
+        <li>{{ keep_hyphenated_words(bullet) }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <p class="project-technologies">
+        <strong>Tech:</strong> {{ project.technologies | join(", ") }}
+      </p>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+
+<main class="cv-page history-page">
+  <div class="history-block">
+{% else %}
+<!-- Page 2: Career history and education -->
+<main class="cv-page page-2">
+{% endif %}
+
+  <section class="section employment-section">
+    <h2>{{ employment.heading }}</h2>
+    {% for item in employment['items'] %}
+    <article class="timeline-entry">
+      <div class="timeline-meta">
+        {%- set _company, _location = organization_parts(item.organization) %}
+        <p class="entry-org"><span class="entry-company">{{ _company }}</span>{% if _location %}<span class="entry-location">{{ _location }}</span>{% endif %}</p>
+        <p class="entry-period"><time>{{ format_employment_period(item.period) }}</time></p>
+      </div>
+      <span class="timeline-anchor" role="presentation" aria-hidden="true"></span>
+      <div class="timeline-detail">
+        <h3 class="entry-title">{{ item.title }}</h3>
+        <ul class="entry-bullets">
+          {% for bullet in item['bullets'] %}
+          <li>{{ keep_hyphenated_words(bullet) }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+
+  <!-- Education -->
+  <section class="section education-section">
+    <h2>{{ education.heading }}</h2>
+    {% for item in education['items'] %}
+    <article class="timeline-entry">
+      <div class="timeline-meta">
+        {%- set _institution, _location = education_parts(item.organization) %}
+        <p class="entry-org"><span class="entry-company">{{ _institution }}</span>{% if _location %}<span class="entry-location">{{ _location }}</span>{% endif %}</p>
+        <p class="entry-period"><time>{{ item.period }}</time></p>
+      </div>
+      <span class="timeline-anchor" role="presentation" aria-hidden="true"></span>
+      <div class="timeline-detail">
+        <h3 class="entry-title">{{ item.title }}</h3>
+        {% if item['bullets'] %}
+        <ul class="entry-bullets">
+          {% for bullet in item['bullets'] %}
+          <li>{{ keep_hyphenated_words(bullet) }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+
+{% if selected_projects %}
+  </div><!-- /.history-block -->
+</main><!-- /.history-page -->
+{% else %}
+</main><!-- /.cv-page.page-2 -->
+{% endif %}
+
+{% if project_overview %}
+<!-- Detailed project overview always begins on page 4, after the core CV. -->
+<main class="cv-page project-page freelancer-project-page">
+  <section class="section freelancer-projects-section">
+    <h2>{{ project_overview.heading }}</h2>
+    {% for project in project_overview.records %}
+    <article class="freelancer-project">
+      <div class="timeline-meta">
+        <h3 class="entry-org">{{ project.client }}</h3>
+        <p class="entry-period"><time>{{ project.start }}</time></p>
+      </div>
+      <div class="timeline-detail">
+        <h4 class="entry-title">{{ project.title }}</h4>
+        <p class="project-summary">{{ project.summary }}</p>
+        <p class="project-technologies"><strong>Tech:</strong> {{ project.technologies | join(", ") }}</p>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+{% endif %}
+</body>
+</html>

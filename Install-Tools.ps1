@@ -129,7 +129,7 @@ $tools = [pscustomobject]@{
             [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
             [pscustomobject]@{name="@github/copilot-cli"}     # github copilot cli
             [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
-
+            [pscustomobject]@{name="@playwright/cli@latest"}  # playwright cli
         }
     )
     pwsh_modules = @(

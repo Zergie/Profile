@@ -1,0 +1,15 @@
+# cv-generator — generated artifacts (ignored by git)
+# The ignore-control files (.gitignore, .gitkeep) are versioned.
+
+# Fontconfig runtime cache
+fontcache/*
+!fontcache/.gitkeep
+
+# Fontconfig cache as written by MinGW fontconfig (fallback location)
+LOCAL_APPDATA_FONTCONFIG_CACHE/
+
+# Test-generated artifacts (cleaned by fixture on success; git safety net)
+tests/cv.html
+tests/cv-validation.json
+tests/cv-failed.html
+tests/cv-failed-validation.json
