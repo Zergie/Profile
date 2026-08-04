@@ -302,7 +302,7 @@ def validate_payload(raw: Any) -> dict[str, Any]:
         data["project_overview"] = {
             "heading": overview["heading"],
             "records": [
-                {"client": item["organization"], "start": item["period"], "end": item["period"], "end_label": None,
+                {"client": item["organization"], "start": item["period"], "end": None, "end_label": None,
                  "title": item["title"], "summary": item["text"], "technologies": item["technologies"]}
                 for item in overview["items"]
             ],
@@ -482,10 +482,11 @@ def _build_ats_expected(data: dict[str, Any]) -> list[str]:
         for project in project_overview["records"]:
             tokens.append(project["client"])
             tokens.append(project["start"])
-            tokens.append(project["end"] or project["end_label"])
+            if project["end"] or project["end_label"]:
+                tokens.append(project["end"] or project["end_label"])
             tokens.append(project["title"])
             tokens.append(project["summary"])
-            tokens.append("Technologien:")
+            tokens.append("Tech:")
             tokens.extend(project["technologies"])
 
     # Following page: employment section
@@ -615,10 +616,10 @@ def _validate_ats_content(pdf_path: Path, data: dict[str, Any]) -> dict[str, Any
     if overview:
         overview_tokens = [overview["heading"]]
         for project in overview["records"]:
+            overview_tokens.extend([project["client"], project["start"]])
+            if project["end"] or project["end_label"]:
+                overview_tokens.append(project["end"] or project["end_label"])
             overview_tokens.extend([
-                project["client"],
-                project["start"],
-                project["end"] or project["end_label"],
                 project["title"],
                 project["summary"],
                 *project["technologies"],
@@ -1191,7 +1192,7 @@ def main() -> int:
             raise PayloadError("narrative and input must be mappings")
         merged = _merge(raw, override)
         if "project_overview" in merged:
-            projects_path = args.projects or args.narrative.with_name("projects.json")
+            projects_path = args.projects or args.narrative.with_name("projects.yaml")
             projects = yaml.safe_load(projects_path.read_text(encoding="utf-8"))
             if not isinstance(projects, dict) or projects.get("schema_version") != 3:
                 raise PayloadError("projects.schema_version must be 3 when project_overview is used")

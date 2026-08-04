@@ -31,7 +31,7 @@ Create truthful, tailored application documents from secured facts. The schema-v
 
 ## CV
 
-1. Read `secrets/cv/projects.json` and `secrets/cv/small-projects.json`. Propose three to five relevant, evidence-backed `selected_projects` with a relevance reason and obtain confirmation of selection and order. **Done:** the project selection and order are confirmed.
+1. Read `secrets/cv/projects.yaml` and apply the project-source rules below. Propose three to five relevant, evidence-backed `selected_projects` with a relevance reason and obtain confirmation of selection and order. **Done:** the project selection and order are confirmed.
 
 2. Create the schema-v3 override in `agents/skills/application-generator/output/`, then render it:
 
@@ -77,7 +77,7 @@ Create truthful, tailored application documents from secured facts. The schema-v
 ## Source and layout rules
 
 - `narrative.yaml` owns identity, headings, languages, education, employment, and default content. The override may change `subtitle`, allowed section items, sparse employment patches by `period`, and `cover_letter`.
-- `projects.json` is the sole source for `project_overview.items`; use it only for contract-focused applications and in the narrative language.
+- `projects.yaml.items` is the sole source for `project_overview.items`; use it only for contract-focused applications and in the narrative language. `projects.yaml.narrative_references` supports tailoring and does not supply rendered CV projects.
 - Use plain YAML and evidence-led wording. Include only secured credentials, responsibilities, metrics, technologies, language levels, dates, employers, and outcomes.
 - Put selected projects from page 2 onward; career history follows their final page. Put `project_overview`, when used, from page 4 onward.
 - Keep the CV's first page within its supported competency and technology content. Keep cover letters to one A4 page using normal hyphens.

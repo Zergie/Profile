@@ -35,7 +35,7 @@ def main() -> int:
         "--input", required=True, type=Path, help="schema-v3 override YAML"
     )
     parser.add_argument("--narrative", required=True, type=Path, help="schema-v3 narrative baseline")
-    parser.add_argument("--projects", type=Path, help="schema-v3 projects baseline for project_overview")
+    parser.add_argument("--projects", type=Path, help="schema-v3 projects YAML baseline for project_overview")
     parser.add_argument("--pdf", required=True, type=Path, help="PDF file to validate")
     args = parser.parse_args()
 

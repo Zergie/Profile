@@ -113,6 +113,7 @@ $tools = [pscustomobject]@{
         [pscustomobject]@{name="pypy3"}
         [pscustomobject]@{name="python3";version="3.11";reason="neovim-remote does not work with python 3.12"}
         [pscustomobject]@{name="ripgrep"}
+        [pscustomobject]@{name="fd"}
         [pscustomobject]@{name="visualstudio2022community";reason="Visual Studio 2020 Community has an integrated updates";pin=$true}
         [pscustomobject]@{name="vlc"}
         [pscustomobject]@{name="vscode"}
@@ -234,6 +235,7 @@ $commands = @(
             -Value "wt -w 0 split-pane --horizontal --size 0.1 cmd /c `"$((Resolve-Path "$PSScriptRoot\notepad.bat").Path)`""
     }
     { pip3 install neovim-remote }
+    { git config --global core.excludesfile "$PSScriptRoot\global.gitignore" }
 )
 
 

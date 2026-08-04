@@ -1,360 +1,140 @@
 [CmdletBinding()]
 param(
+    [Parameter(DontShow)]
+    [switch] $SkipGitPromptWatcherStart
 )
 $ErrorActionPreference = 'Stop'
 
 # oh-my-posh init pwsh --config atomic | Invoke-Expression
 
-$global:GitWorkspaceRoot = [IO.Path]::GetFullPath('C:\GIT')
-$global:GitPromptCache = [hashtable]::Synchronized(@{})
-$global:GitPromptWatcher = $null
+$global:GitPromptWatcherScript = Join-Path $PSScriptRoot 'Startup\Invoke-GitPromptWatcher.ps1'
+$global:GitPromptWatcherLastError = $null
 
-function Remove-GitPromptWatcher {
-    $subscribers = @(
-        Get-EventSubscriber -ErrorAction SilentlyContinue |
-            Where-Object SourceIdentifier -Like 'GitPrompt.*'
-    )
-
-    $sourceObjects = @(
-        $subscribers |
-            ForEach-Object SourceObject |
-            Where-Object { $null -ne $_ } |
-            Select-Object -Unique
-    )
-
-    foreach ($subscriber in $subscribers) {
-        $actionJob = $subscriber.Action
-
-        Unregister-Event `
-            -SubscriptionId $subscriber.SubscriptionId `
-            -ErrorAction SilentlyContinue
-
-        if ($actionJob) {
-            Remove-Job `
-                -Id $actionJob.Id `
-                -Force `
-                -ErrorAction SilentlyContinue
-        }
+function Initialize-GitPromptWatcherStoppedEvent {
+    $sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+    $userName = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $identitySuffix = [string] $env:GIT_PROMPT_WATCHER_TEST_ID
+    $bytes = [Text.Encoding]::UTF8.GetBytes("$userName|$sessionId|$identitySuffix")
+    $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 24)
+    $eventName = "Local\GitPromptWatcher-Stopped-$hash"
+    $global:GitPromptWatcherPipeName = "GitPromptWatcher-$hash"
+    if (-not $global:GitPromptWatcherStoppedEventHandle) {
+        $created = $false
+        $global:GitPromptWatcherStoppedEventHandle = [Threading.EventWaitHandle]::new(
+            $false,
+            [Threading.EventResetMode]::ManualReset,
+            $eventName,
+            [ref] $created
+        )
     }
-
-    foreach ($sourceObject in $sourceObjects) {
-        if ($sourceObject -is [IO.FileSystemWatcher]) {
-            $sourceObject.EnableRaisingEvents = $false
-            $sourceObject.Dispose()
-        }
-    }
-
-    $global:GitPromptWatcher = $null
 }
 
-function Initialize-GitPromptWatcher {
-    if ($global:GitPromptWatcher) {
-        return
+Initialize-GitPromptWatcherStoppedEvent
+
+function Invoke-GitPromptWatcherSnapshotRequest {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    if (-not (Test-Path -LiteralPath $global:GitPromptWatcherScript -PathType Leaf)) {
+        return $null
     }
 
-    if (-not (Test-Path -LiteralPath $global:GitWorkspaceRoot -PathType Container)) {
-        return
-    }
-
-    $watcher = [IO.FileSystemWatcher]::new($global:GitWorkspaceRoot)
-    $watcher.IncludeSubdirectories = $true
-    $watcher.NotifyFilter =
-        [IO.NotifyFilters]::FileName `
-        -bor [IO.NotifyFilters]::DirectoryName `
-        -bor [IO.NotifyFilters]::LastWrite `
-        -bor [IO.NotifyFilters]::Size
-
-    # Helps when builds generate many filesystem events.
-    $watcher.InternalBufferSize = 65536
-
-    $state = [pscustomobject]@{
-        Cache = $global:GitPromptCache
-    }
-
-    $invalidateAction = {
-        $cache = $event.MessageData.Cache
-
-        $changedPaths = @($event.SourceEventArgs.FullPath)
-
-        if ($event.SourceEventArgs -is [IO.RenamedEventArgs]) {
-            $changedPaths += $event.SourceEventArgs.OldFullPath
-        }
-
-        foreach ($changedPath in $changedPaths) {
-            # Only Git index lock updates should invalidate the prompt cache.
-            $fileName = [IO.Path]::GetFileName($changedPath)
-
-            $isGitFile = $changedPath -match '(^|[\\/])\.git([\\/]|$)'
-            $isInsideGitDirectory = $changedPath -match '(^|[\\/])\.git([\\/]|$)'
-
-            if (-not ($isGitFile -and $isInsideGitDirectory)) {
-                continue
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+            '.', $global:GitPromptWatcherPipeName, [IO.Pipes.PipeDirection]::InOut,
+            [IO.Pipes.PipeOptions]::Asynchronous,
+            [Security.Principal.TokenImpersonationLevel]::Impersonation
+        )
+        $reader = $null
+        $writer = $null
+        try {
+            $pipe.Connect(100)
+            $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+            $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+            $writer.AutoFlush = $true
+            $writer.WriteLine((@{ type = 'Snapshot'; path = $Path } | ConvertTo-Json -Compress))
+            $readTask = $reader.ReadLineAsync()
+            if (-not $readTask.Wait(250)) {
+                throw 'The Git prompt watcher response timed out.'
             }
-
-            foreach ($repositoryRoot in @($cache.Keys)) {
-                $entry = $cache[$repositoryRoot]
-
-                # Normally .git is inside the repository. For Git worktrees,
-                # however, the Git directory can be elsewhere.
-                $pathsBelongingToRepository = @($repositoryRoot)
-
-                if ($entry.GitDirectory) {
-                    $pathsBelongingToRepository += $entry.GitDirectory
-                }
-
-                foreach ($root in $pathsBelongingToRepository) {
-                    $normalizedRoot = $root.TrimEnd('\', '/')
-                    $rootPrefix = "$normalizedRoot\"
-
-                    $isInside =
-                        $changedPath.Equals(
-                            $normalizedRoot,
-                            [StringComparison]::OrdinalIgnoreCase
-                        ) -or
-                        $changedPath.StartsWith(
-                            $rootPrefix,
-                            [StringComparison]::OrdinalIgnoreCase
-                        )
-
-                    if ($isInside) {
-                        $entry.Dirty = $true
-                        break
-                    }
-                }
+            $responseText = $readTask.Result
+            if ($null -eq $responseText) {
+                throw 'The Git prompt watcher closed the response pipe.'
             }
+            return $responseText | ConvertFrom-Json
+        } catch {
+            if ($attempt -eq 3) {
+                return $null
+            }
+            Start-Sleep -Milliseconds 10
+        } finally {
+            if ($reader) { $reader.Dispose() }
+            if ($writer) { $writer.Dispose() }
+            try { $pipe.Dispose() } catch { }
         }
     }
-
-    Remove-GitPromptWatcher
-    foreach ($eventName in @('Changed', 'Created', 'Deleted', 'Renamed')) {
-        Register-ObjectEvent `
-            -InputObject $watcher `
-            -EventName $eventName `
-            -SourceIdentifier "GitPrompt.$eventName" `
-            -MessageData $state `
-            -Action $invalidateAction |
-            Out-Null
-    }
-
-    # If the watcher buffer overflows, some changes may have been lost.
-    # In that case, invalidate every cached repository.
-    Register-ObjectEvent `
-        -InputObject $watcher `
-        -EventName Error `
-        -SourceIdentifier 'GitPrompt.Error' `
-        -MessageData $state `
-        -Action {
-            foreach ($entry in $event.MessageData.Cache.Values) {
-                $entry.Dirty = $true
-            }
-        } |
-        Out-Null
-
-    $watcher.EnableRaisingEvents = $true
-    $global:GitPromptWatcher = $watcher
 }
 
-function Update-GitPromptCache {
-    param(
-        [Parameter(Mandatory)]
-        [string] $RepositoryRoot,
+function Format-GitPromptSnapshot {
+    param([object] $Snapshot)
 
-        [Parameter(Mandatory)]
-        [object] $CacheEntry
-    )
+    if (-not $Snapshot -or -not $Snapshot.available) { return '' }
 
-    # Clear Dirty before calculating. If a file changes while Git is running,
-    # the watcher will set it to true again.
-    $CacheEntry.Dirty = $false
-
-    $branch = & git -C $RepositoryRoot symbolic-ref --quiet --short HEAD 2>$null
-
-    if (-not $branch) {
-        $branch = & git -C $RepositoryRoot rev-parse --short HEAD 2>$null
-    }
-
-    if (-not $branch) {
-        $branch = "unknown"
-    }
-
-    $statusLines = & git -C $RepositoryRoot --no-optional-locks `
-        status --porcelain=v2 --branch --untracked-files=normal 2>$null
-
-    if ($LASTEXITCODE -ne 0) {
-        $CacheEntry.Text = ""
-        $CacheEntry.Dirty = $true
-        return
-    }
-
-    $stagedAdded = 0
-    $stagedModified = 0
-    $stagedDeleted = 0
-    $untrackedAdded = 0
-    $untrackedModified = 0
-    $untrackedDeleted = 0
-    $conflicts = 0
-    $ahead = 0
-    $behind = 0
-    $hasUpstream = $false
-    $hasAheadBehind = $false
-
-    foreach ($line in $statusLines) {
-        if (-not $line) {
-            continue
-        }
-
-        if ($line.StartsWith('# branch.upstream ')) {
-            $hasUpstream = $true
-            continue
-        }
-
-        if ($line.StartsWith('# branch.ab ')) {
-            $hasAheadBehind = $true
-
-            if ($line -match '^# branch\.ab \+(\d+) -(\d+)$') {
-                $ahead = [int]$matches[1]
-                $behind = [int]$matches[2]
-            }
-
-            continue
-        }
-
-        if ($line.StartsWith('? ')) {
-            $untrackedAdded++
-            continue
-        }
-
-        if ($line.StartsWith('u ')) {
-            $conflicts++
-            continue
-        }
-
-        if (-not ($line.StartsWith('1 ') -or $line.StartsWith('2 '))) {
-            continue
-        }
-
-        $fields = $line -split '\s+'
-
-        if ($fields.Count -lt 2) {
-            continue
-        }
-
-        $xy = $fields[1]
-
-        if ($xy.Length -lt 2) {
-            continue
-        }
-
-        $indexStatus = $xy[0]
-        $workingTreeStatus = $xy[1]
-
-        switch ($indexStatus) {
-            'A' { $stagedAdded++ }
-            'D' { $stagedDeleted++ }
-            '.' { }
-            default { $stagedModified++ }
-        }
-
-        switch ($workingTreeStatus) {
-            'D' { $untrackedDeleted++ }
-            '.' { }
-            default { $untrackedModified++ }
-        }
-    }
-
+    $branch = $Snapshot.branch
     if ($branch -match '^(release)/') {
         $text = " `e[38;5;214m$branch"
     } elseif ($branch -match '^(users|feature|feat)/') {
-        $branch_text = $branch -replace '(\d+)$', "`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/`$1`e\`$1`e]8;;`e\"
-        $text = " `e[38;5;29m$branch_text"
+        $branchText = $branch -replace '(\d+)$', "`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/`$1`e\`$1`e]8;;`e\"
+        $text = " `e[38;5;29m$branchText"
     } else {
         $text = " `e[38;5;32m$branch"
     }
 
-    $upstreamGone = $hasUpstream -and -not $hasAheadBehind
-
-    if ($upstreamGone) {
+    if ($Snapshot.hasUpstream -and -not $Snapshot.hasAheadBehind) {
         $text += " `e[31m×"
-    } elseif ($behind -eq 0 -and $ahead -eq 0 -and $hasAheadBehind) {
-    } elseif ($behind -gt 0 -and $ahead -gt 0) {
-        $text += " `e[33m$behind $ahead"
-    } elseif ($behind -gt 0) {
-        $text += " `e[31m$behind"
-    } elseif ($ahead -gt 0) {
-        $text += " `e[32m$ahead"
-    } else {
-        $text += " "
+    } elseif ($Snapshot.behind -gt 0 -and $Snapshot.ahead -gt 0) {
+        $text += " `e[33m$($Snapshot.behind) $($Snapshot.ahead)"
+    } elseif ($Snapshot.behind -gt 0) {
+        $text += " `e[31m$($Snapshot.behind)"
+    } elseif ($Snapshot.ahead -gt 0) {
+        $text += " `e[32m$($Snapshot.ahead)"
+    } elseif (-not $Snapshot.hasAheadBehind) {
+        $text += ' '
     }
 
-    $hasStaged =
-        $stagedAdded -gt 0 -or
-        $stagedModified -gt 0 -or
-        $stagedDeleted -gt 0
-
-    $hasUntracked =
-        $untrackedAdded -gt 0 -or
-        $untrackedModified -gt 0 -or
-        $untrackedDeleted -gt 0 -or
-        $conflicts -gt 0
-
+    $hasStaged = $Snapshot.staged.added -gt 0 -or $Snapshot.staged.modified -gt 0 -or $Snapshot.staged.deleted -gt 0
+    $hasWorkingTree = $Snapshot.workingTree.added -gt 0 -or $Snapshot.workingTree.modified -gt 0 -or $Snapshot.workingTree.deleted -gt 0 -or $Snapshot.conflicts -gt 0
     if ($hasStaged) {
-        $text += " `e[32m+$stagedAdded ~$stagedModified -$stagedDeleted"
+        $text += " `e[32m+$($Snapshot.staged.added) ~$($Snapshot.staged.modified) -$($Snapshot.staged.deleted)"
     }
-
-    if ($hasStaged -and $hasUntracked) {
-        $text += " `e[38;5;8m|"
+    if ($hasStaged -and $hasWorkingTree) { $text += " `e[38;5;8m|" }
+    if ($hasWorkingTree) {
+        $text += " `e[31m+$($Snapshot.workingTree.added) ~$($Snapshot.workingTree.modified) -$($Snapshot.workingTree.deleted)"
     }
-
-    if ($hasUntracked) {
-        $text += " `e[31m+$untrackedAdded ~$untrackedModified -$untrackedDeleted"
-    }
-
-
-    $text += " `e[0m"
-
-    $CacheEntry.Text = $text
-    $CacheEntry.LastRefresh = [datetime]::UtcNow
+    return "$text `e[0m"
 }
 
 function Get-GitPromptCached {
-    $repositoryInformation = @(
-        & git rev-parse --show-toplevel --absolute-git-dir 2>$null
-    )
-
-    if ($LASTEXITCODE -ne 0 -or $repositoryInformation.Count -lt 2) {
+    try {
+        $response = Invoke-GitPromptWatcherSnapshotRequest -Path (Get-Location).Path
+        if ($response.state -eq 'Paused' -and $response.sourceLoadError) {
+            $global:GitPromptWatcherLastError = "Invoke-GitPromptWatcher: $($response.sourceLoadError)"
+        } else {
+            $global:GitPromptWatcherLastError = $null
+        }
+        return Format-GitPromptSnapshot -Snapshot $response.snapshot
+    } catch {
+        $global:GitPromptWatcherLastError = $null
         return ''
     }
-
-    $repositoryRoot = [IO.Path]::GetFullPath($repositoryInformation[0])
-    $gitDirectory = [IO.Path]::GetFullPath($repositoryInformation[1])
-
-    if (-not $global:GitPromptCache.ContainsKey($repositoryRoot)) {
-        $global:GitPromptCache[$repositoryRoot] = [pscustomobject]@{
-            Text         = ''
-            Dirty        = $true
-            LastRefresh  = [datetime]::MinValue
-            GitDirectory = $gitDirectory
-        }
-    }
-
-    $entry = $global:GitPromptCache[$repositoryRoot]
-
-    # FileSystemWatcher is not a transactional guarantee, so retain
-    # a fallback refresh interval.
-    $cacheExpired =
-        ([datetime]::UtcNow - $entry.LastRefresh).TotalSeconds -ge 30
-
-    if ($entry.Dirty -or $cacheExpired) {
-        Update-GitPromptCache `
-            -RepositoryRoot $repositoryRoot `
-            -CacheEntry $entry
-        $entry.Dirty = $false
-    }
-
-    return $entry.Text
 }
 
-Initialize-GitPromptWatcher
+# Start the watcher during profile loading. Its mutex makes duplicate profile
+# loads harmless, and prompt requests use short-lived pipe connections.
+if (-not $SkipGitPromptWatcherStart) {
+    Start-Process -FilePath (Get-Process -Id $PID).Path -WindowStyle Hidden `
+        -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-File', $global:GitPromptWatcherScript) |
+        Out-Null
+}
 
 function Get-RGB {
     param (
@@ -368,6 +148,11 @@ function Get-RGB {
 }
 
 function prompt {
+
+    $gitPromptSegment = Get-GitPromptCached
+    if ($global:GitPromptWatcherLastError) {
+        Write-Host $global:GitPromptWatcherLastError
+    }
 
     $cwd = (Get-Location).Path
     if ($cwd.StartsWith("Microsoft.PowerShell.Core\FileSystem::")) {
@@ -399,7 +184,7 @@ function prompt {
             -replace '(#d#)', "`e[38;2;$fg4`e[48;2;$bg4`$1`e[0m`e[38;2;$bg4" `
             -replace '(#x#)', "`e[0m"
         ).Replace('#a#' , $cwd
-        ).Replace('#b#' , $(Get-GitPromptCached)
+        ).Replace('#b#' , $gitPromptSegment
         ).Replace('#c#', $((Get-Date).ToString("ddd HH:mm"))
         ).Replace('#d#', $(
                 try {

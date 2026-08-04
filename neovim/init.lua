@@ -317,27 +317,6 @@ require("lazy").setup({
     end
   },
 
-  { -- extended vim motions
-    'phaazon/hop.nvim',
-    config = function()
-      local map = function(lhs, rhs, desc)
-        vim.keymap.set("", lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Hop]" })
-      end
-      local hop = require("hop")
-      -- local hint = require("hop.hint")
-      -- local directions = hint.HintDirection
-
-      hop.setup()
-      -- map("f",         function () hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true }) end, "Hop forward find")
-      -- map("F",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true }) end, "Hop backward find")
-      -- map("t",         function () hop.hint_char1({ direction = directions.AFTER_CURSOR, current_line_only = true, hint_offset = -1 }) end, "Hop forward till")
-      -- map("T",         function () hop.hint_char1({ direction = directions.BEFORE_CURSOR, current_line_only = true, hint_offset = 1 }) end, "Hop backward till")
-      map("s", function() hop.hint_words {} end, "Hop word")
-      map("<Leader>j", function() hop.hint_lines {} end, "Hop word")
-      map("<Leader>s", function() hop.hint_char1 {} end, "Hop 2chars forward")
-    end,
-  },
-
   -- inline key help
   {
     'folke/which-key.nvim',
@@ -756,24 +735,24 @@ require("lazy").setup({
 
             local tableHasKey = function(table, key) return table[key] ~= nil end
 
-            mason_lspconfig.setup_handlers {
-              function(server_name)
-                if tableHasKey(servers, server_name) and tableHasKey(servers[server_name], 'cmd') then
-                  require('lspconfig')[server_name].setup {
-                    cmd = servers[server_name]['cmd'],
-                    capabilities = capabilities,
-                    on_attach = On_attach,
-                    settings = servers[server_name],
-                  }
-                else
-                  require('lspconfig')[server_name].setup {
-                    capabilities = capabilities,
-                    on_attach = On_attach,
-                    settings = servers[server_name],
-                  }
-                end
-              end,
-            }
+            -- mason_lspconfig.setup_handlers {
+            --   function(server_name)
+            --     if tableHasKey(servers, server_name) and tableHasKey(servers[server_name], 'cmd') then
+            --       require('lspconfig')[server_name].setup {
+            --         cmd = servers[server_name]['cmd'],
+            --         capabilities = capabilities,
+            --         on_attach = On_attach,
+            --         settings = servers[server_name],
+            --       }
+            --     else
+            --       require('lspconfig')[server_name].setup {
+            --         capabilities = capabilities,
+            --         on_attach = On_attach,
+            --         settings = servers[server_name],
+            --       }
+            --     end
+            --   end,
+            -- }
           end
         end
       },

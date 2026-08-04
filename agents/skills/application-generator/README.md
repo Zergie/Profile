@@ -23,7 +23,7 @@ All collections are YAML lists: a section uses `items` and nested list content
 uses `points`. `profile.items` renders as paragraphs; all other `points` render
 as bullet lists. `selected_projects` must contain content after merging.
 `project_overview` is optional, additive, begins on page 4, and can continue
-onto subsequent pages. When it is present, the renderer reads `projects.json`
+onto subsequent pages. When it is present, the renderer reads `projects.yaml`
 beside the narrative (or an explicit `--projects` path) and rejects a different
 `language`.
 
