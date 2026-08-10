@@ -1,194 +1,208 @@
-[CmdletBinding()]
-param()
+#Requires -Version 7.0
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
 
-$ErrorActionPreference = "Stop"
-$scriptPath = Join-Path $PSScriptRoot "..\Startup\Invoke-ChatGPT.ps1"
-$source = Get-Content -Raw $scriptPath
-$failures = [System.Collections.Generic.List[string]]::new()
+Set-StrictMode -Version Latest
 
-Add-Type -TypeDefinition @'
-using System;
-using System.Management.Automation.Host;
+Describe 'Invoke-ChatGPT' {
+    BeforeAll {
+        $script:chatScriptPath = (Get-Item -LiteralPath (
+            Join-Path $PSScriptRoot '..\Startup\Invoke-ChatGPT.ps1'
+        )).FullName
+        $quotedScriptPath = $script:chatScriptPath.Replace("'", "''")
+        $importScript = [scriptblock]::Create(@"
+`$script:InvokeChatGPTImportOnly = `$true
+. '$quotedScriptPath'
+"@)
+        $script:chatModule = New-Module -Name (
+            'Invoke-ChatGPT.TestImport.' + [guid]::NewGuid().ToString('N')
+        ) -ScriptBlock $importScript
+        Import-Module -ModuleInfo $script:chatModule -Force
 
-public sealed class InvokeChatGPTFakeRawUi
-{
-    private readonly string[] lines;
-    private readonly bool unavailable;
+        function New-FakeRawUi {
+            param(
+                [Parameter(Mandatory)][string[]] $Lines,
+                [switch] $Unavailable
+            )
 
-    public Coordinates WindowPosition { get; } = new Coordinates(0, 0);
-    public Size WindowSize { get; }
+            $width = [Math]::Max(1, ($Lines | ForEach-Object Length | Measure-Object -Maximum).Maximum)
+            $rawUi = [pscustomobject]@{
+                WindowPosition = [System.Management.Automation.Host.Coordinates]::new(0, 0)
+                WindowSize = [System.Management.Automation.Host.Size]::new($width, [Math]::Max(1, $Lines.Count))
+                Lines = $Lines
+                Unavailable = $Unavailable.IsPresent
+            }
+            $rawUi | Add-Member -MemberType ScriptMethod -Name GetBufferContents -Value {
+                param([System.Management.Automation.Host.Rectangle] $Rectangle)
+                if ($this.Unavailable) {
+                    throw 'screen buffer unavailable'
+                }
 
-    public InvokeChatGPTFakeRawUi(string[] lines, bool unavailable)
-    {
-        this.lines = lines;
-        this.unavailable = unavailable;
-        var width = 1;
-        foreach (var line in lines)
-            width = Math.Max(width, line.Length);
-        WindowSize = new Size(width, Math.Max(1, lines.Length));
-    }
-
-    public BufferCell[,] GetBufferContents(Rectangle rectangle)
-    {
-        if (unavailable)
-            throw new InvalidOperationException("screen buffer unavailable");
-
-        var cells = new BufferCell[WindowSize.Height, WindowSize.Width];
-        for (var row = 0; row < WindowSize.Height; row++)
-        for (var column = 0; column < WindowSize.Width; column++)
-        {
-            var character = row < lines.Length && column < lines[row].Length
-                ? lines[row][column]
-                : ' ';
-            cells[row, column] = new BufferCell(
-                character,
-                ConsoleColor.White,
-                ConsoleColor.Black,
-                BufferCellType.Complete
-            );
-        }
-        return cells;
-    }
-}
-'@
-
-function Assert-True {
-    param([bool] $Condition, [string] $Message)
-    if (-not $Condition) {
-        $failures.Add($Message)
-    }
-}
-
-function New-FakeRawUi {
-    param(
-        [string[]] $Lines,
-        [switch] $Unavailable
-    )
-
-    return [InvokeChatGPTFakeRawUi]::new($Lines, $Unavailable.IsPresent)
-}
-
-function Invoke-ChatTestCase {
-    param(
-        [string[]] $Message,
-        [switch] $Pipeline,
-        [switch] $Interactive,
-        [switch] $IncludeTerminal,
-        [switch] $Unavailable
-    )
-
-    $testSource = $source.Replace('$Host.UI.RawUI', '$global:InvokeChatGPTTestRawUi')
-    $testSource = [regex]::Replace($testSource, '(?m)^(\s*)exit\s*$', '$1return')
-    $testScript = Join-Path ([System.IO.Path]::GetTempPath()) "Invoke-ChatGPT-$([guid]::NewGuid()).ps1"
-    Set-Content -LiteralPath $testScript -Value $testSource
-
-    $longLine = "x" * 12000
-    $global:InvokeChatGPTTestRawUi = New-FakeRawUi -Lines @(
-        "PS C:\repo> git status"
-        "PS C:\repo> Invoke-ChatGPT -Message 'why' -IncludeTerminal"
-        $longLine
-    ) -Unavailable:$Unavailable
-    $global:InvokeChatGPTTestRequests = [System.Collections.Generic.List[object]]::new()
-    function global:Invoke-RestMethod {
-        param($Method, $Uri, $Headers, $Body)
-        $global:InvokeChatGPTTestRequests.Add(($Body | ConvertFrom-Json))
-        return [pscustomobject]@{
-            choices = @([pscustomobject]@{
-                message = [pscustomobject]@{ content = "test response" }
-            })
+                $cells = [System.Management.Automation.Host.BufferCell[,]]::new(
+                    $this.WindowSize.Height,
+                    $this.WindowSize.Width
+                )
+                for ($row = 0; $row -lt $this.WindowSize.Height; $row++) {
+                    $line = if ($row -lt $this.Lines.Count) { [string]$this.Lines[$row] } else { '' }
+                    for ($column = 0; $column -lt $this.WindowSize.Width; $column++) {
+                        $character = if ($column -lt $line.Length) {
+                            $line[$column]
+                        } else {
+                            ' '
+                        }
+                        $cells[$row, $column] = [System.Management.Automation.Host.BufferCell]::new(
+                            $character,
+                            [ConsoleColor]::White,
+                            [ConsoleColor]::Black,
+                            [System.Management.Automation.Host.BufferCellType]::Complete
+                        )
+                    }
+                }
+                Write-Output -NoEnumerate $cells
+            }
+            $rawUi
         }
     }
 
-    try {
-        $arguments = @{}
-        if ($Interactive) { $arguments.Interactive = $true }
-        if ($IncludeTerminal) { $arguments.IncludeTerminal = $true }
+    AfterAll {
+        if ($script:chatModule) {
+            Remove-Module -ModuleInfo $script:chatModule -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'imports private behavior without reading RawUI, sending requests, or entering the command loop' -Tag 'Internal' {
+        & $script:chatModule {
+            Get-Command Get-VisibleTerminalText | Should -Not -BeNullOrEmpty
+            Get-Command Invoke-ChatGPTConversation | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    It 'declares IncludeTerminal only for chat requests' -Tag 'Internal' {
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script:chatScriptPath,
+            [ref] $null,
+            [ref] $parseErrors
+        )
+        $parseErrors | Should -BeNullOrEmpty
+        $includeParameter = $ast.ParamBlock.Parameters | Where-Object {
+            $_.Name.VariablePath.UserPath -eq 'IncludeTerminal'
+        }
+        $includeParameter | Should -Not -BeNullOrEmpty
+        @($includeParameter.Attributes | ForEach-Object {
+            $_.NamedArguments | Where-Object {
+                $_.ArgumentName -eq 'ParameterSetName' -and
+                $_.Argument.Extent.Text -eq '"ChatParameterSet"'
+            }
+        }) | Should -HaveCount 1
+    }
+
+    It 'captures visible terminal text without truncating long lines' -Tag 'Internal' {
+        $longLine = 'x' * 12000
+        $rawUi = New-FakeRawUi -Lines @(
+            'PS C:\repo> git status'
+            "PS C:\repo> Invoke-ChatGPT -Message 'why' -IncludeTerminal"
+            $longLine
+        )
+        $terminalText = & $script:chatModule {
+            param($RawUi)
+            Get-VisibleTerminalText -RawUi $RawUi
+        } $rawUi
+
+        $terminalText | Should -Match 'PS C:\\repo> git status'
+        $terminalText | Should -Match "Invoke-ChatGPT -Message 'why' -IncludeTerminal"
+        $terminalText | Should -Match ([regex]::Escape($longLine))
+    }
+
+    It 'adds visible terminal context in one-shot, pipeline, and interactive modes' -Tag 'Command' -TestCases @(
+        @{ Name = 'one-shot'; Pipeline = $false; Interactive = $false }
+        @{ Name = 'pipeline'; Pipeline = $true; Interactive = $false }
+        @{ Name = 'interactive'; Pipeline = $false; Interactive = $true }
+    ) {
+        param($Pipeline, $Interactive)
+
+        $requests = [System.Collections.Generic.List[object]]::new()
+        Mock -CommandName Get-VisibleTerminalText -ModuleName $script:chatModule.Name -MockWith {
+            "PS C:\repo> git status`nPS C:\repo> Invoke-ChatGPT -Message 'why' -IncludeTerminal`n$('x' * 12000)"
+        }
+        Mock -CommandName Invoke-RestMethod -ModuleName $script:chatModule.Name -MockWith {
+            param($Method, $Uri, $Headers, $Body)
+            [void] $requests.Add(($Body | ConvertFrom-Json))
+            [pscustomobject]@{
+                choices = @([pscustomobject]@{
+                    message = [pscustomobject]@{ content = 'test response' }
+                })
+            }
+        }
+        if ($Interactive) {
+            Mock -CommandName Read-Host -ModuleName $script:chatModule.Name -MockWith { 'exit' }
+        }
+
+        if ($Pipeline) {
+            'original question' | & $script:chatModule {
+                process { Invoke-ChatGPTConversation -Message $_ -IncludeTerminal }
+            }
+        } else {
+            & $script:chatModule {
+                param($IsInteractive)
+                Invoke-ChatGPTConversation -Message 'original question' -IncludeTerminal -Interactive:$IsInteractive
+            } $Interactive
+        }
+
+        $requests | Should -HaveCount 1
+        $content = $requests[0].messages[1].content
+        $content.StartsWith('[TERMINAL OUTPUT - VISIBLE SCREEN]') | Should -BeTrue
+        $content | Should -Match 'PS C:\\repo> git status'
+        $content | Should -Match "Invoke-ChatGPT -Message 'why' -IncludeTerminal"
+        $content | Should -Match ('x' * 12000)
+        $content.EndsWith('original question') | Should -BeTrue
+    }
+
+    It 'fails before requesting when terminal capture is unavailable' -Tag 'Command' {
+        $requests = [System.Collections.Generic.List[object]]::new()
+        Mock -CommandName Get-VisibleTerminalText -ModuleName $script:chatModule.Name -MockWith {
+            throw [System.InvalidOperationException]::new(
+                'Cannot include terminal context because this PowerShell host cannot read its visible screen buffer. Run the command in a console host that supports RawUI.GetBufferContents(), or omit -IncludeTerminal. No API request was sent.'
+            )
+        }
+        Mock -CommandName Invoke-RestMethod -ModuleName $script:chatModule.Name -MockWith {
+            [void] $requests.Add('unexpected')
+        }
 
         $caught = $null
         try {
-            if ($Pipeline) {
-                $Message | & $testScript @arguments | Out-Null
-            } else {
-                & $testScript -Message $Message @arguments | Out-Null
+            & $script:chatModule {
+                Invoke-ChatGPTConversation -Message 'do not send' -IncludeTerminal
             }
         } catch {
             $caught = $_
         }
+        $caught | Should -Not -BeNullOrEmpty
+        $caught.Exception.Message | Should -Match 'omit -IncludeTerminal'
+        $caught.Exception.Message | Should -Match 'No API request was sent'
+        $requests.Count | Should -Be 0
+    }
 
-        return [pscustomobject]@{
-            Requests = @($global:InvokeChatGPTTestRequests)
-            Error = $caught
-            LongLine = $longLine
+    It 'does not require a terminal buffer when IncludeTerminal is omitted' -Tag 'Command' {
+        $requests = [System.Collections.Generic.List[object]]::new()
+        Mock -CommandName Invoke-RestMethod -ModuleName $script:chatModule.Name -MockWith {
+            param($Method, $Uri, $Headers, $Body)
+            [void] $requests.Add(($Body | ConvertFrom-Json))
+            [pscustomobject]@{
+                choices = @([pscustomobject]@{
+                    message = [pscustomobject]@{ content = 'test response' }
+                })
+            }
         }
-    } finally {
-        Remove-Item -LiteralPath $testScript -Force -ErrorAction SilentlyContinue
-        Remove-Item function:\global:Invoke-RestMethod -ErrorAction SilentlyContinue
-        Remove-Variable InvokeChatGPTTestRawUi -Scope Global -ErrorAction SilentlyContinue
-        Remove-Variable InvokeChatGPTTestRequests -Scope Global -ErrorAction SilentlyContinue
-    }
-}
-
-$parseErrors = $null
-$ast = [System.Management.Automation.Language.Parser]::ParseFile(
-    $scriptPath,
-    [ref] $null,
-    [ref] $parseErrors
-)
-Assert-True ($parseErrors.Count -eq 0) "Invoke-ChatGPT.ps1 must parse without errors."
-$includeParameter = $ast.ParamBlock.Parameters | Where-Object {
-    $_.Name.VariablePath.UserPath -eq 'IncludeTerminal'
-}
-Assert-True ($null -ne $includeParameter) "-IncludeTerminal must be a declared parameter."
-Assert-True (
-    @($includeParameter.Attributes | ForEach-Object {
-        $_.NamedArguments | Where-Object {
-            $_.ArgumentName -eq 'ParameterSetName' -and $_.Argument.Extent.Text -eq '"ChatParameterSet"'
+        Mock -CommandName Get-VisibleTerminalText -ModuleName $script:chatModule.Name -MockWith {
+            throw 'Terminal capture must not run without IncludeTerminal.'
         }
-    }).Count -eq 1
-) "-IncludeTerminal must only be added to ChatParameterSet."
 
-foreach ($case in @(
-    @{ Name = "one-shot"; Pipeline = $false; Interactive = $false }
-    @{ Name = "pipeline"; Pipeline = $true; Interactive = $false }
-    @{ Name = "interactive"; Pipeline = $false; Interactive = $true }
-)) {
-    $messages = if ($case.Interactive) {
-        @("original question", "exit")
-    } else {
-        @("original question")
-    }
-    $result = Invoke-ChatTestCase -Message $messages `
-        -Pipeline:$case.Pipeline -Interactive:$case.Interactive -IncludeTerminal
-    Assert-True ($null -eq $result.Error) "$($case.Name) invocation should succeed. Error: $($result.Error)"
-    Assert-True ($result.Requests.Count -eq 1) "$($case.Name) invocation should make one API request."
-    if ($result.Requests.Count -eq 1) {
-        $content = $result.Requests[0].messages[1].content
-        Assert-True ($content.StartsWith("[TERMINAL OUTPUT - VISIBLE SCREEN]")) "$($case.Name) content must start with the terminal label."
-        Assert-True ($content.Contains("PS C:\repo> git status")) "$($case.Name) content must preserve prompts."
-        Assert-True ($content.Contains("Invoke-ChatGPT -Message 'why' -IncludeTerminal")) "$($case.Name) content must preserve partial input."
-        Assert-True ($content.Contains($result.LongLine)) "$($case.Name) content must not feature-truncate terminal text."
-        Assert-True ($content.EndsWith("original question")) "$($case.Name) content must preserve the original message after terminal context."
+        & $script:chatModule {
+            Invoke-ChatGPTConversation -Message 'unchanged question'
+        } | Out-Null
+
+        $requests | Should -HaveCount 1
+        $requests[0].messages[1].content | Should -Be 'unchanged question'
+        Should -Invoke Get-VisibleTerminalText -ModuleName $script:chatModule.Name -Times 0 -Exactly
     }
 }
-
-$unavailable = Invoke-ChatTestCase -Message @("do not send") -IncludeTerminal -Unavailable
-Assert-True ($unavailable.Requests.Count -eq 0) "An unavailable screen buffer must fail before the API request."
-Assert-True (
-    $null -ne $unavailable.Error -and
-    $unavailable.Error.Exception.Message.Contains("omit -IncludeTerminal") -and
-    $unavailable.Error.Exception.Message.Contains("No API request was sent")
-) "An unavailable screen buffer must produce an actionable error."
-
-$optOut = Invoke-ChatTestCase -Message @("unchanged question") -Unavailable
-Assert-True ($null -eq $optOut.Error) "Opt-out invocation must not require a readable screen buffer."
-Assert-True ($optOut.Requests.Count -eq 1) "Opt-out invocation should make its normal API request."
-if ($optOut.Requests.Count -eq 1) {
-    Assert-True ($optOut.Requests[0].messages[1].content -eq "unchanged question") "Opt-out request content must remain unchanged."
-}
-
-if ($failures.Count -gt 0) {
-    $failures | ForEach-Object { Write-Host "FAIL: $_" -ForegroundColor Red }
-    throw "$($failures.Count) Invoke-ChatGPT test(s) failed."
-}
-
-Write-Output "PASS: Invoke-ChatGPT terminal-context tests"

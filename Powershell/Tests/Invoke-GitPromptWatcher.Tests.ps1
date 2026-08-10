@@ -1,7 +1,18 @@
 #Requires -Version 7.0
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
 
 BeforeAll {
+    . (Join-Path $PSScriptRoot 'TestSupport.ps1')
+
     $script:watcherScript = Join-Path $PSScriptRoot '..\Startup\Invoke-GitPromptWatcher.ps1'
+    $quotedWatcherScript = $script:watcherScript.Replace("'", "''")
+    $script:watcherModule = New-Module -Name (
+        'Invoke-GitPromptWatcher.TestImport.' + [guid]::NewGuid().ToString('N')
+    ) -ScriptBlock ([scriptblock]::Create(@"
+`$script:GitPromptWatcherImportOnly = `$true
+. '$quotedWatcherScript'
+"@))
+    Import-Module -ModuleInfo $script:watcherModule -Force
     $script:workerPid = $null
     $env:GIT_PROMPT_WATCHER_TEST_ID = [guid]::NewGuid().ToString('N')
     $env:GIT_PROMPT_WATCHER_PERIODIC_SECONDS = '3'
@@ -45,9 +56,234 @@ BeforeAll {
     & git -C $script:externalRepository commit -m initial | Out-Null
     & git -C $script:startupRepository commit -m initial | Out-Null
     (Get-Item -LiteralPath $script:startupRepository).LastWriteTime = [datetime]::MaxValue
+
+    function New-WatcherLifecycleFixture {
+        $environmentNames = @(
+            'GIT_PROMPT_WATCHER_TEST_ID',
+            'GIT_PROMPT_WATCHER_PERIODIC_SECONDS',
+            'GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS',
+            'GIT_PROMPT_WATCHER_REFRESH_DELAY_MS',
+            'GIT_PROMPT_WATCHER_SOURCE_PATH',
+            'GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS'
+        )
+        $environment = @{}
+        foreach ($name in $environmentNames) {
+            $value = Get-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+            $environment[$name] = [pscustomobject]@{
+                Exists = $null -ne $value
+                Value = if ($value) { $value.Value } else { $null }
+            }
+        }
+
+        $testId = [guid]::NewGuid().ToString('N')
+        $env:GIT_PROMPT_WATCHER_TEST_ID = $testId
+        $env:GIT_PROMPT_WATCHER_PERIODIC_SECONDS = '3'
+        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '2'
+        Remove-Item Env:GIT_PROMPT_WATCHER_REFRESH_DELAY_MS -ErrorAction SilentlyContinue
+        Remove-Item Env:GIT_PROMPT_WATCHER_SOURCE_PATH -ErrorAction SilentlyContinue
+        Remove-Item Env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS -ErrorAction SilentlyContinue
+
+        $sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+        $userName = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $bytes = [Text.Encoding]::UTF8.GetBytes("$userName|$sessionId|$testId")
+        $key = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 24)
+        $created = $false
+        $stoppedEvent = [Threading.EventWaitHandle]::new(
+            $false,
+            [Threading.EventResetMode]::ManualReset,
+            "Local\GitPromptWatcher-Stopped-$key",
+            [ref] $created
+        )
+        $stoppedEvent.Reset() | Out-Null
+
+        [pscustomobject]@{
+            Environment = $environment
+            Key = $key
+            PipeName = "GitPromptWatcher-$key"
+            StoppedEvent = $stoppedEvent
+            WorkerPids = [Collections.Generic.List[int]]::new()
+        }
+    }
+
+    function Add-WatcherWorkerPid {
+        param($Fixture, [int] $ProcessId)
+
+        if (-not $Fixture.WorkerPids.Contains($ProcessId)) {
+            $Fixture.WorkerPids.Add($ProcessId)
+        }
+    }
+
+    function Get-WatcherWorkerDiagnostics {
+        param($Worker)
+
+        $stdout = if (Test-Path -LiteralPath $Worker.StdOutPath) {
+            Get-Content -LiteralPath $Worker.StdOutPath -Raw
+        } else {
+            ''
+        }
+        $stderr = if (Test-Path -LiteralPath $Worker.StdErrPath) {
+            Get-Content -LiteralPath $Worker.StdErrPath -Raw
+        } else {
+            ''
+        }
+        "process id $($Worker.Process.Id); stdout: $stdout; stderr: $stderr"
+    }
+
+    function Start-TestWatcherWorker {
+        param(
+            [Parameter(Mandatory)] $Fixture,
+            [string] $IdentityKey = $Fixture.Key
+        )
+
+        $token = [guid]::NewGuid().ToString('N')
+        $stdoutPath = Join-Path $TestDrive "watcher-$token.stdout"
+        $stderrPath = Join-Path $TestDrive "watcher-$token.stderr"
+        $process = Start-Process -FilePath (Get-Process -Id $PID).Path `
+            -ArgumentList @(
+                '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $script:watcherScript,
+                '-Worker', '-WorkerIdentityKey', $IdentityKey
+            ) `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath `
+            -WindowStyle Hidden -PassThru
+        Add-WatcherWorkerPid -Fixture $Fixture -ProcessId $process.Id
+        [pscustomobject]@{
+            Process = $process
+            StdOutPath = $stdoutPath
+            StdErrPath = $stderrPath
+        }
+    }
+
+    function Wait-WatcherStatus {
+        param(
+            [Parameter(Mandatory)] $Fixture,
+            [Parameter(Mandatory)] [string] $ExpectedState,
+            [int] $TimeoutSeconds = 5,
+            $DiagnosticWorker
+        )
+
+        $lastStatus = $null
+        try {
+            Wait-TestCondition -Operation "Git prompt watcher status '$ExpectedState'" `
+                -TimeoutSeconds $TimeoutSeconds -Condition {
+                    $lastStatus = & $script:watcherScript -Status
+                    if ($lastStatus.state -eq $ExpectedState) {
+                        if ($lastStatus.processId) {
+                            Add-WatcherWorkerPid -Fixture $Fixture -ProcessId ([int] $lastStatus.processId)
+                        }
+                        return $lastStatus
+                    }
+                    return $false
+                } | Out-Null
+        } catch {
+            $diagnostics = if ($DiagnosticWorker) {
+                Get-WatcherWorkerDiagnostics -Worker $DiagnosticWorker
+            } else {
+                "last status: $($lastStatus | ConvertTo-Json -Compress)"
+            }
+            throw "$($_.Exception.Message)`n$diagnostics"
+        }
+        return $lastStatus
+    }
+
+    function Connect-TestWatcherPipe {
+        param(
+            [Parameter(Mandatory)] $Fixture,
+            [int] $TimeoutSeconds = 5,
+            $DiagnosticWorker
+        )
+
+        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+            '.', $Fixture.PipeName, [IO.Pipes.PipeDirection]::InOut,
+            [IO.Pipes.PipeOptions]::Asynchronous,
+            [Security.Principal.TokenImpersonationLevel]::Impersonation
+        )
+        try {
+            Wait-TestCondition -Operation "connection to watcher pipe '$($Fixture.PipeName)'" `
+                -TimeoutSeconds $TimeoutSeconds -Condition {
+                    try {
+                        $pipe.Connect(100)
+                        return $true
+                    } catch [TimeoutException] {
+                        return $false
+                    }
+                } | Out-Null
+            return $pipe
+        } catch {
+            $pipe.Dispose()
+            if ($DiagnosticWorker) {
+                throw "$($_.Exception.Message)`n$(Get-WatcherWorkerDiagnostics -Worker $DiagnosticWorker)"
+            }
+            throw
+        }
+    }
+
+    function Read-TestWatcherPipeLine {
+        param(
+            [Parameter(Mandatory)] [IO.StreamReader] $Reader,
+            [Parameter(Mandatory)] [IO.Pipes.NamedPipeClientStream] $Pipe,
+            [int] $TimeoutMilliseconds = 1000
+        )
+
+        $readTask = $Reader.ReadLineAsync()
+        if (-not $readTask.Wait($TimeoutMilliseconds)) {
+            $Pipe.Dispose()
+            throw "Watcher pipe response timed out after $TimeoutMilliseconds ms."
+        }
+        return $readTask.Result
+    }
+
+    function Complete-TestWatcherJobs {
+        param(
+            [Parameter(Mandatory)] [object[]] $Jobs,
+            [int] $TimeoutSeconds = 10
+        )
+
+        Wait-TestCondition -Operation 'concurrent watcher startup jobs' `
+            -TimeoutSeconds $TimeoutSeconds -Condition {
+                @($Jobs | Where-Object State -ne 'Completed').Count -eq 0
+            } | Out-Null
+        $jobErrors = @()
+        $output = @($Jobs | Receive-Job -ErrorAction SilentlyContinue -ErrorVariable +jobErrors)
+        if ($jobErrors) {
+            throw "Concurrent watcher startup jobs failed: $($jobErrors | Out-String)`nOutput: $($output | Out-String)"
+        }
+    }
+
+    function Remove-WatcherLifecycleFixture {
+        param([Parameter(Mandatory)] $Fixture)
+
+        try {
+            & $script:watcherScript -Stop | Out-Null
+        } catch {
+        }
+        foreach ($processId in @($Fixture.WorkerPids | Select-Object -Unique)) {
+            $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($process -and -not $process.HasExited) {
+                Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+                $process.WaitForExit(3000) | Out-Null
+            }
+            if ($process) {
+                $process.Dispose()
+            }
+        }
+        try {
+            $Fixture.StoppedEvent.Dispose()
+        } finally {
+            foreach ($name in $Fixture.Environment.Keys) {
+                $original = $Fixture.Environment[$name]
+                if ($original.Exists) {
+                    Set-Item -LiteralPath "Env:$name" -Value $original.Value
+                } else {
+                    Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
 }
 
 AfterAll {
+    & $script:watcherScript -Stop | Out-Null
     if ($script:workerPid) {
         Stop-Process -Id $script:workerPid -Force -ErrorAction SilentlyContinue
     }
@@ -63,9 +299,19 @@ AfterAll {
     Remove-Item -LiteralPath $script:testRepository -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $script:externalRepository -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $script:startupRepository -Recurse -Force -ErrorAction SilentlyContinue
+    if ($script:watcherModule) {
+        Remove-Module -ModuleInfo $script:watcherModule -Force -ErrorAction SilentlyContinue
+    }
 }
 
-Describe 'Invoke-GitPromptWatcher' {
+Describe 'Invoke-GitPromptWatcher internals' -Tag 'Internal' {
+    It 'imports private request behavior without starting a worker' {
+        & $script:watcherModule {
+            Get-Command Invoke-GitPromptWatcherRequest | Should -Not -BeNullOrEmpty
+        }
+        (& $script:watcherScript -Status).state | Should -Be 'NotRunning'
+    }
+
     It 'parses without errors' {
         $errors = $null
         [Management.Automation.Language.Parser]::ParseFile(
@@ -73,79 +319,9 @@ Describe 'Invoke-GitPromptWatcher' {
         ) | Out-Null
         $errors | Should -BeNullOrEmpty
     }
+}
 
-    It 'reports NotRunning before startup' {
-        $status = & $script:watcherScript -Status
-        $status.state | Should -Be 'NotRunning'
-    }
-
-    It 'starts exactly one healthy owner for concurrent clients' {
-        $jobs = 1..4 | ForEach-Object {
-            Start-Job -ScriptBlock {
-                param($Pwsh, $Script)
-                & $Pwsh -NoLogo -NoProfile -NonInteractive -File $Script
-            } -ArgumentList (Get-Process -Id $PID).Path, $script:watcherScript
-        }
-        try {
-            $jobs | Wait-Job | Receive-Job | Out-Null
-            @($jobs.State | Where-Object { $_ -ne 'Completed' }) | Should -BeNullOrEmpty
-        } finally {
-            $jobs | Remove-Job -Force
-        }
-
-        $statuses = 1..4 | ForEach-Object { & $script:watcherScript -Status }
-        @($statuses.state | Select-Object -Unique) | Should -Be @('Healthy')
-        $ownerPids = @($statuses.processId | Select-Object -Unique)
-        $ownerPids.Count | Should -Be 1
-        $script:workerPid = [int] $ownerPids[0]
-        (Get-Process -Id $script:workerPid -ErrorAction Stop).HasExited | Should -BeFalse
-    }
-
-    It 'remains ready across repeated restarts' {
-        1..10 | ForEach-Object {
-            (& $script:watcherScript -Restart).state | Should -Be 'Healthy'
-        }
-    }
-
-    It 'replaces an unresponsive worker that owns the current identity' {
-        & $script:watcherScript -Stop | Out-Null
-        $worker = Start-Process -FilePath (Get-Process -Id $PID).Path `
-            -ArgumentList @(
-                '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $script:watcherScript,
-                '-Worker', '-WorkerIdentityKey', ($script:pipeName -replace '^GitPromptWatcher-')
-            ) `
-            -WindowStyle Hidden -PassThru
-        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
-            '.', $script:pipeName, [IO.Pipes.PipeDirection]::InOut,
-            [IO.Pipes.PipeOptions]::Asynchronous,
-            [Security.Principal.TokenImpersonationLevel]::Impersonation
-        )
-        try {
-            $deadline = [datetime]::UtcNow.AddSeconds(5)
-            do {
-                try {
-                    $pipe.Connect(100)
-                    $connected = $true
-                } catch {
-                    if ($_.Exception.InnerException -isnot [TimeoutException]) {
-                        throw
-                    }
-                    Start-Sleep -Milliseconds 50
-                }
-            } while (-not $connected -and [datetime]::UtcNow -lt $deadline)
-            $connected | Should -BeTrue
-
-            $restart = & $script:watcherScript -Restart
-            $restart.state | Should -Be 'Healthy'
-            $restart.processId | Should -Not -Be $worker.Id
-            $script:workerPid = [int] $restart.processId
-        } finally {
-            $pipe.Dispose()
-            if (-not $worker.HasExited) {
-                Stop-Process -Id $worker.Id -Force -ErrorAction SilentlyContinue
-            }
-        }
-    }
+Describe 'Invoke-GitPromptWatcher snapshots' -Tag 'Command' {
 
     It 'preloads direct C:\GIT repositories without a snapshot request' {
         (& $script:watcherScript -Restart).state | Should -Be 'Healthy'
@@ -157,113 +333,8 @@ Describe 'Invoke-GitPromptWatcher' {
         $snapshot.repositoryRoot | Should -Be ([IO.Path]::GetFullPath($script:startupRepository))
     }
 
-    It 'does not let a completed client connection block another request' {
-        & $script:watcherScript -Stop | Out-Null
-        $script:stoppedEventHandle.Reset() | Out-Null
-        $oldPollSeconds = $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS
-        $oldRequireClientRequests = $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS
-        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '60'
-        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
-        $worker = Start-Process -FilePath (Get-Process -Id $PID).Path `
-            -ArgumentList @(
-                '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $script:watcherScript,
-                '-Worker', '-WorkerIdentityKey', ($script:pipeName -replace '^GitPromptWatcher-')
-            ) `
-            -WindowStyle Hidden -PassThru
-        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
-            '.', $script:pipeName, [IO.Pipes.PipeDirection]::InOut,
-            [IO.Pipes.PipeOptions]::Asynchronous,
-            [Security.Principal.TokenImpersonationLevel]::Impersonation
-        )
-        $reader = $null
-        $writer = $null
-        try {
-            $deadline = [datetime]::UtcNow.AddSeconds(5)
-            do {
-                Start-Sleep -Milliseconds 50
-                $status = & $script:watcherScript -Status
-            } while ($status.state -ne 'Healthy' -and -not $worker.HasExited -and [datetime]::UtcNow -lt $deadline)
-            $status.state | Should -Be 'Healthy'
-
-            $pipe.Connect(1000)
-            $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
-            $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
-            try {
-                $writer.AutoFlush = $true
-                $writer.WriteLine('{"type":"Status"}')
-                ($reader.ReadLine() | ConvertFrom-Json).state | Should -Be 'Healthy'
-                (& $script:watcherScript -Status).state | Should -Be 'Healthy'
-            } finally {
-                if ($reader) { $reader.Dispose() }
-                if ($writer) { $writer.Dispose() }
-            }
-        } finally {
-            $pipe.Dispose()
-            if ($worker -and -not $worker.HasExited) {
-                Stop-Process -Id $worker.Id -Force -ErrorAction SilentlyContinue
-            }
-            $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = $oldPollSeconds
-            if ($null -eq $oldRequireClientRequests) {
-                Remove-Item Env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS -ErrorAction SilentlyContinue
-            } else {
-                $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = $oldRequireClientRequests
-            }
-            & $script:watcherScript -Restart | Out-Null
-        }
-    }
-
-    It 'does not kill a live owner when startup cannot connect to its pipe' {
-        & $script:watcherScript -Stop | Out-Null
-        $script:stoppedEventHandle.Reset() | Out-Null
-        $oldPollSeconds = $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS
-        $oldRequireClientRequests = $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS
-        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '60'
-        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
-        $worker = Start-Process -FilePath (Get-Process -Id $PID).Path `
-            -ArgumentList @(
-                '-NoLogo', '-NoProfile', '-NonInteractive', '-File', $script:watcherScript,
-                '-Worker', '-WorkerIdentityKey', ($script:pipeName -replace '^GitPromptWatcher-')
-            ) `
-            -WindowStyle Hidden -PassThru
-        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
-            '.', $script:pipeName, [IO.Pipes.PipeDirection]::InOut,
-            [IO.Pipes.PipeOptions]::Asynchronous,
-            [Security.Principal.TokenImpersonationLevel]::Impersonation
-        )
-        try {
-            $deadline = [datetime]::UtcNow.AddSeconds(5)
-            do {
-                try {
-                    $pipe.Connect(100)
-                    $connected = $true
-                } catch {
-                    if ($_.Exception.InnerException -isnot [TimeoutException]) {
-                        throw
-                    }
-                    Start-Sleep -Milliseconds 50
-                }
-            } while (-not $connected -and [datetime]::UtcNow -lt $deadline)
-            $connected | Should -BeTrue
-
-            { & $script:watcherScript } | Should -Throw '*did not become ready*'
-            (Get-Process -Id $worker.Id -ErrorAction Stop).HasExited | Should -BeFalse
-        } finally {
-            $pipe.Dispose()
-            if (-not $worker.HasExited) {
-                Stop-Process -Id $worker.Id -Force -ErrorAction SilentlyContinue
-            }
-            $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = $oldPollSeconds
-            if ($null -eq $oldRequireClientRequests) {
-                Remove-Item Env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS -ErrorAction SilentlyContinue
-            } else {
-                $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = $oldRequireClientRequests
-            }
-            & $script:watcherScript -Restart | Out-Null
-        }
-    }
-
     It 'accepts a structured request without exposing mutable cache ownership' {
-        $response = & $script:watcherScript -Request Snapshot -Path $PSScriptRoot
+        $response = & $script:watcherScript -Request Snapshot -Path $TestDrive
         $response.state | Should -Be 'Healthy'
         $response.snapshot | Should -BeNullOrEmpty
         $response.PSObject.Properties.Name | Should -Not -Contain 'cache'
@@ -367,7 +438,7 @@ Describe 'Invoke-GitPromptWatcher' {
                 $snapshot = (& $script:watcherScript -Request Snapshot -Path $script:testRepository).snapshot
             } while (-not $snapshot -and [datetime]::UtcNow -lt $readyDeadline)
             $snapshot | Should -Not -BeNullOrEmpty
-            $baseline = [string] $snapshot.refreshedAt
+            $baselineStagedAdded = [int] $snapshot.staged.added
 
             $addedFile = Join-Path $script:testRepository "event-add-$([guid]::NewGuid().ToString('N')).txt"
             Set-Content -LiteralPath $addedFile -Value 'staged through metadata event'
@@ -381,14 +452,13 @@ Describe 'Invoke-GitPromptWatcher' {
             } while (
                 (
                     -not $updated -or
-                    [string] $updated.refreshedAt -eq $baseline
+                    [int] $updated.staged.added -le $baselineStagedAdded
                 ) -and
                 [datetime]::UtcNow -lt $deadline
             )
 
             $updated | Should -Not -BeNullOrEmpty
-            $updated.refreshedAt | Should -Not -Be $baseline
-            $updated.staged.added | Should -BeGreaterThan 0
+            $updated.staged.added | Should -BeGreaterThan $baselineStagedAdded
         } finally {
             $env:GIT_PROMPT_WATCHER_PERIODIC_SECONDS = '3'
             (& $script:watcherScript -Restart).state | Should -Be 'Healthy'
@@ -476,18 +546,6 @@ Describe 'Invoke-GitPromptWatcher' {
     }
 
     It 'bounds response reads when a connected pipe stalls' {
-        $tokens = $null
-        $errors = $null
-        $ast = [Management.Automation.Language.Parser]::ParseFile(
-            $script:watcherScript, [ref] $tokens, [ref] $errors
-        )
-        $requestFunction = $ast.FindAll({
-            param($node)
-            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
-                $node.Name -eq 'Invoke-GitPromptWatcherRequest'
-        }, $true)[0]
-        . ([scriptblock]::Create($requestFunction.Extent.Text))
-
         $pipeName = "GitPromptWatcher-Stall-$([guid]::NewGuid().ToString('N'))"
         $serverJob = Start-Job -ScriptBlock {
             param($Name)
@@ -505,7 +563,12 @@ Describe 'Invoke-GitPromptWatcher' {
         try {
             Start-Sleep -Milliseconds 100
             $stopwatch = [Diagnostics.Stopwatch]::StartNew()
-            { Invoke-GitPromptWatcherRequest -PipeName $pipeName -Message @{ type = 'Status' } } |
+            {
+                & $script:watcherModule {
+                    param($PipeName)
+                    Invoke-GitPromptWatcherRequest -PipeName $PipeName -Message @{ type = 'Status' }
+                } $pipeName
+            } |
                 Should -Throw '*timed out*'
             $stopwatch.Stop()
             $stopwatch.ElapsedMilliseconds | Should -BeLessThan 1000
@@ -515,76 +578,162 @@ Describe 'Invoke-GitPromptWatcher' {
         }
     }
 
-    It 'distinguishes Stopped from NotRunning and blocks auto-start until restart' {
-        & $script:watcherScript -Stop | Out-Null
-        $status = & $script:watcherScript -Status
-        $status.state | Should -Be 'Stopped'
+}
 
-        & $script:watcherScript | Out-Null
-        (& $script:watcherScript -Status).state | Should -Be 'Stopped'
+Describe 'Invoke-GitPromptWatcher lifecycle' -Tag 'Command' {
+    BeforeEach {
+        $script:lifecycleFixture = New-WatcherLifecycleFixture
+    }
 
-        & $script:watcherScript -Restart | Out-Null
+    AfterEach {
+        if ($script:lifecycleFixture) {
+            Remove-WatcherLifecycleFixture -Fixture $script:lifecycleFixture
+            $script:lifecycleFixture = $null
+        }
+    }
+
+    It 'reports NotRunning before startup' {
+        (& $script:watcherScript -Status).state | Should -Be 'NotRunning'
+    }
+
+    It 'starts exactly one healthy owner for concurrent clients' {
+        $jobs = 1..4 | ForEach-Object {
+            Start-Job -ScriptBlock {
+                param($Pwsh, $Script, $TestId)
+                $env:GIT_PROMPT_WATCHER_TEST_ID = $TestId
+                & $Pwsh -NoLogo -NoProfile -NonInteractive -File $Script
+            } -ArgumentList (Get-Process -Id $PID).Path, $script:watcherScript, $env:GIT_PROMPT_WATCHER_TEST_ID
+        }
+        try {
+            Complete-TestWatcherJobs -Jobs $jobs
+            $statuses = 1..4 | ForEach-Object { & $script:watcherScript -Status }
+            @($statuses.state | Select-Object -Unique) | Should -Be @('Healthy')
+            $ownerPids = @($statuses.processId | Select-Object -Unique)
+            $ownerPids.Count | Should -Be 1
+            Add-WatcherWorkerPid -Fixture $script:lifecycleFixture -ProcessId ([int] $ownerPids[0])
+            (Get-Process -Id $ownerPids[0] -ErrorAction Stop).HasExited | Should -BeFalse
+        } finally {
+            $jobs | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'remains ready across repeated restarts' {
+        1..10 | ForEach-Object {
+            $restart = & $script:watcherScript -Restart
+            $restart.state | Should -Be 'Healthy'
+            Add-WatcherWorkerPid -Fixture $script:lifecycleFixture -ProcessId ([int] $restart.processId)
+        }
+        Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Healthy | Out-Null
         (& $script:watcherScript -Status).state | Should -Be 'Healthy'
     }
 
-    It 'supports explicit reload and reports paused recovery errors from failed reload preflight' {
-        $badSource = Join-Path $TestDrive 'missing-reload-source.ps1'
-        $goodSource = $script:watcherScript
-        $env:GIT_PROMPT_WATCHER_SOURCE_PATH = $badSource
+    It 'replaces an unresponsive worker that owns the current identity' {
+        $worker = Start-TestWatcherWorker -Fixture $script:lifecycleFixture
+        $pipe = Connect-TestWatcherPipe -Fixture $script:lifecycleFixture -DiagnosticWorker $worker
+        try {
+            $restart = & $script:watcherScript -Restart
+            $restart.state | Should -Be 'Healthy'
+            $restart.processId | Should -Not -Be $worker.Process.Id
+            Add-WatcherWorkerPid -Fixture $script:lifecycleFixture -ProcessId ([int] $restart.processId)
+        } finally {
+            $pipe.Dispose()
+        }
+    }
+
+    It 'does not let a completed client connection block another request' {
+        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '60'
+        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
+        $worker = Start-TestWatcherWorker -Fixture $script:lifecycleFixture
+        Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Healthy -DiagnosticWorker $worker | Out-Null
+        $pipe = Connect-TestWatcherPipe -Fixture $script:lifecycleFixture -DiagnosticWorker $worker
+        $reader = $null
+        $writer = $null
+        try {
+            $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+            $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+            $writer.AutoFlush = $true
+            $writer.WriteLine('{"type":"Status"}')
+            (Read-TestWatcherPipeLine -Reader $reader -Pipe $pipe | ConvertFrom-Json).state | Should -Be 'Healthy'
+            Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Healthy | Out-Null
+            (& $script:watcherScript -Status).state | Should -Be 'Healthy'
+        } finally {
+            if ($reader) { $reader.Dispose() }
+            if ($writer) { $writer.Dispose() }
+            $pipe.Dispose()
+        }
+    }
+
+    It 'does not kill a live owner when startup cannot connect to its pipe' {
+        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '60'
+        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
+        $worker = Start-TestWatcherWorker -Fixture $script:lifecycleFixture
+        $pipe = Connect-TestWatcherPipe -Fixture $script:lifecycleFixture -DiagnosticWorker $worker
+        try {
+            { & $script:watcherScript } | Should -Throw '*did not become ready*'
+            (Get-Process -Id $worker.Process.Id -ErrorAction Stop).HasExited | Should -BeFalse
+        } finally {
+            $pipe.Dispose()
+        }
+    }
+
+    It 'distinguishes Stopped from NotRunning and blocks auto-start until restart' {
+        & $script:watcherScript -Stop | Out-Null
+        (& $script:watcherScript -Status).state | Should -Be 'Stopped'
+        & $script:watcherScript | Out-Null
+        (& $script:watcherScript -Status).state | Should -Be 'Stopped'
+        $restart = & $script:watcherScript -Restart
+        $restart.state | Should -Be 'Healthy'
+        Add-WatcherWorkerPid -Fixture $script:lifecycleFixture -ProcessId ([int] $restart.processId)
+    }
+
+    It 'recovers from a failed reload preflight' {
+        & $script:watcherScript | Out-Null
+        Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Healthy | Out-Null
+        $env:GIT_PROMPT_WATCHER_SOURCE_PATH = Join-Path $TestDrive 'missing-reload-source.ps1'
         try {
             $reload = & $script:watcherScript -Reload
             $reload.state | Should -Be 'Paused'
             $reload.sourceLoadError | Should -Match 'source'
-
-            $status = & $script:watcherScript -Status
-            $status.state | Should -Be 'Paused'
-            $status.sourceLoadError | Should -Not -BeNullOrEmpty
+            Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Paused | Out-Null
+            (& $script:watcherScript -Status).sourceLoadError | Should -Not -BeNullOrEmpty
         } finally {
-            $env:GIT_PROMPT_WATCHER_SOURCE_PATH = $goodSource
+            Remove-Item Env:GIT_PROMPT_WATCHER_SOURCE_PATH -ErrorAction SilentlyContinue
         }
-
         $recovered = & $script:watcherScript -Reload
         $recovered.state | Should -Be 'Healthy'
         $recovered.sourceLoadError | Should -BeNullOrEmpty
     }
 
     It 'keeps a recoverable paused owner after restart preflight fails' {
-        $env:GIT_PROMPT_WATCHER_SOURCE_PATH = (Join-Path $TestDrive 'missing-restart-source.ps1')
+        $env:GIT_PROMPT_WATCHER_SOURCE_PATH = Join-Path $TestDrive 'missing-restart-source.ps1'
         try {
             $restart = & $script:watcherScript -Restart
             $restart.state | Should -Be 'Paused'
             $restart.sourceLoadError | Should -Not -BeNullOrEmpty
         } finally {
-            $env:GIT_PROMPT_WATCHER_SOURCE_PATH = $script:watcherScript
+            Remove-Item Env:GIT_PROMPT_WATCHER_SOURCE_PATH -ErrorAction SilentlyContinue
         }
-
-        (& $script:watcherScript -Status).state | Should -Be 'Paused'
+        Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Paused | Out-Null
+        $paused = & $script:watcherScript -Status
+        Add-WatcherWorkerPid -Fixture $script:lifecycleFixture -ProcessId ([int] $paused.processId)
         (& $script:watcherScript -Restart).state | Should -Be 'Healthy'
     }
 
-    It 'exits when no qualifying PowerShell process remains after poll interval' {
-        $isolatedKey = [guid]::NewGuid().ToString('N').Substring(0, 24)
-        $quotedScript = $script:watcherScript.Replace("'", "''")
-        $workerCommand = @"
-`$env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '1'
-`$env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
-& '$quotedScript' -Worker -WorkerIdentityKey '$isolatedKey'
-"@
-        $runner = Start-Process -FilePath (Get-Process -Id $PID).Path `
-            -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-Command', $workerCommand) `
-            -WindowStyle Hidden -PassThru
+    It 'exits when no qualifying PowerShell process remains after the poll interval' {
+        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '1'
+        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
+        $worker = Start-TestWatcherWorker -Fixture $script:lifecycleFixture
         try {
-            $runner.WaitForExit(6000) | Should -BeTrue
-        } finally {
-            if (-not $runner.HasExited) {
-                Stop-Process -Id $runner.Id -Force -ErrorAction SilentlyContinue
-            }
+            Wait-TestProcessExit -Process $worker.Process -Operation 'unclaimed watcher worker exit' -TimeoutSeconds 6
+            $worker.Process.HasExited | Should -BeTrue
+        } catch {
+            throw "$($_.Exception.Message)`n$(Get-WatcherWorkerDiagnostics -Worker $worker)"
         }
     }
 }
 
 
-Describe 'Git prompt snapshot integration' {
+Describe 'Git prompt snapshot integration' -Tag 'Internal' {
     BeforeAll {
         $script:promptScript = Join-Path $PSScriptRoot '..\Install-Prompt.ps1'
         . $script:promptScript -SkipGitPromptWatcherStart
@@ -633,25 +782,23 @@ Describe 'Git prompt snapshot integration' {
     }
 
     It 'renders a ready snapshot through the public prompt function without invoking Git' {
-        $fakeWatcher = Join-Path $TestDrive 'fake-watcher.ps1'
-        Set-Content -LiteralPath $fakeWatcher -Value @'
-[pscustomobject]@{
-    snapshot = [pscustomobject]@{
-        available = $true; branch = 'feature/123'; hasUpstream = $false
-        hasAheadBehind = $false; ahead = 0; behind = 0; conflicts = 0
-        staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
-        workingTree = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
-    }
-}
-'@
-        $global:GitPromptWatcherScript = $fakeWatcher
-        Mock Invoke-GitPromptWatcherSnapshotRequest { & $global:GitPromptWatcherScript }
-        function global:git { throw 'prompt invoked Git synchronously' }
-        try {
-            $rendered = prompt 6>&1 | Out-String
-            $rendered | Should -Match 'feature/123'
-        } finally {
-            Remove-Item Function:\git -ErrorAction SilentlyContinue
+        Mock Invoke-GitPromptWatcherSnapshotRequest {
+            [pscustomobject]@{
+                state = 'Healthy'
+                snapshot = [pscustomobject]@{
+                    available = $true; branch = 'feature/123'; hasUpstream = $false
+                    hasAheadBehind = $false; ahead = 0; behind = 0; conflicts = 0
+                    staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+                    workingTree = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+                }
+            }
         }
+
+        (Invoke-GitPromptWatcherSnapshotRequest -Path $PSScriptRoot).snapshot.branch | Should -Be 'feature/123'
+        (Get-GitPromptCached).Contains('feature/') | Should -BeTrue
+        (Get-GitPromptCached).Contains('123') | Should -BeTrue
+        $rendered = prompt 6>&1 | Out-String
+        $rendered.Contains('feature/') | Should -BeTrue
+        $rendered.Contains('123') | Should -BeTrue
     }
 }

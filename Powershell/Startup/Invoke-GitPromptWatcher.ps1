@@ -995,132 +995,134 @@ function Invoke-GitPromptWatcherWorker {
     }
 }
 
-$identity = Get-GitPromptWatcherIdentity
-$sourcePath = Get-GitPromptWatcherSourcePath
+if (-not (Get-Variable -Name GitPromptWatcherImportOnly -Scope Script -ValueOnly -ErrorAction SilentlyContinue)) {
+    $identity = Get-GitPromptWatcherIdentity
+    $sourcePath = Get-GitPromptWatcherSourcePath
 
-if ($Worker) {
-    $initialPausedError = $null
-    if ($InitialPausedErrorBase64) {
-        $initialPausedError = [Text.Encoding]::UTF8.GetString(
-            [Convert]::FromBase64String($InitialPausedErrorBase64)
-        )
-    }
-    Invoke-GitPromptWatcherWorker -Identity $identity -InitialPausedError $initialPausedError
-    return
-}
-
-if ($Status) {
-    if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
-        return [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
-    }
-
-    $statusDeadline = [datetime]::UtcNow.AddMilliseconds(500)
-    do {
-        try {
-            return Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Status' }
-        } catch {
-            Start-Sleep -Milliseconds 25
+    if ($Worker) {
+        $initialPausedError = $null
+        if ($InitialPausedErrorBase64) {
+            $initialPausedError = [Text.Encoding]::UTF8.GetString(
+                [Convert]::FromBase64String($InitialPausedErrorBase64)
+            )
         }
-    } while ([datetime]::UtcNow -lt $statusDeadline)
-
-    if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
-        [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
-    } else {
-        [pscustomobject]@{ state = 'NotRunning'; processId = $null; sourceLoadError = $null }
+        Invoke-GitPromptWatcherWorker -Identity $identity -InitialPausedError $initialPausedError
+        return
     }
-    return
-}
 
-if ($Stop) {
-    Set-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName
-    try {
-        Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Stop' } |
-            Out-Null
-    } catch {
-    }
-    [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
-    return
-}
-
-if ($Reload) {
-    try {
-        return Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{
-            type = 'Reload'
-            sourcePath = $sourcePath
+    if ($Status) {
+        if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
+            return [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
         }
-    } catch {
+
+        $statusDeadline = [datetime]::UtcNow.AddMilliseconds(500)
+        do {
+            try {
+                return Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Status' }
+            } catch {
+                Start-Sleep -Milliseconds 25
+            }
+        } while ([datetime]::UtcNow -lt $statusDeadline)
+
         if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
             [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
         } else {
             [pscustomobject]@{ state = 'NotRunning'; processId = $null; sourceLoadError = $null }
         }
+        return
     }
-    return
-}
 
-if ($Restart) {
-    Clear-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName
-    try {
-        Test-GitPromptWatcherSourceLoad -SourcePath $sourcePath
-    } catch {
-        $sourceError = $_.Exception.Message
+    if ($Stop) {
+        Set-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName
         try {
-            Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{
-                type = 'Pause'
-                sourceLoadError = $sourceError
-            } | Out-Null
+            Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Stop' } |
+                Out-Null
         } catch {
-            Start-GitPromptWatcherWorker -Identity $identity -InitialPausedError $sourceError
         }
-        return [pscustomobject]@{
-            state = 'Paused'
-            processId = $null
-            sourceLoadError = $sourceError
-        }
+        [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
+        return
     }
 
-    try {
-        Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Stop' } | Out-Null
-    } catch {
-    }
-
-    $stopDeadline = [datetime]::UtcNow.AddSeconds(5)
-    $previousWorkerRunning = $false
-    do {
-        Start-Sleep -Milliseconds 50
+    if ($Reload) {
         try {
-            Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
-                -Message @{ type = 'Status' } -TimeoutMilliseconds 100 | Out-Null
-            $previousWorkerRunning = $true
-            try {
-                Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
-                    -Message @{ type = 'Stop' } -TimeoutMilliseconds 100 | Out-Null
-            } catch {
+            return Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{
+                type = 'Reload'
+                sourcePath = $sourcePath
             }
         } catch {
-            $previousWorkerRunning = $false
+            if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
+                [pscustomobject]@{ state = 'Stopped'; processId = $null; sourceLoadError = $null }
+            } else {
+                [pscustomobject]@{ state = 'NotRunning'; processId = $null; sourceLoadError = $null }
+            }
         }
-    } while ($previousWorkerRunning -and [datetime]::UtcNow -lt $stopDeadline)
-
-    if ($previousWorkerRunning) {
-        throw 'The previous Git prompt watcher did not stop during restart.'
+        return
     }
-    Start-GitPromptWatcherWorker -Identity $identity -StopUnresponsiveWorker
-    return (& $PSCommandPath -Status)
-}
 
-if ($Request) {
-    try {
-        Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
-            -Message @{ type = $Request; path = $Path }
-    } catch {
-        if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
-            [pscustomobject]@{ state = 'Stopped'; snapshot = $null; sourceLoadError = $null }
-        } else {
-            [pscustomobject]@{ state = 'NotRunning'; snapshot = $null; sourceLoadError = $null }
+    if ($Restart) {
+        Clear-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName
+        try {
+            Test-GitPromptWatcherSourceLoad -SourcePath $sourcePath
+        } catch {
+            $sourceError = $_.Exception.Message
+            try {
+                Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{
+                    type = 'Pause'
+                    sourceLoadError = $sourceError
+                } | Out-Null
+            } catch {
+                Start-GitPromptWatcherWorker -Identity $identity -InitialPausedError $sourceError
+            }
+            return [pscustomobject]@{
+                state = 'Paused'
+                processId = $null
+                sourceLoadError = $sourceError
+            }
         }
-    }
-    return
-}
 
-Start-GitPromptWatcherWorker -Identity $identity
+        try {
+            Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName -Message @{ type = 'Stop' } | Out-Null
+        } catch {
+        }
+
+        $stopDeadline = [datetime]::UtcNow.AddSeconds(5)
+        $previousWorkerRunning = $false
+        do {
+            Start-Sleep -Milliseconds 50
+            try {
+                Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
+                    -Message @{ type = 'Status' } -TimeoutMilliseconds 100 | Out-Null
+                $previousWorkerRunning = $true
+                try {
+                    Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
+                        -Message @{ type = 'Stop' } -TimeoutMilliseconds 100 | Out-Null
+                } catch {
+                }
+            } catch {
+                $previousWorkerRunning = $false
+            }
+        } while ($previousWorkerRunning -and [datetime]::UtcNow -lt $stopDeadline)
+
+        if ($previousWorkerRunning) {
+            throw 'The previous Git prompt watcher did not stop during restart.'
+        }
+        Start-GitPromptWatcherWorker -Identity $identity -StopUnresponsiveWorker
+        return (& $PSCommandPath -Status)
+    }
+
+    if ($Request) {
+        try {
+            Invoke-GitPromptWatcherRequest -PipeName $identity.PipeName `
+                -Message @{ type = $Request; path = $Path }
+        } catch {
+            if (Test-GitPromptWatcherStoppedState -EventName $identity.StoppedEventName) {
+                [pscustomobject]@{ state = 'Stopped'; snapshot = $null; sourceLoadError = $null }
+            } else {
+                [pscustomobject]@{ state = 'NotRunning'; snapshot = $null; sourceLoadError = $null }
+            }
+        }
+        return
+    }
+
+    Start-GitPromptWatcherWorker -Identity $identity
+}

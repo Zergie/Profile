@@ -65,19 +65,6 @@ param(
             }
     })]
     [ValidateNotNullOrEmpty()]
-    [ValidateScript({
-        $scratch = Join-Path (Get-Location) '.scratch'
-        $candidate = Join-Path $scratch $_
-        if ($_ -ceq 'done' -or
-            [System.IO.Path]::GetFileName($_) -cne $_ -or
-            -not (Test-Path -LiteralPath $candidate -PathType Container) -or
-            -not (Test-Path -LiteralPath (
-                Join-Path $candidate 'spec.md'
-            ) -PathType Leaf)) {
-            throw "Archive must name a direct active tracker folder containing spec.md: $_"
-        }
-        $true
-    })]
     [string]
     $Archive,
 
@@ -130,32 +117,9 @@ param(
             }
     })]
     [ValidateNotNullOrEmpty()]
-    [ValidateScript({
-        $scratch = Join-Path (Get-Location) '.scratch'
-        $candidate = Join-Path $scratch $_
-        if ($_ -ceq 'done' -or
-            [System.IO.Path]::GetFileName($_) -cne $_ -or
-            -not (Test-Path -LiteralPath $candidate -PathType Container) -or
-            -not (Test-Path -LiteralPath (
-                Join-Path $candidate 'spec.md'
-            ) -PathType Leaf)) {
-            throw "Feature must name a direct active tracker folder containing spec.md: $_"
-        }
-        $true
-    })]
     [string]
     $Feature
 )
-
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-
-foreach ($optionName in 'Model', 'Effort') {
-    if ($PSBoundParameters.ContainsKey($optionName) -and
-        [string]::IsNullOrWhiteSpace([string]$PSBoundParameters[$optionName])) {
-        throw "-$optionName must be a non-empty value."
-    }
-}
 
 function Invoke-NativeText {
     param(
@@ -175,6 +139,737 @@ function Invoke-NativeText {
     }
 
     return ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+}
+
+function Get-JsonPropertyValue {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $InputObject,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Path
+    )
+
+    $value = $InputObject
+    foreach ($segment in $Path -split '\.') {
+        if ($null -eq $value) { return $null }
+        $property = $value.PSObject.Properties[$segment]
+        if ($null -eq $property) { return $null }
+        $value = $property.Value
+    }
+
+    return $value
+}
+
+function Get-FirstJsonString {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $InputObject,
+
+        [Parameter(Mandatory)]
+        [string[]]
+        $Paths
+    )
+
+    foreach ($path in $Paths) {
+        $value = Get-JsonPropertyValue -InputObject $InputObject -Path $path
+        if ($null -ne $value -and -not [string]::IsNullOrEmpty([string]$value)) {
+            return [string]$value
+        }
+    }
+
+    return $null
+}
+
+function ConvertTo-NormalizedAgentMessage {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('codex', 'copilot')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory)]
+        [object]
+        $Event,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.HashSet[string]]
+        $SeenMessageIds
+    )
+
+    if ($Name -eq 'codex') {
+        if (
+            $Event.type -ne 'item.completed' -or
+            (Get-JsonPropertyValue -InputObject $Event -Path 'item.type') -ne 'agent_message'
+        ) {
+            return $null
+        }
+
+        $text = Get-FirstJsonString -InputObject $Event -Paths @('item.text')
+        $eventId = Get-FirstJsonString -InputObject $Event -Paths @('id', 'event_id')
+        $messageId = Get-FirstJsonString -InputObject $Event -Paths @(
+            'item.id', 'item.message_id'
+        )
+        $agentInstanceId = Get-FirstJsonString -InputObject $Event -Paths @(
+            'item.agent_instance_id', 'item.agent_id'
+        )
+    }
+    else {
+        if ($Event.type -ne 'assistant.message') { return $null }
+
+        $text = Get-FirstJsonString -InputObject $Event -Paths @(
+            'data.content', 'data.text', 'data.message.content', 'data.message.text',
+            'content', 'text', 'message.content', 'message.text'
+        )
+        $eventId = Get-FirstJsonString -InputObject $Event -Paths @('id', 'event_id', 'eventId')
+        $messageId = Get-FirstJsonString -InputObject $Event -Paths @(
+            'data.message.id', 'data.message_id', 'data.messageId', 'data.id',
+            'message.id', 'message_id', 'messageId'
+        )
+        $agentInstanceId = Get-FirstJsonString -InputObject $Event -Paths @(
+            'data.agent_instance_id', 'data.agentInstanceId', 'data.agent_id',
+            'data.agentId', 'agent_instance_id', 'agentInstanceId', 'agent_id', 'agentId'
+        )
+    }
+
+    if ([string]::IsNullOrEmpty($text)) { return $null }
+    foreach ($identity in @($eventId, $messageId) | Where-Object {
+            -not [string]::IsNullOrEmpty($_)
+        }) {
+        if ($SeenMessageIds.Contains($identity)) { return $null }
+    }
+    foreach ($identity in @($eventId, $messageId) | Where-Object {
+            -not [string]::IsNullOrEmpty($_)
+        }) {
+        [void]$SeenMessageIds.Add($identity)
+    }
+
+    return [pscustomobject]@{
+        Text            = $text
+        EventId         = $eventId
+        MessageId       = $messageId
+        AgentInstanceId = $agentInstanceId
+    }
+}
+
+function Update-SubAgentLifecycle {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $Event,
+
+        [Parameter(Mandatory)]
+        [hashtable]
+        $DisplayNames
+    )
+
+    $eventType = Get-FirstJsonString -InputObject $Event -Paths @('type')
+    if ($eventType -notmatch '(?i)(?:sub[_-]?agent|agent[._-]?lifecycle).*(?:start|create)|(?:start|create).*?(?:sub[_-]?agent|agent[._-]?lifecycle)') {
+        return
+    }
+
+    $agentInstanceId = Get-FirstJsonString -InputObject $Event -Paths @(
+        'data.agent_instance_id', 'data.agentInstanceId', 'data.agent_id', 'data.agentId',
+        'agent_instance_id', 'agentInstanceId', 'agent_id', 'agentId'
+    )
+    $displayName = Get-FirstJsonString -InputObject $Event -Paths @(
+        'data.display_name', 'data.displayName', 'data.name', 'display_name', 'displayName', 'name'
+    )
+    if (-not [string]::IsNullOrEmpty($agentInstanceId) -and
+        -not [string]::IsNullOrEmpty($displayName)) {
+        $DisplayNames[$agentInstanceId] = $displayName
+    }
+}
+
+function ConvertFrom-SubduedHue {
+    param(
+        [Parameter(Mandatory)]
+        [int]
+        $Index
+    )
+
+    $hue = ($Index * 137.50776405003785) % 360
+    $chroma = (1 - [Math]::Abs((2 * 0.62) - 1)) * 0.42
+    $component = $chroma * (1 - [Math]::Abs((($hue / 60) % 2) - 1))
+    $match = switch ([Math]::Floor($hue / 60)) {
+        0 { @($chroma, $component, 0); break }
+        1 { @($component, $chroma, 0); break }
+        2 { @(0, $chroma, $component); break }
+        3 { @(0, $component, $chroma); break }
+        4 { @($component, 0, $chroma); break }
+        default { @($chroma, 0, $component) }
+    }
+    $offset = 0.62 - ($chroma / 2)
+    $rgb = $match | ForEach-Object { [int][Math]::Round(255 * ($_ + $offset)) }
+    return "`e[38;2;$($rgb[0]);$($rgb[1]);$($rgb[2])m"
+}
+
+function Get-MarkdownInlineText {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $Inlines,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Markdown,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle = '',
+
+        [Parameter()]
+        [switch]
+        $Interactive
+    )
+
+    $reset = if ($Interactive) { $PSStyle.Reset } else { '' }
+    $result = [System.Text.StringBuilder]::new()
+    foreach ($inline in $Inlines) {
+        $typeName = $inline.GetType().Name
+        if ($typeName -eq 'LiteralInline') {
+            [void]$result.Append([string]$inline.Content)
+            continue
+        }
+        if ($typeName -eq 'HtmlInline') {
+            [void]$result.Append([string]$inline.Tag)
+            continue
+        }
+        if ($typeName -eq 'LineBreakInline') {
+            [void]$result.Append("`n")
+            continue
+        }
+        if ($typeName -eq 'LinkInline') {
+            $label = Get-MarkdownInlineText -Inlines $inline -Markdown $Markdown `
+                -BaseStyle $BaseStyle -Interactive:$Interactive
+            $destination = [string]$inline.Url
+            $isImage = [bool]$inline.IsImage
+            if ($isImage) {
+                $label = "Image: $label"
+            }
+
+            if (-not $Interactive) {
+                [void]$result.Append($label)
+                if (-not [string]::IsNullOrEmpty($destination) -and (
+                        $isImage -or
+                        $destination -cne $label
+                    )) {
+                    [void]$result.Append(" ($destination)")
+                }
+                continue
+            }
+
+            if ([string]::IsNullOrEmpty($destination)) {
+                [void]$result.Append($label)
+                continue
+            }
+
+            $osc8Prefix = "$([char]27)]8;;"
+            $osc8Close = "$osc8Prefix$([char]27)\"
+            [void]$result.Append("$osc8Prefix$destination$([char]27)\$label$osc8Close")
+            continue
+        }
+        if ($typeName -eq 'CodeInline') {
+            $content = [string]$inline.Content
+            if ($Interactive) {
+                [void]$result.Append("`e[7m $content ${reset}${BaseStyle}")
+            }
+            else {
+                [void]$result.Append(" $content ")
+            }
+            continue
+        }
+        if ($typeName -eq 'EmphasisInline') {
+            $start = [int]$inline.Span.Start
+            $marker = if (($start + 2) -le $Markdown.Length) {
+                $Markdown.Substring($start, 2)
+            }
+            elseif ($start -lt $Markdown.Length) {
+                $Markdown.Substring($start, 1)
+            }
+            else {
+                ''
+            }
+            $style = switch ($marker) {
+                '**' { "`e[1m"; break }
+                '__' { "`e[1m"; break }
+                '~~' { "`e[9m"; break }
+                default { "`e[3m" }
+            }
+            $content = Get-MarkdownInlineText -Inlines $inline -Markdown $Markdown `
+                -BaseStyle $BaseStyle -Interactive:$Interactive
+            if ($Interactive) {
+                [void]$result.Append("$style$content${reset}${BaseStyle}")
+            }
+            else {
+                [void]$result.Append($content)
+            }
+            continue
+        }
+
+        [void]$result.Append([string]$inline)
+    }
+
+    return $result.ToString()
+}
+
+function Get-RalphInlineMarkdown {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $Text,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle,
+
+        [Parameter()]
+        [switch]
+        $Interactive
+    )
+
+    $inlineDocument = ConvertFrom-Markdown -InputObject $Text -ErrorAction Stop
+    $paragraph = @($inlineDocument.Tokens | Where-Object {
+            $_.GetType().Name -eq 'ParagraphBlock'
+        } | Select-Object -First 1)
+    if ($paragraph.Count -eq 0) { return $Text }
+
+    return Get-MarkdownInlineText -Inlines $paragraph[0].Inline -Markdown $Text `
+        -BaseStyle $BaseStyle -Interactive:$Interactive
+}
+
+function ConvertTo-RalphListOrQuoteRows {
+    param(
+        [Parameter(Mandatory)]
+        [string[]]
+        $Lines,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle,
+
+        [Parameter()]
+        [switch]
+        $Interactive
+    )
+
+    $rows = [System.Collections.Generic.List[string]]::new()
+    foreach ($sourceLine in $Lines) {
+        $line = $sourceLine
+        $quotePrefix = ''
+        while ($line -match '^\s*>\s?') {
+            $quotePrefix += '│ '
+            $line = $line -replace '^\s*>\s?', ''
+        }
+
+        if ($line -match '^(\s*)(?:[-+*]\s+|(\d+)[.)]\s+)(.*)$') {
+            $indent = ' ' * (2 * [math]::Floor($matches[1].Length / 2))
+            $marker = if ([string]::IsNullOrEmpty($matches[2])) { '• ' } else { "$($matches[2]). " }
+            $content = $matches[3]
+            if ($content -match '^\[([ xX])\]\s+(.*)$') {
+                $taskState = $matches[1]
+                $taskContent = $matches[2]
+                $marker = if ($taskState -match '[xX]') { '[✓] ' } else { '[ ] ' }
+                $content = $taskContent
+            }
+            $rendered = Get-RalphInlineMarkdown -Text $content -BaseStyle $BaseStyle `
+                -Interactive:$Interactive
+            $rows.Add("$quotePrefix$indent$marker$rendered")
+            continue
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($quotePrefix)) {
+            $rendered = Get-RalphInlineMarkdown -Text $line -BaseStyle $BaseStyle `
+                -Interactive:$Interactive
+            $rows.Add("$quotePrefix$rendered")
+        }
+    }
+
+    return @($rows)
+}
+
+function Expand-RalphCodeTabs {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $Text
+    )
+
+    $expanded = [System.Text.StringBuilder]::new()
+    $column = 0
+    $index = 0
+    while ($index -lt $Text.Length) {
+        if ($Text[$index] -eq "`t") {
+            $spaces = 4 - ($column % 4)
+            [void]$expanded.Append(' ' * $spaces)
+            $column += $spaces
+            $index++
+            continue
+        }
+
+        $codePoint = [char]::ConvertToUtf32($Text, $index)
+        $length = if ($codePoint -gt 0xFFFF) { 2 } else { 1 }
+        $element = $Text.Substring($index, $length)
+        [void]$expanded.Append($element)
+        $column += Get-DisplayCellWidth -Text $element
+        $index += $length
+    }
+
+    return $expanded.ToString()
+}
+
+function ConvertTo-RalphCodeRows {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Source,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Language = '',
+
+        [Parameter()]
+        [switch]
+        $Interactive
+    )
+
+    $sourceLines = @($Source -split '\r?\n')
+    $language = $Language
+    if ($sourceLines.Count -gt 0 -and $sourceLines[0] -match '^\s*(?:`{3,}|~{3,})\s*(\S*)') {
+        $language = $matches[1]
+        $sourceLines = @($sourceLines | Select-Object -Skip 1)
+        if ($sourceLines.Count -gt 0 -and $sourceLines[-1] -match '^\s*(?:`{3,}|~{3,})\s*$') {
+            $sourceLines = @($sourceLines | Select-Object -SkipLast 1)
+        }
+    }
+
+    $rows = [System.Collections.Generic.List[string]]::new()
+    if (-not [string]::IsNullOrEmpty($language)) {
+        $label = if ($Interactive) {
+            "`e[2m$language$($PSStyle.Reset)$BaseStyle"
+        }
+        else {
+            $language
+        }
+        $rows.Add($label)
+    }
+    foreach ($line in $sourceLines) {
+        $codeRow = Expand-RalphCodeTabs -Text $line
+        # This marker is consumed by the frame wrapper and never emitted to the terminal.
+        $rows.Add("$(if ($Interactive) { [char]0x1E })$codeRow")
+    }
+
+    return @($rows)
+}
+
+function ConvertTo-RalphTableRows {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $Table,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Markdown,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle,
+
+        [Parameter()]
+        [int]
+        $InnerWidth = 0,
+
+        [Parameter()]
+        [switch]
+        $Interactive
+    )
+
+    $columnCount = if ($Table.Count -gt 0) { [int]$Table[0].Count } else { 0 }
+    if ($columnCount -eq 0) { return @() }
+
+    $reset = if ($Interactive) { $PSStyle.Reset } else { '' }
+    $headers = [System.Collections.Generic.List[string]]::new()
+    $bodyRows = [System.Collections.Generic.List[string[]]]::new()
+    $naturalWidths = @(for ($column = 0; $column -lt $columnCount; $column++) { 3 })
+    foreach ($tableRow in $Table) {
+        $cells = [string[]]::new($columnCount)
+        for ($column = 0; $column -lt $columnCount; $column++) {
+            $cell = if ($column -lt $tableRow.Count) { $tableRow[$column] } else { $null }
+            $content = if ($null -eq $cell) {
+                ''
+            }
+            else {
+                Get-MarkdownInlineText -Inlines $cell.Inline -Markdown $Markdown `
+                    -BaseStyle $BaseStyle -Interactive:$Interactive
+            }
+            $cells[$column] = $content
+            $naturalWidths[$column] = [Math]::Max(
+                $naturalWidths[$column],
+                (Get-DisplayCellWidth -Text $content)
+            )
+        }
+        if ($tableRow.IsHeader) {
+            foreach ($cell in $cells) { $headers.Add($cell) }
+        }
+        else {
+            $bodyRows.Add($cells)
+        }
+    }
+    if ($headers.Count -eq 0) { return @() }
+
+    # A bordered row needs three cells per column plus its two outer borders.
+    $minimumWidth = (5 * $columnCount) + 1
+    if ($InnerWidth -gt 0 -and $InnerWidth -lt $minimumWidth) {
+        $verticalRows = [System.Collections.Generic.List[string]]::new()
+        foreach ($body in $bodyRows) {
+            for ($column = 0; $column -lt $columnCount; $column++) {
+                $verticalRows.Add("$BaseStyle$($headers[$column]): $($body[$column])${reset}")
+            }
+        }
+        return @($verticalRows)
+    }
+
+    $widths = [int[]]$naturalWidths.Clone()
+    if ($InnerWidth -gt 0) {
+        $availableContentWidth = $InnerWidth - ((3 * $columnCount) + 1)
+        while (($widths | Measure-Object -Sum).Sum -gt $availableContentWidth) {
+            $widest = 0
+            for ($column = 1; $column -lt $columnCount; $column++) {
+                if ($widths[$column] -gt $widths[$widest]) { $widest = $column }
+            }
+            if ($widths[$widest] -le 3) { break }
+            $widths[$widest]--
+        }
+    }
+
+    $alignments = @(
+        for ($column = 0; $column -lt $columnCount; $column++) {
+            if ($column -lt $Table.ColumnDefinitions.Count) {
+                [string]$Table.ColumnDefinitions[$column].Alignment
+            }
+            else {
+                'Left'
+            }
+        }
+    )
+    $formatCell = {
+        param([string] $Content, [int] $Width, [string] $Alignment)
+        $padding = [Math]::Max(0, $Width - (Get-DisplayCellWidth -Text $Content))
+        switch ($Alignment) {
+            'Right' { return (' ' * $padding) + $Content }
+            'Center' {
+                $left = [Math]::Floor($padding / 2)
+                return (' ' * $left) + $Content + (' ' * ($padding - $left))
+            }
+            default { return $Content + (' ' * $padding) }
+        }
+    }
+    $renderRow = {
+        param([string[]] $Cells)
+        $wrappedCells = [System.Collections.Generic.List[object[]]]::new()
+        $rowCount = 1
+        for ($column = 0; $column -lt $columnCount; $column++) {
+            $wrapped = @(Split-AgentOutputContent -Content $Cells[$column] -InnerWidth $widths[$column])
+            if ($wrapped.Count -eq 0) { $wrapped = @([pscustomobject]@{ Text = ''; Width = 0 }) }
+            $wrappedCells.Add($wrapped)
+            $rowCount = [Math]::Max($rowCount, $wrapped.Count)
+        }
+        $renderedRows = [System.Collections.Generic.List[string]]::new()
+        for ($row = 0; $row -lt $rowCount; $row++) {
+            $parts = for ($column = 0; $column -lt $columnCount; $column++) {
+                $content = if ($row -lt $wrappedCells[$column].Count) {
+                    [string]$wrappedCells[$column][$row].Text
+                }
+                else {
+                    ''
+                }
+                & $formatCell $content $widths[$column] $alignments[$column]
+            }
+            $renderedRows.Add("$BaseStyle| $($parts -join ' | ') |${reset}")
+        }
+        return @($renderedRows)
+    }
+
+    $rows = [System.Collections.Generic.List[string]]::new()
+    foreach ($row in @(& $renderRow $headers.ToArray())) { $rows.Add($row) }
+    $separator = for ($column = 0; $column -lt $columnCount; $column++) { '─' * $widths[$column] }
+    $rows.Add("$BaseStyle|$($separator -join '┼')|${reset}")
+    foreach ($body in $bodyRows) {
+        foreach ($row in @(& $renderRow $body)) { $rows.Add($row) }
+    }
+    return @($rows)
+}
+
+function ConvertTo-RalphMarkdown {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]
+        $Markdown,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $BaseStyle = '',
+
+        [Parameter()]
+        [switch]
+        $Interactive,
+
+        [Parameter()]
+        [int]
+        $InnerWidth = 0
+    )
+
+    $baseStyle = if ($Interactive) {
+        if ([string]::IsNullOrEmpty($BaseStyle)) { "`e[38;5;252m" } else { $BaseStyle }
+    }
+    else { '' }
+    $reset = if ($Interactive) { $PSStyle.Reset } else { '' }
+    # Markdig treats an ESC sequence as Markdown punctuation. Preserve valid message
+    # controls verbatim rather than letting parsing alter their byte sequence.
+    if ($Markdown.Contains([string][char]27)) {
+        return $Markdown.Trim("`r", "`n")
+    }
+    try {
+        $document = ConvertFrom-Markdown -InputObject $Markdown -ErrorAction Stop
+        $rows = [System.Collections.Generic.List[string]]::new()
+        $sourceLines = @($Markdown -split '\r?\n')
+        $structuralLines = @($sourceLines | Where-Object {
+                $_ -match '^\s*(?:[-+*]\s+|\d+[.)]\s+|>+)'
+            })
+        if ($structuralLines.Count -eq @($sourceLines | Where-Object {
+                    -not [string]::IsNullOrWhiteSpace($_)
+                }).Count -and $structuralLines.Count -gt 0) {
+            $structuralRows = ConvertTo-RalphListOrQuoteRows -Lines $sourceLines `
+                -BaseStyle $baseStyle -Interactive:$Interactive
+            return (($structuralRows | ForEach-Object {
+                        "$baseStyle$_${reset}"
+                    }) -join "`n").Trim("`r", "`n")
+        }
+        foreach ($block in $document.Tokens) {
+            $typeName = $block.GetType().Name
+            if ($typeName -eq 'Table') {
+                $tableRows = ConvertTo-RalphTableRows -Table $block -Markdown $Markdown `
+                    -BaseStyle $baseStyle -InnerWidth $InnerWidth -Interactive:$Interactive
+                if ($tableRows.Count -gt 0) {
+                    if ($rows.Count -gt 0) { $rows.Add('') }
+                    foreach ($tableRow in $tableRows) { $rows.Add($tableRow) }
+                }
+                continue
+            }
+            if ($typeName -match 'CodeBlock$') {
+                $start = [Math]::Max(0, [int]$block.Span.Start)
+                $length = [Math]::Min(
+                    $Markdown.Length - $start,
+                    ([int]$block.Span.End - $start + 1)
+                )
+                $declaredLanguage = if ($null -ne $block.PSObject.Properties['Info']) {
+                    [string]$block.Info
+                }
+                else {
+                    ''
+                }
+                $codeRows = ConvertTo-RalphCodeRows -Source $Markdown.Substring($start, $length) `
+                    -BaseStyle $baseStyle -Language $declaredLanguage -Interactive:$Interactive
+                if ($rows.Count -gt 0) { $rows.Add('') }
+                foreach ($codeRow in $codeRows) {
+                    $marker = if ($Interactive -and $codeRow.StartsWith(
+                            [string][char]0x1E,
+                            [System.StringComparison]::Ordinal
+                        )) {
+                        [string][char]0x1E
+                    }
+                    else {
+                        ''
+                    }
+                    if ($marker) { $codeRow = $codeRow.Substring(1) }
+                    $rows.Add("$marker$baseStyle$codeRow${reset}")
+                }
+                continue
+            }
+            if ($typeName -match 'ThematicBreak') {
+                if ($rows.Count -gt 0) { $rows.Add('') }
+                $rows.Add("$baseStyle$('─' * 12)${reset}")
+                continue
+            }
+            if ($typeName -match 'Html') {
+                $start = [Math]::Max(0, [int]$block.Span.Start)
+                $length = [Math]::Min(
+                    $Markdown.Length - $start,
+                    ([int]$block.Span.End - $start + 1)
+                )
+                if ($rows.Count -gt 0) { $rows.Add('') }
+                foreach ($htmlRow in @($Markdown.Substring($start, $length) -split '\r?\n')) {
+                    $rows.Add("$baseStyle$htmlRow${reset}")
+                }
+                continue
+            }
+            if ($typeName -in @('ListBlock', 'QuoteBlock')) {
+                $start = [Math]::Max(0, [int]$block.Span.Start)
+                $length = [Math]::Min(
+                    $Markdown.Length - $start,
+                    ([int]$block.Span.End - $start + 1)
+                )
+                $blockSource = $Markdown.Substring($start, $length)
+                $structuralRows = ConvertTo-RalphListOrQuoteRows `
+                    -Lines @($blockSource -split '\r?\n') `
+                    -BaseStyle $baseStyle -Interactive:$Interactive
+                if ($structuralRows.Count -gt 0) {
+                    if ($rows.Count -gt 0) { $rows.Add('') }
+                    foreach ($structuralRow in $structuralRows) {
+                        $rows.Add("$baseStyle$structuralRow${reset}")
+                    }
+                }
+                continue
+            }
+            if ($typeName -notin @('HeadingBlock', 'ParagraphBlock')) { continue }
+
+            $content = Get-MarkdownInlineText -Inlines $block.Inline -Markdown $Markdown `
+                -BaseStyle $baseStyle -Interactive:$Interactive
+            if ($typeName -eq 'HeadingBlock') {
+                $level = [int]$block.Level
+                if ($level -eq 1) {
+                    if ($Interactive) {
+                        $content = "`e[1;7m $content ${reset}${baseStyle}"
+                    }
+                    else {
+                        $content = "# $content"
+                    }
+                }
+                else {
+                    $content = ('#' * $level) + " $content"
+                    if ($Interactive -and $level -lt 6) {
+                        $content = "`e[1m$content${reset}${baseStyle}"
+                    }
+                }
+            }
+            if ($rows.Count -gt 0) { $rows.Add('') }
+            $rows.Add("$baseStyle$content${reset}")
+        }
+
+        return ($rows -join "`n").Trim("`r", "`n")
+    }
+    catch {
+        return $Markdown.Trim("`r", "`n")
+    }
 }
 
 function Invoke-Agent {
@@ -227,7 +922,9 @@ function Invoke-Agent {
         'copilot' {
             $copilotArguments = @(
                 "--log-level", "debug",
-                '--model', $Model
+                '--model', $Model,
+                '--output-format', 'json',
+                '--stream', 'off'
             )
             if (-not [string]::IsNullOrEmpty($Effort)) {
                 $copilotArguments += @('--effort', $Effort)
@@ -242,24 +939,87 @@ function Invoke-Agent {
     }
 
     $lines = [System.Collections.Generic.List[string]]::new()
+    $seenMessageIds = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::Ordinal
+    )
+    $subAgentDisplayNames = @{}
+    $subAgentStyles = @{}
     $outputState = [pscustomobject]@{
         HasEmittedNonBlank = $false
         LastWasBlank = $false
     }
+    $hasCompletedMessage = $false
     & $CommandPath @arguments 2>&1 |
         ForEach-Object {
-            if ($Name -eq "codex") {
-                try {
-                    $item = $_ | ConvertFrom-Json
-                    if ($item.type -eq "item.completed" -and $item.item.type -eq "agent_message") {
-                        $text = $item.item.text + "`n"
-                    } else {
-                        $text = $null
-                    }
-                } catch {
+            $rawLine = $_.ToString()
+            $lines.Add($rawLine)
+            $text = $null
+            try {
+                $event = $rawLine | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch {
+                if (-not [string]::IsNullOrEmpty($rawLine)) {
+                    $text = $rawLine
                 }
-            } else {
-                $text = $_
+                $event = $null
+            }
+            if ($null -ne $event) {
+                if ($Name -eq 'copilot') {
+                    Update-SubAgentLifecycle -Event $event -DisplayNames $subAgentDisplayNames
+                }
+                $message = ConvertTo-NormalizedAgentMessage `
+                    -Name $Name `
+                    -Event $event `
+                    -SeenMessageIds $seenMessageIds
+                if ($null -ne $message) {
+                    $isSubAgent = -not [string]::IsNullOrEmpty($message.AgentInstanceId)
+                    $baseStyle = ''
+                    $label = ''
+                    if ($isSubAgent) {
+                        $agentInstanceId = $message.AgentInstanceId
+                        if (-not $subAgentStyles.ContainsKey($agentInstanceId)) {
+                            $subAgentStyles[$agentInstanceId] = ConvertFrom-SubduedHue `
+                                -Index $subAgentStyles.Count
+                        }
+                        $baseStyle = [string]$subAgentStyles[$agentInstanceId]
+                        $displayName = if ($subAgentDisplayNames.ContainsKey($agentInstanceId)) {
+                            [string]$subAgentDisplayNames[$agentInstanceId]
+                        }
+                        else {
+                            'Sub-agent'
+                        }
+                        $label = if ($WorkboardState) {
+                            "${baseStyle}`e[1m${displayName}:$($PSStyle.Reset)$baseStyle"
+                        }
+                        else {
+                            "${displayName}:"
+                        }
+                    }
+                    if ($WorkboardState) {
+                        Refresh-RalphWorkboardForResize `
+                            -ScratchDirectory $ScratchDirectory `
+                            -State $WorkboardState | Out-Null
+                    }
+                    $rendered = ConvertTo-RalphMarkdown -Markdown $message.Text `
+                        -BaseStyle $baseStyle `
+                        -Interactive:([bool]$WorkboardState) `
+                        -InnerWidth $(if ($WorkboardState) {
+                            [int]$WorkboardState.InnerWidth
+                        }
+                        else {
+                            $FrameInnerWidth
+                        })
+                    if (-not [string]::IsNullOrEmpty($label)) {
+                        $rendered = "$label`n$rendered"
+                    }
+                    $text = if ($hasCompletedMessage) {
+                        "`n$rendered"
+                    }
+                    else {
+                        $rendered
+                    }
+                    $hasCompletedMessage = $true
+                }
             }
 
             if ($null -ne $text) {
@@ -272,7 +1032,8 @@ function Invoke-Agent {
                     foreach ($row in $rows) {
                         Write-TypedAgentOutputRow -Content $row.Text `
                             -ContentWidth ([int]$row.Width) `
-                            -InnerWidth ([int]$WorkboardState.InnerWidth)
+                            -InnerWidth ([int]$WorkboardState.InnerWidth) `
+                            -WorkboardState $WorkboardState
                     }
                 }
                 else {
@@ -297,11 +1058,7 @@ function Invoke-Agent {
                         $outputState.LastWasBlank = $isBlank
                     }
                 }
-                $_
             }
-        } |
-        ForEach-Object {
-            $lines.Add($_.ToString())
         }
 
     if ($LASTEXITCODE -ne 0) {
@@ -359,6 +1116,58 @@ function Get-NewProgressEntry {
     return $entry
 }
 
+function Repair-ProgressHistoryTerminator {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Path
+    )
+
+    $content = [System.IO.File]::ReadAllBytes($Path)
+    if ($content.Length -eq 0 -or $content[$content.Length - 1] -eq [byte]10) {
+        return $false
+    }
+
+    $stream = [System.IO.File]::Open(
+        $Path,
+        [System.IO.FileMode]::Append,
+        [System.IO.FileAccess]::Write,
+        [System.IO.FileShare]::Read
+    )
+    try {
+        $stream.WriteByte([byte]10)
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    return $true
+}
+
+function Assert-ProgressEntryMatchesScope {
+    param(
+        [Parameter(Mandatory)]
+        [psobject]
+        $ProgressEntry,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $ScopeFeature = '',
+
+        [Parameter(Mandatory)]
+        [ValidateSet('automatic', 'feature')]
+        [string]
+        $ScopeKind
+    )
+
+    if ($ScopeKind -ne 'automatic' -and $ProgressEntry.feature -cne $ScopeFeature) {
+        throw "Progress record does not match requested feature '$ScopeFeature'."
+    }
+
+    return $ProgressEntry
+}
+
 function Get-TrackerStatusPattern {
     return '^\s*(?:(?:>\s*)|(?:[-+*]\s+))*(?:Status\s*:|\*\*Status\s*:\*\*|\*\*Status\*\*\s*:)\s*(.*?)\s*$'
 }
@@ -389,6 +1198,219 @@ function Get-MarkdownLinesOutsideFencedCode {
                 StartIndex = $lineMatch.Index
             }
         }
+    }
+}
+
+function Get-TrackerBlockedByPattern {
+    return '^\s*(?:(?:>\s*)|(?:[-+*]\s+))*(?:Blocked by\s*:|\*\*Blocked by\s*:\*\*|\*\*Blocked by\*\*\s*:)\s*(.*?)\s*$'
+}
+
+function Get-TrackerComparableTitle {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Title
+    )
+
+    return [regex]::Replace($Title.Trim(), '\.$', '')
+}
+
+function Set-TrackerTicketStatus {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory)]
+        [string]
+        $ExpectedStatus,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('ready-for-agent', 'done', 'closed')]
+        [string]
+        $Status
+    )
+
+    if ((Get-TrackerTicketStatus -Path $Path) -cne $ExpectedStatus) {
+        throw "Tracker ticket does not have expected Status '$ExpectedStatus': $Path"
+    }
+
+    $statusPattern = [regex]::new(
+        (Get-TrackerStatusPattern),
+        [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor
+            [System.Text.RegularExpressions.RegexOptions]::Multiline
+    )
+    $content = [System.IO.File]::ReadAllText($Path)
+    foreach ($line in (Get-MarkdownLinesOutsideFencedCode -Path $Path)) {
+        $match = $statusPattern.Match([string]$line.Text)
+        if ($match.Success) {
+            $valueIndex = $line.StartIndex + $match.Groups[1].Index
+            $updated = $content.Remove(
+                $valueIndex,
+                $match.Groups[1].Length
+            ).Insert($valueIndex, $Status)
+            [System.IO.File]::WriteAllText($Path, $updated)
+            return
+        }
+    }
+
+    throw "Validated Status declaration was not found: $Path"
+}
+
+function Get-TrackerBlockedByReferences {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Path
+    )
+
+    $pattern = [regex]::new(
+        (Get-TrackerBlockedByPattern),
+        [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+    $matches = [System.Collections.Generic.List[System.Text.RegularExpressions.Match]]::new()
+    foreach ($line in (Get-MarkdownLinesOutsideFencedCode -Path $Path)) {
+        $match = $pattern.Match([string]$line.Text)
+        if ($match.Success) {
+            $matches.Add($match)
+        }
+    }
+
+    if ($matches.Count -ne 1) {
+        throw "Tracker ticket must have exactly one Blocked by declaration: $Path"
+    }
+
+    $value = $matches[0].Groups[1].Value.Trim()
+    if ($value -match '(?i)^none(?:\s+[—-]\s+.+)?$') {
+        return @()
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        throw "Tracker ticket has malformed Blocked by declaration: $Path"
+    }
+
+    $references = [System.Collections.Generic.List[pscustomobject]]::new()
+    foreach ($reference in ($value -split ';')) {
+        $reference = $reference.Trim()
+        $match = [regex]::Match($reference, '^(\d+)(?:\s*[—-]\s*(.+?))?$')
+        if (-not $match.Success) {
+            throw "Tracker ticket has malformed Blocked by reference '$reference': $Path"
+        }
+        $references.Add([pscustomobject]@{
+            Id    = $match.Groups[1].Value
+            Title = $match.Groups[2].Value.Trim()
+        })
+    }
+
+    return @($references)
+}
+
+function Invoke-TrackerDependencyReconciliation {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $FeatureDirectory
+    )
+
+    $issuesDirectory = Join-Path $FeatureDirectory 'issues'
+    if (-not (Test-Path -LiteralPath $issuesDirectory -PathType Container)) {
+        throw "Feature issues directory not found: $issuesDirectory"
+    }
+
+    $ticketsById = @{}
+    foreach ($ticket in (Get-ChildItem -LiteralPath $issuesDirectory -File -Filter '*.md' |
+            Sort-Object Name)) {
+        $idMatch = [regex]::Match($ticket.BaseName, '^(\d+)(?:[._-]|$)')
+        if (-not $idMatch.Success) {
+            throw "Tracker ticket has no leading identifier: $($ticket.FullName)"
+        }
+        $id = $idMatch.Groups[1].Value
+        if ($ticketsById.ContainsKey($id)) {
+            throw "Feature has duplicate ticket identifier '$id': $FeatureDirectory"
+        }
+        $heading = Get-MarkdownHeading -Path $ticket.FullName -Fallback $ticket.BaseName
+        $title = [regex]::Replace($heading, '^\d+\s*[—-]\s*', '').Trim()
+        $ticketsById[$id] = [pscustomobject]@{
+            Id           = $id
+            File         = $ticket
+            Title        = $title
+            Status       = Get-TrackerTicketStatus -Path $ticket.FullName
+            Dependencies = @()
+        }
+    }
+
+    foreach ($ticket in $ticketsById.Values) {
+        $dependencies = [System.Collections.Generic.List[string]]::new()
+        foreach ($reference in (Get-TrackerBlockedByReferences -Path $ticket.File.FullName)) {
+            if (-not $ticketsById.ContainsKey($reference.Id)) {
+                throw "Tracker ticket '$($ticket.Id)' has unknown Blocked by reference '$($reference.Id)': $($ticket.File.FullName)"
+            }
+            $dependency = $ticketsById[$reference.Id]
+            if (-not [string]::IsNullOrWhiteSpace($reference.Title) -and
+                (Get-TrackerComparableTitle -Title $reference.Title) -cne
+                    (Get-TrackerComparableTitle -Title $dependency.Title)) {
+                throw "Tracker ticket '$($ticket.Id)' has mismatched Blocked by title for '$($reference.Id)': $($ticket.File.FullName)"
+            }
+            if (-not $dependencies.Contains($dependency.Id)) {
+                $dependencies.Add($dependency.Id)
+            }
+        }
+        $ticket.Dependencies = @($dependencies)
+    }
+
+    $visitStates = @{}
+    $visitPath = [System.Collections.Generic.List[string]]::new()
+    $visit = $null
+    $visit = {
+        param([string] $TicketId)
+        $state = if ($visitStates.ContainsKey($TicketId)) { $visitStates[$TicketId] } else { '' }
+        if ($state -eq 'visiting') {
+            $start = $visitPath.IndexOf($TicketId)
+            $cycle = @($visitPath.GetRange($start, $visitPath.Count - $start)) + $TicketId
+            throw "Tracker dependency cycle: $($cycle -join ' -> ')"
+        }
+        if ($state -eq 'visited') { return }
+
+        $visitStates[$TicketId] = 'visiting'
+        $visitPath.Add($TicketId)
+        foreach ($dependencyId in $ticketsById[$TicketId].Dependencies) {
+            & $visit $dependencyId
+        }
+        $visitPath.RemoveAt($visitPath.Count - 1)
+        $visitStates[$TicketId] = 'visited'
+    }
+    foreach ($ticketId in @($ticketsById.Keys | Sort-Object)) {
+        & $visit $ticketId
+    }
+
+    $completedIds = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::Ordinal
+    )
+    $markCompletedDependencies = $null
+    $markCompletedDependencies = {
+        param([string] $TicketId)
+        if (-not $completedIds.Add($TicketId)) { return }
+        foreach ($dependencyId in $ticketsById[$TicketId].Dependencies) {
+            & $markCompletedDependencies $dependencyId
+        }
+    }
+    foreach ($ticket in $ticketsById.Values | Where-Object {
+            $_.Status -in @('done', 'closed')
+        }) {
+        & $markCompletedDependencies $ticket.Id
+    }
+
+    $updatedIds = [System.Collections.Generic.List[string]]::new()
+    foreach ($ticketId in @($completedIds | Sort-Object)) {
+        $ticket = $ticketsById[$ticketId]
+        if ($ticket.Status -ceq 'ready-for-agent') {
+            Set-TrackerTicketStatus -Path $ticket.File.FullName -ExpectedStatus 'ready-for-agent' -Status 'done'
+            $updatedIds.Add($ticketId)
+        }
+    }
+
+    return [pscustomobject]@{
+        CompletedTicketIds = @($completedIds | Sort-Object)
+        UpdatedTicketIds   = @($updatedIds)
     }
 }
 
@@ -436,30 +1458,7 @@ function Complete-TrackerTicket {
         throw "Ticket is already completed: $($ProgressEntry.feature)/$ticketName"
     }
 
-    $statusPattern = [regex]::new(
-        (Get-TrackerStatusPattern),
-        [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor
-            [System.Text.RegularExpressions.RegexOptions]::Multiline
-    )
-    $content = [System.IO.File]::ReadAllText($ticket.FullName)
-    $match = $null
-    $valueIndex = -1
-    foreach ($line in (Get-MarkdownLinesOutsideFencedCode -Path $ticket.FullName)) {
-        $lineMatch = $statusPattern.Match([string]$line.Text)
-        if ($lineMatch.Success) {
-            $match = $lineMatch
-            $valueIndex = $line.StartIndex + $lineMatch.Groups[1].Index
-            break
-        }
-    }
-    if ($null -eq $match) {
-        throw "Validated Status declaration was not found: $($ticket.FullName)"
-    }
-    $updated = $content.Remove(
-        $valueIndex,
-        $match.Groups[1].Length
-    ).Insert($valueIndex, 'done')
-    [System.IO.File]::WriteAllText($ticket.FullName, $updated)
+    Set-TrackerTicketStatus -Path $ticket.FullName -ExpectedStatus 'ready-for-agent' -Status 'done'
     return $ticketName
 }
 
@@ -577,13 +1576,29 @@ function Get-ActiveTrackerFeatures {
     )
 
     return @(
+        Get-TrackerFeatureDirectories -ScratchDirectory $ScratchDirectory |
+            Where-Object {
+                @(Get-UnfinishedTrackerTickets -FeatureDirectory $_.FullName).Count -gt 0
+            }
+    )
+}
+
+function Get-TrackerFeatureDirectories {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory
+    )
+
+    return @(
         Get-ChildItem -LiteralPath $ScratchDirectory -Directory |
             Where-Object {
                 $_.Name -cne 'done' -and
-                @(
-                    Get-UnfinishedTrackerTickets -FeatureDirectory $_.FullName
-                ).Count -gt 0
-            }
+                (Test-Path -LiteralPath (
+                    Join-Path $_.FullName 'spec.md'
+                ) -PathType Leaf)
+            } |
+            Sort-Object Name
     )
 }
 
@@ -863,6 +1878,14 @@ function Get-TrackerLines {
             continue
         }
 
+        if (@($featureRow.Tickets | Where-Object { -not $_.Completed }).Count -eq 0) {
+            $issueLabel = if ($featureRow.Tickets.Count -eq 1) { 'issue' } else { 'issues' }
+            $lines.Add(
+                "${muted}└─ [✓] All $($featureRow.Tickets.Count) $issueLabel completed${reset}"
+            )
+            continue
+        }
+
         for ($index = 0; $index -lt $featureRow.Tickets.Count; $index++) {
             $ticket   = $featureRow.Tickets[$index]
             $branch   = if ($index -eq $featureRow.Tickets.Count - 1) { '└─' } else { '├─' }
@@ -946,21 +1969,10 @@ function Get-DisplayCellWidth {
     $width = 0
     $index = 0
     while ($index -lt $Text.Length) {
-        if (
-            $Text[$index] -eq [char]27 -and
-            ($index + 1) -lt $Text.Length -and
-            $Text[$index + 1] -eq '['
-        ) {
-            $sequenceEnd = $index + 2
-            while ($sequenceEnd -lt $Text.Length) {
-                $value = [int][char]$Text[$sequenceEnd]
-                if ($value -ge 0x40 -and $value -le 0x7E) { break }
-                $sequenceEnd++
-            }
-            if ($sequenceEnd -lt $Text.Length) {
-                $index = $sequenceEnd + 1
-                continue
-            }
+        $controlLength = Get-TerminalControlSequenceLength -Text $Text -StartIndex $index
+        if ($controlLength -gt 0) {
+            $index += $controlLength
+            continue
         }
 
         $codePoint = [char]::ConvertToUtf32($Text, $index)
@@ -1006,6 +2018,44 @@ function Get-DisplayCellWidth {
     return $width
 }
 
+function Get-TerminalControlSequenceLength {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Text,
+
+        [Parameter(Mandatory)]
+        [int]
+        $StartIndex
+    )
+
+    if ($StartIndex + 1 -ge $Text.Length -or $Text[$StartIndex] -ne [char]27) {
+        return 0
+    }
+
+    if ($Text[$StartIndex + 1] -eq '[') {
+        for ($index = $StartIndex + 2; $index -lt $Text.Length; $index++) {
+            $value = [int][char]$Text[$index]
+            if ($value -ge 0x40 -and $value -le 0x7E) {
+                return $index - $StartIndex + 1
+            }
+        }
+        return 0
+    }
+
+    if ($Text[$StartIndex + 1] -eq ']') {
+        for ($index = $StartIndex + 2; $index -lt $Text.Length; $index++) {
+            if ($Text[$index] -eq [char]7) { return $index - $StartIndex + 1 }
+            if ($Text[$index] -eq [char]27 -and
+                ($index + 1) -lt $Text.Length -and $Text[$index + 1] -eq '\') {
+                return $index - $StartIndex + 2
+            }
+        }
+    }
+
+    return 0
+}
+
 function Add-AgentOutputWrappedLine {
     param(
         [Parameter(Mandatory)]
@@ -1019,34 +2069,48 @@ function Add-AgentOutputWrappedLine {
 
         [Parameter(Mandatory)]
         [int]
-        $InnerWidth
+        $InnerWidth,
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $ContinuationPrefix = '',
+
+        [Parameter()]
+        [switch]
+        $HardWrap
     )
 
     $tokens = [System.Collections.Generic.List[pscustomobject]]::new()
+    $activeStyle = ''
+    $activeHyperlink = ''
+    $osc8Prefix = "$([char]27)]8;;"
+    $osc8Close = "$osc8Prefix$([char]27)\"
     $rowWidth = 0
     $lastWhitespace = -1
     $index = 0
     while ($index -lt $Content.Length) {
-        if (
-            $Content[$index] -eq [char]27 -and
-            ($index + 1) -lt $Content.Length -and
-            $Content[$index + 1] -eq '['
-        ) {
-            $sequenceEnd = $index + 2
-            while ($sequenceEnd -lt $Content.Length) {
-                $value = [int][char]$Content[$sequenceEnd]
-                if ($value -ge 0x40 -and $value -le 0x7E) { break }
-                $sequenceEnd++
+        $controlLength = Get-TerminalControlSequenceLength -Text $Content -StartIndex $index
+        if ($controlLength -gt 0) {
+            $sequence = $Content.Substring($index, $controlLength)
+            $tokens.Add([pscustomobject]@{
+                    Text         = $sequence
+                    Width        = 0
+                    IsWhitespace = $false
+                })
+            if ($sequence.EndsWith('m', [System.StringComparison]::Ordinal)) {
+                if ($sequence -match "`e\[(?:0;?)*m") {
+                    $activeStyle = ''
+                }
+                if ($sequence -notmatch "`e\[0m") {
+                    $activeStyle += $sequence
+                }
             }
-            if ($sequenceEnd -lt $Content.Length) {
-                $tokens.Add([pscustomobject]@{
-                        Text         = $Content.Substring($index, $sequenceEnd - $index + 1)
-                        Width        = 0
-                        IsWhitespace = $false
-                    })
-                $index = $sequenceEnd + 1
-                continue
+            if ($sequence.StartsWith($osc8Prefix, [System.StringComparison]::Ordinal)) {
+                $activeHyperlink = if ($sequence -ceq $osc8Close) { '' } else { $sequence }
             }
+            $index += $controlLength
+            continue
         }
 
         $codePoint = [char]::ConvertToUtf32($Content, $index)
@@ -1059,12 +2123,15 @@ function Add-AgentOutputWrappedLine {
             $rowWidth -gt 0 -and
             ($rowWidth + $elementWidth -gt $InnerWidth)
         ) {
-            if ($lastWhitespace -ge 0) {
+            if (-not $HardWrap -and $lastWhitespace -ge 0) {
                 $rowTokens = @($tokens.GetRange(0, $lastWhitespace))
                 $remainingTokens = @(
                     $tokens.GetRange($lastWhitespace + 1, $tokens.Count - $lastWhitespace - 1)
                 )
                 $rowText = ($rowTokens | ForEach-Object Text) -join ''
+                if (-not [string]::IsNullOrEmpty($activeHyperlink)) {
+                    $rowText += $osc8Close
+                }
                 $rowDisplayWidth = ($rowTokens | Measure-Object -Property Width -Sum).Sum
                 $Rows.Add([pscustomobject]@{
                         Text  = $rowText
@@ -1074,8 +2141,30 @@ function Add-AgentOutputWrappedLine {
                 $tokens = [System.Collections.Generic.List[pscustomobject]]::new()
                 $rowWidth = 0
                 $lastWhitespace = -1
+                if (-not [string]::IsNullOrEmpty($activeStyle)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $activeStyle
+                            Width        = 0
+                            IsWhitespace = $false
+                        })
+                }
+                if (-not [string]::IsNullOrEmpty($activeHyperlink)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $activeHyperlink
+                            Width        = 0
+                            IsWhitespace = $false
+                        })
+                }
+                if (-not [string]::IsNullOrEmpty($ContinuationPrefix)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $ContinuationPrefix
+                            Width        = Get-DisplayCellWidth -Text $ContinuationPrefix
+                            IsWhitespace = $false
+                        })
+                    $rowWidth = Get-DisplayCellWidth -Text $ContinuationPrefix
+                }
                 foreach ($remainingToken in $remainingTokens) {
-                    if ($tokens.Count -eq 0 -and $remainingToken.IsWhitespace) { continue }
+                    if ($rowWidth -eq 0 -and $remainingToken.IsWhitespace) { continue }
                     $tokens.Add($remainingToken)
                     $rowWidth += [int]$remainingToken.Width
                     if ($remainingToken.IsWhitespace) {
@@ -1084,12 +2173,40 @@ function Add-AgentOutputWrappedLine {
                 }
             }
             else {
+                $rowText = ($tokens | ForEach-Object Text) -join ''
+                if (-not [string]::IsNullOrEmpty($activeHyperlink)) {
+                    $rowText += $osc8Close
+                }
                 $Rows.Add([pscustomobject]@{
-                        Text  = ($tokens | ForEach-Object Text) -join ''
+                        Text  = $rowText
                         Width = $rowWidth
                     })
                 $tokens.Clear()
-                $rowWidth = 0
+                if (-not [string]::IsNullOrEmpty($activeStyle)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $activeStyle
+                            Width        = 0
+                            IsWhitespace = $false
+                        })
+                }
+                if (-not [string]::IsNullOrEmpty($activeHyperlink)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $activeHyperlink
+                            Width        = 0
+                            IsWhitespace = $false
+                        })
+                }
+                if (-not [string]::IsNullOrEmpty($ContinuationPrefix)) {
+                    $tokens.Add([pscustomobject]@{
+                            Text         = $ContinuationPrefix
+                            Width        = Get-DisplayCellWidth -Text $ContinuationPrefix
+                            IsWhitespace = $false
+                        })
+                    $rowWidth = Get-DisplayCellWidth -Text $ContinuationPrefix
+                }
+                else {
+                    $rowWidth = 0
+                }
                 $lastWhitespace = -1
             }
         }
@@ -1106,8 +2223,12 @@ function Add-AgentOutputWrappedLine {
         $index += $charLen
     }
 
+    $rowText = ($tokens | ForEach-Object Text) -join ''
+    if (-not [string]::IsNullOrEmpty($activeHyperlink)) {
+        $rowText += $osc8Close
+    }
     $Rows.Add([pscustomobject]@{
-            Text  = ($tokens | ForEach-Object Text) -join ''
+            Text  = $rowText
             Width = $rowWidth
         })
 }
@@ -1132,10 +2253,28 @@ function Split-AgentOutputContent {
     $lineStart = 0
     while ($index -lt $Content.Length) {
         if ($Content[$index] -eq "`n" -or $Content[$index] -eq "`r") {
+            $line = $Content.Substring($lineStart, $index - $lineStart)
+            $isCodeRow = $line.StartsWith([string][char]0x1E, [System.StringComparison]::Ordinal)
+            if ($isCodeRow) { $line = $line.Substring(1) }
+            $plainLine = $line -replace "`e\[[0-?]*[ -/]*[@-~]", ''
+            $continuationPrefix = ''
+            if ($isCodeRow) {
+                $continuationPrefix = '↪ '
+            }
+            elseif ($plainLine -match '^((?:│ )*)(\s*)(?:• |\[[ ✓]\] |\d+[.)] )') {
+                $continuationPrefix = $matches[1] + $matches[2] + (' ' * (
+                        Get-DisplayCellWidth -Text $matches[3]
+                    ))
+            }
+            elseif ($plainLine -match '^((?:│ )+)') {
+                $continuationPrefix = $matches[1]
+            }
             Add-AgentOutputWrappedLine `
                 -Rows $rows `
-                -Content $Content.Substring($lineStart, $index - $lineStart) `
-                -InnerWidth $InnerWidth
+                -Content $line `
+                -InnerWidth $InnerWidth `
+                -ContinuationPrefix $continuationPrefix `
+                -HardWrap:$isCodeRow
             if (
                 $Content[$index] -eq "`r" -and
                 ($index + 1) -lt $Content.Length -and
@@ -1150,10 +2289,28 @@ function Split-AgentOutputContent {
         $index++
     }
 
+    $line = $Content.Substring($lineStart)
+    $isCodeRow = $line.StartsWith([string][char]0x1E, [System.StringComparison]::Ordinal)
+    if ($isCodeRow) { $line = $line.Substring(1) }
+    $plainLine = $line -replace "`e\[[0-?]*[ -/]*[@-~]", ''
+    $continuationPrefix = ''
+    if ($isCodeRow) {
+        $continuationPrefix = '↪ '
+    }
+    elseif ($plainLine -match '^((?:│ )*)(\s*)(?:• |\[[ ✓]\] |\d+[.)] )') {
+        $continuationPrefix = $matches[1] + $matches[2] + (' ' * (
+                Get-DisplayCellWidth -Text $matches[3]
+            ))
+    }
+    elseif ($plainLine -match '^((?:│ )+)') {
+        $continuationPrefix = $matches[1]
+    }
     Add-AgentOutputWrappedLine `
         -Rows $rows `
-        -Content $Content.Substring($lineStart) `
-        -InnerWidth $InnerWidth
+        -Content $line `
+        -InnerWidth $InnerWidth `
+        -ContinuationPrefix $continuationPrefix `
+        -HardWrap:$isCodeRow
 
     return @($rows)
 }
@@ -1167,7 +2324,11 @@ function Write-AgentOutputRow {
 
         [Parameter(Mandatory)]
         [int]
-        $InnerWidth
+        $InnerWidth,
+
+        [Parameter()]
+        [hashtable]
+        $WorkboardState
     )
 
     $frame = "`e[2;38;5;8m"
@@ -1175,11 +2336,38 @@ function Write-AgentOutputRow {
     $rows = Split-AgentOutputContent -Content $Content -InnerWidth $InnerWidth
     foreach ($row in $rows) {
         $pad = ' ' * [Math]::Max(0, $InnerWidth - [int]$row.Width)
-        [Console]::WriteLine("${frame}│${reset} $($row.Text)$pad ${frame}│${reset}")
+        [Console]::Write("${frame}│${reset} $($row.Text)$pad ${frame}│${reset}")
+        Invoke-RalphFramedRowAdvance -WorkboardState $WorkboardState
     }
 }
 
-function Write-TypedAgentOutputRow {
+function Invoke-RalphFramedRowAdvance {
+    param(
+        [Parameter()]
+        [hashtable]
+        $WorkboardState
+    )
+
+    # CR clears delayed autowrap before LF advances inside the message margin.
+    [Console]::Write("`r`n")
+    if ($null -eq $WorkboardState) {
+        return
+    }
+
+    $messageBottom = [int]$WorkboardState.MessageBottom
+    $cursorRow = [int]$WorkboardState.MessageCursorRow
+    if ($cursorRow -lt $messageBottom) {
+        $WorkboardState.MessageCursorRow = $cursorRow + 1
+        return
+    }
+
+    # Scrolling creates an unframed blank bottom row. Repaint it and leave the
+    # cursor at its start so the next message replaces that row normally.
+    $blankRow = Get-AgentOutputBlankRow -InnerWidth ([int]$WorkboardState.InnerWidth)
+    [Console]::Write("`e[${messageBottom};1H$blankRow`e[${messageBottom};1H")
+}
+
+function Get-TypedAgentOutputPlan {
     param(
         [Parameter()]
         [AllowEmptyString()]
@@ -1198,39 +2386,88 @@ function Write-TypedAgentOutputRow {
     $frame = "`e[2;38;5;8m"
     $reset = $PSStyle.Reset
     $pad = ' ' * [Math]::Max(0, $InnerWidth - $ContentWidth)
-    [Console]::Write("${frame}│${reset} ")
+    $operations = [System.Collections.Generic.List[object]]::new()
+    $operations.Add([pscustomobject]@{ Kind = 'Write'; Text = "${frame}│${reset} " })
 
     $index = 0
+    $cellsSincePause = 0
     while ($index -lt $Content.Length) {
-        if (
-            $Content[$index] -eq [char]27 -and
-            ($index + 1) -lt $Content.Length -and
-            $Content[$index + 1] -eq '['
-        ) {
-            $sequenceEnd = $index + 2
-            while ($sequenceEnd -lt $Content.Length) {
-                $value = [int][char]$Content[$sequenceEnd]
-                if ($value -ge 0x40 -and $value -le 0x7E) { break }
-                $sequenceEnd++
-            }
-            if ($sequenceEnd -lt $Content.Length) {
-                [Console]::Write($Content.Substring($index, $sequenceEnd - $index + 1))
-                $index = $sequenceEnd + 1
-                continue
-            }
+        $controlLength = Get-TerminalControlSequenceLength -Text $Content -StartIndex $index
+        if ($controlLength -gt 0) {
+            $operations.Add([pscustomobject]@{
+                    Kind = 'Write'; Text = $Content.Substring($index, $controlLength)
+                })
+            $index += $controlLength
+            continue
         }
 
         $codePoint = [char]::ConvertToUtf32($Content, $index)
         $elementLength = if ($codePoint -gt 0xFFFF) { 2 } else { 1 }
         $element = $Content.Substring($index, $elementLength)
-        [Console]::Write($element)
-        if ((Get-DisplayCellWidth -Text $element) -gt 0) {
-            Start-Sleep -Milliseconds 8
+        $operations.Add([pscustomobject]@{ Kind = 'Write'; Text = $element })
+        $elementWidth = Get-DisplayCellWidth -Text $element
+        if ($elementWidth -gt 0) {
+            $cellsSincePause += $elementWidth
+            if ($cellsSincePause -ge 2) {
+                $operations.Add([pscustomobject]@{ Kind = 'Pause'; Duration = 8 })
+                $cellsSincePause %= 2
+            }
         }
         $index += $elementLength
     }
 
-    [Console]::WriteLine("$pad ${frame}│${reset}")
+    $operations.Add([pscustomobject]@{ Kind = 'WriteLine'; Text = "$pad ${frame}│${reset}" })
+    return @($operations)
+}
+
+function Invoke-TerminalOutputPlan {
+    param(
+        [Parameter(Mandatory)]
+        [object[]]
+        $Operations,
+
+        [Parameter()]
+        [hashtable]
+        $WorkboardState
+    )
+
+    foreach ($operation in $Operations) {
+        switch ($operation.Kind) {
+            'Write' { [Console]::Write([string]$operation.Text); break }
+            'WriteLine' {
+                [Console]::Write([string]$operation.Text)
+                Invoke-RalphFramedRowAdvance -WorkboardState $WorkboardState
+                break
+            }
+            'Pause' { Start-Sleep -Milliseconds ([int]$operation.Duration); break }
+            default { throw "Unsupported terminal operation kind: $($operation.Kind)" }
+        }
+    }
+}
+
+function Write-TypedAgentOutputRow {
+    param(
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $Content = '',
+
+        [Parameter(Mandatory)]
+        [int]
+        $ContentWidth,
+
+        [Parameter(Mandatory)]
+        [int]
+        $InnerWidth,
+
+        [Parameter()]
+        [hashtable]
+        $WorkboardState
+    )
+
+    $plan = Get-TypedAgentOutputPlan -Content $Content -ContentWidth $ContentWidth `
+        -InnerWidth $InnerWidth
+    Invoke-TerminalOutputPlan -Operations $plan -WorkboardState $WorkboardState
 }
 
 function Compact-AgentOutputPanel {
@@ -1257,8 +2494,17 @@ function Compact-AgentOutputPanel {
         }
     }
 
-    $newBottomRow = try { [Console]::CursorTop + 1 } catch { $oldBottomRow }
-    if ($newBottomRow -lt 1) { $newBottomRow = $oldBottomRow }
+    $newBottomRow = try { [Console]::CursorTop + 1 } catch { 0 }
+    $messageTop = if ($State.ContainsKey('ScrollTop')) { [int]$State.ScrollTop } else { 1 }
+    if ($newBottomRow -lt $messageTop -or $newBottomRow -gt $oldBottomRow) {
+        $newBottomRow = if ($State.ContainsKey('MessageCursorRow')) {
+            [int]$State.MessageCursorRow
+        }
+        else {
+            $oldBottomRow
+        }
+    }
+    $newBottomRow = [Math]::Min($oldBottomRow, [Math]::Max($messageTop, $newBottomRow))
     $newBottomRow = [Math]::Min($windowHeight, $newBottomRow)
 
     if ($oldBottomRow -gt $newBottomRow) {
@@ -1271,6 +2517,8 @@ function Compact-AgentOutputPanel {
     [Console]::Write("`e[${newBottomRow};1H")
     [Console]::Write((Format-PanelBottomBorder -Width $windowWidth))
     $State.BottomRow = $newBottomRow
+    $State.MessageBottom = [Math]::Max($messageTop, $newBottomRow - 1)
+    $State.MessageCursorRow = $State.MessageBottom
 }
 
 function Get-AgentOutputPanelLayout {
@@ -1504,6 +2752,8 @@ function Enter-RalphWorkboard {
     return @{
         Height               = $trackerHeight
         ScrollTop            = $outputLayout.MessageTop
+        MessageBottom         = $outputLayout.MessageBottom
+        MessageCursorRow      = $outputLayout.MessageTop
         BottomRow            = $outputLayout.BottomRow
         InnerWidth           = $outputLayout.InnerWidth
         WindowWidth          = $windowWidth
@@ -1651,6 +2901,8 @@ function Update-RalphWorkboard {
 
         $State.Height = $trackerHeight
         $State.ScrollTop = $outputLayout.MessageTop
+        $State.MessageBottom = $outputLayout.MessageBottom
+        $State.MessageCursorRow = $outputLayout.MessageTop
         $State.BottomRow = $outputLayout.BottomRow
         $State.InnerWidth = $outputLayout.InnerWidth
         $State.WindowWidth = $lineWidth
@@ -1727,6 +2979,99 @@ function Invoke-RalphCleanup {
     }
 }
 
+function Resolve-RalphInvocation {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $ScratchDirectory,
+
+        [Parameter(Mandatory)]
+        [hashtable]
+        $BoundParameters,
+
+        [switch] $List,
+        [switch] $Cleanup,
+        [AllowEmptyString()][string] $Archive,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('codex', 'copilot')]
+        [string]
+        $Agent,
+
+        [AllowEmptyString()][string] $Model,
+        [AllowEmptyString()][string] $Effort,
+        [AllowEmptyString()][string] $Feature
+    )
+
+    foreach ($optionName in 'Model', 'Effort') {
+        if ($BoundParameters.ContainsKey($optionName) -and
+            [string]::IsNullOrWhiteSpace([string]$BoundParameters[$optionName])) {
+            throw "-$optionName must be a non-empty value."
+        }
+    }
+
+    $mode = 'Run'
+    $incompatibleOptions = @()
+    if ($BoundParameters.ContainsKey('Archive')) {
+        $mode = 'Archive'
+        $incompatibleOptions = @(
+            @('List', 'Cleanup', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
+                Where-Object { $BoundParameters.ContainsKey($_) }
+        )
+    }
+    elseif ($List) {
+        $mode = 'List'
+        $incompatibleOptions = @(
+            @('Cleanup', 'Archive', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
+                Where-Object { $BoundParameters.ContainsKey($_) }
+        )
+    }
+    elseif ($Cleanup) {
+        $mode = 'Cleanup'
+        $incompatibleOptions = @(
+            @('Archive', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
+                Where-Object { $BoundParameters.ContainsKey($_) }
+        )
+    }
+
+    if ($incompatibleOptions.Count -gt 0) {
+        throw "-$mode cannot be combined with: $($incompatibleOptions -join ', ')."
+    }
+
+    $identity = if ($mode -eq 'Archive') { $Archive } elseif (
+        $BoundParameters.ContainsKey('Feature')
+    ) { $Feature } else { $null }
+    if ($null -ne $identity) {
+        $candidate = Join-Path $ScratchDirectory $identity
+        if ($identity -ceq 'done' -or
+            [System.IO.Path]::GetFileName($identity) -cne $identity -or
+            -not (Test-Path -LiteralPath $candidate -PathType Container) -or
+            -not (Test-Path -LiteralPath (Join-Path $candidate 'spec.md') -PathType Leaf)) {
+            $parameterName = if ($mode -eq 'Archive') { 'Archive' } else { 'Feature' }
+            throw "$parameterName must name a direct active tracker folder containing spec.md: $identity"
+        }
+    }
+
+    return [pscustomobject]@{
+        Mode    = $mode
+        Scope   = if ($BoundParameters.ContainsKey('Feature')) { 'feature' } else { 'automatic' }
+        Feature = $Feature
+        Archive = $Archive
+        Agent   = [pscustomobject]@{
+            Name   = $Agent
+            Model  = if ($BoundParameters.ContainsKey('Model')) { $Model } else { 'gpt-5.6-luna' }
+            Effort = if ($BoundParameters.ContainsKey('Effort')) { $Effort } else { 'medium' }
+        }
+    }
+}
+
+# Dot-sourcing is an intentionally private test seam. Keep all production setup
+# and orchestration below this guard so importing the functions has no host,
+# repository, terminal, or process side effects.
+if ($MyInvocation.InvocationName -ne '.') {
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
 $git = Get-Command git -ErrorAction Stop
 
 $repositoryRoot = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
@@ -1746,36 +3091,31 @@ if (-not (Test-Path -LiteralPath $scratchDirectory -PathType Container)) {
     throw "Local issue tracker directory not found: $scratchDirectory"
 }
 
-if ($PSBoundParameters.ContainsKey('Archive')) {
-    $incompatibleOptions = @(
-        @('List', 'Cleanup', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
-            Where-Object { $PSBoundParameters.ContainsKey($_) }
-    )
-    if ($incompatibleOptions.Count -gt 0) {
-        throw "-Archive cannot be combined with: $($incompatibleOptions -join ', ')."
-    }
+$invocation = Resolve-RalphInvocation `
+    -ScratchDirectory $scratchDirectory `
+    -BoundParameters $PSBoundParameters `
+    -List:$List `
+    -Cleanup:$Cleanup `
+    -Archive $Archive `
+    -Agent $Agent `
+    -Model $Model `
+    -Effort $Effort `
+    -Feature $Feature
 
+if ($invocation.Mode -eq 'Archive') {
     $archivePath = Move-CompletedTrackerFeature `
         -ScratchDirectory $scratchDirectory `
-        -Feature $Archive `
+        -Feature $invocation.Archive `
         -AllowUnfinished
     $relativeArchivePath = [System.IO.Path]::GetRelativePath(
         $repositoryRoot,
         $archivePath
     )
-    Write-Host "Archived feature '$Archive' to: $relativeArchivePath"
+    Write-Host "Archived feature '$($invocation.Archive)' to: $relativeArchivePath"
     exit 0
 }
 
-if ($List) {
-    $incompatibleOptions = @(
-        @('Cleanup', 'Archive', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
-            Where-Object { $PSBoundParameters.ContainsKey($_) }
-    )
-    if ($incompatibleOptions.Count -gt 0) {
-        throw "-List cannot be combined with: $($incompatibleOptions -join ', ')."
-    }
-
+if ($invocation.Mode -eq 'List') {
     Show-RalphTracker -ScratchDirectory $scratchDirectory -Repository $repositoryRoot
     exit 0
 }
@@ -1785,19 +3125,11 @@ if (-not (Test-Path -LiteralPath $progressFile -PathType Leaf)) {
     New-Item -ItemType File -Path $progressFile | Out-Null
 }
 
-if ($Cleanup) {
-    $incompatibleOptions = @(
-        @('Archive', 'Agent', 'Model', 'Effort', 'Iterations', 'Feature') |
-            Where-Object { $PSBoundParameters.ContainsKey($_) }
-    )
-    if ($incompatibleOptions.Count -gt 0) {
-        throw "-Cleanup cannot be combined with: $($incompatibleOptions -join ', ')."
-    }
+if ($invocation.Mode -eq 'Cleanup') {
     Invoke-RalphCleanup -ScratchDirectory $scratchDirectory
     exit 0
 }
 
-$agentCommand = Get-Command $Agent -ErrorAction Stop
 $gitStatus = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
     'status',
     '--porcelain'
@@ -1806,18 +3138,51 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     throw 'The Git working tree is not clean. Commit or stash all changes before running Invoke-Ralph.'
 }
 
-$scopeKind = 'automatic'
-$scopeFeature = $null
-$scopeInstruction = if ($PSBoundParameters.ContainsKey('Feature')) {
-    $scopeFeature = $Feature
-    $scopeKind = 'feature'
+Repair-ProgressHistoryTerminator -Path $progressFile | Out-Null
+
+$scopeKind = $invocation.Scope
+$scopeFeature = $invocation.Feature
+$reconciliationFeatures = if ($scopeKind -eq 'feature') {
+    @(
+        Get-Item -LiteralPath (Join-Path $scratchDirectory $scopeFeature) -ErrorAction Stop
+    )
+}
+else {
+    @(Get-TrackerFeatureDirectories -ScratchDirectory $scratchDirectory)
+}
+foreach ($featureDirectory in $reconciliationFeatures) {
+    Invoke-TrackerDependencyReconciliation -FeatureDirectory $featureDirectory.FullName |
+        Out-Null
+}
+foreach ($featureDirectory in $reconciliationFeatures) {
+    if (@(Get-UnfinishedTrackerTickets -FeatureDirectory $featureDirectory.FullName).Count -eq 0) {
+        Move-CompletedTrackerFeature `
+            -ScratchDirectory $scratchDirectory `
+            -Feature $featureDirectory.Name | Out-Null
+    }
+}
+if ($scopeKind -eq 'feature' -and -not (Test-Path -LiteralPath (
+        Join-Path $scratchDirectory $scopeFeature
+    ) -PathType Container)) {
+    Write-Host 'Requested scope complete.'
+    exit 0
+}
+if ($scopeKind -eq 'automatic' -and @(
+        Get-ActiveTrackerFeatures -ScratchDirectory $scratchDirectory
+    ).Count -eq 0) {
+    Write-Host 'Requested scope complete.'
+    exit 0
+}
+
+$agentCommand = Get-Command $Agent -ErrorAction Stop
+$scopeInstruction = if ($scopeKind -eq 'feature') {
     $specPath = [System.IO.Path]::GetRelativePath(
         $repositoryRoot,
-        (Join-Path (Join-Path $scratchDirectory $Feature) 'spec.md')
+        (Join-Path (Join-Path $scratchDirectory $scopeFeature) 'spec.md')
     )
 
     @"
-Work only on the selected feature '$Feature', whose specification is '$specPath'.
+Work only on the selected feature '$scopeFeature', whose specification is '$specPath'.
 Complete successive unfinished tickets for that feature until it archives.
 Ralph determines completion from the resulting tracker state.
 "@
@@ -1880,24 +3245,8 @@ $isInteractive = (
 )
 if ($env:RALPH_FORCE_INTERACTIVE -eq '1') { $isInteractive = $true }
 
-$model = if ($PSBoundParameters.ContainsKey('Model')) {
-    $Model
-}
-elseif ($Agent -ceq 'codex') {
-    'gpt-5.6-terra'
-}
-else {
-    'gpt-5.6-terra'
-}
-$effort = if ($PSBoundParameters.ContainsKey('Effort')) {
-    $Effort
-}
-elseif ($Agent -ceq 'codex') {
-    'medium'
-}
-else {
-    'medium'
-}
+$model = $invocation.Agent.Model
+$effort = $invocation.Agent.Effort
 $agentSummary = "$Agent / $model$(if ($effort) { " ($effort)" } else { '' })"
 
 $workboardState = $null
@@ -1933,12 +3282,13 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
 
     if ($workboardState) {
         $frameWidth = [int]$workboardState.InnerWidth
-        Write-AgentOutputRow -Content '' -InnerWidth $frameWidth
+        Write-AgentOutputRow -Content '' -InnerWidth $frameWidth `
+            -WorkboardState $workboardState
         Write-AgentOutputRow -Content "`e[2mIteration $iteration of $Iterations`e[0m" `
-            -InnerWidth $frameWidth
+            -InnerWidth $frameWidth -WorkboardState $workboardState
         Write-AgentOutputRow `
             -Content "`e[2m$('─' * [Math]::Min(40, $frameWidth))`e[0m" `
-            -InnerWidth $frameWidth
+            -InnerWidth $frameWidth -WorkboardState $workboardState
     }
     else {
         Write-Host ''
@@ -1959,7 +3309,8 @@ for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
         if ($currentIssueDirectories.Count -eq 0) {
             if ($workboardState) {
                 Write-AgentOutputRow -Content 'Requested scope complete.' `
-                    -InnerWidth ([int]$workboardState.InnerWidth)
+                    -InnerWidth ([int]$workboardState.InnerWidth) `
+                    -WorkboardState $workboardState
                 $compactOutputPanelOnExit = $true
             }
             else {
@@ -2018,12 +3369,15 @@ before selecting another feature.
     $progressEntry = Get-NewProgressEntry `
         -Before $progressBeforeIteration `
         -After $progressAfterIteration
-    if ($scopeKind -ne 'automatic' -and $progressEntry.feature -cne $scopeFeature) {
-        throw "Progress record does not match requested feature '$scopeFeature'."
-    }
+    Assert-ProgressEntryMatchesScope -ProgressEntry $progressEntry `
+        -ScopeFeature $scopeFeature -ScopeKind $scopeKind | Out-Null
     $completedTicket = Complete-TrackerTicket `
         -ScratchDirectory $scratchDirectory `
         -ProgressEntry $progressEntry
+    Repair-ProgressHistoryTerminator -Path $progressFile | Out-Null
+    $completedFeatureDirectory = Join-Path $scratchDirectory $progressEntry.feature
+    Invoke-TrackerDependencyReconciliation `
+        -FeatureDirectory $completedFeatureDirectory | Out-Null
     $archivePath = Move-CompletedTrackerFeature `
         -ScratchDirectory $scratchDirectory `
         -Feature $progressEntry.feature
@@ -2034,20 +3388,11 @@ before selecting another feature.
     }
 
     Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null
-    $trackerStatePath = if ($featureCompleted) {
-        $archivePath
-    }
-    else {
-        Join-Path $scratchDirectory (
-            "$($progressEntry.feature)\issues\$completedTicket.md"
-        )
-    }
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
         'add',
         '--force',
         '--',
-        $progressFile,
-        $trackerStatePath
+        $progressFile
     ) | Out-Null
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
         'commit',
@@ -2073,7 +3418,8 @@ before selecting another feature.
     if ($scopeComplete) {
         if ($workboardState) {
             Write-AgentOutputRow -Content 'Requested scope complete.' `
-                -InnerWidth ([int]$workboardState.InnerWidth)
+                -InnerWidth ([int]$workboardState.InnerWidth) `
+                -WorkboardState $workboardState
             $compactOutputPanelOnExit = $true
         }
         else {
@@ -2085,7 +3431,8 @@ before selecting another feature.
 
 if ($workboardState) {
     Write-AgentOutputRow -Content "Reached the iteration limit ($Iterations)." `
-        -InnerWidth ([int]$workboardState.InnerWidth)
+        -InnerWidth ([int]$workboardState.InnerWidth) `
+        -WorkboardState $workboardState
 }
 else {
     Write-Host "Reached the iteration limit ($Iterations)."
@@ -2099,4 +3446,5 @@ exit 0
         }
         Exit-RalphWorkboard -State $workboardState
     }
+}
 }

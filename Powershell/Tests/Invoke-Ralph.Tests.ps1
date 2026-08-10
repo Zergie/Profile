@@ -1,4 +1,5 @@
 #Requires -Version 7.0
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
 
 [CmdletBinding()]
 param()
@@ -6,127 +7,534 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$ralphScript = Join-Path $PSScriptRoot '..\Startup\Invoke-Ralph.ps1'
-$temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) (
-    'Invoke-Ralph.Tests.' + [guid]::NewGuid().ToString('N')
-)
-$originalPath = $env:PATH
+Describe 'Internal' -Tag 'Internal' {
+    BeforeAll {
+        $ralphPath = (Get-Item -LiteralPath (
+            Join-Path $PSScriptRoot '..\Startup\Invoke-Ralph.ps1'
+        )).FullName
+        $quotedRalphPath = $ralphPath.Replace("'", "''")
+        $importScript = [scriptblock]::Create(". '$quotedRalphPath'")
+        $script:ralphModule = New-Module -Name (
+            'Invoke-Ralph.TestImport.' + [guid]::NewGuid().ToString('N')
+        ) -ScriptBlock $importScript
 
-function Assert-Equal {
-    param($Expected, $Actual, [string] $Because)
-    if ($Expected -cne $Actual) {
-        throw "$Because`nExpected: <$Expected>`nActual:   <$Actual>"
-    }
-}
+        function ConvertFrom-RalphTerminalOutput {
+            param(
+                [Parameter(Mandatory)][string] $Output,
+                [Parameter(Mandatory)][int] $Width,
+                [Parameter(Mandatory)][int] $Height
+            )
 
-function Assert-True {
-    param([bool] $Condition, [string] $Because)
-    if (-not $Condition) {
-        throw $Because
-    }
-}
+            $cells = [char[,]]::new($Height, $Width)
+            for ($row = 0; $row -lt $Height; $row++) {
+                for ($column = 0; $column -lt $Width; $column++) {
+                    $cells[$row, $column] = ' '
+                }
+            }
 
-function Invoke-Git {
-    param([string] $Repository, [string[]] $Arguments)
-    $output = & git -C $Repository @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "git $($Arguments -join ' ') failed:`n$($output -join "`n")"
-    }
-    return ($output | ForEach-Object { $_.ToString() }) -join "`n"
-}
+            $cursorX = 0; $cursorY = 0; $savedX = 0; $savedY = 0
+            $scrollTop = 0; $scrollBottom = $Height - 1; $pendingWrap = $false
+            $index = 0
+            while ($index -lt $Output.Length) {
+                $character = $Output[$index]
+                if ($character -eq [char]27 -and $index + 1 -lt $Output.Length) {
+                    if ($Output[$index + 1] -eq '[') {
+                        $end = $index + 2
+                        while ($end -lt $Output.Length -and $Output[$end] -notmatch '[@-~]') { $end++ }
+                        if ($end -ge $Output.Length) { break }
+                        $parameters = $Output.Substring($index + 2, $end - $index - 2)
+                        $command = $Output[$end]
+                        $numbers = @($parameters -replace '^\?', '' -split ';' | ForEach-Object {
+                                if ($_) { [int]$_ } else { 0 }
+                            })
+                        switch ($command) {
+                            'H' { $cursorY = [Math]::Max(0, ($numbers[0] -as [int]) - 1); $cursorX = [Math]::Max(0, ($numbers[1] -as [int]) - 1); $pendingWrap = $false }
+                            'f' { $cursorY = [Math]::Max(0, ($numbers[0] -as [int]) - 1); $cursorX = [Math]::Max(0, ($numbers[1] -as [int]) - 1); $pendingWrap = $false }
+                            'J' { if ($numbers[0] -eq 2) { for ($row = 0; $row -lt $Height; $row++) { for ($column = 0; $column -lt $Width; $column++) { $cells[$row, $column] = ' ' } } } }
+                            'r' { if ($parameters) { $scrollTop = $numbers[0] - 1; $scrollBottom = $numbers[1] - 1 } else { $scrollTop = 0; $scrollBottom = $Height - 1 }; $pendingWrap = $false }
+                            's' { $savedX = $cursorX; $savedY = $cursorY }
+                            'u' { $cursorX = $savedX; $cursorY = $savedY; $pendingWrap = $false }
+                        }
+                        $index = $end + 1
+                        continue
+                    }
+                    if ($Output[$index + 1] -eq ']') {
+                        $end = $Output.IndexOf([string][char]27 + '\', $index + 2, [System.StringComparison]::Ordinal)
+                        $index = if ($end -lt 0) { $Output.Length } else { $end + 2 }
+                        continue
+                    }
+                }
 
-function Set-TestTicket {
-    param(
-        [string] $Path,
-        [string] $Heading,
-        [string] $Status = 'ready-for-agent'
-    )
+                if ($character -eq "`r") { $cursorX = 0; $pendingWrap = $false }
+                elseif ($character -eq "`n") {
+                    if ($cursorY -eq $scrollBottom) {
+                        for ($row = $scrollTop; $row -lt $scrollBottom; $row++) {
+                            for ($column = 0; $column -lt $Width; $column++) { $cells[$row, $column] = $cells[($row + 1), $column] }
+                        }
+                        for ($column = 0; $column -lt $Width; $column++) { $cells[$scrollBottom, $column] = ' ' }
+                    }
+                    else { $cursorY = [Math]::Min($Height - 1, $cursorY + 1) }
+                    $pendingWrap = $false
+                }
+                elseif ([int]$character -ge 32) {
+                    if ($pendingWrap) {
+                        $cursorX = 0
+                        if ($cursorY -eq $scrollBottom) {
+                            for ($row = $scrollTop; $row -lt $scrollBottom; $row++) {
+                                for ($column = 0; $column -lt $Width; $column++) { $cells[$row, $column] = $cells[($row + 1), $column] }
+                            }
+                            for ($column = 0; $column -lt $Width; $column++) { $cells[$scrollBottom, $column] = ' ' }
+                        }
+                        else { $cursorY = [Math]::Min($Height - 1, $cursorY + 1) }
+                        $pendingWrap = $false
+                    }
+                    $cells[$cursorY, $cursorX] = $character
+                    if ($cursorX -eq $Width - 1) { $pendingWrap = $true } else { $cursorX++ }
+                }
+                $index++
+            }
 
-    Set-Content -LiteralPath $Path "$Heading`n`nStatus: $Status"
-}
+            [pscustomobject]@{
+                Cells = $cells
+                Snapshot = (@(for ($row = 0; $row -lt $Height; $row++) {
+                            -join @(for ($column = 0; $column -lt $Width; $column++) { $cells[$row, $column] })
+                        }) -join "`n")
+            }
+        }
+    }
 
-function New-TestRepository {
-    param(
-        [string] $Name,
-        [switch] $ExistingProgress,
-        [switch] $CompletedTicket,
-        [switch] $LegacyTicketFilename,
-        [switch] $FinalTicket,
-        [switch] $ArchiveCollision,
-        [switch] $SecondFeature
-    )
+    AfterAll {
+        if ($script:ralphModule) {
+            Remove-Module -ModuleInfo $script:ralphModule -Force -ErrorAction SilentlyContinue
+        }
+    }
 
-    $repository = Join-Path $temporaryRoot $Name
-    $issues = Join-Path $repository '.scratch\feature\issues'
-    New-Item -ItemType Directory -Path $issues -Force | Out-Null
-    Set-Content (Join-Path $repository '.gitignore') ".scratch/`n"
-    Set-Content (Join-Path $repository 'baseline.txt') "baseline`n"
-    Set-Content (Join-Path $repository '.scratch\feature\spec.md') '# Feature'
-    $ticketName = if ($CompletedTicket -or $LegacyTicketFilename) { '01.done.md' } else { '01.md' }
-    Set-TestTicket (Join-Path $issues $ticketName) '# Ticket' `
-        $(if ($CompletedTicket) { 'done' } else { 'ready-for-agent' })
-    if ($LegacyTicketFilename) {
-        Set-Content (Join-Path $issues $ticketName) `
-            "# Ticket`n`n**Status:** ready-for-agent"
+    It 'imports Ralph internals without starting the command body' {
+        $nativeText = & $script:ralphModule { Get-Command Invoke-NativeText }
+        $progressReader = & $script:ralphModule { Get-Command Get-NewProgressEntry }
+        $invocationResolver = & $script:ralphModule { Get-Command Resolve-RalphInvocation }
+        $repositoryState = & $script:ralphModule {
+            Get-Variable -Name repositoryRoot -ErrorAction SilentlyContinue
+        }
+
+        $nativeText.Name | Should -Be 'Invoke-NativeText'
+        $progressReader.Name | Should -Be 'Get-NewProgressEntry'
+        $invocationResolver.Name | Should -Be 'Resolve-RalphInvocation'
+        $repositoryState | Should -BeNullOrEmpty
     }
-    if (-not $FinalTicket) {
-        Set-TestTicket (Join-Path $issues '02.md') '# Later ticket'
-    }
-    if ($ArchiveCollision) {
-        $existingArchive = Join-Path $repository '.scratch\done\feature'
-        New-Item -ItemType Directory -Path $existingArchive -Force | Out-Null
-        Set-Content (Join-Path $existingArchive 'preserve.txt') 'existing archive'
-    }
-    if ($SecondFeature) {
-        $secondIssues = Join-Path $repository '.scratch\later-feature\issues'
-        New-Item -ItemType Directory -Path $secondIssues -Force | Out-Null
-        Set-Content (Join-Path $repository '.scratch\later-feature\spec.md') '# Later feature'
-        Set-TestTicket (Join-Path $secondIssues '01.md') '# Later ticket'
-    }
-    if ($ExistingProgress) {
-        Set-Content (Join-Path $repository '.scratch\progress.jsonl') (
-            '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'
+
+    It 'resolves Ralph invocation modes and effective configuration in process' -TestCases @(
+        @{
+            Name = 'automatic defaults'
+            Bound = @{}
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'feature scope'
+            Bound = @{ Feature = 'feature' }
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'copilot'; Model = ''; Effort = ''; Feature = 'feature'
+            Mode = 'Run'; Scope = 'feature'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'archive mode'
+            Bound = @{ Archive = 'feature' }
+            List = $false; Cleanup = $false; Archive = 'feature'; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
+            Mode = 'Archive'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'list mode'
+            Bound = @{ List = $true }
+            List = $true; Cleanup = $false; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
+            Mode = 'List'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'cleanup mode'
+            Bound = @{ Cleanup = $true }
+            List = $false; Cleanup = $true; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
+            Mode = 'Cleanup'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'custom Codex configuration'
+            Bound = @{ Agent = 'codex'; Model = 'custom-model'; Effort = 'high' }
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'codex'; Model = 'custom-model'; Effort = 'high'; Feature = ''
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'custom-model'; EffectiveEffort = 'high'
+        },
+        @{
+            Name = 'custom Copilot configuration'
+            Bound = @{ Agent = 'copilot'; Model = 'custom-model'; Effort = 'low' }
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'copilot'; Model = 'custom-model'; Effort = 'low'; Feature = ''
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'custom-model'; EffectiveEffort = 'low'
+        }
+    ) {
+        param($Name, $Bound, $List, $Cleanup, $Archive, $Agent, $Model, $Effort, $Feature,
+            $Mode, $Scope, $EffectiveModel, $EffectiveEffort)
+
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Invocation.' + [guid]::NewGuid().ToString('N')
         )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'feature') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\spec.md') -Value '# Feature'
+
+            $result = & $script:ralphModule {
+                param($Scratch, $Parameters, $IsList, $IsCleanup, $ArchiveName, $AgentName,
+                    $ModelName, $EffortName, $FeatureName)
+                Resolve-RalphInvocation -ScratchDirectory $Scratch -BoundParameters $Parameters `
+                    -List:$IsList -Cleanup:$IsCleanup -Archive $ArchiveName -Agent $AgentName `
+                    -Model $ModelName -Effort $EffortName -Feature $FeatureName
+            } $scratch $Bound $List $Cleanup $Archive $Agent $Model $Effort $Feature
+
+            $result.Mode | Should -Be $Mode
+            $result.Scope | Should -Be $Scope
+            $result.Agent.Name | Should -Be $Agent
+            $result.Agent.Model | Should -Be $EffectiveModel
+            $result.Agent.Effort | Should -Be $EffectiveEffort
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
-    Invoke-Git $repository @('init', '--quiet') | Out-Null
-    Invoke-Git $repository @('config', 'user.name', 'Ralph Tests') | Out-Null
-    Invoke-Git $repository @('config', 'user.email', 'ralph-tests@example.invalid') | Out-Null
-    Invoke-Git $repository @('add', '.gitignore', 'baseline.txt') | Out-Null
-    Invoke-Git $repository @('commit', '--quiet', '--message', 'baseline') | Out-Null
-    return $repository
-}
+    It 'rejects invalid Ralph invocation options and tracker identities in process' -TestCases @(
+        @{ Name = 'empty model'; Bound = @{ Model = '' }; List = $false; Cleanup = $false; Archive = ''; Feature = ''; Error = '-Model must be a non-empty value.' },
+        @{ Name = 'empty effort'; Bound = @{ Effort = '' }; List = $false; Cleanup = $false; Archive = ''; Feature = ''; Error = '-Effort must be a non-empty value.' },
+        @{ Name = 'list feature'; Bound = @{ List = $true; Feature = 'feature' }; List = $true; Cleanup = $false; Archive = ''; Feature = 'feature'; Error = '-List cannot be combined with: Feature.' },
+        @{ Name = 'archive cleanup'; Bound = @{ Archive = 'feature'; Cleanup = $true }; List = $false; Cleanup = $true; Archive = 'feature'; Feature = ''; Error = '-Archive cannot be combined with: Cleanup.' },
+        @{ Name = 'nested feature'; Bound = @{ Feature = 'feature\spec.md' }; List = $false; Cleanup = $false; Archive = ''; Feature = 'feature\spec.md'; Error = 'Feature must name a direct active tracker folder containing spec.md: feature\spec.md' },
+        @{ Name = 'archived feature'; Bound = @{ Feature = 'archived' }; List = $false; Cleanup = $false; Archive = ''; Feature = 'archived'; Error = 'Feature must name a direct active tracker folder containing spec.md: archived' },
+        @{ Name = 'missing archive'; Bound = @{ Archive = 'missing' }; List = $false; Cleanup = $false; Archive = 'missing'; Feature = ''; Error = 'Archive must name a direct active tracker folder containing spec.md: missing' }
+    ) {
+        param($Name, $Bound, $List, $Cleanup, $Archive, $Feature, $Error)
 
-function Invoke-TestCase {
-    param(
-        [string] $Name,
-        [ValidateSet('codex', 'copilot')]
-        [string] $Agent = 'codex',
-        [int] $ExpectedExitCode = 0,
-        [switch] $ExistingProgress,
-        [switch] $CompletedTicket,
-        [switch] $LegacyTicketFilename,
-        [switch] $FinalTicket,
-        [switch] $ArchiveCollision,
-        [switch] $SecondFeature,
-        [switch] $BodyPositionedStatus,
-        [ValidateSet('feature', 'automatic')]
-        [string] $Scope = 'feature',
-        [int] $Iterations = 1,
-        [switch] $UseDefaultIterations,
-        [string] $Scenario,
-        [switch] $ForceInteractive,
-        [string] $WorkboardDimensions,
-        [string] $Model,
-        [string] $Effort
-    )
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Invocation.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'feature') -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'done\archived') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\spec.md') -Value '# Feature'
+            Set-Content -LiteralPath (Join-Path $scratch 'done\archived\spec.md') -Value '# Archived'
 
-    $repository = New-TestRepository $Name -ExistingProgress:$ExistingProgress `
-        -CompletedTicket:$CompletedTicket -LegacyTicketFilename:$LegacyTicketFilename `
-        -FinalTicket:$FinalTicket `
-        -ArchiveCollision:$ArchiveCollision -SecondFeature:$SecondFeature
-    if ($BodyPositionedStatus) {
-        Set-Content (Join-Path $repository '.scratch\feature\issues\01.md') @'
+            {
+                & $script:ralphModule {
+                    param($Scratch, $Parameters, $IsList, $IsCleanup, $ArchiveName, $FeatureName)
+                    Resolve-RalphInvocation -ScratchDirectory $Scratch -BoundParameters $Parameters `
+                        -List:$IsList -Cleanup:$IsCleanup -Archive $ArchiveName -Agent codex `
+                        -Model '' -Effort '' -Feature $FeatureName
+                } $scratch $Bound $List $Cleanup $Archive $Feature
+            } | Should -Throw "*$Error*"
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'plans typed terminal output without writing or sleeping' {
+        $escape = [string][char]27
+        $plan = & $script:ralphModule {
+            param($text)
+            Get-TypedAgentOutputPlan -Content $text -ContentWidth 4 -InnerWidth 6
+        } "${escape}[31mA漢B${escape}]0;title${escape}`\${escape}[0m"
+
+        @($plan | ForEach-Object Kind) | Should -Be @(
+            'Write', 'Write', 'Write', 'Write', 'Pause', 'Write', 'Pause', 'Write', 'Write', 'WriteLine'
+        )
+        @($plan | Where-Object Kind -eq 'Pause').Count | Should -Be 2
+        @($plan | Where-Object Kind -eq 'Pause' | ForEach-Object Duration) | Should -Be @(8, 8)
+        ($plan | Where-Object Kind -eq 'Write').Text -join '' | Should -Match (
+            [regex]::Escape("${escape}[31mA漢B${escape}]0;title${escape}`\${escape}[0m")
+        )
+        ($plan | Where-Object Kind -eq 'WriteLine').Text | Should -Match '│'
+    }
+
+    It 'keeps renderer wrapping, Markdown, blank rows, and line boundaries deterministic' {
+        $escape = [string][char]27
+        $result = & $script:ralphModule {
+            $longRows = Split-AgentOutputContent -Content ('L' * 20) -InnerWidth 8
+            $wordRows = Split-AgentOutputContent -Content 'alpha beta gamma' -InnerWidth 10
+            $wideRows = Split-AgentOutputContent -Content ('漢' * 8) -InnerWidth 6
+            $lineRows = Split-AgentOutputContent -Content "first`r`n`rsecond`nthird" -InnerWidth 20
+            $markdown = ConvertTo-RalphMarkdown -Markdown '# Heading with **bold**' -Interactive
+            [pscustomobject]@{
+                LongWidths = @($longRows | ForEach-Object Width)
+                WordRows = @($wordRows | ForEach-Object Text)
+                WideWidths = @($wideRows | ForEach-Object Width)
+                LineRows = @($lineRows | ForEach-Object Text)
+                Markdown = $markdown
+            }
+        }
+
+        $result.LongWidths.Count | Should -BeGreaterThan 1
+        @($result.LongWidths | Where-Object { $_ -gt 8 }).Count | Should -Be 0
+        ($result.WordRows -join ' ') | Should -Be 'alpha beta gamma'
+        @($result.WordRows | Where-Object { $_ -match 'alph$|bet$|gamm$' }).Count | Should -Be 0
+        @($result.WideWidths | Where-Object { $_ -gt 6 }).Count | Should -Be 0
+        $result.LineRows | Should -Be @('first', '', 'second', 'third')
+        $result.Markdown | Should -Match ([regex]::Escape("${escape}[1;7m"))
+        $result.Markdown | Should -Match ([regex]::Escape("${escape}[1mbold"))
+    }
+
+    It 'validates appended progress records in process' -TestCases @(
+        @{ Name = 'valid append'; Before = ''; After = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"; Error = ''; Ticket = '01' },
+        @{ Name = 'valid unterminated append'; Before = ''; After = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}'; Error = ''; Ticket = '01' },
+        @{ Name = 'existing history'; Before = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}' + "`n"; After = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}' + "`n" + '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"; Error = ''; Ticket = '01' },
+        @{ Name = 'malformed JSON'; Before = ''; After = '{bad json' + "`n"; Error = 'not valid JSON'; Ticket = '' },
+        @{ Name = 'missing field'; Before = ''; After = '{"feature":"feature","ticket":"01","changes":"implemented"}' + "`n"; Error = "requires a non-empty string 'checks'"; Ticket = '' },
+        @{ Name = 'empty field'; Before = ''; After = '{"feature":"feature","ticket":"01","changes":" ","checks":"passed"}' + "`n"; Error = "requires a non-empty string 'changes'"; Ticket = '' },
+        @{ Name = 'multiple records'; Before = ''; After = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n" + '{"feature":"feature","ticket":"02","changes":"implemented","checks":"passed"}' + "`n"; Error = 'exactly one JSONL record'; Ticket = '' },
+        @{ Name = 'rewrite'; Before = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}' + "`n"; After = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"; Error = 'must only append'; Ticket = '' },
+        @{ Name = 'missing prior newline'; Before = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'; After = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"; Error = 'must end with a newline'; Ticket = '' }
+    ) {
+        param($Name, $Before, $After, $Error, $Ticket)
+
+        if ($Error) {
+            {
+                & $script:ralphModule {
+                    param($BeforeText, $AfterText)
+                    Get-NewProgressEntry -Before $BeforeText -After $AfterText
+                } $Before $After
+            } | Should -Throw "*$Error*"
+        }
+        else {
+            $entry = & $script:ralphModule {
+                param($BeforeText, $AfterText)
+                Get-NewProgressEntry -Before $BeforeText -After $AfterText
+            } $Before $After
+            $entry.ticket | Should -Be $Ticket
+        }
+    }
+
+    It 'repairs only a missing progress history terminator in process' -TestCases @(
+        @{ Name = 'empty history'; Before = [byte[]]@(); After = [byte[]]@(); Changed = $false },
+        @{ Name = 'LF terminated history'; Before = [Text.Encoding]::UTF8.GetBytes("one`n"); After = [Text.Encoding]::UTF8.GetBytes("one`n"); Changed = $false },
+        @{ Name = 'CRLF terminated history'; Before = [Text.Encoding]::UTF8.GetBytes("one`r`n"); After = [Text.Encoding]::UTF8.GetBytes("one`r`n"); Changed = $false },
+        @{ Name = 'unterminated history'; Before = [Text.Encoding]::UTF8.GetBytes('one'); After = [Text.Encoding]::UTF8.GetBytes("one`n"); Changed = $true }
+    ) {
+        param($Name, $Before, $After, $Changed)
+
+        $path = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Progress.' + [guid]::NewGuid().ToString('N') + '.jsonl'
+        )
+        try {
+            [System.IO.File]::WriteAllBytes($path, $Before)
+
+            $actualChanged = & $script:ralphModule {
+                param($ProgressPath)
+                Repair-ProgressHistoryTerminator -Path $ProgressPath
+            } $path
+
+            $actualChanged | Should -Be $Changed
+            [System.IO.File]::ReadAllBytes($path) | Should -Be $After
+            & $script:ralphModule {
+                param($ProgressPath)
+                Repair-ProgressHistoryTerminator -Path $ProgressPath
+            } $path | Should -BeFalse
+            [System.IO.File]::ReadAllBytes($path) | Should -Be $After
+        }
+        finally {
+            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'interprets tracker status declarations in process' -TestCases @(
+        @{ Name = 'ready status'; Content = "# Ticket`n`nStatus: ready-for-agent"; Status = 'ready-for-agent'; Error = '' },
+        @{ Name = 'bold case variant'; Content = "# Ticket`n`n**STATUS:** DONE"; Status = 'done'; Error = '' },
+        @{ Name = 'list closed status'; Content = "# Ticket`n`n- Status: closed"; Status = 'closed'; Error = '' },
+        @{ Name = 'quote ready status'; Content = "# Ticket`n`n> Status: READY-FOR-AGENT"; Status = 'ready-for-agent'; Error = '' },
+        @{ Name = 'body positioned status'; Content = "# Ticket`n`nText before metadata.`n`n**Status:** ready-for-agent"; Status = 'ready-for-agent'; Error = '' },
+        @{ Name = 'missing status'; Content = '# Ticket'; Status = ''; Error = 'missing Status' },
+        @{ Name = 'duplicate status'; Content = "# Ticket`n`nStatus: done`nStatus: closed"; Status = ''; Error = 'exactly one Status' },
+        @{ Name = 'malformed status'; Content = "# Ticket`n`nStatus = done"; Status = ''; Error = 'malformed Status' },
+        @{ Name = 'unsupported status'; Content = "# Ticket`n`nStatus: in-progress"; Status = ''; Error = 'unsupported Status' },
+        @{ Name = 'fenced example'; Content = "# Ticket`n`n" + '```md' + "`nStatus: done`n" + '```'; Status = ''; Error = 'missing Status' },
+        @{ Name = 'fenced and body status'; Content = "# Ticket`n`n" + '```md' + "`nStatus: done`n" + '```' + "`n`nStatus: ready-for-agent"; Status = 'ready-for-agent'; Error = '' }
+    ) {
+        param($Name, $Content, $Status, $Error)
+
+        $path = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Status.' + [guid]::NewGuid().ToString('N') + '.md'
+        )
+        try {
+            Set-Content -LiteralPath $path -Value $Content -NoNewline
+            if ($Error) {
+                {
+                    & $script:ralphModule {
+                        param($TicketPath)
+                        Get-TrackerTicketStatus -Path $TicketPath
+                    } $path
+                } | Should -Throw "*$Error*"
+            }
+            else {
+                $actual = & $script:ralphModule {
+                    param($TicketPath)
+                    Get-TrackerTicketStatus -Path $TicketPath
+                } $path
+                $actual | Should -Be $Status
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'reconciles completed dependency closures in process' -TestCases @(
+        @{ Name = 'direct done dependency'; SeedStatus = 'done'; Dependencies = '01 — First'; Expected = @('01', '02') },
+        @{ Name = 'direct closed dependency'; SeedStatus = 'closed'; Dependencies = '01 — First'; Expected = @('01', '02') },
+        @{ Name = 'sentence punctuation after dependency title'; SeedStatus = 'done'; Dependencies = '01 — First.'; Expected = @('01', '02') },
+        @{ Name = 'duplicate dependency references'; SeedStatus = 'done'; Dependencies = '01 — First; 01 — First'; Expected = @('01', '02') }
+    ) {
+        param($Name, $SeedStatus, $Dependencies, $Expected)
+
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Reconcile.' + [guid]::NewGuid().ToString('N')
+        )
+        $issues = Join-Path $fixture 'feature\issues'
+        try {
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $issues '01-first.md') -Value @'
+# 01 — First
+
+Blocked by: None — can start immediately
+
+Status: ready-for-agent
+'@
+            Set-Content -LiteralPath (Join-Path $issues '02-second.md') -Value @"
+# 02 — Second
+
+Blocked by: $Dependencies
+
+Status: $SeedStatus
+"@
+
+            $result = & $script:ralphModule {
+                param($FeatureDirectory)
+                Invoke-TrackerDependencyReconciliation -FeatureDirectory $FeatureDirectory
+            } (Join-Path $fixture 'feature')
+
+            $result.CompletedTicketIds | Should -Be $Expected
+            $result.UpdatedTicketIds | Should -Be @('01')
+            & $script:ralphModule {
+                param($Path)
+                Get-TrackerTicketStatus -Path $Path
+            } (Join-Path $issues '01-first.md') | Should -Be 'done'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'reconciles multi-level dependency chains from a completed seed in process' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Reconcile.' + [guid]::NewGuid().ToString('N')
+        )
+        $issues = Join-Path $fixture 'feature\issues'
+        try {
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            foreach ($ticket in @(
+                @{ Id = '01'; Title = 'First'; BlockedBy = 'None — can start immediately'; Status = 'ready-for-agent' },
+                @{ Id = '02'; Title = 'Second'; BlockedBy = '01 — First'; Status = 'ready-for-agent' },
+                @{ Id = '03'; Title = 'Third'; BlockedBy = '02 — Second'; Status = 'done' }
+            )) {
+                Set-Content -LiteralPath (Join-Path $issues "$($ticket.Id)-$($ticket.Title.ToLowerInvariant()).md") -Value @"
+# $($ticket.Id) — $($ticket.Title)
+
+Blocked by: $($ticket.BlockedBy)
+
+Status: $($ticket.Status)
+"@
+            }
+
+            $result = & $script:ralphModule {
+                param($FeatureDirectory)
+                Invoke-TrackerDependencyReconciliation -FeatureDirectory $FeatureDirectory
+            } (Join-Path $fixture 'feature')
+
+            $result.CompletedTicketIds | Should -Be @('01', '02', '03')
+            $result.UpdatedTicketIds | Should -Be @('01', '02')
+            foreach ($id in '01', '02', '03') {
+                & $script:ralphModule {
+                    param($Path)
+                    Get-TrackerTicketStatus -Path $Path
+                } (Join-Path $issues "$id-$(switch ($id) { '01' { 'first' }; '02' { 'second' }; default { 'third' } }).md") | Should -Be 'done'
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'rejects invalid dependency graphs before changing statuses in process' -TestCases @(
+        @{
+            Name = 'unknown reference'
+            FirstBlockedBy = '99 — Missing'; SecondBlockedBy = 'None — can start immediately'
+            Error = "unknown Blocked by reference '99'"
+        },
+        @{
+            Name = 'malformed reference'
+            FirstBlockedBy = 'First ticket'; SecondBlockedBy = 'None — can start immediately'
+            Error = 'malformed Blocked by reference'
+        },
+        @{
+            Name = 'mismatched punctuated title'
+            FirstBlockedBy = 'None — can start immediately'; SecondBlockedBy = '01 — Different.'
+            Error = "mismatched Blocked by title for '01'"
+        },
+        @{
+            Name = 'cycle'
+            FirstBlockedBy = '02 — Second'; SecondBlockedBy = '01 — First'
+            Error = 'dependency cycle: 01 -> 02 -> 01'
+        }
+    ) {
+        param($Name, $FirstBlockedBy, $SecondBlockedBy, $Error)
+
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Reconcile.' + [guid]::NewGuid().ToString('N')
+        )
+        $issues = Join-Path $fixture 'feature\issues'
+        try {
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $issues '01-first.md') -Value @"
+# 01 — First
+
+Blocked by: $FirstBlockedBy
+
+Status: ready-for-agent
+"@
+            Set-Content -LiteralPath (Join-Path $issues '02-second.md') -Value @"
+# 02 — Second
+
+Blocked by: $SecondBlockedBy
+
+Status: done
+"@
+
+            {
+                & $script:ralphModule {
+                    param($FeatureDirectory)
+                    Invoke-TrackerDependencyReconciliation -FeatureDirectory $FeatureDirectory
+                } (Join-Path $fixture 'feature')
+            } | Should -Throw "*$Error*"
+            & $script:ralphModule {
+                param($Path)
+                Get-TrackerTicketStatus -Path $Path
+            } (Join-Path $issues '01-first.md') | Should -Be 'ready-for-agent'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'completes only the validated tracker status declaration in process' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Complete.' + [guid]::NewGuid().ToString('N')
+        )
+        $ticketPath = Join-Path $fixture 'feature\issues\01.done.md'
+        try {
+            New-Item -ItemType Directory -Path (Split-Path $ticketPath) -Force | Out-Null
+            Set-Content -LiteralPath $ticketPath -Value @'
 # Ticket
 
 ```md
@@ -137,70 +545,496 @@ Status: ready-for-agent
 
 **Status:** ready-for-agent
 '@
+            $entry = [pscustomobject]@{
+                feature = 'feature'
+                ticket = '01.done'
+                changes = 'implemented'
+                checks = 'passed'
+            }
+            $completed = & $script:ralphModule {
+                param($Scratch, $Progress)
+                Complete-TrackerTicket -ScratchDirectory $Scratch -ProgressEntry $Progress
+            } $fixture $entry
+
+            $completed | Should -Be '01.done'
+            $content = Get-Content -LiteralPath $ticketPath -Raw
+            $content | Should -Match '(?m)^Status: ready-for-agent\r?$'
+            $content | Should -Match '(?m)^\*\*Status:\*\* done\r?$'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
-    $agentDirectory = Join-Path $temporaryRoot "$Name.agent"
-    $argumentLog = Join-Path $temporaryRoot "$Name.args"
-    New-Item -ItemType Directory -Path $agentDirectory | Out-Null
-    $fakeAgent = @'
+
+    It 'enforces progress tracker ownership in process' -TestCases @(
+        @{ Name = 'mismatched feature scope'; EntryFeature = 'other'; Ticket = '01'; Scope = 'feature'; ScopeFeature = 'feature'; Error = 'does not match requested feature' },
+        @{ Name = 'missing ticket'; EntryFeature = 'feature'; Ticket = '99'; Scope = 'automatic'; ScopeFeature = ''; Error = 'Unfinished tracker ticket not found' },
+        @{ Name = 'already completed ticket'; EntryFeature = 'feature'; Ticket = '02'; Scope = 'automatic'; ScopeFeature = ''; Error = 'already completed' }
+    ) {
+        param($Name, $EntryFeature, $Ticket, $Scope, $ScopeFeature, $Error)
+
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Ownership.' + [guid]::NewGuid().ToString('N')
+        )
+        try {
+            $issues = Join-Path $fixture 'feature\issues'
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $issues '01.md') -Value "# Open`n`nStatus: ready-for-agent"
+            Set-Content -LiteralPath (Join-Path $issues '02.md') -Value "# Done`n`nStatus: done"
+            $entry = [pscustomobject]@{
+                feature = $EntryFeature
+                ticket = $Ticket
+                changes = 'implemented'
+                checks = 'passed'
+            }
+
+            {
+                & $script:ralphModule {
+                    param($Scratch, $Progress, $ScopeKind, $RequestedFeature)
+                    Assert-ProgressEntryMatchesScope -ProgressEntry $Progress `
+                        -ScopeKind $ScopeKind -ScopeFeature $RequestedFeature | Out-Null
+                    Complete-TrackerTicket -ScratchDirectory $Scratch -ProgressEntry $Progress
+                } $fixture $entry $Scope $ScopeFeature
+            } | Should -Throw "*$Error*"
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'formats, archives, and cleans tracker fixtures in process' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Tracker.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            foreach ($feature in 'alpha-feature', 'complete-feature', 'single-feature', 'zeta-feature') {
+                New-Item -ItemType Directory -Path (Join-Path $scratch "$feature\issues") -Force | Out-Null
+            }
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\spec.md') -Value '# Alpha display'
+            Set-Content -LiteralPath (Join-Path $scratch 'complete-feature\spec.md') -Value '# Complete display'
+            Set-Content -LiteralPath (Join-Path $scratch 'single-feature\spec.md') -Value '# Single display'
+            Set-Content -LiteralPath (Join-Path $scratch 'zeta-feature\spec.md') -Value '# Zeta display'
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\issues\10.md') -Value "# Tenth`n`nStatus: ready-for-agent"
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\issues\2.md') -Value "# Second`n`nStatus: ready-for-agent"
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\issues\01.done.md') -Value "# Finished`n`nStatus: done"
+            Set-Content -LiteralPath (Join-Path $scratch 'complete-feature\issues\01.md') -Value "# Complete done`n`nStatus: done"
+            Set-Content -LiteralPath (Join-Path $scratch 'complete-feature\issues\02.md') -Value "# Complete closed`n`nStatus: closed"
+            Set-Content -LiteralPath (Join-Path $scratch 'single-feature\issues\01.md') -Value "# Single done`n`nStatus: done"
+            Set-Content -LiteralPath (Join-Path $scratch 'zeta-feature\issues\01.md') -Value "# Zeta`n`nStatus: ready-for-agent"
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'partial-feature') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'partial-feature\spec.md') -Value 'Specification without a heading'
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'done\archived-feature') -Force | Out-Null
+
+            $lines = & $script:ralphModule {
+                param($Scratch)
+                Get-TrackerLines -ScratchDirectory $Scratch -Repository 'repository' -IncludeIteration:$false
+            } $scratch
+            $text = ($lines -join "`n") -replace "$([char]27)\[[0-9;]*m", ''
+            $text.IndexOf('Alpha display') | Should -BeLessThan $text.IndexOf('Zeta display')
+            $text.IndexOf('Finished') | Should -BeLessThan $text.IndexOf('Second')
+            $text.IndexOf('Second') | Should -BeLessThan $text.IndexOf('Tenth')
+            $text | Should -Match 'Complete display'
+            $text | Should -Match 'All 2 issues completed'
+            $text | Should -Not -Match 'Complete done'
+            $text | Should -Not -Match 'Complete closed'
+            $text | Should -Match 'Single display'
+            $text | Should -Match 'All 1 issue completed'
+            $text | Should -Not -Match 'Single done'
+            $text | Should -Not -Match 'archived-feature'
+            $text | Should -Match 'partial-feature'
+            $text | Should -Match 'no tickets'
+
+            $unfinishedArchive = & $script:ralphModule {
+                param($Scratch)
+                Move-CompletedTrackerFeature -ScratchDirectory $Scratch -Feature 'alpha-feature'
+            } $scratch
+            $unfinishedArchive | Should -BeNullOrEmpty
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\issues\10.md') -Value "# Tenth`n`nStatus: done"
+            Set-Content -LiteralPath (Join-Path $scratch 'alpha-feature\issues\2.md') -Value "# Second`n`nStatus: done"
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'done\alpha-feature') -Force | Out-Null
+            $archive = & $script:ralphModule {
+                param($Scratch)
+                Move-CompletedTrackerFeature -ScratchDirectory $Scratch -Feature 'alpha-feature'
+            } $scratch
+            (Split-Path $archive -Leaf) | Should -Be 'alpha-feature-2'
+            Test-Path -LiteralPath (Join-Path $archive 'issues\01.done.md') | Should -BeTrue
+
+            $progress = Join-Path $scratch 'progress.jsonl'
+            Set-Content -LiteralPath $progress -Value '{"feature":"feature","ticket":"01","changes":"done","checks":"passed"}'
+            & $script:ralphModule {
+                param($Scratch)
+                Invoke-RalphCleanup -ScratchDirectory $Scratch
+            } $scratch | Out-Null
+            Test-Path -LiteralPath (Join-Path $scratch 'done') | Should -BeTrue
+            @(Get-ChildItem -LiteralPath (Join-Path $scratch 'done') -Directory).Count | Should -Be 0
+            Test-Path -LiteralPath (Join-Path $scratch 'zeta-feature') | Should -BeTrue
+            Get-Content -LiteralPath $progress -Raw | Should -Match '"feature":"feature"'
+
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'done\unsafe_archive') -Force | Out-Null
+            {
+                & $script:ralphModule {
+                    param($Scratch)
+                    Invoke-RalphCleanup -ScratchDirectory $Scratch
+                } $scratch | Out-Null
+            } | Should -Throw '*Unsafe archived feature directory*'
+            Test-Path -LiteralPath (Join-Path $scratch 'done\unsafe_archive') | Should -BeTrue
+            Remove-Item -LiteralPath (Join-Path $scratch 'done\unsafe_archive') -Recurse -Force
+
+            Remove-Item -LiteralPath (Join-Path $scratch 'zeta-feature') -Recurse -Force
+            Remove-Item -LiteralPath (Join-Path $scratch 'complete-feature') -Recurse -Force
+            Remove-Item -LiteralPath (Join-Path $scratch 'single-feature') -Recurse -Force
+            Remove-Item -LiteralPath (Join-Path $scratch 'partial-feature') -Recurse -Force
+            $emptyLines = & $script:ralphModule {
+                param($Scratch)
+                Get-TrackerLines -ScratchDirectory $Scratch -IncludeIteration:$false
+            } $scratch
+            ($emptyLines -join "`n") | Should -Match 'No active features'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'renders and refreshes the workboard in process' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Workboard.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        $writer = [System.IO.StringWriter]::new()
+        $originalWriter = [Console]::Out
+        try {
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'feature\issues') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\spec.md') -Value '# Feature'
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\issues\01.md') -Value (
+                "# First ticket`n`nStatus: ready-for-agent"
+            )
+            [Console]::SetOut($writer)
+
+            $state = & $script:ralphModule {
+                param($Scratch)
+                Enter-RalphWorkboard -ScratchDirectory $Scratch -Repository 'repository' `
+                    -AgentSummary 'codex / test (medium)' -CurrentIteration 1 -TotalIterations 2
+            } $scratch
+            $initial = $writer.ToString()
+            $initial | Should -Match 'Ralph tracker'
+            $initial | Should -Match 'Agent output'
+            $initial | Should -Match 'Repository:'
+            $initial | Should -Match "`e\[2J"
+            $initial | Should -Match "`e\[\?25l"
+            $initial | Should -Match "`e\[\d+;\d+r"
+            $state.RetainedFeatureNames | Should -Contain 'feature'
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $state = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState `
+                    -WindowWidth 60 -WindowHeight 18 -ForceFullRedraw
+            } $scratch $state
+            $widthRefresh = $writer.ToString()
+            $widthRefresh | Should -Match "`e\[2J"
+            $state.InnerWidth | Should -Be 56
+            $state.WindowWidth | Should -Be 60
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $env:RALPH_TEST_WORKBOARD_DIMENSIONS = '60x18'
+            $unchanged = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Remove-Variable -Name RalphTestDimensionQueue -Scope Script -ErrorAction SilentlyContinue
+                Refresh-RalphWorkboardForResize -ScratchDirectory $Scratch -State $WorkboardState
+            } $scratch $state
+            $writer.ToString() | Should -Be ''
+            $unchanged.WindowWidth | Should -Be 60
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $env:RALPH_TEST_WORKBOARD_DIMENSIONS = '40x14'
+            $heightRefresh = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Remove-Variable -Name RalphTestDimensionQueue -Scope Script -ErrorAction SilentlyContinue
+                Refresh-RalphWorkboardForResize -ScratchDirectory $Scratch -State $WorkboardState
+            } $scratch $state
+            $heightOutput = $writer.ToString()
+            $heightOutput | Should -Match "`e\[2J"
+            $heightOutput | Should -Match "`e\[\d+;13r"
+            $heightRefresh.WindowHeight | Should -Be 14
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $env:RALPH_TEST_WORKBOARD_DIMENSIONS = '40x5'
+            $deferred = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Remove-Variable -Name RalphTestDimensionQueue -Scope Script -ErrorAction SilentlyContinue
+                Refresh-RalphWorkboardForResize -ScratchDirectory $Scratch -State $WorkboardState
+            } $scratch $heightRefresh
+            $writer.ToString() | Should -Be ''
+            $deferred.WindowHeight | Should -Be 14
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'later-feature\issues') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'later-feature\spec.md') -Value '# Later feature'
+            Set-Content -LiteralPath (Join-Path $scratch 'later-feature\issues\01.md') -Value (
+                "# Later ticket`n`nStatus: ready-for-agent"
+            )
+            $recovered = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState `
+                    -WindowWidth 40 -WindowHeight 18 -ForceFullRedraw
+            } $scratch $deferred
+            $recoveredOutput = $writer.ToString()
+            $recoveredOutput | Should -Match 'Later feature'
+            $recoveredOutput | Should -Match "`e\[\d+;17r"
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\issues\01.md') -Value (
+                "# First ticket`n`nStatus: done"
+            )
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'done') -Force | Out-Null
+            Move-Item -LiteralPath (Join-Path $scratch 'feature') -Destination (Join-Path $scratch 'done\feature') -Force
+            $completed = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState
+            } $scratch $recovered
+            $completionOutput = $writer.ToString()
+            $completionOutput | Should -Match '\[✓\]'
+            $completionOutput | Should -Not -Match 'later-feature.*\[✓\]'
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            & $script:ralphModule {
+                param($WorkboardState)
+                Exit-RalphWorkboard -State $WorkboardState
+            } $completed
+            $exitOutput = $writer.ToString()
+            $exitOutput | Should -Match "`e\[r"
+            $exitOutput | Should -Match "`e\[\d+;1H"
+            $exitOutput | Should -Match "`e\[\?25h"
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            Remove-Item Env:RALPH_TEST_WORKBOARD_DIMENSIONS -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        [Console]::Out | Should -Be $originalWriter
+    }
+
+    It 'keeps every visible Agent output row framed after repeated typed and plain scrolling' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('Invoke-Ralph.Scroll.' + [guid]::NewGuid().ToString('N'))
+        $scratch = Join-Path $fixture '.scratch'
+        $writer = [System.IO.StringWriter]::new()
+        $originalWriter = [Console]::Out
+        try {
+            New-Item -ItemType Directory -Path (Join-Path $scratch 'feature\issues') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\spec.md') -Value '# Feature'
+            Set-Content -LiteralPath (Join-Path $scratch 'feature\issues\01.md') -Value "# Ticket`n`nStatus: ready-for-agent"
+            [Console]::SetOut($writer)
+            $state = & $script:ralphModule {
+                param($Scratch)
+                Enter-RalphWorkboard -ScratchDirectory $Scratch -Repository 'repository' -AgentSummary 'codex / test (medium)' -CurrentIteration 1 -TotalIterations 1
+            } $scratch
+            & $script:ralphModule {
+                param($WorkboardState)
+                for ($index = 0; $index -lt 40; $index++) {
+                    if ($index -lt 8) {
+                        Write-TypedAgentOutputRow -Content "`e[36mtyped $index 漢`e[0m" -ContentWidth 10 -InnerWidth $WorkboardState.InnerWidth -WorkboardState $WorkboardState
+                    }
+                    else {
+                        Write-AgentOutputRow -Content $(if ($index % 5 -eq 0) { '' } else { "plain $index" }) -InnerWidth $WorkboardState.InnerWidth -WorkboardState $WorkboardState
+                    }
+                }
+            } $state
+
+            $screen = ConvertFrom-RalphTerminalOutput -Output $writer.ToString() -Width $state.WindowWidth -Height $state.WindowHeight
+            $screen.Cells[($state.BottomRow - 1), 0] | Should -Be '╰' -Because $screen.Snapshot
+            for ($row = ($state.ScrollTop - 1); $row -lt $state.MessageBottom; $row++) {
+                $screen.Cells[$row, 0] | Should -Be '│' -Because $screen.Snapshot
+                $screen.Cells[$row, ($state.WindowWidth - 1)] | Should -Be '│' -Because $screen.Snapshot
+            }
+
+            $state = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState
+            } $scratch $state
+            & $script:ralphModule {
+                param($WorkboardState)
+                Write-AgentOutputRow -Content 'after tracker refresh' -InnerWidth $WorkboardState.InnerWidth -WorkboardState $WorkboardState
+            } $state
+            $screen = ConvertFrom-RalphTerminalOutput -Output $writer.ToString() -Width $state.WindowWidth -Height $state.WindowHeight
+            for ($row = ($state.ScrollTop - 1); $row -lt $state.MessageBottom; $row++) {
+                $screen.Cells[$row, 0] | Should -Be '│' -Because $screen.Snapshot
+                $screen.Cells[$row, ($state.WindowWidth - 1)] | Should -Be '│' -Because $screen.Snapshot
+            }
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $state = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState `
+                    -WindowWidth 40 -WindowHeight 14 -ForceFullRedraw
+            } $scratch $state
+            & $script:ralphModule {
+                param($WorkboardState)
+                Write-TypedAgentOutputRow -Content 'after resize' -ContentWidth 12 -InnerWidth $WorkboardState.InnerWidth -WorkboardState $WorkboardState
+            } $state
+            $screen = ConvertFrom-RalphTerminalOutput -Output $writer.ToString() -Width 40 -Height 14
+            $screen.Cells[($state.BottomRow - 1), 0] | Should -Be '╰' -Because $screen.Snapshot
+            for ($row = ($state.ScrollTop - 1); $row -lt $state.MessageBottom; $row++) {
+                $screen.Cells[$row, 0] | Should -Be '│' -Because $screen.Snapshot
+                $screen.Cells[$row, 39] | Should -Be '│' -Because $screen.Snapshot
+            }
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            $deferred = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState `
+                    -WindowWidth 40 -WindowHeight 5 -ForceFullRedraw
+            } $scratch $state
+            $writer.ToString() | Should -Be ''
+            $deferred.WindowHeight | Should -Be 14
+
+            $state = & $script:ralphModule {
+                param($Scratch, $WorkboardState)
+                Update-RalphWorkboard -ScratchDirectory $Scratch -State $WorkboardState `
+                    -WindowWidth 40 -WindowHeight 18 -ForceFullRedraw
+            } $scratch $deferred
+            & $script:ralphModule {
+                param($WorkboardState)
+                Write-AgentOutputRow -Content 'after resize recovery' -InnerWidth $WorkboardState.InnerWidth -WorkboardState $WorkboardState
+                Compact-AgentOutputPanel -State $WorkboardState
+                Exit-RalphWorkboard -State $WorkboardState
+            } $state
+            $screen = ConvertFrom-RalphTerminalOutput -Output $writer.ToString() -Width 40 -Height 18
+            $screen.Cells[($state.BottomRow - 1), 0] | Should -Be '╰' -Because $screen.Snapshot
+            for ($row = ($state.ScrollTop - 1); $row -lt $state.MessageBottom; $row++) {
+                $screen.Cells[$row, 0] | Should -Be '│' -Because $screen.Snapshot
+                $screen.Cells[$row, 39] | Should -Be '│' -Because $screen.Snapshot
+            }
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+Describe 'Command' -Tag 'Command' {
+    BeforeAll {
+        . (Join-Path $PSScriptRoot 'TestSupport.ps1')
+
+        $script:ralphScript = (Get-Item -LiteralPath (
+            Join-Path $PSScriptRoot '..\Startup\Invoke-Ralph.ps1'
+        )).FullName
+        $script:pwsh = (Get-Command pwsh -ErrorAction Stop).Source
+        $script:temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Tests.' + [guid]::NewGuid().ToString('N')
+        )
+        $script:originalPath = $env:PATH
+        $script:commandRunner = Join-Path $temporaryRoot 'run-ralph.ps1'
+        function Invoke-Git {
+            param([string] $Repository, [string[]] $Arguments)
+
+            $result = Invoke-BoundedProcess -FilePath 'git' -ArgumentList (
+                @('-C', $Repository) + $Arguments
+            ) -TimeoutSeconds 30
+            if ($result.ExitCode -ne 0) {
+                throw "git $($Arguments -join ' ') failed with exit code $($result.ExitCode): $($result.Command)`nstdout:`n$($result.StdOut)`nstderr:`n$($result.StdErr)"
+            }
+
+            return $result.StdOut.TrimEnd([char[]]"`r`n")
+        }
+
+        function Set-TestTicket {
+            param([string] $Path, [string] $Heading, [string] $Status = 'ready-for-agent')
+
+            Set-Content -LiteralPath $Path -Value (
+                "$Heading`n`nBlocked by: None — can start immediately`n`nStatus: $Status"
+            )
+        }
+
+        New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
+        @'
+param(
+    [Parameter(Mandatory)][string] $TargetScript,
+    [Parameter(Mandatory)][string] $PwshPath,
+    [Parameter(Mandatory)][string] $EncodedArguments
+)
+
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$scriptArguments = @(
+    [System.Text.Encoding]::UTF8.GetString(
+        [Convert]::FromBase64String($EncodedArguments)
+    ) | ConvertFrom-Json
+)
+& $PwshPath -NoProfile -File $TargetScript @scriptArguments
+exit $LASTEXITCODE
+'@ | Set-Content -LiteralPath $commandRunner -Encoding Ascii -NoNewline
+
+        $script:commandBaseline = Join-Path $temporaryRoot 'baseline'
+        New-Item -ItemType Directory -Path (Join-Path $commandBaseline '.scratch\feature\issues') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $commandBaseline '.gitignore') -Value ".scratch/`n"
+        Set-Content -LiteralPath (Join-Path $commandBaseline 'baseline.txt') -Value "baseline`n"
+        Set-Content -LiteralPath (Join-Path $commandBaseline '.scratch\feature\spec.md') -Value '# Feature'
+        Set-TestTicket -Path (Join-Path $commandBaseline '.scratch\feature\issues\01.md') -Heading '# Ticket'
+        Invoke-Git $commandBaseline @('init', '--quiet') | Out-Null
+        Invoke-Git $commandBaseline @('config', 'user.name', 'Ralph Tests') | Out-Null
+        Invoke-Git $commandBaseline @('config', 'user.email', 'ralph-tests@example.invalid') | Out-Null
+        Invoke-Git $commandBaseline @('add', '--force', '.gitignore', 'baseline.txt', '.scratch') | Out-Null
+        Invoke-Git $commandBaseline @('commit', '--quiet', '--message', 'baseline') | Out-Null
+
+        $script:commandAgentDirectory = Join-Path $temporaryRoot 'agents'
+        New-Item -ItemType Directory -Path $commandAgentDirectory | Out-Null
+        $fakeAgent = @'
 param([Parameter(ValueFromRemainingArguments)] [string[]] $AgentArguments)
 $ErrorActionPreference = 'Stop'
 [System.IO.File]::WriteAllLines($env:RALPH_ARGUMENT_LOG, $AgentArguments)
 $root = (& git rev-parse --show-toplevel).Trim()
 $progress = Join-Path $root '.scratch\progress.jsonl'
-$valid = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}'
+$record = '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}'
+$completedMessage = if ($env:RALPH_SCENARIO -eq 'rich-markdown') {
+    @(
+        'completed message',
+        '',
+        '```powershell',
+        "`$value = `t漢",
+        'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
+        '```',
+        '',
+        '---',
+        '',
+        '<div>literal <em>HTML</em></div>',
+        '',
+        'See [the linked reference](https://example.com/reference) and [https://example.com/same](https://example.com/same).',
+        '',
+        '![architecture diagram](https://example.com/diagram.svg)',
+        '',
+        '| Name | Score | Notes |',
+        '| :--- | ---: | :---: |',
+        '| Alpha | 42 | 漢字 with deliberately long table content |'
+    ) -join [Environment]::NewLine
+}
+else {
+    'completed message'
+}
+[System.IO.File]::AppendAllText(
+    $env:RALPH_INVOCATION_LOG,
+    (($AgentArguments | ConvertTo-Json -Compress) + [Environment]::NewLine)
+)
 
 switch ($env:RALPH_SCENARIO) {
-    'success' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
+    'agent-failure' {
+        Write-Output 'agent process failed'
+        exit 7
     }
-    'legacy-filename-success' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress `
-            '{"feature":"feature","ticket":"01.done","changes":"implemented","checks":"passed"}'
+    'invalid-handoff' {
+        Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
+        Write-Output 'agent omitted the required handoff'
+        break
     }
-    'malformed' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress '{bad json'
-    }
-    'missing-field' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress '{"feature":"feature","ticket":"01","changes":"implemented"}'
-    }
-    'empty-field' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress '{"feature":"feature","ticket":"01","changes":" ","checks":"passed"}'
-    }
-    'multiple' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        Add-Content $progress $valid
-    }
-    'rewrite' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Set-Content $progress $valid
-    }
-    'nonexistent-feature' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress '{"feature":"missing","ticket":"01","changes":"implemented","checks":"passed"}'
-    }
-    'nonexistent-ticket' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress '{"feature":"feature","ticket":"99","changes":"implemented","checks":"passed"}'
-    }
-    'already-completed' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Set-Content (Join-Path $root '.scratch\feature\issues\01.md') `
-            "# Ticket`n`nStatus: closed"
-        Add-Content $progress $valid
-    }
-    'sequential' {
-        $next = Get-ChildItem (Join-Path $root '.scratch') -Directory |
+    'automatic' {
+        $next = Get-ChildItem -LiteralPath (Join-Path $root '.scratch') -Directory |
             Where-Object { $_.Name -cne 'done' } |
             Sort-Object Name |
             ForEach-Object {
-                $ticket = Get-ChildItem (Join-Path $_.FullName 'issues') -File -Filter '*.md' |
-                    Where-Object { (Get-Content -Raw $_.FullName) -match '(?im)^Status:\s*ready-for-agent\s*$' } |
+                $ticket = Get-ChildItem -LiteralPath (Join-Path $_.FullName 'issues') -File -Filter '*.md' |
+                    Where-Object {
+                        (Get-Content -LiteralPath $_.FullName -Raw) -match '(?im)^Status:\s*ready-for-agent\s*$'
+                    } |
                     Sort-Object Name |
                     Select-Object -First 1
                 if ($ticket) {
@@ -208,8 +1042,8 @@ switch ($env:RALPH_SCENARIO) {
                 }
             } |
             Select-Object -First 1
-        Set-Content (Join-Path $root "work-$($next.Feature)-$($next.Ticket).txt") 'implemented'
-        Add-Content $progress (
+        Set-Content -LiteralPath (Join-Path $root "work-$($next.Feature)-$($next.Ticket).txt") -Value 'implemented'
+        Add-Content -LiteralPath $progress -Value (
             [pscustomobject]@{
                 feature = $next.Feature
                 ticket = $next.Ticket
@@ -217,1241 +1051,494 @@ switch ($env:RALPH_SCENARIO) {
                 checks = 'passed'
             } | ConvertTo-Json -Compress
         )
+        break
     }
-    'dynamic-feature' {
-        $marker = Join-Path $root '.scratch\dynamic-feature-created.marker'
-        if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
-            $laterIssues = Join-Path $root '.scratch\later-feature\issues'
-            New-Item -ItemType Directory -Path $laterIssues -Force | Out-Null
-            Set-Content (Join-Path $root '.scratch\later-feature\spec.md') '# Later feature'
-            Set-Content (Join-Path $laterIssues '01.md') "# Later ticket`n`nStatus: ready-for-agent"
-            Set-Content $marker 'created'
-            Set-Content (Join-Path $root 'work-1.txt') 'implemented'
-            Add-Content $progress (
-                [pscustomobject]@{
-                    feature = 'feature'
-                    ticket = '01'
-                    changes = 'implemented'
-                    checks = 'passed'
-                } | ConvertTo-Json -Compress
-            )
+    'unterminated-handoff' {
+        $next = Get-ChildItem -LiteralPath (Join-Path $root '.scratch\feature\issues') -File -Filter '*.md' |
+            Where-Object {
+                (Get-Content -LiteralPath $_.FullName -Raw) -match '(?im)^Status:\s*ready-for-agent\s*$'
+            } |
+            Sort-Object Name |
+            Select-Object -First 1
+        Set-Content -LiteralPath (Join-Path $root "work-$($next.BaseName).txt") -Value 'implemented'
+        $nextRecord = [pscustomobject]@{
+            feature = 'feature'
+            ticket = $next.BaseName
+            changes = 'implemented'
+            checks = 'passed'
+        } | ConvertTo-Json -Compress
+        [System.IO.File]::AppendAllText(
+            $progress,
+            $nextRecord,
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        break
+    }
+    'post-reconciliation' {
+        Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
+        Add-Content -LiteralPath $progress -Value (
+            '{"feature":"feature","ticket":"03","changes":"implemented","checks":"passed"}'
+        )
+        break
+    }
+    default {
+        Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
+        Add-Content -LiteralPath $progress -Value $record
+        if ($AgentArguments -contains '--json') {
+            @(
+                @{ type = 'item.updated'; item = @{ type = 'agent_message'; text = 'transient output' } }
+                @{ id = 'event-1'; type = 'item.completed'; item = @{ id = 'message-1'; type = 'agent_message'; text = $completedMessage } }
+                @{ id = 'event-1'; type = 'item.completed'; item = @{ id = 'message-1'; type = 'agent_message'; text = $completedMessage } }
+            ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 4 }
         }
         else {
-            Set-Content (Join-Path $root 'work-2.txt') 'implemented'
-            Add-Content $progress (
-                [pscustomobject]@{
-                    feature = 'later-feature'
-                    ticket = '01'
-                    changes = 'implemented'
-                    checks = 'passed'
-                } | ConvertTo-Json -Compress
-            )
+            @(
+                @{ type = 'assistant.message_delta'; data = @{ content = 'transient output' } }
+                @{ id = 'event-1'; type = 'assistant.message'; data = @{ message = @{ id = 'message-1'; content = $completedMessage } } }
+                @{ id = 'event-1'; type = 'assistant.message'; data = @{ message = @{ id = 'message-1'; content = $completedMessage } } }
+            ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 5 }
+        }
+        if ($env:RALPH_SCENARIO -ne 'rich-markdown') {
+            [Console]::WriteLine("`e[36mraw diagnostic`e[0m")
         }
     }
-    'blank-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-    }
-}
-
-$message = 'iteration finished'
-switch ($env:RALPH_SCENARIO) {
-    'long-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = 'L' * 200
-    }
-    'wide-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = '漢' * 400
-    }
-    'line-ending-lf' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = "first agent line`n`nsecond agent line`n"
-    }
-    'line-ending-crlf' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = "first agent line`r`n`r`nsecond agent line`r`n"
-    }
-    'line-ending-cr' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = "first agent line`r`rsecond agent line`r"
-    }
-    'word-wrap-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = ('alpha ' * 60).TrimEnd()
-    }
-    'resize-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = @('before resize', ('R' * 100), 'unchanged size')
-    }
-    'blank-output' {
-        $message = @('first line', '', '', '   ', 'second line', '', '', 'third line', '', '')
-    }
-    'typed-output' {
-        Set-Content (Join-Path $root 'work.txt') 'implemented'
-        Add-Content $progress $valid
-        $message = "`e[31mtyped output `$('T' * 72)`e[0m"
-    }
-}
-if ($AgentArguments -contains '--json') {
-    foreach ($agentMessage in @($message)) {
-        [pscustomobject]@{
-            type = 'item.completed'
-            item = [pscustomobject]@{ type = 'agent_message'; text = $agentMessage }
-        } | ConvertTo-Json -Compress
-    }
-}
-else {
-    $message
 }
 '@
-    foreach ($agentName in 'codex', 'copilot') {
-        Set-Content (Join-Path $agentDirectory "$agentName.ps1") $fakeAgent
+        foreach ($agentName in 'codex', 'copilot') {
+            Set-Content -LiteralPath (Join-Path $commandAgentDirectory "$agentName.ps1") -Value $fakeAgent
+        }
+
+        function New-RalphCommandScenario {
+            param([Parameter(Mandatory)][string] $Name)
+
+            $repository = Join-Path $script:temporaryRoot "scenario-$Name"
+            Invoke-Git $script:commandBaseline @('clone', '--quiet', $script:commandBaseline, $repository) | Out-Null
+            return $repository
+        }
+
+        function Invoke-RalphCommandScenario {
+            param(
+                [Parameter(Mandatory)][string] $Name,
+                [ValidateSet('codex', 'copilot')][string] $Agent = 'codex',
+                [string] $Scenario = 'success',
+                [switch] $Interactive,
+                [string] $WorkboardDimensions = '',
+                [string[]] $RalphArguments = @('-Agent', $Agent, '-Feature', 'feature', '-Iterations', '1'),
+                [scriptblock] $Setup
+            )
+
+            $repository = New-RalphCommandScenario -Name $Name
+            $argumentLog = Join-Path $script:temporaryRoot "scenario-$Name.args"
+            $invocationLog = Join-Path $script:temporaryRoot "scenario-$Name.invocations"
+            $previousPath = $env:PATH
+            $previousScenario = $env:RALPH_SCENARIO
+            $previousArgumentLog = $env:RALPH_ARGUMENT_LOG
+            $previousInvocationLog = $env:RALPH_INVOCATION_LOG
+            $previousInteractive = $env:RALPH_FORCE_INTERACTIVE
+            $previousWorkboardDimensions = $env:RALPH_TEST_WORKBOARD_DIMENSIONS
+            try {
+                if ($Setup) {
+                    & $Setup $repository
+                }
+                $env:PATH = "$script:commandAgentDirectory;$previousPath"
+                $env:RALPH_SCENARIO = $Scenario
+                $env:RALPH_ARGUMENT_LOG = $argumentLog
+                $env:RALPH_INVOCATION_LOG = $invocationLog
+                if ($Interactive) { $env:RALPH_FORCE_INTERACTIVE = '1' }
+                if ($WorkboardDimensions) {
+                    $env:RALPH_TEST_WORKBOARD_DIMENSIONS = $WorkboardDimensions
+                }
+                $encodedArguments = [Convert]::ToBase64String(
+                    [System.Text.Encoding]::UTF8.GetBytes(
+                        (ConvertTo-Json -InputObject $RalphArguments -Compress)
+                    )
+                )
+                $process = Invoke-BoundedProcess -FilePath $script:pwsh -ArgumentList @(
+                    '-NoProfile', '-File', $script:commandRunner,
+                    '-TargetScript', $script:ralphScript,
+                    '-PwshPath', $script:pwsh,
+                    '-EncodedArguments', $encodedArguments
+                ) -WorkingDirectory $repository -TimeoutSeconds 90
+                $output = @($process.StdOut, $process.StdErr) |
+                    Where-Object { -not [string]::IsNullOrEmpty($_) } |
+                    Join-String -Separator "`n"
+                $output = $output -replace "`r`n?", "`n"
+                $exitCode = $process.ExitCode
+            }
+            finally {
+                $env:PATH = $previousPath
+                if ($null -eq $previousScenario) { Remove-Item Env:RALPH_SCENARIO -ErrorAction SilentlyContinue } else { $env:RALPH_SCENARIO = $previousScenario }
+                if ($null -eq $previousArgumentLog) { Remove-Item Env:RALPH_ARGUMENT_LOG -ErrorAction SilentlyContinue } else { $env:RALPH_ARGUMENT_LOG = $previousArgumentLog }
+                if ($null -eq $previousInvocationLog) { Remove-Item Env:RALPH_INVOCATION_LOG -ErrorAction SilentlyContinue } else { $env:RALPH_INVOCATION_LOG = $previousInvocationLog }
+                if ($null -eq $previousInteractive) { Remove-Item Env:RALPH_FORCE_INTERACTIVE -ErrorAction SilentlyContinue } else { $env:RALPH_FORCE_INTERACTIVE = $previousInteractive }
+                if ($null -eq $previousWorkboardDimensions) { Remove-Item Env:RALPH_TEST_WORKBOARD_DIMENSIONS -ErrorAction SilentlyContinue } else { $env:RALPH_TEST_WORKBOARD_DIMENSIONS = $previousWorkboardDimensions }
+            }
+
+            [pscustomobject]@{
+                Repository = $repository
+                ExitCode = $exitCode
+                Output = ($output | ForEach-Object ToString) -join "`n"
+                Arguments = @(Get-Content -LiteralPath $argumentLog -ErrorAction SilentlyContinue)
+                Invocations = @(Get-Content -LiteralPath $invocationLog -ErrorAction SilentlyContinue)
+            }
+        }
     }
 
-    $env:PATH = "$agentDirectory;$originalPath"
-    $env:RALPH_ARGUMENT_LOG = $argumentLog
-    $env:RALPH_SCENARIO = if ($Scenario) {
-        $Scenario
+
+    It 'runs the Codex success lifecycle with semantic output and Git effects' {
+        $result = Invoke-RalphCommandScenario -Name 'codex-success' -Agent codex -Scenario 'rich-markdown'
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Arguments | Should -Contain '--json'
+        $result.Arguments | Should -Contain '--model'
+        $result.Arguments | Should -Contain 'gpt-5.6-terra'
+        $result.Arguments | Should -Contain 'model_reasoning_effort="medium"'
+        [regex]::Matches($result.Output, 'completed message').Count | Should -Be 1
+        $result.Output | Should -Not -Match 'transient output'
+        $result.Output | Should -Match '(?m)^powershell$'
+        $result.Output | Should -Match '\$value = {4}漢'
+        $result.Output | Should -Match ('─' * 12)
+        $result.Output | Should -Match '<div>literal <em>HTML</em></div>'
+        $result.Output | Should -Match 'the linked reference \(https://example\.com/reference\)'
+        [regex]::Matches($result.Output, 'https://example\.com/same').Count | Should -Be 1
+        $result.Output | Should -Match 'Image: architecture diagram \(https://example\.com/diagram\.svg\)'
+        $result.Output | Should -Match '\| Name +\| +Score +\| +Notes +\|'
+        $result.Output | Should -Match '\|─+┼─+┼─+\|'
+        $result.Output | Should -Match 'deliberately long table content'
+        $result.Output | Should -Not -Match [regex]::Escape([string][char]27)
+        (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\done\feature\issues\01.md') -Raw) |
+            Should -Match '(?m)^Status: done\r?$'
+        Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
+            Should -Be 'ralph: feature/01, FEATURE completed'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
     }
-    else {
-        $Name -replace '^(codex|copilot)-', ''
+
+    It 'runs the Copilot success lifecycle with its wire configuration' {
+        $result = Invoke-RalphCommandScenario -Name 'copilot-success' -Agent copilot
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Arguments | Should -Contain '--output-format'
+        $result.Arguments[$result.Arguments.IndexOf('--output-format') + 1] | Should -Be 'json'
+        $result.Arguments | Should -Contain '--stream'
+        $result.Arguments[$result.Arguments.IndexOf('--stream') + 1] | Should -Be 'off'
+        $result.Arguments | Should -Contain '--effort'
+        $result.Arguments[$result.Arguments.IndexOf('--effort') + 1] | Should -Be 'medium'
+        [regex]::Matches($result.Output, 'completed message').Count | Should -Be 1
+        $result.Output | Should -Not -Match 'transient output'
+        $result.Output | Should -Match ([regex]::Escape("`e[36mraw diagnostic`e[0m"))
+        Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
+            Should -Be 'ralph: feature/01, FEATURE completed'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
     }
-    if ($ForceInteractive) { $env:RALPH_FORCE_INTERACTIVE = '1' }
-    if ($WorkboardDimensions) {
-        $env:RALPH_TEST_WORKBOARD_DIMENSIONS = $WorkboardDimensions
+
+    It 'surfaces a nonzero agent exit without committing' {
+        $result = Invoke-RalphCommandScenario -Name 'agent-failure' -Agent copilot -Scenario 'agent-failure'
+
+        $result.ExitCode | Should -Be 1 -Because $result.Output
+        $result.Output | Should -Match 'copilot failed with exit code 7'
+        Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
+        Invoke-Git $result.Repository @('diff', '--cached', '--name-only') | Should -Be ''
     }
-    try {
-        Push-Location $repository
-        $ralphArguments = @('-Agent', $Agent)
-        if (-not $UseDefaultIterations) {
-            $ralphArguments += @('-Iterations', $Iterations)
-        }
-        if ($Scope -eq 'feature') {
-            $ralphArguments += @('-Feature', 'feature')
-        }
-        if ($PSBoundParameters.ContainsKey('Model')) {
-            $ralphArguments += @('--model', $Model)
-        }
-        if ($PSBoundParameters.ContainsKey('Effort')) {
-            $ralphArguments += @('--effort', $Effort)
-        }
-        $output = & pwsh -NoProfile -File $ralphScript @ralphArguments 2>&1
-        $exitCode = $LASTEXITCODE
+
+    It 'rejects an invalid handoff before staging and restores the terminal' {
+        $result = Invoke-RalphCommandScenario -Name 'invalid-handoff' -Scenario 'invalid-handoff' -Interactive
+
+        $result.ExitCode | Should -Be 1 -Because $result.Output
+        $result.Output | Should -Match 'without updating .scratch/progress.jsonl'
+        $result.Output | Should -Match ([regex]::Escape("`e[r"))
+        $result.Output | Should -Match ([regex]::Escape("`e[?25h"))
+        Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
+        Invoke-Git $result.Repository @('diff', '--cached', '--name-only') | Should -Be ''
     }
-    finally {
-        Pop-Location
+
+    It 'wires real interactive pacing, workboard completion, and terminal teardown' {
+        $result = Invoke-RalphCommandScenario -Name 'interactive-success' -Agent codex -Scenario 'rich-markdown' -Interactive
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Ralph tracker'
+        $result.Output | Should -Match 'completed message'
+        $result.Output | Should -Match 'powershell'
+        $result.Output | Should -Match '↪ '
+        $result.Output | Should -Match ('─' * 12)
+        $result.Output | Should -Match '<div>literal <em>HTML</em></div>'
+        $result.Output | Should -Match ([regex]::Escape(
+                "`e]8;;https://example.com/reference`e\the linked reference`e]8;;`e\"
+            ))
+        $result.Output | Should -Match ([regex]::Escape(
+                "`e]8;;https://example.com/diagram.svg`e\Image: architecture diagram`e]8;;`e\"
+            ))
+        [regex]::Matches($result.Output, [regex]::Escape("`e]8;;`e\")).Count |
+            Should -Be 3
+        $result.Output | Should -Match '\| Name +\| +Score +\| +Notes +\|'
+        $result.Output | Should -Match '\|─+┼─+┼─+\|'
+        $result.Output | Should -Match ([regex]::Escape("`e[2J"))
+        $result.Output | Should -Match ([regex]::Escape("`e[r"))
+        $result.Output | Should -Match ([regex]::Escape("`e[?25h"))
+        $result.Output | Should -Match 'Requested scope complete\.'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+    }
+
+    It 'renders an impossible-width interactive table as vertical records' {
+        $result = Invoke-RalphCommandScenario -Name 'interactive-narrow-table' `
+            -Agent codex -Scenario 'rich-markdown' -Interactive `
+            -WorkboardDimensions '18x24;18x24;18x24;18x24'
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Name: Alpha'
+        $result.Output | Should -Match 'Score: 42'
+        $result.Output | Should -Match 'Notes: 漢字'
+        $result.Output | Should -Match 'deliberately'
+        $result.Output | Should -Match 'long table'
+        $result.Output | Should -Match 'content'
+        $result.Output | Should -Not -Match '\| Name +\| +Score +\|'
+        $hyperlinkOpens = [regex]::Matches(
+            $result.Output,
+            [regex]::Escape("`e]8;;https://")
+        ).Count
+        $hyperlinkCloses = [regex]::Matches(
+            $result.Output,
+            [regex]::Escape("`e]8;;`e\")
+        ).Count
+        $hyperlinkOpens | Should -BeGreaterThan 3
+        $hyperlinkCloses | Should -Be $hyperlinkOpens
+    }
+
+    It 'runs list mode without invoking an agent or mutating the tracker' {
+        $result = Invoke-RalphCommandScenario -Name 'list-mode' -RalphArguments @('-List')
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Feature'
+        $result.Output | Should -Match 'Ticket'
+        $result.Output | Should -Match 'feature'
+        $result.Invocations | Should -BeNullOrEmpty
+        (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\feature\issues\01.md') -Raw) |
+            Should -Match '(?m)^Status: ready-for-agent\r?$'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+    }
+
+    It 'runs archive mode without invoking an agent or changing progress history' {
+        $progress = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'
+        $result = Invoke-RalphCommandScenario -Name 'archive-mode' -RalphArguments @('-Archive', 'feature') -Setup {
+            param($Repository)
+            Set-Content -LiteralPath (Join-Path $Repository '.scratch\progress.jsonl') -Value $progress -NoNewline
+        }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match ([regex]::Escape("Archived feature 'feature' to:"))
+        $result.Invocations | Should -BeNullOrEmpty
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\feature') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\done\feature\issues\01.md') | Should -BeTrue
+        Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\progress.jsonl') -Raw |
+            Should -Be $progress
+        Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
+    }
+
+    It 'runs cleanup mode while retaining active work and progress history' {
+        $progress = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'
+        $result = Invoke-RalphCommandScenario -Name 'cleanup-mode' -RalphArguments @('-Cleanup') -Setup {
+            param($Repository)
+            New-Item -ItemType Directory -Path (Join-Path $Repository '.scratch\done\completed-feature') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $Repository '.scratch\done\completed-feature\preserve.txt') -Value 'remove me'
+            Set-Content -LiteralPath (Join-Path $Repository '.scratch\progress.jsonl') -Value $progress -NoNewline
+        }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Cleanup complete: removed completed-feature\.'
+        $result.Invocations | Should -BeNullOrEmpty
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\done\completed-feature') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\feature\issues\01.md') | Should -BeTrue
+        Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\progress.jsonl') -Raw |
+            Should -Be $progress
+    }
+
+    It 'repairs an unterminated progress history before an agent appends its handoff' {
+        $previous = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'
+        $result = Invoke-RalphCommandScenario -Name 'unterminated-progress-history' -Setup {
+            param($Repository)
+            [System.IO.File]::WriteAllText(
+                (Join-Path $Repository '.scratch\progress.jsonl'),
+                $previous,
+                [System.Text.UTF8Encoding]::new($false)
+            )
+        }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $progress = [System.IO.File]::ReadAllBytes(
+            (Join-Path $result.Repository '.scratch\progress.jsonl')
+        )
+        $repairedHistory = [System.Text.Encoding]::UTF8.GetBytes($previous + "`n")
+        $progress[0..($repairedHistory.Length - 1)] | Should -Be $repairedHistory
+        $progress[$progress.Length - 1] | Should -Be 10
+        @(Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\progress.jsonl')).Count |
+            Should -Be 2
+        Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
+            Should -Be 'ralph: feature/01, FEATURE completed'
+    }
+
+    It 'normalizes validated unterminated handoffs before committing each iteration' {
+        $result = Invoke-RalphCommandScenario -Name 'unterminated-handoffs' `
+            -Scenario 'unterminated-handoff' `
+            -RalphArguments @('-Agent', 'codex', '-Feature', 'feature', '-Iterations', '2') -Setup {
+                param($Repository)
+                Set-TestTicket -Path (Join-Path $Repository '.scratch\feature\issues\02.md') `
+                    -Heading '# Second ticket'
+            }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $progressPath = Join-Path $result.Repository '.scratch\progress.jsonl'
+        $progress = [System.IO.File]::ReadAllBytes($progressPath)
+        $progress[$progress.Length - 1] | Should -Be 10
+        @(Get-Content -LiteralPath $progressPath).Count | Should -Be 2
+        $firstCommitProgress = Invoke-Git $result.Repository @(
+            'show', 'HEAD~1:.scratch/progress.jsonl'
+        )
+        $firstCommitProgress | Should -Match '"ticket":"01"'
+        $firstProgressBlob = (
+            Invoke-Git $result.Repository @(
+                'rev-parse', 'HEAD~1:.scratch/progress.jsonl'
+            )
+        ).Trim()
+        [int](Invoke-Git $result.Repository @('cat-file', '-s', $firstProgressBlob)) |
+            Should -Be ([System.Text.UTF8Encoding]::new($false).GetByteCount(
+                '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"
+            ))
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+    }
+
+    It 'reconciles only a selected preflight scope, archives it, and suppresses the agent' {
+        $result = Invoke-RalphCommandScenario -Name 'reconciliation-preflight' `
+            -RalphArguments @('-Agent', 'codex', '-Feature', 'feature') -Setup {
+                param($Repository)
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\feature\issues\01.md') -Value @'
+# 01 — First
+
+Blocked by: None — can start immediately
+
+Status: ready-for-agent
+'@
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\feature\issues\02.md') -Value @'
+# 02 — Completed
+
+Blocked by: 01 — First
+
+Status: done
+'@
+                $otherIssues = Join-Path $Repository '.scratch\other-feature\issues'
+                New-Item -ItemType Directory -Path $otherIssues -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\other-feature\spec.md') -Value '# Other'
+                Set-Content -LiteralPath (Join-Path $otherIssues '01.md') -Value @'
+# 01 — Other
+
+Blocked by: None — can start immediately
+
+Status: ready-for-agent
+'@
+                Set-Content -LiteralPath (Join-Path $otherIssues '02.md') -Value @'
+# 02 — Completed
+
+Blocked by: 01 — Other
+
+Status: done
+'@
+                Invoke-Git $Repository @('add', '--force', '.scratch') | Out-Null
+                Invoke-Git $Repository @('commit', '--quiet', '--message', 'reconciliation fixture') | Out-Null
+            }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Requested scope complete\.'
+        $result.Invocations | Should -BeNullOrEmpty
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\done\feature\issues\01.md') |
+            Should -BeTrue
+        (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\done\feature\issues\01.md') -Raw) |
+            Should -Match '(?m)^Status: done\r?$'
+        (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\other-feature\issues\01.md') -Raw) |
+            Should -Match '(?m)^Status: ready-for-agent\r?$'
+        Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '2'
+    }
+
+    It 'reconciles dependencies after a validated handoff without committing tracker edits' {
+        $result = Invoke-RalphCommandScenario -Name 'reconciliation-post-handoff' `
+            -Scenario 'post-reconciliation' -Setup {
+                param($Repository)
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\feature\issues\01.md') -Value @'
+# 01 — First
+
+Blocked by: None — can start immediately
+
+Status: ready-for-agent
+'@
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\feature\issues\02.md') -Value @'
+# 02 — Second
+
+Blocked by: 01 — First
+
+Status: ready-for-agent
+'@
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\feature\issues\03.md') -Value @'
+# 03 — Third
+
+Blocked by: 02 — Second
+
+Status: ready-for-agent
+'@
+                Invoke-Git $Repository @('add', '--force', '.scratch') | Out-Null
+                Invoke-Git $Repository @('commit', '--quiet', '--message', 'reconciliation fixture') | Out-Null
+            }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Invocations.Count | Should -Be 1
+        foreach ($ticket in '01.md', '02.md', '03.md') {
+            (Get-Content -LiteralPath (
+                Join-Path $result.Repository ".scratch\done\feature\issues\$ticket"
+            ) -Raw) | Should -Match '(?m)^Status: done\r?$'
+        }
+        Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD') |
+            Should -Not -Match '\.scratch[\\/]done[\\/]feature[\\/]issues'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+    }
+
+    It 'iterates active features in priority order until all work is archived' {
+        $result = Invoke-RalphCommandScenario -Name 'automatic-iteration' -Scenario 'automatic' `
+            -RalphArguments @('-Agent', 'codex', '-Iterations', '4') -Setup {
+                param($Repository)
+                $issues = Join-Path $Repository '.scratch\later-feature\issues'
+                New-Item -ItemType Directory -Path $issues -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $Repository '.scratch\later-feature\spec.md') -Value '# Later feature'
+                Set-Content -LiteralPath (Join-Path $issues '01.md') -Value (
+                    "# Later ticket`n`nBlocked by: None — can start immediately`n`nStatus: ready-for-agent"
+                )
+            }
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'Requested scope complete\.'
+        $result.Invocations.Count | Should -Be 2
+        $firstPrompt = ($result.Invocations[0] | ConvertFrom-Json) -join "`n"
+        $secondPrompt = ($result.Invocations[1] | ConvertFrom-Json) -join "`n"
+        $firstPrompt | Should -Match '(?m)^\.scratch\\feature\\issues\r?$'
+        $secondPrompt | Should -Not -Match '(?m)^\.scratch\\feature\\issues\r?$'
+        $secondPrompt | Should -Match '(?m)^\.scratch\\later-feature\\issues\r?$'
+        @(Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\progress.jsonl')).Count | Should -Be 2
+        Invoke-Git $result.Repository @('log', '--format=%s') |
+            Should -Be "ralph: later-feature/01, FEATURE completed`nralph: feature/01, FEATURE completed`nbaseline"
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\done\feature\issues\01.md') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\done\later-feature\issues\01.md') | Should -BeTrue
+    }
+
+    It 'rejects an invalid public invocation before agent execution or mutation' {
+        $result = Invoke-RalphCommandScenario -Name 'invalid-invocation' `
+            -RalphArguments @('-List', '-Agent', 'copilot')
+
+        $result.ExitCode | Should -Be 1 -Because $result.Output
+        $result.Output | Should -Match '-List cannot be combined with: Agent'
+        $result.Invocations | Should -BeNullOrEmpty
+        Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
+        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+    }
+
+    AfterAll {
         $env:PATH = $originalPath
-        Remove-Item Env:RALPH_ARGUMENT_LOG, Env:RALPH_SCENARIO -ErrorAction SilentlyContinue
-        Remove-Item Env:RALPH_FORCE_INTERACTIVE -ErrorAction SilentlyContinue
-        Remove-Item Env:RALPH_TEST_WORKBOARD_DIMENSIONS -ErrorAction SilentlyContinue
-    }
-
-    Assert-Equal $ExpectedExitCode $exitCode (
-        "$Name returned the wrong exit code.`n" +
-        (($output | ForEach-Object { $_.ToString() }) -join "`n")
-    )
-    [pscustomobject]@{
-        Repository = $repository
-        Output = ($output | ForEach-Object { $_.ToString() }) -join "`n"
-        Arguments = @(Get-Content $argumentLog)
-    }
-}
-
-try {
-    New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
-
-    foreach ($agent in 'codex', 'copilot') {
-        $result = Invoke-TestCase "$agent-success" -Agent $agent
-        Assert-Equal 'ralph: feature/01' (
-            Invoke-Git $result.Repository @('log', '-1', '--format=%s')
-        ) "$agent should use the deterministic tracker commit subject."
-        Assert-Equal 2 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
-            "$agent should create one iteration commit."
-        Assert-True (Test-Path (
-            Join-Path $result.Repository '.scratch\feature\issues\01.md'
-        )) "$agent did not mark the ticket complete."
-        Assert-True ((Get-Content -Raw (
-            Join-Path $result.Repository '.scratch\feature\issues\01.md'
-        )) -match '(?m)^Status: done\r?$') "$agent did not transition the ticket status."
-        $paths = Invoke-Git $result.Repository @('show', '--pretty=', '--name-only', 'HEAD')
-        Assert-True ($paths -match '(?m)^work\.txt$') 'Implementation was not committed.'
-        Assert-True ($paths -match '(?m)^\.scratch/progress\.jsonl$') `
-            'The ignored JSONL handoff was not committed.'
-        Assert-True ($paths -match '(?m)^\.scratch/feature/issues/01\.md$') `
-            'The Ralph-owned ticket status transition was not committed.'
-        $record = Get-Content (
-            Join-Path $result.Repository '.scratch\progress.jsonl'
-        ) | Select-Object -Last 1 | ConvertFrom-Json
-        Assert-Equal 'implemented' $record.changes 'The JSONL handoff was not preserved.'
-        Assert-Equal '' (Invoke-Git $result.Repository @('status', '--porcelain')) `
-            'Success should leave a clean worktree.'
-        $prompt = $result.Arguments -join "`n"
-        Assert-True ($prompt -match 'progress\.jsonl' -and $prompt -match '"feature"') `
-            'The agent did not receive the JSONL handoff contract.'
-        Assert-True ($prompt -match 'Do not modify ticket status') `
-            'The prompt did not reserve ticket-state mutation for Ralph.'
-        $expectedSummary = if ($agent -ceq 'codex') {
-            'Agent: codex / gpt-5\.6-terra \(medium\)'
+        if (Test-Path $temporaryRoot) {
+            Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
         }
-        else {
-            'Agent: copilot / auto'
-        }
-        Assert-True ($result.Output -match $expectedSummary) `
-            "$agent did not report its consolidated agent summary."
-        Assert-True ($result.Output -notmatch '(?m)^Model:') `
-            "$agent emitted a standalone model line that should have been removed."
-        Assert-True ($result.Output -notmatch 'Open tickets:') `
-            "$agent emitted a standalone open-ticket line that should have been removed."
-        $expectedModel = if ($agent -ceq 'codex') { 'gpt-5.6-terra' } else { 'auto' }
-        Assert-True ($result.Arguments -contains '--model') `
-            "$agent did not receive its default model option."
-        Assert-Equal $expectedModel (
-            $result.Arguments[($result.Arguments.IndexOf('--model') + 1)]
-        ) "$agent did not receive its existing default model."
-        if ($agent -ceq 'codex') {
-            Assert-True ($result.Arguments -contains '--config') `
-                'Codex did not receive its default reasoning-effort configuration.'
-            Assert-True ($result.Arguments -contains 'model_reasoning_effort="medium"') `
-                'Codex did not receive its existing default reasoning effort.'
-        }
-        else {
-            Assert-True ($result.Arguments -notcontains '--effort') `
-                'Copilot received an effort option when none was supplied.'
-        }
-    }
-
-    foreach ($agent in 'codex', 'copilot') {
-        $model = "test-$agent-model"
-        $effort = "test-$agent-effort"
-        $result = Invoke-TestCase "$agent-custom-options" -Agent $agent `
-            -Model $model -Effort $effort -Scenario success
-        Assert-True ($result.Arguments -contains '--model') `
-            "$agent did not receive its custom model option."
-        Assert-Equal $model (
-            $result.Arguments[($result.Arguments.IndexOf('--model') + 1)]
-        ) "$agent did not receive its custom model."
-        if ($agent -ceq 'codex') {
-            Assert-True ($result.Arguments -contains "model_reasoning_effort=`"$effort`"") `
-                'Codex did not receive its custom reasoning-effort configuration.'
-        }
-        else {
-            Assert-True ($result.Arguments -contains '--effort') `
-                'Copilot did not receive its custom effort option.'
-            Assert-Equal $effort (
-                $result.Arguments[($result.Arguments.IndexOf('--effort') + 1)]
-            ) 'Copilot did not receive its custom effort.'
-        }
-        Assert-True (
-            $result.Output -match [regex]::Escape(
-                "Agent: $agent / $model ($effort)"
-            )
-        ) "$agent did not report its custom effective configuration."
-    }
-
-    foreach ($option in 'model', 'effort') {
-        $emptyOptionRepository = New-TestRepository "empty-$option"
-        $emptyOptionLog = Join-Path $temporaryRoot "empty-$option.args"
-        $env:RALPH_ARGUMENT_LOG = $emptyOptionLog
-        Push-Location $emptyOptionRepository
-        try {
-            $emptyOptionOutput = & pwsh -NoProfile -File $ralphScript `
-                -Agent codex "--$option" '' 2>&1
-            $emptyOptionExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-            Remove-Item Env:RALPH_ARGUMENT_LOG -ErrorAction SilentlyContinue
-        }
-        Assert-Equal 1 $emptyOptionExitCode "An empty --$option value should fail."
-        Assert-True (
-            (($emptyOptionOutput | ForEach-Object ToString) -join "`n") -match $option
-        ) "An empty --$option value did not report parameter validation."
-        Assert-True (-not (Test-Path -LiteralPath $emptyOptionLog)) `
-            "An empty --$option value invoked an agent."
-    }
-
-    $bodyPositionedResult = Invoke-TestCase 'body-positioned-status' `
-        -BodyPositionedStatus -Scenario success
-    $bodyPositionedTicket = Get-Content -Raw (
-        Join-Path $bodyPositionedResult.Repository '.scratch\feature\issues\01.md'
-    )
-    Assert-True ($bodyPositionedTicket -match '(?m)^```md\r?\nStatus: ready-for-agent\r?\n```\r?$') `
-        'Completion changed a Status example inside a fenced code block.'
-    Assert-True ($bodyPositionedTicket -match '(?m)^\*\*Status:\*\* done\r?$') `
-        'Completion did not update the body-positioned Status declaration in place.'
-
-    $result = Invoke-TestCase 'legacy-filename-success' -LegacyTicketFilename `
-        -Scenario legacy-filename-success
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\feature\issues\01.done.md'
-    )) 'A legacy-looking ticket filename was changed during completion.'
-    Assert-True ((Get-Content -Raw (
-        Join-Path $result.Repository '.scratch\feature\issues\01.done.md'
-    )) -match '(?m)^\*\*Status:\*\* done\r?$') `
-        'A ready legacy-looking ticket did not transition to done while preserving label style.'
-
-    $result = Invoke-TestCase 'default-iterations' -Scenario sequential `
-        -UseDefaultIterations
-    Assert-True ($result.Output -match 'Iteration 1 of 32') `
-        'An omitted iteration limit did not default to 32.'
-    Assert-True ($result.Output -notmatch 'Open tickets:') `
-        'The default-limit run emitted a standalone open-ticket line.'
-
-    $result = Invoke-TestCase 'explicit-iterations' -Scenario sequential `
-        -Iterations 7
-    Assert-True ($result.Output -match 'Iteration 1 of 7') `
-        'An explicit iteration limit was not preserved.'
-
-    $result = Invoke-TestCase 'existing-progress-success' -ExistingProgress -Scenario success
-    $records = @(Get-Content (Join-Path $result.Repository '.scratch\progress.jsonl'))
-    Assert-Equal 2 $records.Count 'A valid record was not appended to existing history.'
-
-    foreach ($case in @(
-        @('malformed', 'not valid JSON'),
-        @('missing-field', "requires a non-empty string 'checks'"),
-        @('empty-field', "requires a non-empty string 'changes'"),
-        @('multiple', 'exactly one JSONL record'),
-        @('rewrite', 'must only append'),
-        @('nonexistent-feature', 'does not match requested feature'),
-        @('nonexistent-ticket', 'Unfinished tracker ticket not found')
-    )) {
-        $result = Invoke-TestCase $case[0] -ExpectedExitCode 1 -ExistingProgress
-        Assert-True ($result.Output -match [regex]::Escape($case[1])) `
-            "$($case[0]) did not report the expected validation failure."
-        Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
-            "$($case[0]) must not create a commit."
-        Assert-Equal '' (Invoke-Git $result.Repository @('diff', '--cached', '--name-only')) `
-            "$($case[0]) must fail before staging."
-    }
-
-    $result = Invoke-TestCase 'already-completed' -ExpectedExitCode 1 `
-        -ExistingProgress
-    Assert-True ($result.Output -match 'already completed') `
-        'An already-completed ticket was not rejected.'
-    Assert-Equal 1 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
-        'An already-completed ticket must not create a commit.'
-
-    $result = Invoke-TestCase 'final-ticket' -FinalTicket -Scenario success
-    Assert-Equal 'ralph: feature/01, FEATURE completed' (
-        Invoke-Git $result.Repository @('log', '-1', '--format=%s')
-    ) 'The final-ticket commit subject did not identify feature completion.'
-    Assert-True (-not (Test-Path (
-        Join-Path $result.Repository '.scratch\feature'
-    ))) 'The completed feature remained active.'
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature\spec.md'
-    )) 'The archived feature did not preserve its specification.'
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature\issues\01.md'
-    )) 'The archived feature did not preserve its completed ticket.'
-    $paths = Invoke-Git $result.Repository @('show', '--pretty=', '--name-only', 'HEAD')
-    Assert-True ($paths -match '(?m)^\.scratch/done/feature/spec\.md$') `
-        'The archived specification was not committed.'
-    Assert-True ($paths -match '(?m)^\.scratch/done/feature/issues/01\.md$') `
-        'The archived ticket history was not committed.'
-
-    $result = Invoke-TestCase 'archive-collision' -FinalTicket -ArchiveCollision `
-        -Scenario success
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature\preserve.txt'
-    )) 'An existing archive was overwritten.'
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature-2\spec.md'
-    )) 'The collision archive did not use the next numeric suffix.'
-    Assert-Equal 'ralph: feature/01, FEATURE completed' (
-        Invoke-Git $result.Repository @('log', '-1', '--format=%s')
-    ) 'Archive suffixing changed the original feature identity in the commit.'
-    $record = Get-Content (
-        Join-Path $result.Repository '.scratch\progress.jsonl'
-    ) | Select-Object -Last 1 | ConvertFrom-Json
-    Assert-Equal 'feature' $record.feature `
-        'Archive suffixing changed the original feature identity in the log.'
-
-    $result = Invoke-TestCase 'feature-scope' -Scenario sequential -Iterations 3
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature\issues\02.md'
-    )) 'Feature scope did not continue through archival.'
-    Assert-Equal 3 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
-        'Feature scope should commit both unfinished tickets.'
-    Assert-True (($result.Arguments -join "`n") -notmatch '<promise>COMPLETE</promise>') `
-        'The feature prompt retained the completion-promise protocol.'
-    Assert-True (($result.Arguments -join "`n") -match "selected feature 'feature'") `
-        'The feature prompt did not identify the selected feature by folder name.'
-
-    $parameterRepository = New-TestRepository 'feature-parameter'
-    New-Item -ItemType Directory -Path (
-        Join-Path $parameterRepository '.scratch\no-spec\issues'
-    ) -Force | Out-Null
-    New-Item -ItemType Directory -Path (
-        Join-Path $parameterRepository '.scratch\done\archived\issues'
-    ) -Force | Out-Null
-    Set-Content (Join-Path $parameterRepository '.scratch\done\archived\spec.md') '# Archived'
-    $command = Get-Command $ralphScript
-    Assert-True ($command.Parameters.ContainsKey('Feature')) `
-        'The Ralph command does not expose -Feature.'
-    Assert-True (-not $command.Parameters.ContainsKey('TaskFile')) `
-        'The removed -TaskFile parameter remains public.'
-    $completer = @(
-        $command.Parameters.Feature.Attributes |
-            Where-Object { $_ -is [System.Management.Automation.ArgumentCompleterAttribute] }
-    )[0]
-    Push-Location $parameterRepository
-    try {
-        $completionNames = @(
-            & $completer.ScriptBlock 'Invoke-Ralph.ps1' 'Feature' '' $null @{} |
-                ForEach-Object { $_.CompletionText }
-        )
-    }
-    finally {
-        Pop-Location
-    }
-    Assert-Equal 'feature' ($completionNames -join ',') `
-        'Feature completion included archived, nested, or specification-free folders.'
-
-    Assert-True ($command.Parameters.ContainsKey('Archive')) `
-        'The Ralph command does not expose -Archive.'
-    $archiveCompleter = @(
-        $command.Parameters.Archive.Attributes |
-            Where-Object { $_ -is [System.Management.Automation.ArgumentCompleterAttribute] }
-    )[0]
-    Push-Location $parameterRepository
-    try {
-        $archiveCompletionNames = @(
-            & $archiveCompleter.ScriptBlock 'Invoke-Ralph.ps1' 'Archive' '' $null @{} |
-                ForEach-Object { $_.CompletionText }
-        )
-    }
-    finally {
-        Pop-Location
-    }
-    Assert-Equal 'feature' ($archiveCompletionNames -join ',') `
-        'Archive completion included archived, nested, or specification-free folders.'
-
-    foreach ($invalidFeature in @(
-        '.scratch/feature/spec.md',
-        'archived',
-        'no-spec'
-    )) {
-        Push-Location $parameterRepository
-        try {
-            $invalidOutput = & pwsh -NoProfile -File $ralphScript `
-                -Feature $invalidFeature 2>&1
-            $invalidExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-        }
-        Assert-Equal 1 $invalidExitCode `
-            "Invalid feature '$invalidFeature' should be rejected."
-        Assert-True ((($invalidOutput | ForEach-Object ToString) -join "`n") -match 'Feature') `
-            "Invalid feature '$invalidFeature' did not report feature validation."
-    }
-
-    foreach ($invalidArchive in @(
-        '.scratch/feature/spec.md',
-        'archived',
-        'no-spec'
-    )) {
-        Push-Location $parameterRepository
-        try {
-            $invalidOutput = & pwsh -NoProfile -File $ralphScript `
-                -Archive $invalidArchive 2>&1
-            $invalidExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-        }
-        Assert-Equal 1 $invalidExitCode `
-            "Invalid archive '$invalidArchive' should be rejected."
-        Assert-True ((($invalidOutput | ForEach-Object ToString) -join "`n") -match 'Archive') `
-            "Invalid archive '$invalidArchive' did not report archive validation."
-    }
-
-    $manualArchiveRepository = New-TestRepository 'manual-archive' -ExistingProgress
-    $manualArchiveProgressPath = Join-Path $manualArchiveRepository '.scratch\progress.jsonl'
-    [byte[]] $manualArchiveProgressBefore = [System.IO.File]::ReadAllBytes(
-        $manualArchiveProgressPath
-    )
-    Push-Location $manualArchiveRepository
-    try {
-        $manualArchiveOutput = & pwsh -NoProfile -File $ralphScript -Archive feature 2>&1
-        $manualArchiveExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $manualArchiveText = ($manualArchiveOutput | ForEach-Object { $_.ToString() }) -join "`n"
-    Assert-Equal 0 $manualArchiveExitCode "Manual archive failed.`n$manualArchiveText"
-    Assert-True ($manualArchiveText -match [regex]::Escape("Archived feature 'feature' to:")) `
-        'Manual archive did not report its destination.'
-    Assert-True (-not (Test-Path (
-        Join-Path $manualArchiveRepository '.scratch\feature'
-    ))) 'Manual archive retained the active feature.'
-    Assert-True (Test-Path (
-        Join-Path $manualArchiveRepository '.scratch\done\feature\spec.md'
-    )) 'Manual archive did not preserve its specification.'
-    Assert-True (Test-Path (
-        Join-Path $manualArchiveRepository '.scratch\done\feature\issues\02.md'
-    )) 'Manual archive did not preserve unfinished tickets.'
-    Assert-True ((Get-Content -Raw (
-        Join-Path $manualArchiveRepository '.scratch\done\feature\issues\01.md'
-    )) -match 'ready-for-agent') 'Manual archive changed an unfinished ticket status.'
-    [byte[]] $manualArchiveProgressAfter = [System.IO.File]::ReadAllBytes(
-        $manualArchiveProgressPath
-    )
-    Assert-Equal ([Convert]::ToBase64String($manualArchiveProgressBefore)) (
-        [Convert]::ToBase64String($manualArchiveProgressAfter)
-    ) 'Manual archive invoked an agent or changed tracker progress.'
-    Assert-Equal 1 (Invoke-Git $manualArchiveRepository @(
-        'rev-list', '--all', '--count'
-    )) 'Manual archive created a commit.'
-
-    $manualCollisionRepository = New-TestRepository 'manual-archive-collision' `
-        -ArchiveCollision
-    Push-Location $manualCollisionRepository
-    try {
-        $manualCollisionOutput = & pwsh -NoProfile -File $ralphScript `
-            -Archive feature 2>&1
-        $manualCollisionExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    Assert-Equal 0 $manualCollisionExitCode (
-        "Manual collision archive failed.`n" +
-        (($manualCollisionOutput | ForEach-Object { $_.ToString() }) -join "`n")
-    )
-    Assert-True (Test-Path (
-        Join-Path $manualCollisionRepository '.scratch\done\feature\preserve.txt'
-    )) 'Manual archive overwrote an existing archive.'
-    Assert-True (Test-Path (
-        Join-Path $manualCollisionRepository '.scratch\done\feature-2\spec.md'
-    )) 'Manual archive did not use the next numeric collision suffix.'
-
-    foreach ($incompatible in @(
-        @{ Arguments = @('-List'); Name = 'List' },
-        @{ Arguments = @('-Cleanup'); Name = 'Cleanup' },
-        @{ Arguments = @('-Agent', 'copilot'); Name = 'Agent' },
-        @{ Arguments = @('-Iterations', '2'); Name = 'Iterations' },
-        @{ Arguments = @('-Feature', 'feature'); Name = 'Feature' }
-    )) {
-        $incompatibleRepository = New-TestRepository "manual-archive-$($incompatible.Name)"
-        Push-Location $incompatibleRepository
-        try {
-            $incompatibleOutput = & pwsh -NoProfile -File $ralphScript -Archive feature `
-                @($incompatible.Arguments) 2>&1
-            $incompatibleExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-        }
-        $incompatibleText = (
-            $incompatibleOutput | ForEach-Object { $_.ToString() }
-        ) -join "`n"
-        Assert-Equal 1 $incompatibleExitCode (
-            "-Archive with $($incompatible.Name) should fail.`n$incompatibleText"
-        )
-        Assert-True (
-            $incompatibleText -match [regex]::Escape(
-                "-Archive cannot be combined with: $($incompatible.Name)."
-            )
-        ) "-Archive did not clearly reject $($incompatible.Name)."
-    }
-
-    $result = Invoke-TestCase 'automatic-scope' -Scope automatic -Scenario sequential `
-        -Iterations 5 -SecondFeature
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\feature\spec.md'
-    )) 'Automatic scope did not archive the first active feature.'
-    Assert-True (Test-Path (
-        Join-Path $result.Repository '.scratch\done\later-feature\spec.md'
-    )) 'Automatic scope did not continue to the next active feature.'
-    Assert-Equal 4 (Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD')) `
-        'Automatic scope should commit all three unfinished tickets.'
-    Assert-True ($result.Output -match 'Requested scope complete') `
-        'Automatic scope did not finish from active tracker state.'
-    Assert-True ($result.Output -notmatch 'Open tickets:') `
-        'Automatic scope emitted a standalone open-ticket line.'
-    $lastAutomaticPrompt = $result.Arguments -join "`n"
-    Assert-True ($lastAutomaticPrompt -match '\.scratch[\\/]later-feature[\\/]issues') `
-        'Automatic discovery omitted the remaining active feature.'
-    Assert-True ($lastAutomaticPrompt -notmatch '(?m)^\.scratch[\\/]feature[\\/]issues$') `
-        'Automatic discovery retained an archived feature in a later prompt.'
-
-    $listRepository = Join-Path $temporaryRoot 'list'
-    New-Item -ItemType Directory -Path (
-        Join-Path $listRepository '.scratch\alpha-feature\issues'
-    ) -Force | Out-Null
-    New-Item -ItemType Directory -Path (
-        Join-Path $listRepository '.scratch\zeta-feature\issues'
-    ) -Force | Out-Null
-    New-Item -ItemType Directory -Path (
-        Join-Path $listRepository '.scratch\done\archived-feature\issues'
-    ) -Force | Out-Null
-    Set-Content (Join-Path $listRepository '.scratch\alpha-feature\spec.md') `
-        '# Alpha display name'
-    Set-Content (Join-Path $listRepository '.scratch\zeta-feature\spec.md') `
-        '# Zeta display name'
-    Set-TestTicket (
-        Join-Path $listRepository '.scratch\alpha-feature\issues\10-later.md'
-    ) '# Tenth ticket'
-    Set-TestTicket (
-        Join-Path $listRepository '.scratch\alpha-feature\issues\2-sooner.md'
-    ) '# Second ticket'
-    Set-TestTicket (
-        Join-Path $listRepository '.scratch\alpha-feature\issues\01-finished.done.md'
-    ) '# Finished ticket' 'done'
-    Set-TestTicket (
-        Join-Path $listRepository '.scratch\zeta-feature\issues\01-zeta.md'
-    ) '# Zeta ticket'
-    Set-Content (
-        Join-Path $listRepository '.scratch\done\archived-feature\spec.md'
-    ) '# Must not appear'
-    Set-Content (Join-Path $listRepository '.gitignore') ".scratch/`n"
-    Set-Content (Join-Path $listRepository 'baseline.txt') 'baseline'
-    Invoke-Git $listRepository @('init', '--quiet') | Out-Null
-    $resolvedListRepository = Invoke-Git $listRepository @(
-        'rev-parse',
-        '--show-toplevel'
-    )
-    Push-Location $listRepository
-    try {
-        $listOutput = & pwsh -NoProfile -File $ralphScript -List 2>&1
-        $listExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $listText = ($listOutput | ForEach-Object { $_.ToString() }) -join "`n"
-    $listText = $listText -replace "$([char]27)\[[0-9;]*m", ''
-    Assert-Equal 0 $listExitCode "List mode failed.`n$listText"
-    Assert-True ($listText -notmatch '\s*(active|open|complete)\b') `
-        'List mode emitted a retired tracker status pill.'
-    Assert-True ($listText -match 'Alpha display name.*alpha-feature') `
-        'List mode omitted the feature heading or stable slug.'
-    Assert-True ($listText -match '\[ \] Second ticket') `
-        'List mode omitted an unfinished ticket heading.'
-    Assert-True ($listText -match '\[✓\] Finished ticket') `
-        'List mode did not mark the completed ticket.'
-    Assert-True ($listText -notmatch '2-sooner\.md|10-later\.md|01-finished\.done\.md') `
-        'List mode exposed ticket filenames.'
-    Assert-True (
-        $listText.IndexOf('Alpha display name') -lt $listText.IndexOf('Zeta display name')
-    ) 'List mode did not sort features by slug.'
-    Assert-True (
-        $listText.IndexOf('Finished ticket') -lt $listText.IndexOf('Second ticket') -and
-        $listText.IndexOf('Second ticket') -lt $listText.IndexOf('Tenth ticket')
-    ) 'List mode did not preserve natural ticket order regardless of completion state.'
-    Assert-True ($listText -notmatch 'Must not appear|archived-feature') `
-        'List mode included an archived feature.'
-    Assert-True ($listText -match '├─|└─') `
-        'List mode omitted the readable terminal hierarchy.'
-    Assert-True ($listText -match (
-        'Repository:\s+' + [regex]::Escape($resolvedListRepository)
-    )) 'List mode did not display the resolved repository-root path.'
-    Assert-True ($listText -notmatch 'Iteration:') `
-        'List mode emitted irrelevant iteration metadata.'
-    Assert-True ($listText -notmatch 'Progress:') `
-        'List mode emitted a standalone Progress: metadata row that should have been removed.'
-    Assert-True ($listText -notmatch '(?m)^Agent:') `
-        'List mode emitted a standalone Agent: metadata row that should have been removed.'
-
-    $statusRepository = Join-Path $temporaryRoot 'ticket-status-list'
-    $statusIssues = Join-Path $statusRepository '.scratch\status-feature\issues'
-    New-Item -ItemType Directory -Path $statusIssues -Force | Out-Null
-    Set-Content (Join-Path $statusRepository '.scratch\status-feature\spec.md') `
-        '# Ticket status feature'
-    Set-Content (Join-Path $statusIssues '01-ordinary.done.md') `
-        "# Ordinary legacy filename`n`nStatus: ready-for-agent"
-    Set-Content (Join-Path $statusIssues '02-bold.md') `
-        "# Bold terminal`n`n**STATUS:** DONE"
-    Set-Content (Join-Path $statusIssues '03-list.md') `
-        "# List terminal`n`n- Status: closed"
-    Set-Content (Join-Path $statusIssues '04-quote.md') `
-        "# Quote ready`n`n> Status: READY-FOR-AGENT"
-    Set-Content (Join-Path $statusIssues '05-body-positioned.md') @"
-# Body-positioned status
-
-## Work
-
-Status-like prose must not be treated as a declaration.
-
-**Status:** ready-for-agent
-"@
-    Invoke-Git $statusRepository @('init', '--quiet') | Out-Null
-    Push-Location $statusRepository
-    try {
-        $statusOutput = & pwsh -NoProfile -File $ralphScript -List 2>&1
-        $statusExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $statusText = ($statusOutput | ForEach-Object ToString) -join "`n"
-    $statusText = $statusText -replace "$([char]27)\[[0-9;]*m", ''
-    Assert-Equal 0 $statusExitCode "Status-aware list failed.`n$statusText"
-    Assert-True ($statusText -match '\[ \] Ordinary legacy filename') `
-        'A .done.md filename was incorrectly treated as terminal.'
-    Assert-True ($statusText -match '\[✓\] Bold terminal') `
-        'Bold, case-insensitive done metadata was not terminal.'
-    Assert-True ($statusText -match '\[✓\] List terminal') `
-        'List-prefixed closed metadata was not terminal.'
-    Assert-True ($statusText -match '\[ \] Quote ready') `
-        'Quote-prefixed ready metadata was not unfinished.'
-    Assert-True ($statusText -match '\[ \] Body-positioned status') `
-        'A valid status after ordinary ticket content was not recognized.'
-
-    foreach ($invalidStatusCase in @(
-        @{ Name = 'missing'; Content = "# Missing status"; Error = 'missing' },
-        @{ Name = 'duplicate'; Content = "# Duplicate`n`nStatus: done`nStatus: closed"; Error = 'exactly one' },
-        @{ Name = 'malformed'; Content = "# Malformed`n`nStatus = done"; Error = 'malformed' },
-        @{ Name = 'unsupported'; Content = "# Unsupported`n`nStatus: in-progress"; Error = 'unsupported' },
-        @{ Name = 'fenced-only'; Content = "# Fenced only`n`n" + '```md' + "`nStatus: done`n" + '```'; Error = 'missing' }
-    )) {
-        $invalidRepository = Join-Path $temporaryRoot "status-$($invalidStatusCase.Name)"
-        $invalidIssues = Join-Path $invalidRepository '.scratch\feature\issues'
-        New-Item -ItemType Directory -Path $invalidIssues -Force | Out-Null
-        Set-Content (Join-Path $invalidRepository '.scratch\feature\spec.md') '# Feature'
-        Set-Content (Join-Path $invalidIssues '01.md') $invalidStatusCase.Content
-        Invoke-Git $invalidRepository @('init', '--quiet') | Out-Null
-        Push-Location $invalidRepository
-        try {
-            $invalidOutput = & pwsh -NoProfile -File $ralphScript -List 2>&1
-            $invalidExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-        }
-        $invalidText = ($invalidOutput | ForEach-Object ToString) -join "`n"
-        Assert-Equal 1 $invalidExitCode `
-            "$($invalidStatusCase.Name) ticket status should fail.`n$invalidText"
-        Assert-True ($invalidText -match $invalidStatusCase.Error) `
-            "$($invalidStatusCase.Name) ticket status did not report the expected error."
-    }
-
-    $partialListRepository = Join-Path $temporaryRoot 'partial-list'
-    New-Item -ItemType Directory -Path (
-        Join-Path $partialListRepository '.scratch\missing-everything'
-    ) -Force | Out-Null
-    New-Item -ItemType Directory -Path (
-        Join-Path $partialListRepository '.scratch\partial\issues'
-    ) -Force | Out-Null
-    Set-Content (Join-Path $partialListRepository '.scratch\partial\spec.md') `
-        'Specification without a heading'
-    Set-Content (
-        Join-Path $partialListRepository '.scratch\partial\issues\01.md'
-    ) "Status: ready-for-agent`n`nTicket without a heading"
-    Set-Content (Join-Path $partialListRepository '.gitignore') ".scratch/`n"
-    Set-Content (Join-Path $partialListRepository 'dirty.txt') 'initial'
-    Invoke-Git $partialListRepository @('init', '--quiet') | Out-Null
-    Set-Content (Join-Path $partialListRepository 'dirty.txt') 'unstaged change'
-    try {
-        Push-Location $partialListRepository
-        $partialListOutput = & pwsh -NoProfile -File $ralphScript -List 2>&1
-        $partialListExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $partialListText = (
-        $partialListOutput | ForEach-Object { $_.ToString() }
-    ) -join "`n"
-    $partialListText = $partialListText -replace "$([char]27)\[[0-9;]*m", ''
-    Assert-Equal 0 $partialListExitCode (
-        "Partial list mode failed without an agent or clean worktree.`n$partialListText"
-    )
-    Assert-True ($partialListText -match 'missing-everything.*missing-everything') `
-        'List mode did not fall back for a missing specification and issue directory.'
-    Assert-True ($partialListText -match '└─ no tickets') `
-        'List mode did not render the missing issue-directory fallback.'
-    Assert-True ($partialListText -match 'partial.*partial') `
-        'List mode did not fall back for a specification without a heading.'
-    Assert-True ($partialListText -match '\[ \] 01\b') `
-        'List mode did not fall back for a ticket without a heading.'
-    Assert-True ($partialListText -notmatch '01\.md') `
-        'List mode exposed a ticket filename in fallback output.'
-    Assert-Equal 'unstaged change' (
-        Get-Content (Join-Path $partialListRepository 'dirty.txt') -Raw
-    ).Trim() 'List mode changed dirty working-tree content.'
-    Assert-True (-not (Test-Path (
-        Join-Path $partialListRepository '.scratch\progress.jsonl'
-    ))) 'List mode created tracker state.'
-    Assert-Equal '0' (Invoke-Git $partialListRepository @(
-        'rev-list', '--all', '--count'
-    )) `
-        'List mode created a commit.'
-
-    Push-Location $listRepository
-    try {
-        $cleanupFeatureOutput = & pwsh -NoProfile -File $ralphScript `
-            -Cleanup -Feature alpha-feature 2>&1
-        $cleanupFeatureExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $cleanupFeatureText = (
-        $cleanupFeatureOutput | ForEach-Object { $_.ToString() }
-    ) -join "`n"
-    Assert-Equal 1 $cleanupFeatureExitCode `
-        "-Cleanup with Feature should fail.`n$cleanupFeatureText"
-    Assert-True (
-        $cleanupFeatureText -match [regex]::Escape(
-            '-Cleanup cannot be combined with: Feature.'
-        )
-    ) '-Cleanup did not clearly reject Feature.'
-
-    $emptyListRepository = Join-Path $temporaryRoot 'empty-list'
-    New-Item -ItemType Directory -Path (
-        Join-Path $emptyListRepository '.scratch\done\archived'
-    ) -Force | Out-Null
-    Set-Content (Join-Path $emptyListRepository 'baseline.txt') 'baseline'
-    Invoke-Git $emptyListRepository @('init', '--quiet') | Out-Null
-    Push-Location $emptyListRepository
-    try {
-        $emptyListOutput = & pwsh -NoProfile -File $ralphScript -List 2>&1
-        $emptyListExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    $emptyListText = ($emptyListOutput | ForEach-Object { $_.ToString() }) -join "`n"
-    $emptyListText = $emptyListText -replace "$([char]27)\[[0-9;]*m", ''
-    Assert-Equal 0 $emptyListExitCode "Empty list mode failed.`n$emptyListText"
-    Assert-True ($emptyListText -match 'No active features\.') `
-        'List mode omitted its successful empty-state message.'
-
-    foreach ($incompatible in @(
-        @{ Arguments = @('-Cleanup'); Name = 'Cleanup' },
-        @{ Arguments = @('-Agent', 'copilot'); Name = 'Agent' },
-        @{ Arguments = @('-Iterations', '2'); Name = 'Iterations' },
-        @{
-            Arguments = @(
-                '-Feature',
-                'alpha-feature'
-            )
-            Name = 'Feature'
-        }
-    )) {
-        Push-Location $listRepository
-        try {
-            $incompatibleOutput = & pwsh -NoProfile -File $ralphScript -List `
-                @($incompatible.Arguments) 2>&1
-            $incompatibleExitCode = $LASTEXITCODE
-        }
-        finally {
-            Pop-Location
-        }
-        $incompatibleText = (
-            $incompatibleOutput | ForEach-Object { $_.ToString() }
-        ) -join "`n"
-        Assert-Equal 1 $incompatibleExitCode (
-            "-List with $($incompatible.Name) should fail.`n$incompatibleText"
-        )
-        Assert-True (
-            $incompatibleText -match [regex]::Escape(
-                "-List cannot be combined with: $($incompatible.Name)."
-            )
-        ) "-List did not clearly reject $($incompatible.Name)."
-    }
-
-    $cleanupRepository = New-TestRepository 'cleanup' -ExistingProgress `
-        -ArchiveCollision
-    $progressPath = Join-Path $cleanupRepository '.scratch\progress.jsonl'
-    [byte[]] $beforeCleanup = [System.IO.File]::ReadAllBytes($progressPath)
-    Push-Location $cleanupRepository
-    try {
-        $cleanupOutput = & pwsh -NoProfile -File $ralphScript -Cleanup 2>&1
-        $cleanupExitCode = $LASTEXITCODE
-    }
-    finally {
-        Pop-Location
-    }
-    Assert-Equal 0 $cleanupExitCode (
-        "Cleanup failed.`n" + (($cleanupOutput | ForEach-Object { $_.ToString() }) -join "`n")
-    )
-    Assert-True (-not (Test-Path (
-        Join-Path $cleanupRepository '.scratch\done\feature'
-    ))) 'Cleanup retained an archived feature directory.'
-    Assert-True (Test-Path (
-        Join-Path $cleanupRepository '.scratch\feature'
-    )) 'Cleanup removed active feature work.'
-    [byte[]] $afterCleanup = [System.IO.File]::ReadAllBytes($progressPath)
-    Assert-Equal ([Convert]::ToBase64String($beforeCleanup)) (
-        [Convert]::ToBase64String($afterCleanup)
-    ) 'Cleanup changed the append-only JSONL audit log.'
-
-    # Non-interactive safety: redirected output must not emit cursor-control sequences
-    # that would corrupt a log or pipe.
-    $result = Invoke-TestCase 'noninteractive-safe' -Scenario success
-    $rawOutput = $result.Output
-    Assert-True ($rawOutput -notmatch "`e\[2J") `
-        'Non-interactive run emitted a clear-screen sequence.'
-    Assert-True ($rawOutput -notmatch "`e\[\d+;\d+r") `
-        'Non-interactive run emitted a scroll-region setup sequence.'
-    Assert-True ($rawOutput -notmatch "`e\[\?25l") `
-        'Non-interactive run emitted a cursor-hide sequence.'
-    Assert-True ($rawOutput -notmatch "`e\[\?25h") `
-        'Non-interactive run emitted a cursor-show sequence.'
-
-    # Interactive workboard: RALPH_FORCE_INTERACTIVE=1 simulates an ANSI-capable terminal.
-    # The tracker must be drawn and the scroll region restored on exit.
-    $result = Invoke-TestCase 'interactive-workboard' -ForceInteractive -Scenario success
-    $rawInteractive = $result.Output
-    Assert-True ($rawInteractive -match 'Ralph tracker') `
-        'Interactive run did not draw the tracker workboard.'
-    Assert-True (
-        $rawInteractive.IndexOf('Ralph tracker') -lt $rawInteractive.IndexOf('Iteration 1')
-    ) 'Interactive run drew the tracker after iteration output, not before.'
-    Assert-True ($rawInteractive -match "`e\[2J") `
-        'Interactive run did not clear the screen before the workboard.'
-    Assert-True ($rawInteractive -match "`e\[r") `
-        'Interactive run did not restore the scroll region on exit.'
-    # Panel structure: tracker must be inside a full-width rounded panel.
-    Assert-True ($rawInteractive -match [regex]::Escape('╭')) `
-        'Interactive run did not draw the rounded panel top-left corner.'
-    Assert-True ($rawInteractive -match [regex]::Escape('╰')) `
-        'Interactive run did not draw the rounded panel bottom-left corner.'
-    Assert-True ($rawInteractive -match 'Agent output') `
-        'Interactive run did not draw the Agent output panel label.'
-    Assert-True ($rawInteractive -match "`e\[2m") `
-        'Interactive run did not use dim styling for panel borders.'
-    Assert-True (([regex]::Matches($rawInteractive, [regex]::Escape('╭')).Count -ge 2)) `
-        'Interactive run did not draw two rounded panel top borders.'
-    Assert-True (([regex]::Matches($rawInteractive, [regex]::Escape('╰')).Count -ge 2)) `
-        'Interactive run did not draw two rounded panel bottom borders.'
-    Assert-True ($rawInteractive -notmatch '\s*(active|open|complete)\b') `
-        'Interactive run emitted a retired tracker status pill.'
-    Assert-True ($rawInteractive -match 'Repository:' -and $rawInteractive -match 'Iteration:' -and
-        $rawInteractive -match '1 of 1') `
-        'Interactive run did not render tracker metadata rows.'
-    Assert-True ($rawInteractive -notmatch 'Progress:') `
-        'Interactive run emitted a standalone Progress: metadata row.'
-    Assert-True ($rawInteractive -match (
-        'Repository:.*\x1b\[2;38;5;8mcodex / gpt-5\.6-terra \(medium\)'
-    )) 'Interactive run did not render the dim agent summary on the repository row.'
-    # "Ralph tracker" label appears within the top border, content rows below it.
-    Assert-True (
-        $rawInteractive.IndexOf('╭') -lt $rawInteractive.IndexOf('Ralph tracker')
-    ) 'Panel top-left corner must precede the Ralph tracker label.'
-    Assert-True (
-        $rawInteractive.IndexOf('Ralph tracker') -lt $rawInteractive.IndexOf('╰')
-    ) 'Ralph tracker label must precede the panel bottom-left corner.'
-    Assert-True (
-        $rawInteractive.IndexOf('Ralph tracker') -lt $rawInteractive.IndexOf('Agent output')
-    ) 'Agent output panel must render below the tracker panel.'
-    Assert-True (
-        $rawInteractive.IndexOf('Repository:') -lt $rawInteractive.IndexOf('Agent output')
-    ) 'Session metadata should render inside the tracker panel.'
-    Assert-True ($rawInteractive -notmatch 'Ralph tracker\s+\d+ active feature') `
-        'Interactive run retained the duplicate body title in the tracker.'
-    Assert-True (
-        $rawInteractive.IndexOf('╰') -lt $rawInteractive.IndexOf('Iteration 1')
-    ) 'Panel bottom border must precede iteration output.'
-    # Cursor lifecycle: workboard must hide the cursor on entry and show it on exit,
-    # and cursor-show must appear after the scroll-region restore sequence.
-    Assert-True ($rawInteractive -match "`e\[\?25l") `
-        'Interactive run did not hide the cursor when the workboard started.'
-    Assert-True ($rawInteractive -match "`e\[\?25h") `
-        'Interactive run did not show the cursor after workboard teardown.'
-    Assert-True (
-        $rawInteractive.IndexOf("`e[?25l") -lt $rawInteractive.IndexOf("`e[?25h")
-    ) 'Interactive run: cursor-hide must precede cursor-show.'
-    Assert-True (
-        $rawInteractive.LastIndexOf("`e[r") -lt $rawInteractive.IndexOf("`e[?25h")
-    ) 'Interactive run: cursor-show must appear after the scroll-region restore.'
-
-    # Interactive workboard cleanup on failure: terminal must be restored even when
-    # the agent produces a validation error.
-    $failResult = Invoke-TestCase 'interactive-workboard-failure' `
-        -ForceInteractive -Scenario malformed -ExpectedExitCode 1
-    Assert-True ($failResult.Output -match "`e\[r") `
-        'Interactive run did not restore the scroll region after a failure.'
-    Assert-True ($failResult.Output -match "`e\[\?25h") `
-        'Interactive run did not make the cursor visible after a failure.'
-
-    # Startup-feature retention: a feature that was active at the start of the run
-    # must remain visible as completed in the workboard after it is archived, rather
-    # than disappearing from the fixed header.
-    $retainResult = Invoke-TestCase 'interactive-retained' `
-        -ForceInteractive -FinalTicket -Scenario success
-    $rawRetain = $retainResult.Output
-    # The update draw (after ticket completion and archival) must include the
-    # completed-ticket glyph; the enter draw showed an unfinished ticket, so this
-    # glyph can only originate from the post-completion Update-RalphWorkboard call.
-    Assert-True ($rawRetain -match [regex]::Escape('[' + [char]0x2713 + ']')) `
-        'Retained startup feature: completed ticket marker should appear in the workboard update.'
-    # The tracker header must be emitted at least twice: once at Enter, once at Update.
-    Assert-True (([regex]::Matches($rawRetain, 'Ralph tracker')).Count -ge 2) `
-        'Retained startup feature: tracker should be drawn at least twice (enter and update).'
-
-    # A feature-scoped workboard must not render unrelated active features, and
-    # must retain the selected feature after it archives.
-    $selectedResult = Invoke-TestCase 'interactive-selected-feature' `
-        -ForceInteractive -FinalTicket -SecondFeature -Scenario success
-    $rawSelected = $selectedResult.Output
-    Assert-True ($rawSelected -match '\(feature\)') `
-        'Selected-feature workboard did not render the selected feature.'
-    Assert-True ($rawSelected -notmatch 'Later feature|later-feature') `
-        'Selected-feature workboard rendered an unrelated active feature.'
-    Assert-True ($rawSelected -match [regex]::Escape('[' + [char]0x2713 + ']')) `
-        'Selected feature was not retained as completed after archival.'
-
-    # Dynamic feature handling: when a new feature appears mid-run, the tracker
-    # must rebuild if header height grows, and non-startup features must disappear
-    # after they complete while startup features remain retained.
-    $dynamicResult = Invoke-TestCase 'interactive-dynamic-feature' `
-        -ForceInteractive -FinalTicket -Scope automatic -Iterations 4 `
-        -Scenario dynamic-feature
-    $rawDynamic = $dynamicResult.Output
-    Assert-True ($rawDynamic -match 'Later feature') `
-        'Dynamic feature: newly introduced active feature did not appear in the live tracker.'
-    Assert-True (([regex]::Matches($rawDynamic, "`e\[2J")).Count -ge 2) `
-        'Dynamic feature: header-height increase did not trigger a safe workboard rebuild.'
-    Assert-True (([regex]::Matches($rawDynamic, 'Agent output')).Count -ge 2) `
-        'Dynamic feature: tracker-height update did not redraw the adjacent Agent output panel.'
-    $lastTrackerIndex = $rawDynamic.LastIndexOf('Ralph tracker')
-    Assert-True ($lastTrackerIndex -ge 0) `
-        'Dynamic feature: no tracker draw was captured.'
-    $finalTracker = $rawDynamic.Substring($lastTrackerIndex)
-    Assert-True ($finalTracker -match '\(feature\)') `
-        'Dynamic feature: startup feature was not retained after archival.'
-    Assert-True ($finalTracker -notmatch 'later-feature') `
-        'Dynamic feature: non-startup feature remained after completion and archival.'
-    Assert-True (
-        $finalTracker -match 'Repository:' -and
-        $finalTracker -match 'Iteration:'
-    ) 'Dynamic feature: tracker redraw lost session metadata rows.'
-
-    # Framed agent output: side borders, iteration heading/divider, and agent messages.
-    $result = Invoke-TestCase 'interactive-framed-output' -ForceInteractive -Scenario success
-    $rawFramed = $result.Output
-    # Vertical side borders must appear in message rows (not just top/bottom frame corners).
-    Assert-True ($rawFramed -match "│.*iteration finished") `
-        'Interactive run did not render agent message with side borders.'
-    Assert-True ($rawFramed -match "│.*Iteration 1") `
-        'Interactive run did not render iteration heading inside the Agent output frame.'
-    Assert-True ($rawFramed -match "│.*─") `
-        'Interactive run did not render a divider row inside the Agent output frame.'
-
-    # Typed agent rows must preserve ANSI ordering and framing for both stream
-    # formats. Compare against non-interactive output so the fixed visible-cell
-    # cadence remains observable without depending on process startup time.
-    foreach ($agent in 'codex', 'copilot') {
-        $nonInteractiveStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        $nonInteractiveTyped = Invoke-TestCase "noninteractive-typed-output-$agent" `
-            -Agent $agent -Scenario typed-output
-        $nonInteractiveStopwatch.Stop()
-
-        $interactiveStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        $interactiveTyped = Invoke-TestCase "interactive-typed-output-$agent" `
-            -Agent $agent -ForceInteractive -Scenario typed-output
-        $interactiveStopwatch.Stop()
-
-        $rawTyped = $interactiveTyped.Output
-        $styleStartIndex = $rawTyped.IndexOf("`e[31mtyped output ")
-        $styleResetIndex = $rawTyped.IndexOf("`e[0m", $styleStartIndex)
-        Assert-True ($styleStartIndex -ge 0 -and $styleResetIndex -gt $styleStartIndex) `
-            "$agent typed-output: ANSI styling was not emitted in order."
-        $visibleTyped = $rawTyped -replace "`e\[[0-?]*[ -/]*[@-~]", ''
-        Assert-True ($visibleTyped -match '│ typed output' -and $visibleTyped -match '│ T+') `
-            "$agent typed-output: agent text was not emitted inside framed rows."
-        Assert-True (([regex]::Matches($visibleTyped, '│[^╭╰]+│')).Count -ge 2) `
-            "$agent typed-output: long agent text did not retain wrapped framed rows."
-        Assert-True (
-            ($interactiveStopwatch.ElapsedMilliseconds - $nonInteractiveStopwatch.ElapsedMilliseconds) -ge 400
-        ) "$agent typed-output: visible characters were not paced in the interactive panel."
-    }
-
-    # Agent output must retain a single blank separator while dropping leading and
-    # repeated blank lines, regardless of the CLI's message framing.
-    foreach ($agent in 'codex', 'copilot') {
-        $blankOutputResult = Invoke-TestCase "blank-output-$agent" `
-            -Agent $agent -Scenario blank-output
-        $agentOutput = $blankOutputResult.Output
-        $firstLineIndex = $agentOutput.IndexOf('first line')
-        $thirdLineIndex = $agentOutput.IndexOf('third line')
-        Assert-True ($firstLineIndex -ge 0 -and $thirdLineIndex -gt $firstLineIndex) `
-            "$agent blank-output: expected agent text was not emitted."
-        $agentOutputSection = $agentOutput.Substring(
-            $firstLineIndex,
-            $thirdLineIndex - $firstLineIndex + 'third line'.Length
-        )
-        Assert-True ($agentOutputSection -match "first line`r?`n`r?`nsecond line") `
-            "$agent blank-output: a single blank separator was not retained."
-        Assert-True ($agentOutputSection -notmatch "`r?`n[ `t]*`r?`n[ `t]*`r?`n") `
-            "$agent blank-output: repeated blank lines were not trimmed."
-    }
-
-    # Streamed output resize recovery: the row observing a width change must follow
-    # a full redraw, use the new wrapping width, and unchanged dimensions must not
-    # cause another redraw.
-    $widthResizeResult = Invoke-TestCase 'interactive-width-resize' `
-        -ForceInteractive -Scenario resize-output `
-        -WorkboardDimensions '120x24;60x24;60x24'
-    $rawWidthResize = $widthResizeResult.Output
-    Assert-Equal 2 ([regex]::Matches($rawWidthResize, "`e\[2J").Count) `
-        'Width resize should cause exactly one workboard rebuild.'
-    $widthRedrawIndex = $rawWidthResize.LastIndexOf("`e[2J")
-    $resizedRowIndex = $rawWidthResize.IndexOf('RRRR', $widthRedrawIndex)
-    Assert-True ($resizedRowIndex -gt $widthRedrawIndex) `
-        'Width resize emitted the triggering row before the refreshed frame.'
-    $resizedOutput = $rawWidthResize.Substring($resizedRowIndex)
-    Assert-True (([regex]::Matches($resizedOutput, '│[^\r\n]*R[^\r\n]*│')).Count -ge 2) `
-        'Width resize did not wrap the triggering row to the refreshed inner width.'
-
-    # A height-only change must likewise rebuild the fixed panels and install a
-    # scroll region using the refreshed terminal height.
-    $heightResizeResult = Invoke-TestCase 'interactive-height-resize' `
-        -ForceInteractive -Scenario resize-output `
-        -WorkboardDimensions '120x24;120x18;120x18'
-    $rawHeightResize = $heightResizeResult.Output
-    Assert-Equal 2 ([regex]::Matches($rawHeightResize, "`e\[2J").Count) `
-        'Height resize should cause exactly one workboard rebuild.'
-    $heightRedrawIndex = $rawHeightResize.LastIndexOf("`e[2J")
-    Assert-True ($rawHeightResize.IndexOf('RRRR', $heightRedrawIndex) -gt $heightRedrawIndex) `
-        'Height resize emitted the triggering row before the refreshed frame.'
-    Assert-True ($rawHeightResize.Substring($heightRedrawIndex) -match "`e\[\d+;17r") `
-        'Height resize did not refresh the Agent output scroll region.'
-
-    # A temporarily undersized terminal must retain the last valid layout. Once a
-    # later streamed row observes usable dimensions, Ralph should rebuild and emit
-    # that row inside the recovered frame.
-    $undersizedResizeResult = Invoke-TestCase 'interactive-undersized-resize' `
-        -ForceInteractive -Scenario resize-output `
-        -WorkboardDimensions '120x24;120x5;80x24'
-    $rawUndersizedResize = $undersizedResizeResult.Output
-    Assert-Equal 2 ([regex]::Matches($rawUndersizedResize, "`e\[2J").Count) `
-        'Undersized resize should defer redraw until dimensions become usable.'
-    Assert-True ($rawUndersizedResize -notmatch "`e\[\d+;4r") `
-        'Undersized resize emitted an invalid or overlapping scroll region.'
-    $recoveryRedrawIndex = $rawUndersizedResize.LastIndexOf("`e[2J")
-    $recoveredRowIndex = $rawUndersizedResize.IndexOf(
-        'unchanged size',
-        $recoveryRedrawIndex
-    )
-    Assert-True ($recoveredRowIndex -gt $recoveryRedrawIndex) `
-        'Recovered resize emitted the triggering row before rebuilding the frame.'
-    Assert-True ($rawUndersizedResize.Substring($recoveryRedrawIndex) -match "`e\[\d+;23r") `
-        'Recovered resize did not restore a valid Agent output scroll region.'
-
-    # Long-output wrapping: content longer than the inner width must be split across rows.
-    $longResult = Invoke-TestCase 'interactive-long-output' -ForceInteractive `
-        -Scenario long-output
-    $rawLong = $longResult.Output
-    Assert-True ($rawLong -match 'LLLL') `
-        'Long-output: content was lost from the framed output.'
-    # Wrapped lines each end with the right-side border; multiple │ rows must appear.
-    $borderRows = [regex]::Matches($rawLong, '│[^╭╰]+│')
-    Assert-True ($borderRows.Count -ge 2) `
-        'Long-output: content was not wrapped into multiple framed rows with right borders.'
-
-    # Explicit LF, CRLF, and CR boundaries must create independent framed rows,
-    # including the interior blank line and the transport-appended trailing row.
-    foreach ($scenario in 'line-ending-lf', 'line-ending-crlf', 'line-ending-cr') {
-        $lineEndingResult = Invoke-TestCase "interactive-$scenario" -ForceInteractive `
-            -Agent codex -Scenario $scenario
-        $visibleLineEndingOutput = $lineEndingResult.Output -replace "`e\[[0-?]*[ -/]*[@-~]", ''
-        Assert-True (
-            $visibleLineEndingOutput -match (
-                '│ first agent line[ ]*│\r?\n│[ ]+│\r?\n│ second agent line[ ]*│'
-            )
-        ) "${scenario}: multiline content was not rendered as independently framed rows."
-        Assert-True (
-            $visibleLineEndingOutput -match '│ second agent line[ ]*│\r?\n│[ ]+│'
-        ) "${scenario}: the trailing delimiter did not render a framed blank row."
-    }
-
-    # Prose should break between complete words instead of splitting a normal token.
-    $wordWrapResult = Invoke-TestCase 'interactive-word-wrap-output' -ForceInteractive `
-        -Agent codex -Scenario word-wrap-output -WorkboardDimensions '40x24'
-    $visibleWordWrapRows = @(
-        ($wordWrapResult.Output -replace "`e\[[0-?]*[ -/]*[@-~]", '') -split '\r?\n' |
-            Where-Object { $_ -match '│.*alpha.*│' }
-    )
-    Assert-True ($visibleWordWrapRows.Count -ge 2) `
-        'Word-wrap: normal prose was not wrapped into multiple framed rows.'
-    Assert-True (
-        @($visibleWordWrapRows | Where-Object { $_ -match 'alph[ ]+│' }).Count -eq 0
-    ) 'Word-wrap: a normal word was split at the right border.'
-
-    # Wide-character wrapping: CJK glyphs (display width 2) must still wrap and keep borders aligned.
-    $wideResult = Invoke-TestCase 'interactive-wide-output' -ForceInteractive `
-        -Agent copilot -Scenario wide-output
-    $rawWide = $wideResult.Output
-    Assert-True ($rawWide -match '漢') `
-        'Wide-output: wide glyph content was not emitted by the interactive run.'
-    $wideFramedRows = [regex]::Matches($rawWide, '│[^╭╰]*漢[^╭╰]*│')
-    Assert-True ($wideFramedRows.Count -ge 1) `
-        'Wide-output: display-cell-width output did not preserve a framed row with both side borders.'
-
-    # Successful completion should compact the frame so the final border is redrawn after completion.
-    $compactResult = Invoke-TestCase 'interactive-compact-completion' -ForceInteractive `
-        -FinalTicket -Scenario success
-    $rawCompact = $compactResult.Output
-    $completeIndex = $rawCompact.LastIndexOf('Requested scope complete.')
-    Assert-True ($completeIndex -ge 0) `
-        'Compact completion: expected completion message was not emitted.'
-    $finalBottomIndex = $rawCompact.LastIndexOf('╰')
-    Assert-True ($finalBottomIndex -gt $completeIndex) `
-        'Compact completion: bottom border was not redrawn after completion.'
-    $completionLineEnd = $rawCompact.IndexOf("`n", $completeIndex)
-    if ($completionLineEnd -lt 0) { $completionLineEnd = $completeIndex }
-    $betweenCompletionAndBorder = $rawCompact.Substring(
-        $completionLineEnd,
-        $finalBottomIndex - $completionLineEnd
-    )
-    Assert-True ($betweenCompletionAndBorder -notmatch '│\s*│') `
-        'Compact completion: a blank framed row remained between completion and bottom border.'
-
-    # Terminal cleanup: after exit, cursor must be positioned below the Agent output frame.
-    $exitResult = Invoke-TestCase 'interactive-exit-placement' -ForceInteractive `
-        -Scenario success
-    $rawExit = $exitResult.Output
-    $restoreIdx = $rawExit.LastIndexOf("`e[r")
-    Assert-True ($restoreIdx -ge 0) `
-        'Interactive exit: scroll region was not restored.'
-    $afterRestore = $rawExit.Substring($restoreIdx)
-    Assert-True ($afterRestore -match "`e\[\d+;1H") `
-        'Interactive exit: cursor was not positioned below the Agent output frame.'
-
-    # Capped iteration denominator: with more configured iterations than open tickets, the
-    # displayed denominator must reflect actual scoped work (CompletedIterations + openTickets)
-    # rather than the configured ceiling.
-    # 2 tickets (no FinalTicket), Iterations=5 → at enter: min(5, 0+2)=2 → tracker "Iteration: 1 of 2"
-    $cappedResult = Invoke-TestCase 'interactive-capped-denominator' `
-        -ForceInteractive -Iterations 5 -Scenario sequential
-    $rawCapped = $cappedResult.Output -replace "`e\[[0-9;]*m", ''
-    Assert-True ($rawCapped -match 'Iteration:\s+1 of 2') `
-        'Interactive run did not cap the iteration denominator to actual scoped work.'
-    Assert-True ($rawCapped -notmatch 'Iteration:\s+1 of 5') `
-        'Interactive run used the configured ceiling in the tracker denominator.'
-
-    # Automatic-scope capped denominator: counts open tickets across all active features.
-    # feature(2 tickets) + later-feature(1 ticket) = 3 total, Iterations=4
-    # At enter: min(4, 0+3)=3 → tracker "Iteration: 1 of 3"
-    $autoCapResult = Invoke-TestCase 'interactive-auto-capped' `
-        -ForceInteractive -Scope automatic -SecondFeature -Iterations 4 -Scenario sequential
-    $rawAutoCap = $autoCapResult.Output -replace "`e\[[0-9;]*m", ''
-    $initialAutoTracker = $rawAutoCap.Substring(0, $rawAutoCap.IndexOf('Agent output'))
-    Assert-True ($initialAutoTracker -match 'Iteration:\s+1 of 3') `
-        'Automatic-scope interactive run did not cap the iteration denominator to open ticket count.'
-    Assert-True ($initialAutoTracker -notmatch 'Iteration:\s+1 of 4') `
-        'Automatic-scope interactive run used the configured ceiling in the tracker denominator.'
-
-    Write-Host 'PASS: Invoke-Ralph tracker-state tests'
-}
-finally {
-    $env:PATH = $originalPath
-    if (Test-Path $temporaryRoot) {
-        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
     }
 }

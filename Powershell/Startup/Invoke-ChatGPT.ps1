@@ -3,7 +3,7 @@
     This script will let you have a conversation with ChatGPT.
     It shows how to keep a history of all previous messages and feed them into the REST API in order to have an ongoing conversation.
 #>
-[cmdletbinding()]
+[cmdletbinding(DefaultParameterSetName="ChatParameterSet")]
 param(
     [Parameter(ParameterSetName="ChatParameterSet")]
     [Parameter(ParameterSetName="GitCommitParameterSet")]
@@ -49,10 +49,13 @@ param(
 
 function Get-VisibleTerminalText {
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter()]
+        [object]
+        $RawUi = $Host.UI.RawUI
+    )
 
     try {
-        $rawUi = $Host.UI.RawUI
         if ($null -eq $rawUi) {
             throw "The active PowerShell host does not expose RawUI."
         }
@@ -104,6 +107,50 @@ function Add-VisibleTerminalContext {
     return "[TERMINAL OUTPUT - VISIBLE SCREEN]$([Environment]::NewLine)$terminalText$([Environment]::NewLine)[END TERMINAL OUTPUT]$([Environment]::NewLine)$([Environment]::NewLine)$UserMessage"
 }
 
+function Invoke-ChatGPTConversation {
+    [CmdletBinding()]
+    param(
+        [Parameter(ParameterSetName="ChatParameterSet")]
+        [Parameter(ParameterSetName="GitCommitParameterSet")]
+        [ValidateSet("gpt-5.1", "gpt-5", "gpt-5 mini", "gpt-5-nano", "gpt-4o-mini")]
+        [string]
+        $Model = "gpt-5-nano",
+
+        [Parameter(ParameterSetName="ChatParameterSet",
+                   ValueFromPipeline)]
+        [string[]]
+        $Message,
+
+        [Parameter(ParameterSetName="ChatParameterSet")]
+        [string]
+        $Role = "You are a helpful assistant",
+
+        [Parameter(ParameterSetName="ChatParameterSet")]
+        [switch]
+        $Interactive,
+
+        [Parameter(ParameterSetName="ChatParameterSet")]
+        [switch]
+        $IncludeTerminal,
+
+        [Parameter(ParameterSetName="PullRequestParameterSet")]
+        [switch]
+        $WritePullRequest,
+
+        [Parameter(ParameterSetName="TranslationParameterSet")]
+        [switch]
+        $WriteTranslation,
+
+        [Parameter(ParameterSetName="TranslationParameterSet",
+                   ValueFromPipeline)]
+        [string[]]
+        $Text,
+
+        [Parameter(ParameterSetName="GitCommitParameterSet")]
+        [switch]
+        $WriteGitCommit
+    )
+
 if ($WritePullRequest) {
     $Role = "Write a short pull request with title and bullet points. Do not include 'Title' or 'Bullet Points'. It should summerizes the given commits"
     $Message = @(
@@ -135,7 +182,7 @@ if ($WritePullRequest) {
     }
     if ($commit.Length -eq 0) {
         Write-Host -ForegroundColor Red "Could not write a commit message. Are there staged files?"
-        exit
+        return
     }
     $Message = @(
                     $commit
@@ -172,7 +219,7 @@ while ($true) {
         "^$" { }
         "^(q|exit)$" {
             Write-Host "Exiting.." -ForegroundColor Magenta
-            exit
+            return
         }
         "^(c|copy)$" {
             Set-Clipboard $aiResponse
@@ -230,8 +277,18 @@ while ($true) {
         $userMessage = $MessageStack.Pop()
         Write-Debug ">: $userMessage"
     } elseif ($Message.Count -ne 0 -and !$Interactive) {
-        exit
+        return
     } else {
         $userMessage = Read-Host "`n>"
     }
 }
+}
+
+# A transient test module sets this private script variable before dot-sourcing.
+# Normal dot-sourced profile invocations do not set it and retain command behavior.
+if ($script:InvokeChatGPTImportOnly) {
+    return
+}
+
+Invoke-ChatGPTConversation @PSBoundParameters
+exit

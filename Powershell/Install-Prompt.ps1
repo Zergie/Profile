@@ -18,7 +18,7 @@ function Initialize-GitPromptWatcherStoppedEvent {
     $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 24)
     $eventName = "Local\GitPromptWatcher-Stopped-$hash"
     $global:GitPromptWatcherPipeName = "GitPromptWatcher-$hash"
-    if (-not $global:GitPromptWatcherStoppedEventHandle) {
+    if (-not (Get-Variable -Name GitPromptWatcherStoppedEventHandle -Scope Global -ValueOnly -ErrorAction SilentlyContinue)) {
         $created = $false
         $global:GitPromptWatcherStoppedEventHandle = [Threading.EventWaitHandle]::new(
             $false,

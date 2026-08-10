@@ -88,32 +88,6 @@ param(
     $Color
 )
 
-$interval = switch ($PSCmdlet.ParameterSetName) {
-    'Seconds'      { [TimeSpan]::FromSeconds($Seconds) }
-    'Milliseconds' { [TimeSpan]::FromMilliseconds($Milliseconds) }
-    'Duration'     { $Duration }
-    default        { [TimeSpan]::FromMilliseconds(500) }
-}
-
-$intervalText = if ($interval.TotalSeconds -ge 1) {
-    '{0:g}' -f $interval
-} else {
-    '{0:0.###} ms' -f $interval.TotalMilliseconds
-}
-
-try {
-    $rawUI = $Host.UI.RawUI
-    $cursorSize = $rawUI.CursorSize
-    $windowSize = $rawUI.WindowSize
-    $initialCursor = $rawUI.CursorPosition
-    $rawUI.CursorPosition = $initialCursor
-    if ($windowSize.Width -lt 2 -or $windowSize.Height -lt 1) {
-        throw 'The terminal window has no usable drawing area.'
-    }
-} catch {
-    throw "Watch-Command requires a terminal host with working RawUI cursor positioning. Run it in a PowerShell 7 console or Windows Terminal. $($_.Exception.Message)"
-}
-
 function Limit-WatchLines {
     param(
         [Parameter(Mandatory)]
@@ -233,6 +207,7 @@ function Resolve-WatchColorAnchor {
     param(
         [Parameter(Mandatory)]
         [AllowEmptyCollection()]
+        [AllowEmptyString()]
         [string[]]
         $VisibleLines,
 
@@ -274,16 +249,44 @@ function Resolve-WatchColorAnchor {
     return [System.Management.Automation.Host.Coordinates]::new($WindowLeft, $WindowTop)
 }
 
-$anchor = $null
-$previousLineWidths = @()
-$renderedLineCount = 0
+function Invoke-WatchCommandLifecycle {
+    param(
+        [Parameter(Mandatory)] [scriptblock] $ScriptBlock,
+        [Parameter(Mandatory)] [TimeSpan] $Interval,
+        [Parameter(Mandatory)] [string] $IntervalText,
+        [switch] $Color,
+        $RawUi = $Host.UI.RawUI,
+        [scriptblock] $Write = { param($line) $Host.UI.Write($line) },
+        [scriptblock] $WriteLine = { param($line) $Host.UI.WriteLine($line) },
+        [scriptblock] $WriteErrorLine = { param($line) $Host.UI.WriteErrorLine($line) },
+        [scriptblock] $Sleep = { param($duration) Start-Sleep -Duration $duration },
+        [ValidateRange(0, [int]::MaxValue)] [int] $RefreshCount = 0
+    )
 
-if ($Color) {
+    try {
+        $rawUI = $RawUi
+        $cursorSize = $rawUI.CursorSize
+        $windowSize = $rawUI.WindowSize
+        $initialCursor = $rawUI.CursorPosition
+        $rawUI.CursorPosition = $initialCursor
+        if ($windowSize.Width -lt 2 -or $windowSize.Height -lt 1) {
+            throw 'The terminal window has no usable drawing area.'
+        }
+    } catch {
+        throw "Watch-Command requires a terminal host with working RawUI cursor positioning. Run it in a PowerShell 7 console or Windows Terminal. $($_.Exception.Message)"
+    }
+
+    $anchor = $null
+    $previousLineWidths = @()
+    $renderedLineCount = 0
+    $completedRefreshes = 0
+
+    if ($Color) {
     $colorAnchor = $null
     $prevTotalLines = 0
 
     try {
-        while ($true) {
+        while ($RefreshCount -eq 0 -or $completedRefreshes -lt $RefreshCount) {
             $windowSize = $rawUI.WindowSize
             $windowPosition = $rawUI.WindowPosition
             if ($windowSize.Width -lt 2 -or $windowSize.Height -lt 1) {
@@ -306,7 +309,7 @@ if ($Color) {
             if ($null -eq $colorAnchor) {
                 $colorAnchor = $rawUI.CursorPosition
                 $rawUI.CursorSize = 0
-            } else {
+                } else {
                 $visibleLines = Get-WatchVisibleLines -RawUi $rawUI `
                     -WindowPosition $windowPosition `
                     -WindowSize $windowSize
@@ -315,16 +318,16 @@ if ($Color) {
                     -WindowTop $windowPosition.Y `
                     -ProposedAnchor $colorAnchor
                 $rawUI.CursorPosition = $colorAnchor
-            }
+                }
 
             foreach ($line in $headerLines) {
-                $Host.UI.WriteLine($line)
+                & $WriteLine $line
             }
 
             try {
                 & $ScriptBlock
             } catch {
-                $Host.UI.WriteErrorLine($_)
+                & $WriteErrorLine $_
             }
 
             $curPos = $rawUI.CursorPosition
@@ -343,12 +346,15 @@ if ($Color) {
                         $windowPosition.X,
                         $row
                     )
-                    $Host.UI.Write(' ' * [Math]::Max(1, $windowSize.Width - 1))
+                    & $Write (' ' * [Math]::Max(1, $windowSize.Width - 1))
                 }
             }
             $prevTotalLines = $newTotalLines
 
-            Start-Sleep -Duration $interval
+            $completedRefreshes++
+            if ($RefreshCount -eq 0 -or $completedRefreshes -lt $RefreshCount) {
+                & $Sleep $Interval
+            }
         }
     } finally {
         if ($null -ne $colorAnchor -and $prevTotalLines -gt 0) {
@@ -365,7 +371,7 @@ if ($Color) {
                     [Math]::Max($windowPosition.Y, $finalRow)
                 )
                 if ($finalRow -eq $windowBottom - 1) {
-                    $Host.UI.WriteLine()
+                    & $WriteLine ''
                 }
             } catch {
                 # Cancellation cleanup is best effort; preserve the original exit.
@@ -375,7 +381,7 @@ if ($Color) {
     }
 } else {
     try {
-        while ($true) {
+        while ($RefreshCount -eq 0 -or $completedRefreshes -lt $RefreshCount) {
         $output = try {
             & $ScriptBlock *>&1
         } catch {
@@ -424,7 +430,7 @@ if ($Color) {
             $rawUI.CursorPosition = $initialCursor
             $rawUI.CursorSize = 0
             foreach ($line in $lines) {
-                $Host.UI.WriteLine([string]$line)
+                & $WriteLine ([string]$line)
             }
 
             $cursorAfterFirstRender = $rawUI.CursorPosition
@@ -462,13 +468,16 @@ if ($Color) {
                     $column,
                     $anchor.Y + $index
                 )
-                $Host.UI.Write($line.PadRight($writeWidth))
+                & $Write ($line.PadRight($writeWidth))
             }
         }
 
         $previousLineWidths = @($lines | ForEach-Object { ([string]$_).Length })
         $renderedLineCount = $lines.Count
-        Start-Sleep -Duration $interval
+        $completedRefreshes++
+        if ($RefreshCount -eq 0 -or $completedRefreshes -lt $RefreshCount) {
+            & $Sleep $Interval
+        }
     }
     } finally {
         if ($null -ne $anchor -and $renderedLineCount -gt 0) {
@@ -485,7 +494,7 @@ if ($Color) {
                     [Math]::Max($windowPosition.Y, $finalRow)
                 )
                 if ($finalRow -eq $windowBottom - 1) {
-                    $Host.UI.WriteLine()
+                    & $WriteLine ''
                 }
             } catch {
                 # Cancellation cleanup is best effort; preserve the original exit.
@@ -493,4 +502,21 @@ if ($Color) {
         }
         $rawUI.CursorSize = $cursorSize
     }
+}
+}
+
+if (-not $script:WatchCommandImportOnly) {
+    $interval = switch ($PSCmdlet.ParameterSetName) {
+        'Seconds'      { [TimeSpan]::FromSeconds($Seconds) }
+        'Milliseconds' { [TimeSpan]::FromMilliseconds($Milliseconds) }
+        'Duration'     { $Duration }
+        default        { [TimeSpan]::FromMilliseconds(500) }
+    }
+    $intervalText = if ($interval.TotalSeconds -ge 1) {
+        '{0:g}' -f $interval
+    } else {
+        '{0:0.###} ms' -f $interval.TotalMilliseconds
+    }
+    Invoke-WatchCommandLifecycle -ScriptBlock $ScriptBlock -Interval $interval `
+        -IntervalText $intervalText -Color:$Color
 }

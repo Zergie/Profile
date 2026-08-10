@@ -43,6 +43,7 @@ Begin {
         exit 1
     }
 
+    $password = $null
     if ((Test-Path "$PSScriptRoot\..\secrets.json")) {
         $password = Get-Content "$PSScriptRoot/../secrets.json" |
             ConvertFrom-Json |
@@ -91,7 +92,10 @@ Process {
                 "-o `"pg%d.png`""
                 " `"$($file.FullName)`""
             )
-            $gsArgsLog = ($gsArgs | Join-String -Separator " ").Replace($password, "*")
+            $gsArgsLog = $gsArgs | Join-String -Separator " "
+            if (-not [string]::IsNullOrEmpty($password)) {
+                $gsArgsLog = $gsArgsLog.Replace($password, "*")
+            }
             Write-Debug "gs $gsArgsLog"
 
             Start-Process -FilePath $gs.Source -ArgumentList $gsArgs -WorkingDirectory $renderDir -Wait -WindowStyle Hidden
@@ -176,7 +180,10 @@ Process {
                 OutFile          = $fileAs
             } |
                 ForEach-Object {
-                    $_.ArgumentListWithoutPassword = ($_.ArgumentList | Join-String -Separator " ").Replace($password, "*")
+                    $_.ArgumentListWithoutPassword = $_.ArgumentList | Join-String -Separator " "
+                    if (-not [string]::IsNullOrEmpty($password)) {
+                        $_.ArgumentListWithoutPassword = $_.ArgumentListWithoutPassword.Replace($password, "*")
+                    }
                     $_
                 } |
                 ForEach-Object {
