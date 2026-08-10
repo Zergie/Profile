@@ -203,7 +203,7 @@ function ConvertTo-NormalizedAgentMessage {
 
     if ($Name -eq 'codex') {
         if (
-            $Event.type -ne 'item.completed' -or
+            (Get-JsonPropertyValue -InputObject $Event -Path 'type') -ne 'item.completed' -or
             (Get-JsonPropertyValue -InputObject $Event -Path 'item.type') -ne 'agent_message'
         ) {
             return $null
@@ -219,7 +219,9 @@ function ConvertTo-NormalizedAgentMessage {
         )
     }
     else {
-        if ($Event.type -ne 'assistant.message') { return $null }
+        if ((Get-JsonPropertyValue -InputObject $Event -Path 'type') -ne 'assistant.message') {
+            return $null
+        }
 
         $text = Get-FirstJsonString -InputObject $Event -Paths @(
             'data.content', 'data.text', 'data.message.content', 'data.message.text',
@@ -949,6 +951,7 @@ function Invoke-Agent {
         LastWasBlank = $false
     }
     $hasCompletedMessage = $false
+    $typedOutputCellCount = 0
     & $CommandPath @arguments 2>&1 |
         ForEach-Object {
             $rawLine = $_.ToString()
@@ -1030,9 +1033,11 @@ function Invoke-Agent {
                     $rows = Split-AgentOutputContent -Content ([string]$text) `
                         -InnerWidth ([int]$WorkboardState.InnerWidth)
                     foreach ($row in $rows) {
+                        $typedOutputCellCount += [int]$row.Width
                         Write-TypedAgentOutputRow -Content $row.Text `
                             -ContentWidth ([int]$row.Width) `
                             -InnerWidth ([int]$WorkboardState.InnerWidth) `
+                            -StreamTextCellCount $typedOutputCellCount `
                             -WorkboardState $WorkboardState
                     }
                 }
@@ -2380,7 +2385,11 @@ function Get-TypedAgentOutputPlan {
 
         [Parameter(Mandatory)]
         [int]
-        $InnerWidth
+        $InnerWidth,
+
+        [Parameter()]
+        [int]
+        $StreamTextCellCount = 0
     )
 
     $frame = "`e[2;38;5;8m"
@@ -2391,6 +2400,9 @@ function Get-TypedAgentOutputPlan {
 
     $index = 0
     $cellsSincePause = 0
+    $speedMultiplier = Get-TypedAgentOutputSpeedMultiplier `
+        -StreamTextCellCount $StreamTextCellCount
+    $pauseIntervalCells = 2 * $speedMultiplier
     while ($index -lt $Content.Length) {
         $controlLength = Get-TerminalControlSequenceLength -Text $Content -StartIndex $index
         if ($controlLength -gt 0) {
@@ -2408,9 +2420,9 @@ function Get-TypedAgentOutputPlan {
         $elementWidth = Get-DisplayCellWidth -Text $element
         if ($elementWidth -gt 0) {
             $cellsSincePause += $elementWidth
-            if ($cellsSincePause -ge 2) {
+            if ($cellsSincePause -ge $pauseIntervalCells) {
                 $operations.Add([pscustomobject]@{ Kind = 'Pause'; Duration = 8 })
-                $cellsSincePause %= 2
+                $cellsSincePause -= $pauseIntervalCells
             }
         }
         $index += $elementLength
@@ -2418,6 +2430,19 @@ function Get-TypedAgentOutputPlan {
 
     $operations.Add([pscustomobject]@{ Kind = 'WriteLine'; Text = "$pad ${frame}│${reset}" })
     return @($operations)
+}
+
+function Get-TypedAgentOutputSpeedMultiplier {
+    param(
+        [Parameter()]
+        [int]
+        $StreamTextCellCount = 0
+    )
+
+    # Keep the existing pace for short output, then linearly accelerate until
+    # the typing animation reaches its 16x cap at 1,280 display cells.
+    $progress = [Math]::Clamp((([double]$StreamTextCellCount - 80) / 1200), 0.0, 1.0)
+    return 1.0 + (15.0 * $progress)
 }
 
 function Invoke-TerminalOutputPlan {
@@ -2461,12 +2486,16 @@ function Write-TypedAgentOutputRow {
         $InnerWidth,
 
         [Parameter()]
+        [int]
+        $StreamTextCellCount = 0,
+
+        [Parameter()]
         [hashtable]
         $WorkboardState
     )
 
     $plan = Get-TypedAgentOutputPlan -Content $Content -ContentWidth $ContentWidth `
-        -InnerWidth $InnerWidth
+        -InnerWidth $InnerWidth -StreamTextCellCount $StreamTextCellCount
     Invoke-TerminalOutputPlan -Operations $plan -WorkboardState $WorkboardState
 }
 

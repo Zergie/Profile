@@ -123,36 +123,57 @@ Describe 'Internal' -Tag 'Internal' {
         $repositoryState | Should -BeNullOrEmpty
     }
 
+    It 'ignores agent events without a type under strict mode' {
+        $event = [pscustomobject]@{
+            item = [pscustomobject]@{ type = 'agent_message'; text = 'hello' }
+        }
+        $seen = [System.Collections.Generic.HashSet[string]]::new(
+            [System.StringComparer]::Ordinal
+        )
+        $result = $null
+
+        {
+            $result = & $script:ralphModule {
+                param($InputEvent, $SeenMessageIds)
+                Set-StrictMode -Version Latest
+                ConvertTo-NormalizedAgentMessage -Name codex -Event $InputEvent `
+                    -SeenMessageIds $SeenMessageIds
+            } $event $seen
+        } | Should -Not -Throw
+
+        $result | Should -BeNullOrEmpty
+    }
+
     It 'resolves Ralph invocation modes and effective configuration in process' -TestCases @(
         @{
             Name = 'automatic defaults'
             Bound = @{}
             List = $false; Cleanup = $false; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
-            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-luna'; EffectiveEffort = 'medium'
         },
         @{
             Name = 'feature scope'
             Bound = @{ Feature = 'feature' }
             List = $false; Cleanup = $false; Archive = ''; Agent = 'copilot'; Model = ''; Effort = ''; Feature = 'feature'
-            Mode = 'Run'; Scope = 'feature'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+            Mode = 'Run'; Scope = 'feature'; EffectiveModel = 'gpt-5.6-luna'; EffectiveEffort = 'medium'
         },
         @{
             Name = 'archive mode'
             Bound = @{ Archive = 'feature' }
             List = $false; Cleanup = $false; Archive = 'feature'; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
-            Mode = 'Archive'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+            Mode = 'Archive'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-luna'; EffectiveEffort = 'medium'
         },
         @{
             Name = 'list mode'
             Bound = @{ List = $true }
             List = $true; Cleanup = $false; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
-            Mode = 'List'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+            Mode = 'List'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-luna'; EffectiveEffort = 'medium'
         },
         @{
             Name = 'cleanup mode'
             Bound = @{ Cleanup = $true }
             List = $false; Cleanup = $true; Archive = ''; Agent = 'codex'; Model = ''; Effort = ''; Feature = ''
-            Mode = 'Cleanup'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-terra'; EffectiveEffort = 'medium'
+            Mode = 'Cleanup'; Scope = 'automatic'; EffectiveModel = 'gpt-5.6-luna'; EffectiveEffort = 'medium'
         },
         @{
             Name = 'custom Codex configuration'
@@ -1191,7 +1212,7 @@ switch ($env:RALPH_SCENARIO) {
         $result.ExitCode | Should -Be 0 -Because $result.Output
         $result.Arguments | Should -Contain '--json'
         $result.Arguments | Should -Contain '--model'
-        $result.Arguments | Should -Contain 'gpt-5.6-terra'
+        $result.Arguments | Should -Contain 'gpt-5.6-luna'
         $result.Arguments | Should -Contain 'model_reasoning_effort="medium"'
         [regex]::Matches($result.Output, 'completed message').Count | Should -Be 1
         $result.Output | Should -Not -Match 'transient output'
