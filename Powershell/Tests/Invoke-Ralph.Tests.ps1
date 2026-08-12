@@ -1155,12 +1155,21 @@ else {
 
 switch ($env:RALPH_SCENARIO) {
     'agent-failure' {
-        Write-Output 'agent process failed'
+        Write-Output 'codex raw tool result'
+        Write-Output 'codex stderr diagnostic'
         exit 7
     }
     'invalid-handoff' {
         Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
         Write-Output 'agent omitted the required handoff'
+        break
+    }
+    'scratch-staged' {
+        Set-Content -LiteralPath (Join-Path $root '.scratch\agent-staged.txt') -Value 'must remain local'
+        & git add --force -- .scratch
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
+        Add-Content -LiteralPath $progress -Value $record
         break
     }
     'automatic' {
@@ -1236,7 +1245,7 @@ switch ($env:RALPH_SCENARIO) {
             ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 5 }
         }
         if ($env:RALPH_SCENARIO -ne 'rich-markdown') {
-            [Console]::WriteLine("`e[36mraw diagnostic`e[0m")
+            Write-Output "`e[36mraw diagnostic`e[0m"
         }
     }
 }
@@ -1319,6 +1328,15 @@ switch ($env:RALPH_SCENARIO) {
                 Invocations = @(Get-Content -LiteralPath $invocationLog -ErrorAction SilentlyContinue)
             }
         }
+
+        function Get-NonScratchStatus {
+            param([Parameter(Mandatory)][string] $Repository)
+
+            Invoke-Git $Repository @(
+                'status', '--porcelain', '--untracked-files=all', '--', '.',
+                ':(exclude).scratch/**'
+            )
+        }
     }
 
 
@@ -1347,8 +1365,22 @@ switch ($env:RALPH_SCENARIO) {
             Should -Match '(?m)^Status: done\r?$'
         Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
             Should -Be 'ralph: feature/01, FEATURE completed'
-        Invoke-Git $result.Repository @('status', '--porcelain') |
-            Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
+    }
+
+    It 'removes agent-staged scratch paths before committing' {
+        $result = Invoke-RalphCommandScenario -Name 'scratch-staged' -Scenario 'scratch-staged'
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD') |
+            Should -Not -Match '\.scratch[\\/]'
+        Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD') |
+            Should -Match '(?m)^work\.txt$'
+        Invoke-Git $result.Repository @('diff', '--cached', '--name-only') | Should -Be ''
+        Test-Path -LiteralPath (Join-Path $result.Repository '.scratch\agent-staged.txt') |
+            Should -BeTrue
+        Invoke-Git $result.Repository @('ls-files', '--cached', '--', '.scratch/agent-staged.txt') |
+            Should -BeNullOrEmpty
     }
 
     It 'runs the Copilot success lifecycle with its wire configuration' {
@@ -1366,17 +1398,25 @@ switch ($env:RALPH_SCENARIO) {
         $result.Output | Should -Match ([regex]::Escape("`e[36mraw diagnostic`e[0m"))
         Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
             Should -Be 'ralph: feature/01, FEATURE completed'
-        Invoke-Git $result.Repository @('status', '--porcelain') |
-            Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     It 'surfaces a nonzero agent exit without committing' {
-        $result = Invoke-RalphCommandScenario -Name 'agent-failure' -Agent copilot -Scenario 'agent-failure'
+        $result = Invoke-RalphCommandScenario -Name 'agent-failure' -Agent codex -Scenario 'agent-failure'
 
         $result.ExitCode | Should -Be 1 -Because $result.Output
-        $result.Output | Should -Match 'copilot failed with exit code 7'
+        $result.Output | Should -Match 'codex failed with exit code 7'
+        $result.Output | Should -Not -Match 'codex raw tool result|codex stderr diagnostic'
         Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
         Invoke-Git $result.Repository @('diff', '--cached', '--name-only') | Should -Be ''
+    }
+
+    It 'renders only completed Codex agent messages' {
+        $result = Invoke-RalphCommandScenario -Name 'codex-noisy-success' -Agent codex
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Output | Should -Match 'completed message'
+        $result.Output | Should -Not -Match 'raw diagnostic|transient output'
     }
 
     It 'rejects an invalid handoff before staging and restores the terminal' {
@@ -1414,8 +1454,7 @@ switch ($env:RALPH_SCENARIO) {
         $result.Output | Should -Match ([regex]::Escape("`e[r"))
         $result.Output | Should -Match ([regex]::Escape("`e[?25h"))
         $result.Output | Should -Match 'Requested scope complete\.'
-        Invoke-Git $result.Repository @('status', '--porcelain') |
-            Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     It 'renders an impossible-width interactive table as vertical records' {
@@ -1453,8 +1492,7 @@ switch ($env:RALPH_SCENARIO) {
         $result.Invocations | Should -BeNullOrEmpty
         (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\feature\issues\01.md') -Raw) |
             Should -Match '(?m)^Status: ready-for-agent\r?$'
-        Invoke-Git $result.Repository @('status', '--porcelain') |
-            Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     It 'runs archive mode without invoking an agent or changing progress history' {
@@ -1530,9 +1568,9 @@ switch ($env:RALPH_SCENARIO) {
         $progress = [System.IO.File]::ReadAllBytes($progressPath)
         $progress[$progress.Length - 1] | Should -Be 10
         @(Get-Content -LiteralPath $progressPath).Count | Should -Be 2
-        Invoke-Git $result.Repository @('show', '--format=', '--name-status', 'HEAD~1') |
-            Should -Match '^D\s+\.scratch/progress\.jsonl$'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD~1') |
+            Should -Not -Match '\.scratch[\\/]'
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     It 'reconciles only a selected preflight scope, archives it, and suppresses the agent' {
@@ -1624,8 +1662,7 @@ Status: ready-for-agent
         }
         Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD') |
             Should -Not -Match '\.scratch[\\/]done[\\/]feature[\\/]issues'
-        Invoke-Git $result.Repository @('status', '--porcelain') |
-            Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     It 'iterates active features in priority order until all work is archived' {
@@ -1663,7 +1700,7 @@ Status: ready-for-agent
         $result.Output | Should -Match '-List cannot be combined with: Agent'
         $result.Invocations | Should -BeNullOrEmpty
         Invoke-Git $result.Repository @('rev-list', '--count', 'HEAD') | Should -Be '1'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
     AfterAll {

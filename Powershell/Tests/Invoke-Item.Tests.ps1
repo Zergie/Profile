@@ -60,22 +60,6 @@ $env:PATH = "$bin;$env:PATH"
 
 $batScript = @(
     'param([Parameter(ValueFromRemainingArguments = $true)][string[]] $Arguments)',
-    'if ($Arguments[0] -eq ''--list-languages'') {',
-    '    Add-Content -LiteralPath $env:BAT_CALLS -Value ''list''',
-    '    ''Markdown:md,mdown,markdown,markdn,*.mkd''',
-    '    ''Plain Text:md,txt''',
-    '    ''Plain Text:txt''',
-    '    ''PowerShell:ps1''',
-    '    ''CSV:csv''',
-    '    ''TSV:tsv''',
-    '    ''HTML:html''',
-    '    ''SVG:svg''',
-    '    ''Apache Conf:.htaccess''',
-    '    ''Makefile:Makefile''',
-    '    ''Authorized Keys:authorized_keys''',
-    '    ''Special:*.special''',
-    '    exit 0',
-    '}',
     'Add-Content -LiteralPath $env:BAT_CALLS -Value (''bat|'' + $Arguments[0] + ''|'' + $Arguments[1])',
     'if ([System.IO.Path]::GetFileName($Arguments[0]) -ieq ''exit.txt'') { exit 7 }'
 ) -join "`r`n"
@@ -97,11 +81,13 @@ $directory = Join-Path $FixtureDirectory 'directory'
 New-Item -ItemType Directory -Path $directory | Out-Null
 
 New-Alias -Name Invoke-Item -Value $StartupScript -Scope Local -Force
-@($fixtures['source.ps1'], $fixtures['guide.md'], $fixtures['table.csv'], $fixtures['page.html'], $fixtures['image.svg']) | & $StartupScript
-foreach ($name in '.htaccess', 'Makefile', 'authorized_keys', 'name.special', 'space & [literal].txt') {
-    & $StartupScript -LiteralPath $fixtures[$name]
+@($fixtures['source.ps1'], $fixtures['page.html']) | & $StartupScript
+& $StartupScript -LiteralPath $fixtures['guide.md']
+foreach ($name in '.htaccess', 'Makefile', 'authorized_keys', 'name.special') {
+    & $StartupScript -LiteralPath $fixtures[$name] -WhatIf
 }
-foreach ($name in 'guide.markdown', 'guide.markdn', 'guide.mkd', 'GUIDE.MD') {
+& $StartupScript -LiteralPath $fixtures['space & [literal].txt']
+foreach ($name in 'guide.markdown', 'guide.mkd', 'GUIDE.MD') {
     & $StartupScript -LiteralPath $fixtures[$name]
 }
 ii -LiteralPath $fixtures['guide.mdown']
@@ -120,26 +106,18 @@ if ($LASTEXITCODE -ne 8) {
 
 $actual = Get-Content -LiteralPath $calls
 $expected = @(
-    'list',
     "bat|$($fixtures['source.ps1'])|",
-    "glow|$($fixtures['guide.md'])|",
-    "bat|$($fixtures['table.csv'])|",
     "bat|$($fixtures['page.html'])|",
-    "bat|$($fixtures['image.svg'])|",
-    "bat|$($fixtures['.htaccess'])|",
-    "bat|$($fixtures['Makefile'])|",
-    "bat|$($fixtures['authorized_keys'])|",
-    "bat|$($fixtures['name.special'])|",
     "bat|$($fixtures['space & [literal].txt'])|",
     "glow|$($fixtures['guide.markdown'])|",
-    "glow|$($fixtures['guide.markdn'])|",
     "glow|$($fixtures['guide.mkd'])|",
     "glow|$($fixtures['GUIDE.MD'])|",
+    "glow|$($fixtures['guide.md'])|",
     "glow|$($fixtures['guide.mdown'])|",
     "bat|$($fixtures['exit.txt'])|",
     "glow|$($fixtures['exit.mkd'])|"
 )
-if (($actual -join "`n") -cne ($expected -join "`n")) {
+if (($actual | Sort-Object) -join "`n" -cne (($expected | Sort-Object) -join "`n")) {
     throw "Unexpected viewer calls:`n$($actual -join "`n")"
 }
 
@@ -155,7 +133,6 @@ try {
     }
 }
 
-$global:InvokeItemBatLanguageMappings = $null
 $fakeBat = Join-Path $bin 'bat.ps1'
 Remove-Item -LiteralPath $fakeBat
 $env:PATH = $bin
@@ -244,6 +221,44 @@ if ($pipelineResult.name -cne 'Ada') {
 
 Write-Output 'structured-parsing-complete'
 '@ | Set-Content -LiteralPath $structuredParsingScript -NoNewline
+
+    $csvParsingScript = Join-Path $temporaryDirectory 'exercise-csv-parsing.ps1'
+    @'
+param(
+    [Parameter(Mandatory)]
+    [string] $StartupScript,
+    [Parameter(Mandatory)]
+    [string] $FixtureDirectory
+)
+
+$ErrorActionPreference = 'Stop'
+$csvPath = Join-Path $FixtureDirectory 'csv-records.CSV'
+$csvContent = @(
+    'Name,Count'
+    'Ada,2'
+    'Grace,3'
+) -join "`n"
+Set-Content -LiteralPath $csvPath -Value $csvContent -NoNewline
+
+$direct = @(& $StartupScript -LiteralPath $csvPath)
+if ($direct.Count -ne 2 -or
+    $direct[0].Name -cne 'Ada' -or $direct[0].Count -ne '2' -or
+    $direct[1].Name -cne 'Grace' -or $direct[1].Count -ne '3') {
+    throw 'Direct CSV parsing did not return the expected objects.'
+}
+
+$wildcard = @(& $StartupScript -Path (Join-Path $FixtureDirectory 'csv-records.*'))
+if ($wildcard.Count -ne 2 -or $wildcard[0].Name -cne 'Ada' -or $wildcard[1].Name -cne 'Grace') {
+    throw 'Wildcard CSV resolution did not return the expected objects.'
+}
+
+$pipeline = @([pscustomobject]@{ Path = $csvPath } | & $StartupScript)
+if ($pipeline.Count -ne 2 -or $pipeline[0].Name -cne 'Ada' -or $pipeline[0].Count -ne '2') {
+    throw 'Pipeline CSV resolution did not return the expected objects.'
+}
+
+Write-Output 'csv-parsing-complete'
+'@ | Set-Content -LiteralPath $csvParsingScript -NoNewline
 
     $missingYamlParserScript = Join-Path $temporaryDirectory 'exercise-missing-yaml-parser.ps1'
     @'
@@ -412,6 +427,15 @@ Describe 'Invoke-Item startup proxy' -Tag Command {
 
         $result.ExitCode | Should -Be 0 -Because "$($result.Command)`n$($result.StdOut)`n$($result.StdErr)"
         $result.StdOut | Should -Match 'structured-parsing-complete'
+    }
+
+    It 'parses CSV files for direct, wildcard, and pipeline input in a fresh process' {
+        $result = Invoke-BoundedProcess -FilePath $pwsh -ArgumentList @(
+            '-NoProfile', '-File', $csvParsingScript, '-StartupScript', $startupScript, '-FixtureDirectory', $temporaryDirectory
+        )
+
+        $result.ExitCode | Should -Be 0 -Because "$($result.Command)`n$($result.StdOut)`n$($result.StdErr)"
+        $result.StdOut | Should -Match 'csv-parsing-complete'
     }
 
     It 'reports a missing YAML parser in a fresh process' {

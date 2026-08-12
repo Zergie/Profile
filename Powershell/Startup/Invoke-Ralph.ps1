@@ -141,6 +141,32 @@ function Invoke-NativeText {
     return ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
 }
 
+function Remove-ProtectedPathsFromIndex {
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $GitPath
+    )
+
+    Invoke-NativeText -FilePath $GitPath -ArgumentList @(
+        'reset',
+        '--quiet',
+        '--',
+        '.scratch'
+    ) | Out-Null
+
+    $protectedEntries = Invoke-NativeText -FilePath $GitPath -ArgumentList @(
+        'diff',
+        '--cached',
+        '--name-only',
+        '--',
+        '.scratch'
+    )
+    if (-not [string]::IsNullOrWhiteSpace($protectedEntries)) {
+        throw "Protected .scratch paths remain staged before commit:`n$protectedEntries"
+    }
+}
+
 function Get-JsonPropertyValue {
     param(
         [Parameter(Mandatory)]
@@ -874,6 +900,48 @@ function ConvertTo-RalphMarkdown {
     }
 }
 
+function Invoke-CodexProcess {
+    param(
+        [Parameter(Mandatory)][string] $CommandPath,
+        [Parameter(Mandatory)][string[]] $ArgumentList
+    )
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    if ([System.IO.Path]::GetExtension($CommandPath) -ieq '.ps1') {
+        $startInfo.FileName = (Get-Command pwsh -ErrorAction Stop).Source
+        [void]$startInfo.ArgumentList.Add('-NoProfile')
+        [void]$startInfo.ArgumentList.Add('-File')
+        [void]$startInfo.ArgumentList.Add($CommandPath)
+    }
+    else {
+        $startInfo.FileName = $CommandPath
+    }
+    foreach ($argument in $ArgumentList) {
+        [void]$startInfo.ArgumentList.Add([string]$argument)
+    }
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.WorkingDirectory = (Get-Location).Path
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) {
+        throw "Could not start Codex command '$CommandPath'."
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+
+    return [pscustomobject]@{
+        Output   = $stdoutTask.Result -split '\r?\n'
+        ExitCode = $process.ExitCode
+    }
+}
+
 function Invoke-Agent {
     param(
         [Parameter(Mandatory)]
@@ -952,8 +1020,16 @@ function Invoke-Agent {
     }
     $hasCompletedMessage = $false
     $typedOutputCellCount = 0
-    & $CommandPath @arguments 2>&1 |
-        ForEach-Object {
+    if ($Name -eq 'codex' -and [System.IO.Path]::GetExtension($CommandPath) -ine '.ps1') {
+        $codexResult = Invoke-CodexProcess -CommandPath $CommandPath -ArgumentList $arguments
+        $agentOutput = $codexResult.Output
+        $agentExitCode = $codexResult.ExitCode
+    }
+    else {
+        $agentOutput = & $CommandPath @arguments 2>&1
+        $agentExitCode = $LASTEXITCODE
+    }
+    $agentOutput | ForEach-Object {
             $rawLine = $_.ToString()
             $lines.Add($rawLine)
             $text = $null
@@ -961,7 +1037,7 @@ function Invoke-Agent {
                 $event = $rawLine | ConvertFrom-Json -ErrorAction Stop
             }
             catch {
-                if (-not [string]::IsNullOrEmpty($rawLine)) {
+                if ($Name -ne 'codex' -and -not [string]::IsNullOrEmpty($rawLine)) {
                     $text = $rawLine
                 }
                 $event = $null
@@ -1064,10 +1140,10 @@ function Invoke-Agent {
                     }
                 }
             }
-        }
+    }
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Name failed with exit code $LASTEXITCODE."
+    if ($agentExitCode -ne 0) {
+        throw "$Name failed with exit code $agentExitCode."
     }
 
     return $lines -join [Environment]::NewLine
@@ -3311,7 +3387,11 @@ if ($invocation.Mode -eq 'Cleanup') {
 
 $gitStatus = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
     'status',
-    '--porcelain'
+    '--porcelain',
+    '--untracked-files=all',
+    '--',
+    '.',
+    ':(exclude).scratch/**'
 )
 if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     throw 'The Git working tree is not clean. Commit or stash all changes before running Invoke-Ralph.'
@@ -3567,14 +3647,13 @@ before selecting another feature.
         $commitSubject += ', FEATURE completed'
     }
 
-    Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
-        'rm',
-        '--cached',
-        '--ignore-unmatch',
+        'add',
+        '--all',
         '--',
-        $progressFile
+        '.'
     ) | Out-Null
+    Remove-ProtectedPathsFromIndex -GitPath $git.Source
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
         'commit',
         '--message',

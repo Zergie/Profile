@@ -48,109 +48,35 @@ dynamicparam
 
 begin
 {
-function Get-InvokeItemBatLanguageMappings {
-    if ($null -ne $global:InvokeItemBatLanguageMappings) {
-        return $global:InvokeItemBatLanguageMappings
+    # This is the single editable policy for FileSystem file routing.
+    $fileTypeHandlers = [ordered]@{
+        '.json' = 'Json'
+        '.xml'  = 'Xml'
+        '.yaml' = 'Yaml'
+        '.yml'  = 'Yaml'
+        '.csv'  = 'Csv'
+        '.md' = 'glow'
+        '.markdown' = 'glow'
+        '.mdown' = 'glow'
+        '.mkdn' = 'glow'
+        '.mkd' = 'glow'
+        '.txt' = 'bat'
+        '.log' = 'bat'
+        '.ps1' = 'bat'
+        '.psm1' = 'bat'
+        '.psd1' = 'bat'
+        '.cs' = 'bat'
+        '.js' = 'bat'
+        '.ts' = 'bat'
+        '.py' = 'bat'
+        '.sh' = 'bat'
+        '.sql' = 'bat'
+        '.html' = 'bat'
+        '.css' = 'bat'
+        '.toml' = 'bat'
+        '.ini' = 'bat'
+        '.conf' = 'bat'
     }
-
-    if ($null -eq (Get-Command bat -ErrorAction SilentlyContinue)) {
-        throw "Unable to classify FileSystem files because the required 'bat' command was not found."
-    }
-
-    $languageLines = @(& bat --list-languages)
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to load bat language mappings because 'bat --list-languages' exited with code $LASTEXITCODE."
-    }
-
-    $mappings = [ordered]@{
-        Markdown = [System.Collections.Generic.List[string]]::new()
-        Text     = [System.Collections.Generic.List[string]]::new()
-    }
-
-    foreach ($languageLine in $languageLines) {
-        $parts = $languageLine -split ':', 2
-        if ($parts.Count -ne 2) {
-            continue
-        }
-
-        $patterns = $parts[1] -split ',' |
-            ForEach-Object { $_.Trim() } |
-            Where-Object { $_.Length -gt 0 }
-
-        foreach ($pattern in $patterns) {
-            if ($parts[0].Trim() -ieq 'Markdown') {
-                $mappings.Markdown.Add($pattern)
-            } else {
-                $mappings.Text.Add($pattern)
-            }
-        }
-    }
-
-    $global:InvokeItemBatLanguageMappings = [pscustomobject]$mappings
-    return $global:InvokeItemBatLanguageMappings
-}
-
-function Test-InvokeItemBatPattern {
-    param(
-        [Parameter(Mandatory)]
-        [string]
-        $Path,
-
-        [Parameter(Mandatory)]
-        [string]
-        $Pattern
-    )
-
-    $fileName = [System.IO.Path]::GetFileName($Path)
-    if ($Pattern.IndexOfAny([char[]]'*?[') -ge 0) {
-        $wildcard = [System.Management.Automation.WildcardPattern]::new(
-            $Pattern,
-            [System.Management.Automation.WildcardOptions]::IgnoreCase)
-        return $wildcard.IsMatch($fileName) -or $wildcard.IsMatch(($Path -replace '\\', '/'))
-    }
-
-    return $fileName -ieq $Pattern -or $fileName.EndsWith(".$Pattern", [System.StringComparison]::OrdinalIgnoreCase)
-}
-
-function Get-InvokeItemViewer {
-    param(
-        [Parameter(Mandatory)]
-        [string]
-        $Path
-    )
-
-    $mappings = Get-InvokeItemBatLanguageMappings
-    foreach ($pattern in $mappings.Markdown) {
-        if (Test-InvokeItemBatPattern -Path $Path -Pattern $pattern) {
-            return 'glow'
-        }
-    }
-
-    foreach ($pattern in $mappings.Text) {
-        if (Test-InvokeItemBatPattern -Path $Path -Pattern $pattern) {
-            return 'bat'
-        }
-    }
-
-    return $null
-}
-
-function Get-InvokeItemStructuredFormat {
-    param(
-        [Parameter(Mandatory)]
-        [string]
-        $Path
-    )
-
-    switch ([System.IO.Path]::GetExtension($Path)) {
-        { $_ -ieq '.json' } { return 'Json' }
-        { $_ -ieq '.xml' } { return 'Xml' }
-        { $_ -ieq '.yaml' } { return 'Yaml' }
-        { $_ -ieq '.yml' } { return 'Yaml' }
-    }
-
-    return $null
-}
 
     $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand(
         'Microsoft.PowerShell.Management\Invoke-Item',
@@ -197,38 +123,51 @@ process
 
         foreach ($item in $resolvedItems) {
             if ($item.PSProvider.Name -eq 'FileSystem' -and -not $item.PSIsContainer) {
-                $structuredFormat = Get-InvokeItemStructuredFormat -Path $item.FullName
-                if ($null -ne $structuredFormat) {
-                    if ($PSCmdlet.ShouldProcess($item.FullName, "Parse $structuredFormat")) {
+                $extension = [System.IO.Path]::GetExtension($item.FullName).ToLowerInvariant()
+                $fileTypeHandler = $fileTypeHandlers[$extension]
+                if ($fileTypeHandler -eq 'Native') {
+                    $fallbackParameters = @{ LiteralPath = $item.PSPath }
+                    foreach ($entry in $PSBoundParameters.GetEnumerator()) {
+                        if ($entry.Key -notin 'Path', 'LiteralPath', 'Filter', 'Include', 'Exclude') {
+                            $fallbackParameters[$entry.Key] = $entry.Value
+                        }
+                    }
+                    & $wrappedCmd @fallbackParameters
+                    continue
+                }
+
+                if ($fileTypeHandler -in 'Json', 'Xml', 'Yaml', 'Csv') {
+                    if ($PSCmdlet.ShouldProcess($item.FullName, "Parse $fileTypeHandler")) {
                         try {
                             $content = Microsoft.PowerShell.Management\Get-Content -LiteralPath $item.FullName -Raw -ErrorAction Stop
-                            if ($structuredFormat -eq 'Json') {
+                            if ($fileTypeHandler -eq 'Json') {
                                 $content | Microsoft.PowerShell.Utility\ConvertFrom-Json
-                            } elseif ($structuredFormat -eq 'Xml') {
+                            } elseif ($fileTypeHandler -eq 'Xml') {
                                 [xml]$content
-                            } else {
+                            } elseif ($fileTypeHandler -eq 'Yaml') {
                                 $yamlCommand = Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue
                                 if ($null -eq $yamlCommand) {
                                     throw "Unable to parse YAML files because the required 'ConvertFrom-Yaml' command was not found."
                                 }
 
                                 $content | & $yamlCommand
+                            } else {
+                                $content | Microsoft.PowerShell.Utility\ConvertFrom-Csv
                             }
                         } catch {
-                            $message = "Unable to parse $structuredFormat file '$($item.FullName)': $($_.Exception.Message)"
+                            $message = "Unable to parse $fileTypeHandler file '$($item.FullName)': $($_.Exception.Message)"
                             throw [System.InvalidOperationException]::new($message, $_.Exception)
                         }
                     }
                     continue
                 }
 
-                $viewer = Get-InvokeItemViewer -Path $item.FullName
-                if ($null -ne $viewer) {
-                    if ($PSCmdlet.ShouldProcess($item.FullName, "View with $viewer")) {
-                        if ($null -eq (Get-Command $viewer -ErrorAction SilentlyContinue)) {
-                            throw "Unable to view Markdown files because the required '$viewer' command was not found."
+                if ($fileTypeHandler -in 'glow', 'bat') {
+                    if ($PSCmdlet.ShouldProcess($item.FullName, "View with $fileTypeHandler")) {
+                        if ($null -eq (Get-Command $fileTypeHandler -ErrorAction SilentlyContinue)) {
+                            throw "Unable to view files because the required '$fileTypeHandler' command was not found."
                         }
-                        & $viewer $item.FullName
+                        & $fileTypeHandler $item.FullName
                     }
                     continue
                 }
