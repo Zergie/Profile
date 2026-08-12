@@ -100,6 +100,7 @@ BeforeAll {
             Environment = $environment
             Key = $key
             PipeName = "GitPromptWatcher-$key"
+            NotificationPipeName = "GitPromptWatcher-Notifications-$key"
             StoppedEvent = $stoppedEvent
             WorkerPids = [Collections.Generic.List[int]]::new()
         }
@@ -189,17 +190,18 @@ BeforeAll {
     function Connect-TestWatcherPipe {
         param(
             [Parameter(Mandatory)] $Fixture,
+            [string] $PipeName = $Fixture.PipeName,
             [int] $TimeoutSeconds = 5,
             $DiagnosticWorker
         )
 
         $pipe = [IO.Pipes.NamedPipeClientStream]::new(
-            '.', $Fixture.PipeName, [IO.Pipes.PipeDirection]::InOut,
+            '.', $PipeName, [IO.Pipes.PipeDirection]::InOut,
             [IO.Pipes.PipeOptions]::Asynchronous,
             [Security.Principal.TokenImpersonationLevel]::Impersonation
         )
         try {
-            Wait-TestCondition -Operation "connection to watcher pipe '$($Fixture.PipeName)'" `
+            Wait-TestCondition -Operation "connection to watcher pipe '$PipeName'" `
                 -TimeoutSeconds $TimeoutSeconds -Condition {
                     try {
                         $pipe.Connect(100)
@@ -305,6 +307,20 @@ AfterAll {
 }
 
 Describe 'Invoke-GitPromptWatcher internals' -Tag 'Internal' {
+    It 'is the single runtime script for watcher control and prompt installation' {
+        $scripts = @(Get-ChildItem -Path (Join-Path $PSScriptRoot '..') -Recurse -File -Filter 'Invoke-Git*.ps1')
+        $runtimeScripts = @($scripts | Where-Object FullName -NotLike '*\Tests\*')
+        $testScripts = @($scripts | Where-Object Name -Like '*.Tests.ps1')
+
+        $runtimeScripts | Should -HaveCount 1
+        $runtimeScripts[0].FullName | Should -Be ([IO.Path]::GetFullPath($script:watcherScript))
+        $testScripts | Should -HaveCount 1
+        $testScripts[0].FullName | Should -Be ([IO.Path]::GetFullPath($PSCommandPath))
+        Test-Path -LiteralPath (Join-Path $PSScriptRoot '..\Install-Prompt.ps1') |
+            Should -BeFalse
+        Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\Microsoft.PowerShell_profile.ps1') |
+            Should -Match ([regex]::Escape('. "$PSScriptRoot\Startup\Invoke-GitPromptWatcher.ps1" -InstallPrompt'))
+    }
     It 'imports private request behavior without starting a worker' {
         & $script:watcherModule {
             Get-Command Invoke-GitPromptWatcherRequest | Should -Not -BeNullOrEmpty
@@ -719,6 +735,55 @@ Describe 'Invoke-GitPromptWatcher lifecycle' -Tag 'Command' {
         (& $script:watcherScript -Restart).state | Should -Be 'Healthy'
     }
 
+    It 'stays alive while a prompt notification subscriber is connected' {
+        $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '2'
+        $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
+        $worker = Start-TestWatcherWorker -Fixture $script:lifecycleFixture
+        Wait-WatcherStatus -Fixture $script:lifecycleFixture -ExpectedState Healthy -DiagnosticWorker $worker | Out-Null
+        $subscriberJob = Start-ThreadJob -ScriptBlock {
+            param($PipeName)
+            $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+                '.', $PipeName, [IO.Pipes.PipeDirection]::InOut,
+                [IO.Pipes.PipeOptions]::Asynchronous,
+                [Security.Principal.TokenImpersonationLevel]::Impersonation
+            )
+            try {
+                $pipe.Connect(2000)
+                $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+                $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+                try {
+                    $writer.AutoFlush = $true
+                    $writer.WriteLine('{"type":"Subscribe"}')
+                    $reader.ReadLine()
+                    while ($pipe.IsConnected) {
+                        $line = $reader.ReadLine()
+                        if ($null -eq $line) { break }
+                        $line
+                    }
+                } finally {
+                    $writer.Dispose()
+                    $reader.Dispose()
+                }
+            } finally {
+                $pipe.Dispose()
+            }
+        } -ArgumentList $script:lifecycleFixture.NotificationPipeName
+        try {
+            $acknowledgement = Wait-TestCondition -Operation 'prompt notification subscription' -Condition {
+                $lines = @($subscriberJob | Receive-Job -ErrorAction SilentlyContinue)
+                if ($lines) { return $lines[0] | ConvertFrom-Json }
+                return $null
+            }
+            $acknowledgement.type | Should -Be 'Subscribed'
+
+            Start-Sleep -Seconds 5
+
+            (& $script:watcherScript -Status).state | Should -Be 'Healthy'
+        } finally {
+            $subscriberJob | Stop-Job -ErrorAction SilentlyContinue
+            $subscriberJob | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+    }
     It 'exits when no qualifying PowerShell process remains after the poll interval' {
         $env:GIT_PROMPT_WATCHER_PROCESS_POLL_SECONDS = '1'
         $env:GIT_PROMPT_WATCHER_REQUIRE_CLIENT_REQUESTS = '1'
@@ -735,10 +800,134 @@ Describe 'Invoke-GitPromptWatcher lifecycle' -Tag 'Command' {
 
 Describe 'Git prompt snapshot integration' -Tag 'Internal' {
     BeforeAll {
-        $script:promptScript = Join-Path $PSScriptRoot '..\Install-Prompt.ps1'
-        . $script:promptScript -SkipGitPromptWatcherStart
+        . $script:watcherScript -InstallPrompt -SkipGitPromptWatcherStart
     }
 
+    It 'drains a completed initial snapshot request while the prompt is idle' {
+        $snapshotJob = $global:GitPromptSnapshotRefreshJob
+        $snapshotCache = $global:GitPromptSnapshotCache
+        $path = (Get-Location).Path
+        Mock Invoke-GitPromptStatusRowRefresh { $true }
+        $completedJob = Start-ThreadJob -ScriptBlock {
+            param($RequestPath)
+            [pscustomobject]@{
+                path = $RequestPath
+                response = [pscustomobject]@{
+                    state = 'Healthy'
+                    snapshot = [pscustomobject]@{
+                        available = $true
+                        repositoryRoot = $RequestPath
+                        branch = 'feature/initial-idle-refresh'
+                    }
+                }
+            }
+        } -ArgumentList $path
+        try {
+            $completedJob | Wait-Job | Out-Null
+            $global:GitPromptSnapshotRefreshJob = $completedJob
+            $global:GitPromptSnapshotCache = $null
+
+            New-Event -SourceIdentifier PowerShell.OnIdle | Out-Null
+            Wait-TestCondition -Operation 'idle initial Git prompt snapshot drain' -Condition {
+                $global:GitPromptSnapshotCache.response.snapshot.branch -eq 'feature/initial-idle-refresh'
+            } | Out-Null
+
+            $global:GitPromptSnapshotCache.response.snapshot.branch |
+                Should -Be 'feature/initial-idle-refresh'
+            Should -Invoke Invoke-GitPromptStatusRowRefresh -Times 1 -Exactly
+        } finally {
+            $global:GitPromptSnapshotRefreshJob = $snapshotJob
+            $global:GitPromptSnapshotCache = $snapshotCache
+            $completedJob | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+    }
+    It 'replaces the existing status row without appending another prompt on idle refresh' {
+        $snapshotCache = $global:GitPromptSnapshotCache
+        $rows = [Collections.Generic.List[string]]::new()
+        $rows.Add('┌ old status')
+        $rows.Add('└ ')
+        $terminal = [pscustomobject]@{
+            Cursor = [Management.Automation.Host.Coordinates]::new(0, 1)
+            Rows = $rows
+        }
+        $terminal | Add-Member ScriptMethod GetCursor { $this.Cursor }
+        $terminal | Add-Member ScriptMethod ReadRow { param($rowNumber) $this.Rows[$rowNumber] }
+        $terminal | Add-Member ScriptMethod WriteRow {
+            param($rowNumber, $text, $cursor)
+            $this.Rows[$rowNumber] = $text
+        }
+        $script:cleanRefreshTerminal = $terminal
+        Mock Receive-GitPromptSnapshotRefresh { $true }
+        Mock Receive-GitPromptNotifications { $false }
+        Mock New-GitPromptTerminal { $script:cleanRefreshTerminal }
+        Mock Invoke-GitPromptRedraw {
+            $script:cleanRefreshTerminal.Rows.Add('┌ duplicate status')
+            $script:cleanRefreshTerminal.Rows.Add('└ ')
+        }
+        try {
+            $global:GitPromptSnapshotCache = [pscustomobject]@{
+                path = (Get-Location).Path
+                response = [pscustomobject]@{
+                    state = 'Healthy'
+                    snapshot = [pscustomobject]@{
+                        available = $true; branch = 'feature/clean-refresh'; hasUpstream = $false
+                        hasAheadBehind = $false; ahead = 0; behind = 0; conflicts = 0
+                        staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+                        workingTree = [pscustomobject]@{ added = 0; modified = 1; deleted = 0 }
+                    }
+                }
+            }
+
+            Receive-GitPromptIdleUpdates
+
+            $terminal.Rows | Should -HaveCount 2
+            $terminal.Rows[0] | Should -Match 'feature/clean-refresh'
+            $terminal.Rows[1] | Should -Be '└ '
+            Should -Invoke Invoke-GitPromptRedraw -Times 0 -Exactly
+        } finally {
+            $global:GitPromptSnapshotCache = $snapshotCache
+            Remove-Variable -Scope Script -Name cleanRefreshTerminal -ErrorAction SilentlyContinue
+        }
+    }
+    It 'drains pushed snapshots while the prompt is idle' {
+        $global:GitPromptNotificationIdleJob | Should -Not -BeNullOrEmpty
+        @(
+            Get-EventSubscriber -SourceIdentifier PowerShell.OnIdle -ErrorAction SilentlyContinue |
+                Where-Object Action -eq $global:GitPromptNotificationIdleJob
+        ) | Should -HaveCount 1
+
+        $listenerJob = $global:GitPromptNotificationJob
+        $snapshotCache = $global:GitPromptSnapshotCache
+        $repositoryRoot = (Get-Location).Path
+        $notificationJob = Start-ThreadJob -ScriptBlock {
+            param($Root)
+            [ordered]@{
+                type = 'Snapshot'
+                repositoryRoot = $Root
+                snapshot = [ordered]@{
+                    available = $true
+                    repositoryRoot = $Root
+                    branch = 'feature/idle-refresh'
+                }
+            } | ConvertTo-Json -Compress -Depth 5
+        } -ArgumentList $repositoryRoot
+        try {
+            $notificationJob | Wait-Job | Out-Null
+            $global:GitPromptNotificationJob = $notificationJob
+            $global:GitPromptSnapshotCache = $null
+
+            New-Event -SourceIdentifier PowerShell.OnIdle | Out-Null
+            Wait-TestCondition -Operation 'idle Git prompt snapshot drain' -Condition {
+                $global:GitPromptSnapshotCache.response.snapshot.branch -eq 'feature/idle-refresh'
+            } | Out-Null
+
+            $global:GitPromptSnapshotCache.response.snapshot.branch | Should -Be 'feature/idle-refresh'
+        } finally {
+            $global:GitPromptNotificationJob = $listenerJob
+            $global:GitPromptSnapshotCache = $snapshotCache
+            $notificationJob | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+    }
     It 'preserves formatter colors counters and branch link from raw state' {
         $snapshot = [pscustomobject]@{
             available = $true; branch = 'feature/123'; hasUpstream = $true
@@ -777,6 +966,11 @@ Describe 'Git prompt snapshot integration' -Tag 'Internal' {
 '@
         $global:GitPromptWatcherScript = $fakeWatcher
         Mock Invoke-GitPromptWatcherSnapshotRequest { & $global:GitPromptWatcherScript }
+        $global:GitPromptSnapshotRefreshJob = $null
+        $global:GitPromptSnapshotCache = [pscustomobject]@{
+            path = (Get-Location).Path
+            response = (Invoke-GitPromptWatcherSnapshotRequest -Path (Get-Location).Path)
+        }
         $rendered = prompt 6>&1 | Out-String
         $rendered | Should -Match 'Invoke-GitPromptWatcher: reload failed'
     }
@@ -794,11 +988,96 @@ Describe 'Git prompt snapshot integration' -Tag 'Internal' {
             }
         }
 
-        (Invoke-GitPromptWatcherSnapshotRequest -Path $PSScriptRoot).snapshot.branch | Should -Be 'feature/123'
+        $global:GitPromptSnapshotRefreshJob = $null
+        $global:GitPromptSnapshotCache = [pscustomobject]@{
+            path = (Get-Location).Path
+            response = Invoke-GitPromptWatcherSnapshotRequest -Path $PSScriptRoot
+        }
+        $global:GitPromptSnapshotCache.response.snapshot.branch | Should -Be 'feature/123'
         (Get-GitPromptCached).Contains('feature/') | Should -BeTrue
-        (Get-GitPromptCached).Contains('123') | Should -BeTrue
+        (Get-GitPromptCached -replace "`e\]8;;.*?`e\\", '').Contains('123') | Should -BeTrue
         $rendered = prompt 6>&1 | Out-String
         $rendered.Contains('feature/') | Should -BeTrue
         $rendered.Contains('123') | Should -BeTrue
+    }
+
+    It 'returns the complete multiline prompt through the success stream' {
+        $snapshotCache = $global:GitPromptSnapshotCache
+        try {
+            $global:GitPromptSnapshotCache = [pscustomobject]@{
+                path = (Get-Location).Path
+                response = [pscustomobject]@{
+                    state = 'Healthy'
+                    snapshot = [pscustomobject]@{
+                        available = $true; repositoryRoot = (Get-Location).Path; branch = 'feature/returned-prompt'
+                        hasUpstream = $false; hasAheadBehind = $false; ahead = 0; behind = 0; conflicts = 0
+                        staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+                        workingTree = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+                    }
+                }
+            }
+
+            $returnedPrompt = prompt 6>$null | Out-String
+
+            $returnedPrompt | Should -Match '┌'
+            $returnedPrompt | Should -Match 'feature/returned-prompt'
+            $returnedPrompt | Should -Match '└'
+            $returnedPrompt.TrimEnd("`r", "`n") | Should -Match (([regex]::Escape("`e[0m")) + '$')
+        } finally {
+            $global:GitPromptSnapshotCache = $snapshotCache
+        }
+    }
+    It 'builds the production terminal adapter with callable methods' {
+        $terminal = New-GitPromptTerminal
+
+        foreach ($methodName in @('GetCursor', 'ReadRow', 'WriteRow')) {
+            ($terminal.PSObject.Methods | Where-Object Name -eq $methodName).MemberType |
+                Should -Be 'ScriptMethod'
+        }
+    }
+    It 'replaces a marked status row and restores the cursor through the terminal seam' {
+        $snapshot = [pscustomobject]@{
+            available = $true; branch = 'feature/live'; hasUpstream = $false; hasAheadBehind = $false
+            ahead = 0; behind = 0; conflicts = 0
+            staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }
+            workingTree = [pscustomobject]@{ added = 0; modified = 1; deleted = 0 }
+        }
+        $terminal = [pscustomobject]@{ Cursor = [Management.Automation.Host.Coordinates]::new(12, 4); Written = $null }
+        $terminal | Add-Member ScriptMethod GetCursor { $this.Cursor }
+        $terminal | Add-Member ScriptMethod ReadRow { param($row) '┌ old status' }
+        $terminal | Add-Member ScriptMethod WriteRow {
+            param($rowNumber, $text, $cursor)
+            $this.Written = [pscustomobject]@{ RowNumber = $rowNumber; Text = $text; Cursor = $cursor }
+        }
+
+        Invoke-GitPromptStatusRowRefresh -Snapshot $snapshot -Terminal $terminal | Should -BeTrue
+        $terminal.Written.RowNumber | Should -Be 3
+        $terminal.Written.Cursor.X | Should -Be 12
+        $terminal.Written.Cursor.Y | Should -Be 4
+        $terminal.Written.Text | Should -Match '^\[0m┌'
+        $terminal.Written.Text | Should -Match (([regex]::Escape("`e[0m")) + '$')
+        $terminal.Written.Text | Should -Match 'feature/live'
+        $terminal.Written.Text | Should -Match ''
+    }
+
+    It 'does not repaint when the row marker is absent' {
+        $terminal = [pscustomobject]@{ Cursor = [Management.Automation.Host.Coordinates]::new(0, 2); Writes = 0 }
+        $terminal | Add-Member ScriptMethod GetCursor { $this.Cursor }
+        $terminal | Add-Member ScriptMethod ReadRow { param($row) 'ordinary output' }
+        $terminal | Add-Member ScriptMethod WriteRow { $this.Writes++ }
+        $snapshot = [pscustomobject]@{ available = $true; branch = 'main'; staged = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 }; workingTree = [pscustomobject]@{ added = 0; modified = 0; deleted = 0 } }
+
+        Invoke-GitPromptStatusRowRefresh -Snapshot $snapshot -Terminal $terminal | Should -BeFalse
+        $terminal.Writes | Should -Be 0
+    }
+
+    It 'silently ignores terminal read and repaint failures' {
+        $terminal = [pscustomobject]@{ Cursor = [Management.Automation.Host.Coordinates]::new(0, 2) }
+        $terminal | Add-Member ScriptMethod GetCursor { $this.Cursor }
+        $terminal | Add-Member ScriptMethod ReadRow { throw 'unsupported buffer' }
+        $terminal | Add-Member ScriptMethod WriteRow { throw 'unsupported repaint' }
+        $snapshot = [pscustomobject]@{ available = $false }
+
+        { Invoke-GitPromptStatusRowRefresh -Snapshot $snapshot -Terminal $terminal } | Should -Not -Throw
     }
 }

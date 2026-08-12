@@ -176,7 +176,7 @@ Complete-Action
 
 # initialize prompt
 Start-Action "Initialize prompt"
-    . "$PSScriptRoot\Install-Prompt.ps1"
+    . "$PSScriptRoot\Startup\Invoke-GitPromptWatcher.ps1" -InstallPrompt
 Complete-Action
 
 # Creating Enter-* scripts

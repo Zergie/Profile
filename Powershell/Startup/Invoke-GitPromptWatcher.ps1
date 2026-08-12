@@ -14,6 +14,12 @@ param(
     [Parameter(ParameterSetName = 'Restart')]
     [switch] $Restart,
 
+    [Parameter(ParameterSetName = 'InstallPrompt', Mandatory)]
+    [switch] $InstallPrompt,
+
+    [Parameter(ParameterSetName = 'InstallPrompt', DontShow)]
+    [switch] $SkipGitPromptWatcherStart,
+
     [Parameter(ParameterSetName = 'Request', Mandatory)]
     [ValidateSet('Snapshot')]
     [string] $Request,
@@ -31,7 +37,9 @@ param(
     [string] $InitialPausedErrorBase64
 )
 
-Set-StrictMode -Version Latest
+if (-not $InstallPrompt) {
+    Set-StrictMode -Version Latest
+}
 $ErrorActionPreference = 'Stop'
 
 function Get-GitPromptWatcherIdentity {
@@ -42,6 +50,7 @@ function Get-GitPromptWatcherIdentity {
             MutexName = "Local\GitPromptWatcher-$hash"
             StartMutexName = "Local\GitPromptWatcher-Start-$hash"
             PipeName = "GitPromptWatcher-$hash"
+            NotificationPipeName = "GitPromptWatcher-Notifications-$hash"
             StoppedEventName = "Local\GitPromptWatcher-Stopped-$hash"
         }
     }
@@ -59,6 +68,7 @@ function Get-GitPromptWatcherIdentity {
         MutexName = "Local\GitPromptWatcher-$hash"
         StartMutexName = "Local\GitPromptWatcher-Start-$hash"
         PipeName = "GitPromptWatcher-$hash"
+        NotificationPipeName = "GitPromptWatcher-Notifications-$hash"
         StoppedEventName = "Local\GitPromptWatcher-Stopped-$hash"
     }
 }
@@ -441,12 +451,16 @@ function Invoke-GitPromptWatcherWorker {
             )
             $refreshQueue = [Collections.Concurrent.ConcurrentQueue[string]]::new()
             $queuedRefreshKeys = [Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
+            $pendingRefreshDue = [Collections.Concurrent.ConcurrentDictionary[string, datetime]]::new()
             $startupRefreshQueue = [Collections.Concurrent.ConcurrentQueue[string]]::new()
             $queuedStartupRefreshKeys = [Collections.Concurrent.ConcurrentDictionary[string, bool]]::new()
             $refreshJob = $null
             $refreshTargetPath = $null
             $watchers = [Collections.Generic.List[IDisposable]]::new()
             $watcherSubscriptions = [Collections.Generic.List[object]]::new()
+            $notificationSubscribers = [Collections.Generic.List[object]]::new()
+            $notificationAcceptServer = $null
+            $notificationAcceptTask = $null
             $metadataWatcherByGitDir = [Collections.Generic.Dictionary[string, bool]]::new(
                 [StringComparer]::OrdinalIgnoreCase
             )
@@ -618,12 +632,14 @@ function Invoke-GitPromptWatcherWorker {
                 $watcher.EnableRaisingEvents = $true
                 $queueContext = @{
                     queuedRefreshKeys = $queuedRefreshKeys
+                    pendingRefreshDue = $pendingRefreshDue
                     refreshQueue = $refreshQueue
                     queuePath = $repositoryRoot
                     queueKey = (Get-QueueKey -CandidatePath $repositoryRoot)
                 }
                 $enqueueAction = {
                     $context = $Event.MessageData
+                    $context.pendingRefreshDue[$context.queueKey] = [datetime]::UtcNow.AddMilliseconds(150)
                     if ($context.queuedRefreshKeys.TryAdd($context.queueKey, $true)) {
                         $context.refreshQueue.Enqueue($context.queuePath)
                     }
@@ -657,7 +673,16 @@ function Invoke-GitPromptWatcherWorker {
                             continue
                         }
                     } else {
+                        $dueAt = [datetime]::MinValue
+                        if ($pendingRefreshDue.TryGetValue($queueKey, [ref] $dueAt) -and
+                            $dueAt -gt [datetime]::UtcNow) {
+                            $queuedRefreshKeys.TryAdd($queueKey, $true) | Out-Null
+                            $refreshQueue.Enqueue($nextTarget)
+                            return
+                        }
                         $queuedRefreshKeys.TryRemove($queueKey, [ref] $placeholder) | Out-Null
+                        $removedDueAt = [datetime]::MinValue
+                        $pendingRefreshDue.TryRemove($queueKey, [ref] $removedDueAt) | Out-Null
                     }
                     Set-Variable -Name refreshTargetPath -Scope 1 -Value $nextTarget
                     $nextJob = if (Get-Command -Name Start-ThreadJob -ErrorAction SilentlyContinue) {
@@ -667,6 +692,29 @@ function Invoke-GitPromptWatcherWorker {
                     }
                     Set-Variable -Name refreshJob -Scope 1 -Value $nextJob
                     return
+                }
+            }
+
+            function Broadcast-GitPromptSnapshot {
+                param(
+                    [Parameter(Mandatory)] [string] $RepositoryRoot,
+                    [Parameter(Mandatory)] [object] $Snapshot
+                )
+
+                $message = [ordered]@{
+                    type = 'Snapshot'
+                    repositoryRoot = $RepositoryRoot
+                    snapshot = $Snapshot
+                } | ConvertTo-Json -Compress -Depth 10
+                foreach ($subscriber in @($notificationSubscribers)) {
+                    try {
+                        $subscriber.writer.WriteLine($message)
+                    } catch {
+                        $notificationSubscribers.Remove($subscriber)
+                        try { $subscriber.reader.Dispose() } catch { }
+                        try { $subscriber.writer.Dispose() } catch { }
+                        try { $subscriber.server.Dispose() } catch { }
+                    }
                 }
             }
 
@@ -682,12 +730,14 @@ function Invoke-GitPromptWatcherWorker {
                         $snapshots[$repositoryRoot] = $snapshot
                         $pathRepositories[$targetPath] = $repositoryRoot
                         Register-KnownRepository -Snapshot $snapshot
+                        Broadcast-GitPromptSnapshot -RepositoryRoot $repositoryRoot -Snapshot $snapshot
                     } elseif ($knownRepositories.ContainsKey($targetPath)) {
                         $known = $knownRepositories[$targetPath]
                         $unavailable = New-GitPromptUnavailableSnapshot `
                             -RepositoryRoot $targetPath `
                             -GitDirectory ([string] $known.gitDirectory)
                         $snapshots[$targetPath] = $unavailable
+                        Broadcast-GitPromptSnapshot -RepositoryRoot $targetPath -Snapshot $unavailable
                     }
                 } catch {
                     if ($knownRepositories.ContainsKey($targetPath)) {
@@ -696,6 +746,7 @@ function Invoke-GitPromptWatcherWorker {
                             -RepositoryRoot $targetPath `
                             -GitDirectory ([string] $known.gitDirectory) `
                             -RefreshError $_.Exception.Message
+                        Broadcast-GitPromptSnapshot -RepositoryRoot $targetPath -Snapshot $snapshots[$targetPath]
                     }
                 } finally {
                     try {
@@ -772,7 +823,48 @@ function Invoke-GitPromptWatcherWorker {
             Get-GitPromptStartupRepositoryPaths |
                 ForEach-Object { Enqueue-StartupRefreshTarget -CandidatePath $_ }
 
+            function Start-NotificationAccept {
+                if ($notificationAcceptServer) { return }
+                $server = [IO.Pipes.NamedPipeServerStreamAcl]::Create(
+                    $Identity.NotificationPipeName, [IO.Pipes.PipeDirection]::InOut, -1,
+                    [IO.Pipes.PipeTransmissionMode]::Byte,
+                    [IO.Pipes.PipeOptions]::Asynchronous, 4096, 4096,
+                    $pipeSecurity, [IO.HandleInheritability]::None,
+                    [IO.Pipes.PipeAccessRights] 0
+                )
+                Set-Variable -Name notificationAcceptServer -Scope 1 -Value $server
+                Set-Variable -Name notificationAcceptTask -Scope 1 -Value $server.WaitForConnectionAsync()
+            }
+
+            function Complete-NotificationAccept {
+                if (-not $notificationAcceptTask -or -not $notificationAcceptTask.IsCompleted) { return }
+                $server = $notificationAcceptServer
+                Set-Variable -Name notificationAcceptServer -Scope 1 -Value $null
+                Set-Variable -Name notificationAcceptTask -Scope 1 -Value $null
+                try {
+                    $reader = [IO.StreamReader]::new($server, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+                    $writer = [IO.StreamWriter]::new($server, [Text.UTF8Encoding]::new($false), 1024, $true)
+                    $readTask = $reader.ReadLineAsync()
+                    if (-not $readTask.Wait(250) -or $null -eq $readTask.Result) { throw 'Notification subscription closed.' }
+                    $message = $readTask.Result | ConvertFrom-Json
+                    if ($message.type -ne 'Subscribe') { throw 'Invalid notification subscription.' }
+                    $writer.AutoFlush = $true
+                    $writer.WriteLine((@{ type = 'Subscribed'; processId = $PID } | ConvertTo-Json -Compress))
+                    $notificationSubscribers.Add([pscustomobject]@{
+                        server = $server
+                        reader = $reader
+                        writer = $writer
+                    })
+                } catch {
+                    try { $server.Dispose() } catch { }
+                }
+            }
+
+            Start-NotificationAccept
+
             while ($true) {
+                Complete-NotificationAccept
+                Start-NotificationAccept
                 if ([datetime]::UtcNow -ge $nextProcessPollAt) {
                     $nextProcessPollAt = [datetime]::UtcNow.AddSeconds($processPollSeconds)
                     $hasQualifyingClient = if ($requireClientRequestsOnly) {
@@ -780,8 +872,16 @@ function Invoke-GitPromptWatcherWorker {
                     } else {
                         Test-HasQualifyingPwshClient
                     }
+                    $hasNotificationSubscriber = $false
+                    foreach ($subscriber in @($notificationSubscribers)) {
+                        if ($subscriber.server.IsConnected) {
+                            $hasNotificationSubscriber = $true
+                            break
+                        }
+                    }
                     if (
                         -not $hasQualifyingClient -and
+                        -not $hasNotificationSubscriber -and
                         ([datetime]::UtcNow - $lastClientInteractionAt).TotalSeconds -ge $processPollSeconds
                     ) {
                         break
@@ -805,6 +905,8 @@ function Invoke-GitPromptWatcherWorker {
                 try {
                     $connectedTask = $server.WaitForConnectionAsync($connectionCancellation.Token)
                     if (-not $connectedTask.Wait(100)) {
+                        Complete-NotificationAccept
+                        Start-NotificationAccept
                         if (-not $watchingPaused) {
                             Complete-RefreshJob
                             Enqueue-PeriodicRefreshes
@@ -988,6 +1090,14 @@ function Invoke-GitPromptWatcherWorker {
             foreach ($watcher in @($watchers)) {
                 try { $watcher.Dispose() } catch { }
             }
+            if ($notificationAcceptServer) {
+                try { $notificationAcceptServer.Dispose() } catch { }
+            }
+            foreach ($subscriber in @($notificationSubscribers)) {
+                try { $subscriber.reader.Dispose() } catch { }
+                try { $subscriber.writer.Dispose() } catch { }
+                try { $subscriber.server.Dispose() } catch { }
+            }
             $ownershipMutex.ReleaseMutex()
         }
     } finally {
@@ -995,7 +1105,495 @@ function Invoke-GitPromptWatcherWorker {
     }
 }
 
+function Initialize-GitPromptWatcherStoppedEvent {
+    $sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+    $userName = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $identitySuffix = [string] $env:GIT_PROMPT_WATCHER_TEST_ID
+    $bytes = [Text.Encoding]::UTF8.GetBytes("$userName|$sessionId|$identitySuffix")
+    $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 24)
+    $eventName = "Local\GitPromptWatcher-Stopped-$hash"
+    $global:GitPromptWatcherPipeName = "GitPromptWatcher-$hash"
+    $global:GitPromptNotificationPipeName = "GitPromptWatcher-Notifications-$hash"
+    if (-not (Get-Variable -Name GitPromptWatcherStoppedEventHandle -Scope Global -ValueOnly -ErrorAction SilentlyContinue)) {
+        $created = $false
+        $global:GitPromptWatcherStoppedEventHandle = [Threading.EventWaitHandle]::new(
+            $false,
+            [Threading.EventResetMode]::ManualReset,
+            $eventName,
+            [ref] $created
+        )
+    }
+}
+
+function Invoke-GitPromptWatcherSnapshotRequest {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    if (-not (Test-Path -LiteralPath $global:GitPromptWatcherScript -PathType Leaf)) {
+        return $null
+    }
+
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+            '.', $global:GitPromptWatcherPipeName, [IO.Pipes.PipeDirection]::InOut,
+            [IO.Pipes.PipeOptions]::Asynchronous,
+            [Security.Principal.TokenImpersonationLevel]::Impersonation
+        )
+        $reader = $null
+        $writer = $null
+        try {
+            $pipe.Connect(100)
+            $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+            $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+            $writer.AutoFlush = $true
+            $writer.WriteLine((@{ type = 'Snapshot'; path = $Path } | ConvertTo-Json -Compress))
+            $readTask = $reader.ReadLineAsync()
+            if (-not $readTask.Wait(250)) {
+                throw 'The Git prompt watcher response timed out.'
+            }
+            $responseText = $readTask.Result
+            if ($null -eq $responseText) {
+                throw 'The Git prompt watcher closed the response pipe.'
+            }
+            return $responseText | ConvertFrom-Json
+        } catch {
+            if ($attempt -eq 3) {
+                return $null
+            }
+            Start-Sleep -Milliseconds 10
+        } finally {
+            if ($reader) { $reader.Dispose() }
+            if ($writer) { $writer.Dispose() }
+            try { $pipe.Dispose() } catch { }
+        }
+    }
+}
+
+function Format-GitPromptSnapshot {
+    param([object] $Snapshot)
+
+    if (-not $Snapshot -or -not $Snapshot.available) { return '' }
+
+    $branch = $Snapshot.branch
+    if ($branch -match '^(release)/') {
+        $text = " `e[38;5;214m$branch"
+    } elseif ($branch -match '^(users|feature|feat)/') {
+        $branchText = $branch -replace '(\d+)$', "`e]8;;https://dev.azure.com/rocom-service/TauOffice/_workitems/edit/`$1`e\`$1`e]8;;`e\"
+        $text = " `e[38;5;29m$branchText"
+    } else {
+        $text = " `e[38;5;32m$branch"
+    }
+
+    if ($Snapshot.hasUpstream -and -not $Snapshot.hasAheadBehind) {
+        $text += " `e[31m×"
+    } elseif ($Snapshot.behind -gt 0 -and $Snapshot.ahead -gt 0) {
+        $text += " `e[33m$($Snapshot.behind) $($Snapshot.ahead)"
+    } elseif ($Snapshot.behind -gt 0) {
+        $text += " `e[31m$($Snapshot.behind)"
+    } elseif ($Snapshot.ahead -gt 0) {
+        $text += " `e[32m$($Snapshot.ahead)"
+    } elseif (-not $Snapshot.hasAheadBehind) {
+        $text += ' '
+    }
+
+    $hasStaged = $Snapshot.staged.added -gt 0 -or $Snapshot.staged.modified -gt 0 -or $Snapshot.staged.deleted -gt 0
+    $hasWorkingTree = $Snapshot.workingTree.added -gt 0 -or $Snapshot.workingTree.modified -gt 0 -or $Snapshot.workingTree.deleted -gt 0 -or $Snapshot.conflicts -gt 0
+    if ($hasStaged) {
+        $text += " `e[32m+$($Snapshot.staged.added) ~$($Snapshot.staged.modified) -$($Snapshot.staged.deleted)"
+    }
+    if ($hasStaged -and $hasWorkingTree) { $text += " `e[38;5;8m|" }
+    if ($hasWorkingTree) {
+        $text += " `e[31m+$($Snapshot.workingTree.added) ~$($Snapshot.workingTree.modified) -$($Snapshot.workingTree.deleted)"
+    }
+    return "$text `e[0m"
+}
+
+function New-GitPromptStatusRow {
+    param([string] $Directory, [string] $GitPromptSegment, [datetime] $Clock = (Get-Date), [object] $Duration)
+
+    $palette = "395B64,2C3333,404258,474E68,50577A,6B728E" -split ","
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')
+    $fg1 = 'ffffff' | Get-RGB; $bg1 = if ($isAdmin) { 'dd0000' | Get-RGB } else { $palette[0] | Get-RGB }
+    $fg2 = 'ffffff' | Get-RGB; $bg2 = $palette[1] | Get-RGB
+    $fg3 = 'ffffff' | Get-RGB; $bg3 = $palette[2] | Get-RGB
+    $fg4 = 'ffffff' | Get-RGB; $bg4 = $palette[3] | Get-RGB
+    $durationText = try {
+        if ($Duration -and $Duration.TotalSeconds -gt 1) { '  ' + $Duration.ToString('s\.f') + ' s ' }
+        elseif ($Duration) { '  ' + $Duration.TotalMilliseconds.ToString('0') + ' ms ' }
+    } catch { '' }
+
+    return ("`e[0m┌ #a##b##c##d#" `
+        -replace ' ', "`e[38;2;$bg1" `
+        -replace '(#a#)', "`e[38;2;$fg1`e[48;2;$bg1 `$1 `e[38;2;$bg1`e[48;2;$bg2" `
+        -replace '(#b#)', "`e[38;2;$fg2`e[48;2;$bg2`$1`e[38;2;$bg2`e[48;2;$bg3" `
+        -replace '(#c#)', "`e[38;2;$fg3`e[48;2;$bg3 `$1 `e[38;2;$bg3`e[48;2;$bg4" `
+        -replace '(#d#)', "`e[38;2;$fg4`e[48;2;$bg4`$1`e[0m`e[38;2;$bg4" `
+    ).Replace('#a#', $Directory).Replace('#b#', $GitPromptSegment).Replace('#c#', $Clock.ToString('ddd HH:mm')).Replace('#d#', $durationText) + "`e[0m"
+}
+
+function New-GitPromptTerminal {
+    $terminal = [pscustomobject]@{}
+    $terminal | Add-Member ScriptMethod ReadRow {
+        param($row)
+        $ui = $host.UI.RawUI
+        $cells = $ui.GetBufferContents(
+            [Management.Automation.Host.Rectangle]::new(0, $row, $ui.BufferSize.Width - 1, $row)
+        )
+        return -join ($cells | ForEach-Object Character)
+    }
+    $terminal | Add-Member ScriptMethod GetCursor {
+        return $host.UI.RawUI.CursorPosition
+    }
+    $terminal | Add-Member ScriptMethod WriteRow {
+        param($rowNumber, $text, $position)
+        $host.UI.RawUI.CursorPosition = [Management.Automation.Host.Coordinates]::new(0, $rowNumber)
+        Write-Host -NoNewline ("`e[2K" + $text)
+        $host.UI.RawUI.CursorPosition = $position
+    }
+    return $terminal
+}
+function Invoke-GitPromptStatusRowRefresh {
+    param([Parameter(Mandatory)] [object] $Snapshot, [object] $Terminal = $null)
+    if (-not $Terminal) {
+        $Terminal = New-GitPromptTerminal
+    }
+    try {
+        $cursor = $Terminal.GetCursor()
+        if ($cursor.Y -le 0) { return $false }
+        $row = $Terminal.ReadRow($cursor.Y - 1)
+        if (-not ([string]$row).StartsWith('┌')) { return $false }
+        $directory = (Get-Location).Path
+        if ($directory.StartsWith('Microsoft.PowerShell.Core\FileSystem::')) { $directory = $directory.Substring(38) }
+        $duration = try { (Get-History)[-1].Duration } catch { $null }
+        $statusRow = New-GitPromptStatusRow -Directory $directory -GitPromptSegment (Format-GitPromptSnapshot $Snapshot) -Clock (Get-Date) -Duration $duration
+        $Terminal.WriteRow($cursor.Y - 1, $statusRow, $cursor)
+        return $true
+    } catch { return $false }
+}
+
+function Invoke-GitPromptRedraw {
+    try {
+        if (Get-Command -Name Get-PSReadLineOption -ErrorAction SilentlyContinue) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+            return $true
+        }
+    } catch {
+    }
+    return $false
+}
+function Start-GitPromptSnapshotRefresh {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    if ($global:GitPromptSnapshotRefreshJob -and
+        $global:GitPromptSnapshotRefreshJob.State -in @('NotStarted', 'Running')) {
+        return
+    }
+
+    $requestScript = {
+        param($PipeName, $Path)
+
+        $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+            '.', $PipeName, [IO.Pipes.PipeDirection]::InOut,
+            [IO.Pipes.PipeOptions]::Asynchronous,
+            [Security.Principal.TokenImpersonationLevel]::Impersonation
+        )
+        try {
+            $pipe.Connect(100)
+            $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+            $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+            try {
+                $writer.AutoFlush = $true
+                $writer.WriteLine((@{ type = 'Snapshot'; path = $Path } | ConvertTo-Json -Compress))
+                $readTask = $reader.ReadLineAsync()
+                if (-not $readTask.Wait(250)) { throw 'The Git prompt watcher response timed out.' }
+                if ($null -eq $readTask.Result) { throw 'The Git prompt watcher closed the response pipe.' }
+                return [pscustomobject]@{
+                    path = $Path
+                    response = $readTask.Result | ConvertFrom-Json
+                }
+            } finally {
+                $reader.Dispose()
+                $writer.Dispose()
+            }
+        } finally {
+            $pipe.Dispose()
+        }
+    }
+
+    $global:GitPromptSnapshotRefreshJob = Start-ThreadJob -ScriptBlock $requestScript `
+        -ArgumentList $global:GitPromptWatcherPipeName, $Path
+}
+
+function Receive-GitPromptSnapshotRefresh {
+    param([switch] $PassThru)
+
+    $receivedApplicableSnapshot = $false
+    if (-not $global:GitPromptSnapshotRefreshJob) {
+        if ($PassThru) { return $false }
+        return
+    }
+    if ($global:GitPromptSnapshotRefreshJob.State -in @('NotStarted', 'Running')) {
+        if ($PassThru) { return $false }
+        return
+    }
+
+    $job = $global:GitPromptSnapshotRefreshJob
+    $global:GitPromptSnapshotRefreshJob = $null
+    try {
+        $response = Receive-Job -Job $job -ErrorAction Stop | Select-Object -Last 1
+        if ($response) {
+            $global:GitPromptSnapshotCache = [pscustomobject]@{
+                path = [string] $response.path
+                response = $response.response
+            }
+            $receivedApplicableSnapshot = [bool](
+                $response.response.snapshot -and
+                (Get-Location).Path.Equals(
+                    [string] $response.path,
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            )
+        }
+    } catch {
+        # A watcher outage must not evict the last usable snapshot.
+    } finally {
+        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+    }
+
+    if ($PassThru) { return $receivedApplicableSnapshot }
+}
+function Start-GitPromptNotificationListener {
+    if ($global:GitPromptNotificationJob -and
+        $global:GitPromptNotificationJob.State -in @('NotStarted', 'Running')) { return }
+    if (-not (Get-Command Start-ThreadJob -ErrorAction SilentlyContinue)) { return }
+
+    $listenerScript = {
+        param($PipeName)
+        while ($true) {
+            $pipe = [IO.Pipes.NamedPipeClientStream]::new(
+                '.', $PipeName, [IO.Pipes.PipeDirection]::InOut,
+                [IO.Pipes.PipeOptions]::Asynchronous,
+                [Security.Principal.TokenImpersonationLevel]::Impersonation
+            )
+            try {
+                $pipe.Connect(250)
+                $reader = [IO.StreamReader]::new($pipe, [Text.UTF8Encoding]::new($false), $false, 1024, $true)
+                $writer = [IO.StreamWriter]::new($pipe, [Text.UTF8Encoding]::new($false), 1024, $true)
+                try {
+                    $writer.AutoFlush = $true
+                    $writer.WriteLine((@{ type = 'Subscribe' } | ConvertTo-Json -Compress))
+                    $reader.ReadLine() | Out-Null
+                    while ($pipe.IsConnected) {
+                        $line = $reader.ReadLine()
+                        if ($null -eq $line) { break }
+                        $line
+                    }
+                } finally {
+                    $reader.Dispose()
+                    $writer.Dispose()
+                }
+            } catch {
+            } finally {
+                $pipe.Dispose()
+            }
+            Start-Sleep -Milliseconds 100
+        }
+    }
+    $global:GitPromptNotificationJob = Start-ThreadJob -ScriptBlock $listenerScript `
+        -ArgumentList $global:GitPromptNotificationPipeName
+}
+
+function Receive-GitPromptNotifications {
+    param([switch] $PassThru)
+
+    $receivedApplicableSnapshot = $false
+    if (-not $global:GitPromptNotificationJob) {
+        if ($PassThru) { return $false }
+        return
+    }
+
+    $path = (Get-Location).Path
+    foreach ($line in @(Receive-Job -Job $global:GitPromptNotificationJob -ErrorAction SilentlyContinue)) {
+        try {
+            $notification = $line | ConvertFrom-Json
+            $repositoryRoot = [string] $notification.repositoryRoot
+            if (-not $repositoryRoot -or -not $notification.snapshot) { continue }
+            if (-not ($path.Equals($repositoryRoot, [StringComparison]::OrdinalIgnoreCase) -or
+                    $path.StartsWith($repositoryRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase))) { continue }
+            $global:GitPromptSnapshotCache = [pscustomobject]@{
+                path = $path
+                response = [pscustomobject]@{ state = 'Healthy'; snapshot = $notification.snapshot }
+            }
+            $receivedApplicableSnapshot = $true
+        } catch {
+        }
+    }
+
+    if ($PassThru) { return $receivedApplicableSnapshot }
+}
+function Receive-GitPromptIdleUpdates {
+    $snapshotUpdated = Receive-GitPromptSnapshotRefresh -PassThru
+    $notificationUpdated = Receive-GitPromptNotifications -PassThru
+    if ($snapshotUpdated -or $notificationUpdated) {
+        $snapshot = $global:GitPromptSnapshotCache.response.snapshot
+        if ($snapshot) {
+            Invoke-GitPromptStatusRowRefresh -Snapshot $snapshot | Out-Null
+        }
+    }
+}
+function Start-GitPromptNotificationIdlePump {
+    $global:GitPromptNotificationIdleCallback = ${function:Receive-GitPromptIdleUpdates}
+    if ($global:GitPromptNotificationIdleJob) {
+        $existing = @(
+            Get-EventSubscriber -SourceIdentifier PowerShell.OnIdle -ErrorAction SilentlyContinue |
+                Where-Object Action -eq $global:GitPromptNotificationIdleJob
+        )
+        if ($existing.Count -gt 0) { return }
+    }
+
+    $global:GitPromptNotificationIdleJob = Register-EngineEvent `
+        -SourceIdentifier PowerShell.OnIdle `
+        -Action {
+            try {
+                & $global:GitPromptNotificationIdleCallback
+            } catch {
+                # Prompt refresh failures must never interrupt interactive input.
+            }
+        }
+}
+
+function Get-GitPromptCached {
+    $path = (Get-Location).Path
+    Receive-GitPromptSnapshotRefresh
+    Receive-GitPromptNotifications
+
+    $cacheApplies = $false
+    if ($global:GitPromptSnapshotCache) {
+        $cachedSnapshot = $global:GitPromptSnapshotCache.response.snapshot
+        $repositoryRoot = if ($cachedSnapshot -and
+            $cachedSnapshot.PSObject.Properties['repositoryRoot']) {
+            [string] $cachedSnapshot.repositoryRoot
+        } else {
+            ''
+        }
+        # An empty discovery response is not a cache entry: the watcher returns
+        # it before its asynchronous repository discovery has completed.
+        $cacheApplies = $cachedSnapshot -and ($global:GitPromptSnapshotCache.path -eq $path -or (
+            $repositoryRoot -and
+            $path.StartsWith($repositoryRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)
+        ))
+    }
+    if (-not $cacheApplies) {
+        Start-GitPromptSnapshotRefresh -Path $path
+        $global:GitPromptWatcherLastError = $null
+        return ''
+    }
+
+    $response = $global:GitPromptSnapshotCache.response
+    if ($response.state -eq 'Paused' -and $response.sourceLoadError) {
+        $global:GitPromptWatcherLastError = "Invoke-GitPromptWatcher: $($response.sourceLoadError)"
+    } else {
+        $global:GitPromptWatcherLastError = $null
+    }
+    return Format-GitPromptSnapshot -Snapshot $response.snapshot
+}
+
+function Get-RGB {
+    param (
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [string] $hex,
+        [string] $Delimiter = ";",
+        [string] $Terminator = "m"
+    )
+    $c = ([int]"0x$($hex -replace '#','')")
+    "$($c -shr 16 -band 255)$Delimiter$($c -shr 8 -band 255)$Delimiter$($c -band 255)$Terminator"
+}
+
+function prompt {
+
+    $gitPromptSegment = Get-GitPromptCached
+    if ($global:GitPromptWatcherLastError) {
+        Write-Host $global:GitPromptWatcherLastError
+    }
+
+    $cwd = (Get-Location).Path
+    if ($cwd.StartsWith("Microsoft.PowerShell.Core\FileSystem::")) {
+        $cwd = $cwd.Substring("Microsoft.PowerShell.Core\FileSystem::".Length)
+    }
+
+
+    # colors
+    $palette = "395B64,2C3333,404258,474E68,50577A,6B728E" -split ","
+    if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+        $fg1 = 'ffffff'    | Get-RGB
+        $bg1 = 'dd0000'    | Get-RGB
+    } else {
+        $fg1 = 'ffffff'    | Get-RGB
+        $bg1 = $palette[0] | Get-RGB
+    }
+    $fg2 = 'ffffff'    | Get-RGB
+    $bg2 = $palette[1] | Get-RGB
+    $fg3 = 'ffffff'    | Get-RGB
+    $bg3 = $palette[2] | Get-RGB
+    $fg4 = 'ffffff'    | Get-RGB
+    $bg4 = $palette[3] | Get-RGB
+
+    $promptText = ("`e[0m`n┌ #a##b##c##d#`n#x#└ " `
+            -replace ' ',   "`e[38;2;$bg1" `
+            -replace '(#a#)', "`e[38;2;$fg1`e[48;2;$bg1 `$1 `e[38;2;$bg1`e[48;2;$bg2" `
+            -replace '(#b#)', "`e[38;2;$fg2`e[48;2;$bg2`$1`e[38;2;$bg2`e[48;2;$bg3" `
+            -replace '(#c#)', "`e[38;2;$fg3`e[48;2;$bg3 `$1 `e[38;2;$bg3`e[48;2;$bg4" `
+            -replace '(#d#)', "`e[38;2;$fg4`e[48;2;$bg4`$1`e[0m`e[38;2;$bg4" `
+            -replace '(#x#)', "`e[0m"
+        ).Replace('#a#' , $cwd
+        ).Replace('#b#' , $gitPromptSegment
+        ).Replace('#c#', $((Get-Date).ToString("ddd HH:mm"))
+        ).Replace('#d#', $(
+                try {
+                    (Get-History)[-1].Duration |
+                        ForEach-Object {
+                            if ($_.TotalSeconds -gt 1) {
+                                '  ' + $_.ToString('s\.f') + ' s '
+                            } else {
+                                '  ' + $_.TotalMilliseconds.ToString('0') + ' ms '
+                            }
+                        }
+                } catch {
+                }
+            )
+        )
+    return $promptText + " `e[0m"
+}
+
+function Initialize-GitPrompt {
+    param(
+        [Parameter(Mandatory)] [string] $WatcherScriptPath,
+        [switch] $SkipWatcherStart
+    )
+
+    $global:GitPromptWatcherScript = $WatcherScriptPath
+    $global:GitPromptWatcherLastError = $null
+    $global:GitPromptSnapshotCache = $null
+    $global:GitPromptSnapshotRefreshJob = $null
+    $global:GitPromptNotificationJob = $null
+    if (-not (Get-Variable -Name GitPromptNotificationIdleJob -Scope Global -ErrorAction SilentlyContinue)) {
+        $global:GitPromptNotificationIdleJob = $null
+    }
+
+    Initialize-GitPromptWatcherStoppedEvent
+    if (-not $SkipWatcherStart) {
+        Start-Process -FilePath (Get-Process -Id $PID).Path -WindowStyle Hidden `
+            -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-File', $WatcherScriptPath) |
+            Out-Null
+    }
+    Start-GitPromptNotificationListener
+    Start-GitPromptNotificationIdlePump
+    Set-PSReadLineOption -ContinuationPrompt '  '
+}
 if (-not (Get-Variable -Name GitPromptWatcherImportOnly -Scope Script -ValueOnly -ErrorAction SilentlyContinue)) {
+    if ($InstallPrompt) {
+        Initialize-GitPrompt -WatcherScriptPath $PSCommandPath -SkipWatcherStart:$SkipGitPromptWatcherStart
+        return
+    }
     $identity = Get-GitPromptWatcherIdentity
     $sourcePath = Get-GitPromptWatcherSourcePath
 
