@@ -160,6 +160,11 @@ $patches = @(
                       patch="$PSScriptRoot\neovim\patches\util.lua.patch"}
 )
 
+$fusionProductionRoots = @(
+    "$env:ProgramFiles\Autodesk\webdeploy\production"
+    "$env:LOCALAPPDATA\Autodesk\webdeploy\production"
+) | Where-Object { Test-Path -LiteralPath $_ }
+
 $junctions = @(
     if ((Test-Path "$PSScriptRoot\secrets")) {
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\FileZilla"
@@ -176,6 +181,9 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
                       destination = "$env:USERPROFILE\.gitconfig"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\psmux\psmux.conf"
+                      destination = "$env:USERPROFILE\.psmux.conf"}
 
     [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal"
                       destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"}
@@ -208,8 +216,10 @@ $junctions = @(
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
     [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
                       destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
-    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
-                      destination = "$env:USERPROFILE\AppData\Local\Autodesk\webdeploy\production\**\Fusion\Server\Fusion\Configuration\ThreadData"}
+    foreach ($fusionProductionRoot in $fusionProductionRoots) {
+        [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
+                          destination = "$fusionProductionRoot\*\Fusion\Server\Fusion\Configuration\ThreadData"}
+    }
     if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
         [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
                           destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Fusion 360 CAM\Posts\MPCNC.cps"}

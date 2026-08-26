@@ -1296,14 +1296,37 @@ function Get-TrackerBlockedByReferences {
     $references = [System.Collections.Generic.List[pscustomobject]]::new()
     foreach ($reference in ($value -split ';')) {
         $reference = $reference.Trim()
-        $match = [regex]::Match($reference, '^(\d+)(?:\s*[—-]\s*(.+?))?$')
-        if (-not $match.Success) {
-            throw "Tracker ticket has malformed Blocked by reference '$reference': $Path"
+        $localMatch = [regex]::Match($reference, '^(\d+)(?:\s*[—-]\s*(.+?))?$')
+        if ($localMatch.Success) {
+            $references.Add([pscustomobject]@{
+                Kind  = 'Ticket'
+                Id    = $localMatch.Groups[1].Value
+                Title = $localMatch.Groups[2].Value.Trim()
+            })
+            continue
         }
-        $references.Add([pscustomobject]@{
-            Id    = $match.Groups[1].Value
-            Title = $match.Groups[2].Value.Trim()
-        })
+
+        $findingMatch = [regex]::Match(
+            $reference,
+            '^(?:External prerequisite\s*[—-]\s*)?Finding\s+(\d+)(?:(?:\s*[—-]\s*(.+?))|(?:\s*,\s*[“"](.+?)[”"]))?(?:\s*\(external prerequisite\))?\.?$',
+            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+        )
+        if ($findingMatch.Success) {
+            $title = if ($findingMatch.Groups[2].Success) {
+                $findingMatch.Groups[2].Value
+            }
+            else {
+                $findingMatch.Groups[3].Value
+            }
+            $references.Add([pscustomobject]@{
+                Kind  = 'Spec'
+                Id    = $findingMatch.Groups[1].Value
+                Title = $title.Trim()
+            })
+            continue
+        }
+
+        throw "Tracker ticket has malformed Blocked by reference '$reference': $Path"
     }
 
     return @($references)
@@ -1346,6 +1369,9 @@ function Invoke-TrackerDependencyReconciliation {
     foreach ($ticket in $ticketsById.Values) {
         $dependencies = [System.Collections.Generic.List[string]]::new()
         foreach ($reference in (Get-TrackerBlockedByReferences -Path $ticket.File.FullName)) {
+            if ($reference.Kind -ceq 'Spec') {
+                continue
+            }
             if (-not $ticketsById.ContainsKey($reference.Id)) {
                 throw "Tracker ticket '$($ticket.Id)' has unknown Blocked by reference '$($reference.Id)': $($ticket.File.FullName)"
             }
@@ -1725,6 +1751,21 @@ function Get-TrackerLines {
         [string[]]
         $DisplayFeatureNames = @(),
 
+        # Keep this feature expanded when compact rendering is needed.
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $WorkingFeatureName = '',
+
+        [Parameter()]
+        [switch]
+        $CollapseInactiveFeatures,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $MaximumLines = 0,
+
         [Parameter()]
         [AllowEmptyString()]
         [string]
@@ -1839,11 +1880,13 @@ function Get-TrackerLines {
         )
         $unfinishedCount += @($tickets | Where-Object { -not $_.Completed }).Count
         $featureRows.Add([pscustomobject]@{
-            Directory = $featureDir
-            Heading   = Get-MarkdownHeading `
+            Directory       = $featureDir
+            DisplayName     = $entry.DisplayName
+            Heading         = Get-MarkdownHeading `
                 -Path (Join-Path $featureDir.FullName 'spec.md') `
                 -Fallback $entry.DisplayName
-            Tickets   = $tickets
+            Tickets         = $tickets
+            UnfinishedCount = @($tickets | Where-Object { -not $_.Completed }).Count
         })
     }
 
@@ -1872,11 +1915,59 @@ function Get-TrackerLines {
         return $lines
     }
 
-    foreach ($featureRow in $featureRows) {
+    $titleOrderedFeatureRows = @(
+        $featureRows | Sort-Object `
+            { Get-NaturalSortKey -Value $_.Heading }, `
+            { $_.DisplayName.ToLowerInvariant() }
+    )
+
+    $effectiveWorkingFeatureName = $WorkingFeatureName
+    if ($CollapseInactiveFeatures -and [string]::IsNullOrWhiteSpace(
+            $effectiveWorkingFeatureName
+        )) {
+        $workingFeature = @(
+            $titleOrderedFeatureRows | Where-Object { $_.UnfinishedCount -gt 0 }
+        ) | Select-Object -First 1
+        if (-not $workingFeature) {
+            $workingFeature = @($titleOrderedFeatureRows) | Select-Object -First 1
+        }
+        if ($workingFeature) {
+            $effectiveWorkingFeatureName = $workingFeature.DisplayName
+        }
+    }
+
+    $orderedFeatureRows = if ($CollapseInactiveFeatures) {
+        @($titleOrderedFeatureRows | Sort-Object {
+                if ($_.DisplayName -ceq $effectiveWorkingFeatureName) { 0 } else { 1 }
+            }, { Get-NaturalSortKey -Value $_.Heading },
+            { $_.DisplayName.ToLowerInvariant() })
+    }
+    else {
+        @($titleOrderedFeatureRows)
+    }
+
+    for ($featureIndex = 0; $featureIndex -lt $orderedFeatureRows.Count; $featureIndex++) {
+        $featureRow = $orderedFeatureRows[$featureIndex]
+        $isWorkingFeature = $featureRow.DisplayName -ceq $effectiveWorkingFeatureName
+        if ($CollapseInactiveFeatures -and -not $isWorkingFeature) {
+            if ($MaximumLines -gt 0 -and $lines.Count -ge $MaximumLines - 1) {
+                $remainingSpecs = $orderedFeatureRows.Count - $featureIndex
+                $lines.Add("${muted}… $remainingSpecs more specs${reset}")
+                break
+            }
+            $openLabel = if ($featureRow.UnfinishedCount -eq 1) { 'open issue' } else { 'open issues' }
+            $lines.Add(
+                "${muted}▸${reset} ${accent}$($featureRow.Heading)${reset} " +
+                "${muted}($($featureRow.DisplayName))${reset} " +
+                "${muted}— $($featureRow.UnfinishedCount) $openLabel${reset}"
+            )
+            continue
+        }
+
         $lines.Add('')
         $lines.Add(
             "${accent}$($featureRow.Heading)${reset} " +
-            "${muted}($($featureRow.Directory.Name))${reset}"
+            "${muted}($($featureRow.DisplayName))${reset}"
         )
         if ($featureRow.Tickets.Count -eq 0) {
             $lines.Add("${muted}└─ no tickets${reset}")
@@ -1908,6 +1999,45 @@ function Get-TrackerLines {
     }
 
     return $lines
+}
+
+function Get-AdaptiveTrackerLines {
+    param(
+        [Parameter(Mandatory)][string] $ScratchDirectory,
+        [string[]] $RetainedFeatureNames = @(),
+        [string[]] $DisplayFeatureNames = @(),
+        [AllowEmptyString()][string] $WorkingFeatureName = '',
+        [AllowEmptyString()][string] $Repository = '',
+        [AllowEmptyString()][string] $AgentSummary = '',
+        [int] $InnerWidth = 0,
+        [int] $CurrentIteration = 0,
+        [int] $TotalIterations = 0,
+        [int] $CompletedIterations = 0,
+        [int] $WindowHeight = 0
+    )
+
+    $trackerParameters = @{
+        ScratchDirectory     = $ScratchDirectory
+        RetainedFeatureNames = $RetainedFeatureNames
+        DisplayFeatureNames  = $DisplayFeatureNames
+        WorkingFeatureName   = $WorkingFeatureName
+        Repository           = $Repository
+        AgentSummary         = $AgentSummary
+        InnerWidth           = $InnerWidth
+        CurrentIteration     = $CurrentIteration
+        TotalIterations      = $TotalIterations
+        CompletedIterations  = $CompletedIterations
+    }
+    $lines = @(Get-TrackerLines @trackerParameters)
+    if ($WindowHeight -le 0) { return $lines }
+
+    # Leave room for both panel borders and six useful Agent output rows.
+    $maximumTrackerLines = [Math]::Max(3, $WindowHeight - 10)
+    if ($lines.Count -le $maximumTrackerLines) { return $lines }
+
+    $trackerParameters.CollapseInactiveFeatures = $true
+    $trackerParameters.MaximumLines = $maximumTrackerLines
+    return @(Get-TrackerLines @trackerParameters)
 }
 
 function Format-PanelTopBorder {
@@ -2710,7 +2840,12 @@ function Enter-RalphWorkboard {
 
         [Parameter()]
         [string[]]
-        $DisplayFeatureNames = @()
+        $DisplayFeatureNames = @(),
+
+        [Parameter()]
+        [AllowEmptyString()]
+        [string]
+        $WorkingFeatureName = ''
     )
 
     $displayFeatureNameSet = [System.Collections.Generic.HashSet[string]]::new(
@@ -2733,19 +2868,21 @@ function Enter-RalphWorkboard {
             ForEach-Object { $_.Name }
     )
 
-    $windowWidth   = try { [Console]::WindowWidth } catch { 0 }
+    $windowWidth = try { [Console]::WindowWidth } catch { 0 }
     if ($windowWidth -lt 1) { $windowWidth = 120 }
-    $lines         = Get-TrackerLines `
+    $windowHeight = try { [Console]::WindowHeight } catch { 0 }
+    if ($windowHeight -lt 1) { $windowHeight = 24 }
+    $lines = Get-AdaptiveTrackerLines `
         -ScratchDirectory $ScratchDirectory `
         -DisplayFeatureNames $normalizedDisplayFeatureNames `
+        -WorkingFeatureName $WorkingFeatureName `
         -Repository $Repository `
         -AgentSummary $AgentSummary `
         -InnerWidth ([Math]::Max(0, $windowWidth - 4)) `
         -CurrentIteration $CurrentIteration `
-        -TotalIterations $TotalIterations
+        -TotalIterations $TotalIterations `
+        -WindowHeight $windowHeight
     $trackerHeight = $lines.Count
-    $windowHeight  = try { [Console]::WindowHeight } catch { 0 }
-    if ($windowHeight -lt 1) { $windowHeight = 24 }
 
     $panelLines   = Format-TrackerPanel -TrackerLines $lines -Width $windowWidth
     $panelHeight  = $panelLines.Count  # trackerHeight + 2 borders
@@ -2789,6 +2926,7 @@ function Enter-RalphWorkboard {
         WindowHeight         = $windowHeight
         RetainedFeatureNames = $startupFeatureNames
         DisplayFeatureNames  = $normalizedDisplayFeatureNames
+        WorkingFeatureName   = $WorkingFeatureName
         Repository           = $Repository
         AgentSummary         = $AgentSummary
         CurrentIteration     = $CurrentIteration
@@ -2832,6 +2970,12 @@ function Update-RalphWorkboard {
     else {
         @()
     }
+    $workingFeatureName = if ($State.ContainsKey('WorkingFeatureName')) {
+        [string] $State.WorkingFeatureName
+    }
+    else {
+        ''
+    }
     $repository = if ($State.ContainsKey('Repository')) {
         [string] $State.Repository
     }
@@ -2865,15 +3009,21 @@ function Update-RalphWorkboard {
     $lineWidth = $WindowWidth
     if ($lineWidth -lt 1) { $lineWidth = try { [Console]::WindowWidth } catch { 0 } }
     if ($lineWidth -lt 1) { $lineWidth = 120 }
-    $lines = Get-TrackerLines -ScratchDirectory $ScratchDirectory `
+    $effectiveWindowHeight = $WindowHeight
+    if ($effectiveWindowHeight -lt 1 -and $State.ContainsKey('WindowHeight')) {
+        $effectiveWindowHeight = [int] $State.WindowHeight
+    }
+    $lines = Get-AdaptiveTrackerLines -ScratchDirectory $ScratchDirectory `
         -RetainedFeatureNames $retainedNames `
         -DisplayFeatureNames $displayNames `
+        -WorkingFeatureName $workingFeatureName `
         -Repository $repository `
         -AgentSummary $agentSummary `
         -InnerWidth ([Math]::Max(0, $lineWidth - 4)) `
         -CurrentIteration $currentIteration `
         -TotalIterations $totalIterations `
-        -CompletedIterations $completedIterations
+        -CompletedIterations $completedIterations `
+        -WindowHeight $effectiveWindowHeight
     $trackerHeight = $lines.Count
     $currentHeight = if ($State.ContainsKey('Height')) { [int]$State.Height } else { 0 }
 
@@ -3290,6 +3440,7 @@ if ($isInteractive) {
     }
     if ($scopeKind -eq 'feature') {
         $workboardParameters.DisplayFeatureNames = @($scopeFeature)
+        $workboardParameters.WorkingFeatureName = $scopeFeature
     }
     $workboardState = Enter-RalphWorkboard @workboardParameters
 }
@@ -3418,8 +3569,9 @@ before selecting another feature.
 
     Invoke-NativeText -FilePath $git.Source -ArgumentList @('add', '--all') | Out-Null
     Invoke-NativeText -FilePath $git.Source -ArgumentList @(
-        'add',
-        '--force',
+        'rm',
+        '--cached',
+        '--ignore-unmatch',
         '--',
         $progressFile
     ) | Out-Null
@@ -3430,6 +3582,7 @@ before selecting another feature.
     ) | Out-Null
     if ($workboardState) {
         $workboardState.CurrentIteration = $iteration
+        $workboardState.WorkingFeatureName = if ($featureCompleted) { '' } else { $progressEntry.feature }
         $workboardState.CompletedIterations = [int]$workboardState.CompletedIterations + 1
         $workboardState = Update-RalphWorkboard `
             -ScratchDirectory $scratchDirectory `

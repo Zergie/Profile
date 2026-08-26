@@ -487,6 +487,38 @@ Status: $($ticket.Status)
         }
     }
 
+    It 'allows a ticket to depend on a finding from another spec' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.Reconcile.' + [guid]::NewGuid().ToString('N')
+        )
+        $issues = Join-Path $fixture 'dependent-feature\issues'
+        try {
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $issues '01-first.md') -Value @'
+# 01 — First
+
+Blocked by: Finding 1 — Add adversarial serial and job state-machine tests
+
+Status: ready-for-agent
+'@
+
+            $result = & $script:ralphModule {
+                param($FeatureDirectory)
+                Invoke-TrackerDependencyReconciliation -FeatureDirectory $FeatureDirectory
+            } (Join-Path $fixture 'dependent-feature')
+
+            $result.CompletedTicketIds | Should -BeNullOrEmpty
+            $result.UpdatedTicketIds | Should -BeNullOrEmpty
+            & $script:ralphModule {
+                param($Path)
+                Get-TrackerTicketStatus -Path $Path
+            } (Join-Path $issues '01-first.md') | Should -Be 'ready-for-agent'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'rejects invalid dependency graphs before changing statuses in process' -TestCases @(
         @{
             Name = 'unknown reference'
@@ -711,6 +743,90 @@ Status: ready-for-agent
                 Get-TrackerLines -ScratchDirectory $Scratch -IncludeIteration:$false
             } $scratch
             ($emptyLines -join "`n") | Should -Match 'No active features'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'collapses inactive specs when tracker space is constrained' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.CompactTracker.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            foreach ($feature in 'alpha', 'beta', 'gamma') {
+                $issues = Join-Path $scratch "$feature\issues"
+                New-Item -ItemType Directory -Path $issues -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $scratch "$feature\spec.md") -Value "# $feature display"
+                Set-Content -LiteralPath (Join-Path $issues '01.md') -Value "# $feature ticket`n`nStatus: ready-for-agent"
+            }
+
+            $lines = & $script:ralphModule {
+                param($Scratch)
+                Get-AdaptiveTrackerLines -ScratchDirectory $Scratch `
+                    -WorkingFeatureName 'beta' -WindowHeight 18
+            } $scratch
+            $rawText = $lines -join "`n"
+            $text = $rawText -replace "$([char]27)\[[0-9;]*m", ''
+
+            $text | Should -Match 'beta ticket'
+            $text | Should -Not -Match 'alpha ticket|gamma ticket'
+            $text | Should -Match '▸ alpha display.*1 open issue'
+            $text | Should -Match '▸ gamma display.*1 open issue'
+            $escape = [regex]::Escape([string][char]27)
+            $expandedTitle = [regex]::Match(
+                $rawText,
+                "(?<Style>${escape}\[[0-9;]*m)beta display(?<Reset>${escape}\[[0-9;]*m)"
+            )
+            $expandedFolder = [regex]::Match(
+                $rawText,
+                "(?<Style>${escape}\[[0-9;]*m)\(beta\)(?<Reset>${escape}\[[0-9;]*m)"
+            )
+            $expandedTitle.Success | Should -BeTrue
+            $expandedFolder.Success | Should -BeTrue
+            $rawText.Contains(
+                "$($expandedTitle.Groups['Style'].Value)alpha display$($expandedTitle.Groups['Reset'].Value)"
+            ) | Should -BeTrue
+            $rawText.Contains(
+                "$($expandedFolder.Groups['Style'].Value)(alpha)$($expandedFolder.Groups['Reset'].Value)"
+            ) | Should -BeTrue
+            $lines.Count | Should -BeLessOrEqual 8
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+    It 'sorts specs by title instead of feature directory name' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.SpecTitleSort.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            foreach ($feature in @(
+                @{ Directory = 'alpha-folder'; Title = 'Zulu spec' },
+                @{ Directory = 'finding-15'; Title = 'Finding 15: Later' },
+                @{ Directory = 'finding-5'; Title = 'Finding 5: Earlier' },
+                @{ Directory = 'zeta-folder'; Title = 'Alpha spec' }
+            )) {
+                $issues = Join-Path $scratch "$($feature.Directory)\issues"
+                New-Item -ItemType Directory -Path $issues -Force | Out-Null
+                Set-Content -LiteralPath (
+                    Join-Path $scratch "$($feature.Directory)\spec.md"
+                ) -Value "# $($feature.Title)"
+                Set-Content -LiteralPath (Join-Path $issues '01.md') -Value (
+                    "# Ticket`n`nStatus: ready-for-agent"
+                )
+            }
+
+            $lines = & $script:ralphModule {
+                param($Scratch)
+                Get-TrackerLines -ScratchDirectory $Scratch -IncludeIteration:$false
+            } $scratch
+            $text = ($lines -join "`n") -replace "$([char]27)\[[0-9;]*m", ''
+
+            $text.IndexOf('Alpha spec') | Should -BeLessThan $text.IndexOf('Zulu spec')
+            $text.IndexOf('Finding 5:') | Should -BeLessThan $text.IndexOf('Finding 15:')
         }
         finally {
             Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
@@ -1231,7 +1347,8 @@ switch ($env:RALPH_SCENARIO) {
             Should -Match '(?m)^Status: done\r?$'
         Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
             Should -Be 'ralph: feature/01, FEATURE completed'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('status', '--porcelain') |
+            Should -Be ''
     }
 
     It 'runs the Copilot success lifecycle with its wire configuration' {
@@ -1249,7 +1366,8 @@ switch ($env:RALPH_SCENARIO) {
         $result.Output | Should -Match ([regex]::Escape("`e[36mraw diagnostic`e[0m"))
         Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
             Should -Be 'ralph: feature/01, FEATURE completed'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('status', '--porcelain') |
+            Should -Be ''
     }
 
     It 'surfaces a nonzero agent exit without committing' {
@@ -1296,7 +1414,8 @@ switch ($env:RALPH_SCENARIO) {
         $result.Output | Should -Match ([regex]::Escape("`e[r"))
         $result.Output | Should -Match ([regex]::Escape("`e[?25h"))
         $result.Output | Should -Match 'Requested scope complete\.'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('status', '--porcelain') |
+            Should -Be ''
     }
 
     It 'renders an impossible-width interactive table as vertical records' {
@@ -1334,7 +1453,8 @@ switch ($env:RALPH_SCENARIO) {
         $result.Invocations | Should -BeNullOrEmpty
         (Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\feature\issues\01.md') -Raw) |
             Should -Match '(?m)^Status: ready-for-agent\r?$'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('status', '--porcelain') |
+            Should -Be ''
     }
 
     It 'runs archive mode without invoking an agent or changing progress history' {
@@ -1410,19 +1530,8 @@ switch ($env:RALPH_SCENARIO) {
         $progress = [System.IO.File]::ReadAllBytes($progressPath)
         $progress[$progress.Length - 1] | Should -Be 10
         @(Get-Content -LiteralPath $progressPath).Count | Should -Be 2
-        $firstCommitProgress = Invoke-Git $result.Repository @(
-            'show', 'HEAD~1:.scratch/progress.jsonl'
-        )
-        $firstCommitProgress | Should -Match '"ticket":"01"'
-        $firstProgressBlob = (
-            Invoke-Git $result.Repository @(
-                'rev-parse', 'HEAD~1:.scratch/progress.jsonl'
-            )
-        ).Trim()
-        [int](Invoke-Git $result.Repository @('cat-file', '-s', $firstProgressBlob)) |
-            Should -Be ([System.Text.UTF8Encoding]::new($false).GetByteCount(
-                '{"feature":"feature","ticket":"01","changes":"implemented","checks":"passed"}' + "`n"
-            ))
+        Invoke-Git $result.Repository @('show', '--format=', '--name-status', 'HEAD~1') |
+            Should -Match '^D\s+\.scratch/progress\.jsonl$'
         Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
     }
 
@@ -1515,7 +1624,8 @@ Status: ready-for-agent
         }
         Invoke-Git $result.Repository @('show', '--format=', '--name-only', 'HEAD') |
             Should -Not -Match '\.scratch[\\/]done[\\/]feature[\\/]issues'
-        Invoke-Git $result.Repository @('status', '--porcelain') | Should -Be ''
+        Invoke-Git $result.Repository @('status', '--porcelain') |
+            Should -Be ''
     }
 
     It 'iterates active features in priority order until all work is archived' {

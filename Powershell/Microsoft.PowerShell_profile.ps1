@@ -160,7 +160,7 @@ Start-Action "Initialize language"
     Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
     $languages[0].InputMethodTips.Remove("0407:00000407") | Out-Null
     $languages[0].InputMethodTips.Remove("0407:00000409") | Out-Null
-    0..1 | ForEach-Object {
+    0..($languages.Count-1) | ForEach-Object {
         $languages[$_].InputMethodTips.Add("0409:00000409") | Out-Null
         while ($languages[$_].InputMethodTips.Count -gt 1) {
             $languages[$_].InputMethodTips.RemoveAt(0)
@@ -345,6 +345,8 @@ Start-Action "Configure PSReadLine"
     Set-PSReadLineKeyHandler -Chord "Ctrl+t" -Function AcceptSuggestion
     # Set-PSReadLineKeyHandler -Chord "F9" -Function AcceptSuggestion
     Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
+    Set-PSReadLineKeyHandler -Chord "Ctrl+j" -Function InsertLineAbove
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+k' -Function InsertLineBelow
     # Set-PSReadLineKeyHandler -Chord "F8" -Function AcceptNextSuggestionWord
 
     Set-PSReadLineKeyHandler -Key "Alt+(" `

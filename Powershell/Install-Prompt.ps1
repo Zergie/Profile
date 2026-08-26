@@ -5,6 +5,13 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+# Codex's integrated terminal does not render the Nerd Font private-use glyphs
+# used by the full prompt. Detect any Codex-provided environment marker.
+$script:UseStandardUnicodePrompt = $null -ne (
+    Get-ChildItem Env:CODEX* -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+)
+
 # oh-my-posh init pwsh --config atomic | Invoke-Expression
 
 $global:GitPromptWatcherScript = Join-Path $PSScriptRoot 'Startup\Invoke-GitPromptWatcher.ps1'
@@ -92,13 +99,25 @@ function Format-GitPromptSnapshot {
     if ($Snapshot.hasUpstream -and -not $Snapshot.hasAheadBehind) {
         $text += " `e[31m×"
     } elseif ($Snapshot.behind -gt 0 -and $Snapshot.ahead -gt 0) {
-        $text += " `e[33m$($Snapshot.behind) $($Snapshot.ahead)"
+        if ($script:UseStandardUnicodePrompt) {
+            $text += " `e[33m↓$($Snapshot.behind) ↑$($Snapshot.ahead)"
+        } else {
+            $text += " `e[33m$($Snapshot.behind) $($Snapshot.ahead)"
+        }
     } elseif ($Snapshot.behind -gt 0) {
-        $text += " `e[31m$($Snapshot.behind)"
+        if ($script:UseStandardUnicodePrompt) {
+            $text += " `e[31m↓$($Snapshot.behind)"
+        } else {
+            $text += " `e[31m$($Snapshot.behind)"
+        }
     } elseif ($Snapshot.ahead -gt 0) {
-        $text += " `e[32m$($Snapshot.ahead)"
+        if ($script:UseStandardUnicodePrompt) {
+            $text += " `e[32m↑$($Snapshot.ahead)"
+        } else {
+            $text += " `e[32m$($Snapshot.ahead)"
+        }
     } elseif (-not $Snapshot.hasAheadBehind) {
-        $text += ' '
+        $text += if ($script:UseStandardUnicodePrompt) { ' ✓' } else { ' ' }
     }
 
     $hasStaged = $Snapshot.staged.added -gt 0 -or $Snapshot.staged.modified -gt 0 -or $Snapshot.staged.deleted -gt 0
@@ -176,7 +195,10 @@ function prompt {
     $fg4 = 'ffffff'    | Get-RGB
     $bg4 = $palette[3] | Get-RGB
 
-    Write-Host -NoNewline ("`e[0m`n┌ #a##b##c##d#`n#x#└ " `
+    $promptSeparators = if ($script:UseStandardUnicodePrompt) { '▐', '▌' } else { '', '' }
+    $timerIcon = if ($script:UseStandardUnicodePrompt) { ' ◷ ' } else { '  ' }
+
+    Write-Host -NoNewline (("`e[0m`n┌ $($promptSeparators[0])#a#$($promptSeparators[1])#b#$($promptSeparators[1])#c#$($promptSeparators[1])#d#$($promptSeparators[1])`n#x#└ " `
             -replace ' ',   "`e[38;2;$bg1" `
             -replace '(#a#)', "`e[38;2;$fg1`e[48;2;$bg1 `$1 `e[38;2;$bg1`e[48;2;$bg2" `
             -replace '(#b#)', "`e[38;2;$fg2`e[48;2;$bg2`$1`e[38;2;$bg2`e[48;2;$bg3" `
@@ -191,15 +213,16 @@ function prompt {
                     (Get-History)[-1].Duration |
                         ForEach-Object {
                             if ($_.TotalSeconds -gt 1) {
-                                '  ' + $_.ToString('s\.f') + ' s '
+                                $timerIcon + $_.ToString('s\.f') + ' s '
                             } else {
-                                '  ' + $_.TotalMilliseconds.ToString('0') + ' ms '
+                                $timerIcon + $_.TotalMilliseconds.ToString('0') + ' ms '
                             }
                         }
                 } catch {
                 }
             )
         )
+    )
     " "
 }
 
