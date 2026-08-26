@@ -123,6 +123,30 @@ Describe 'Internal' -Tag 'Internal' {
         $repositoryState | Should -BeNullOrEmpty
     }
 
+    It 'forwards agent output before the process exits' {
+        $pwsh = (Get-Command pwsh -ErrorAction Stop).Source
+        $received = [System.Collections.Generic.List[object]]::new()
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+        $result = & $script:ralphModule {
+            param($PowerShellPath, $Received, $Stopwatch)
+            Invoke-AgentProcess -CommandPath $PowerShellPath -ArgumentList @(
+                '-NoProfile', '-Command',
+                "Write-Output 'first'; Start-Sleep -Milliseconds 1500; Write-Output 'second'"
+            ) -OnOutputLine {
+                param($Line)
+                $Received.Add([pscustomobject]@{
+                        Line = $Line
+                        Milliseconds = $Stopwatch.ElapsedMilliseconds
+                    })
+            }
+        } $pwsh $received $stopwatch
+
+        $result.ExitCode | Should -Be 0
+        $received.Line | Should -Be @('first', 'second')
+        $received[0].Milliseconds | Should -BeLessThan 1200
+    }
+
     It 'ignores agent events without a type under strict mode' {
         $event = [pscustomobject]@{
             item = [pscustomobject]@{ type = 'agent_message'; text = 'hello' }

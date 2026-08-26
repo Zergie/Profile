@@ -154,27 +154,31 @@ DynamicParam {
     $ParameterAttribute.ParameterSetName = "NameParameterSet"
     $AttributeCollection.Add($ParameterAttribute)
 
-    $ids = & "$PSScriptRoot\Invoke-RestApi.ps1" `
+    $ids = @(& "$PSScriptRoot\Invoke-RestApi.ps1" `
                 -Endpoint "POST https://dev.azure.com/{organization}/{project}/{team}/_apis/wit/wiql?api-version=6.0" `
                 -Body @{
-                    query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.TeamProject] = 'TauOffice'"
+                    query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] <> 'Done' AND [System.WorkItemType] <> 'Task' AND [System.TeamProject] = @Project"
                 } |
                 ForEach-Object workItems |
-                ForEach-Object id
+                ForEach-Object id)
+    $workitemNames = @(
+        for ($offset = 0; $offset -lt $ids.Count; $offset += 200) {
+            & "$PSScriptRoot\Invoke-RestApi.ps1" `
+                    -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
+                    -Body @{
+                        ids= @($ids | Select-Object -Skip $offset -First 200)
+                        fields= @(
+                            "System.Id"
+                            "System.Title"
+                         )
+                    } |
+                    ForEach-Object value |
+                    ForEach-Object fields |
+                    ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" }
+        }
+    )
     $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute(@(
-        & "$PSScriptRoot\Invoke-RestApi.ps1" `
-                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=6.0" `
-                -Body @{
-                    ids= $ids
-                    fields= @(
-                        "System.Id"
-                        "System.Title"
-                     )
-                } |
-                ForEach-Object value |
-                ForEach-Object fields |
-                ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
-                Sort-Object
+        $workitemNames | Sort-Object
     ))
     $AttributeCollection.Add($ValidateSetAttribute)
 
@@ -325,7 +329,7 @@ process {
 
     $workitems = @()
     $workitems = $downloaded |
-        Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" -or $null -ne $Id } |
+        Where-Object { $_.fields.'System.WorkItemType' -eq "Issue" -or $null -ne $WorkitemId } |
         ForEach-Object {
             $_.PSObject.TypeNames.Insert(0, 'User.WorkItem')
             if ($WithComments) {

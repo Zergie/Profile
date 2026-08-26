@@ -840,7 +840,9 @@
             "yellow": "#F4C820"
         }
     ],
+    "showTabsFullscreen": false,
     "showTerminalTitleInTitlebar": false,
     "themes": [],
+    "useAcrylicInTabRow": false,
     "windowingBehavior": "useAnyExisting"
 }

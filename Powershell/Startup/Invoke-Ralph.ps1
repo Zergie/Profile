@@ -900,10 +900,11 @@ function ConvertTo-RalphMarkdown {
     }
 }
 
-function Invoke-CodexProcess {
+function Invoke-AgentProcess {
     param(
         [Parameter(Mandatory)][string] $CommandPath,
-        [Parameter(Mandatory)][string[]] $ArgumentList
+        [Parameter(Mandatory)][string[]] $ArgumentList,
+        [Parameter(Mandatory)][scriptblock] $OnOutputLine
     )
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
@@ -930,15 +931,37 @@ function Invoke-CodexProcess {
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     if (-not $process.Start()) {
-        throw "Could not start Codex command '$CommandPath'."
+        throw "Could not start agent command '$CommandPath'."
     }
-    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
-    $process.WaitForExit()
+    $output = [System.Collections.Generic.List[string]]::new()
+    $exitCode = $null
+    try {
+        while (-not $process.StandardOutput.EndOfStream) {
+            $line = $process.StandardOutput.ReadLine()
+            if ($null -eq $line) { continue }
+
+            $output.Add($line)
+            & $OnOutputLine $line | Out-Null
+        }
+        $process.WaitForExit()
+        $exitCode = $process.ExitCode
+        $stderrTask.GetAwaiter().GetResult() | Out-Null
+    }
+    catch {
+        if (-not $process.HasExited) {
+            $process.Kill($true)
+            $process.WaitForExit()
+        }
+        throw
+    }
+    finally {
+        $process.Dispose()
+    }
 
     return [pscustomobject]@{
-        Output   = $stdoutTask.Result -split '\r?\n'
-        ExitCode = $process.ExitCode
+        Output   = @($output)
+        ExitCode = $exitCode
     }
 }
 
@@ -1018,129 +1041,125 @@ function Invoke-Agent {
         HasEmittedNonBlank = $false
         LastWasBlank = $false
     }
-    $hasCompletedMessage = $false
-    $typedOutputCellCount = 0
-    if ($Name -eq 'codex' -and [System.IO.Path]::GetExtension($CommandPath) -ine '.ps1') {
-        $codexResult = Invoke-CodexProcess -CommandPath $CommandPath -ArgumentList $arguments
-        $agentOutput = $codexResult.Output
-        $agentExitCode = $codexResult.ExitCode
+    $streamState = [pscustomobject]@{
+        HasCompletedMessage = $false
+        TypedOutputCellCount = 0
     }
-    else {
-        $agentOutput = & $CommandPath @arguments 2>&1
-        $agentExitCode = $LASTEXITCODE
-    }
-    $agentOutput | ForEach-Object {
-            $rawLine = $_.ToString()
-            $lines.Add($rawLine)
-            $text = $null
-            try {
-                $event = $rawLine | ConvertFrom-Json -ErrorAction Stop
+    $processOutputLine = {
+        param([string] $rawLine)
+        $lines.Add($rawLine)
+        $text = $null
+        try {
+            $event = $rawLine | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            if ($Name -ne 'codex' -and -not [string]::IsNullOrEmpty($rawLine)) {
+                $text = $rawLine
             }
-            catch {
-                if ($Name -ne 'codex' -and -not [string]::IsNullOrEmpty($rawLine)) {
-                    $text = $rawLine
-                }
-                $event = $null
+            $event = $null
+        }
+        if ($null -ne $event) {
+            if ($Name -eq 'copilot') {
+                Update-SubAgentLifecycle -Event $event -DisplayNames $subAgentDisplayNames
             }
-            if ($null -ne $event) {
-                if ($Name -eq 'copilot') {
-                    Update-SubAgentLifecycle -Event $event -DisplayNames $subAgentDisplayNames
-                }
-                $message = ConvertTo-NormalizedAgentMessage `
-                    -Name $Name `
-                    -Event $event `
-                    -SeenMessageIds $seenMessageIds
-                if ($null -ne $message) {
-                    $isSubAgent = -not [string]::IsNullOrEmpty($message.AgentInstanceId)
-                    $baseStyle = ''
-                    $label = ''
-                    if ($isSubAgent) {
-                        $agentInstanceId = $message.AgentInstanceId
-                        if (-not $subAgentStyles.ContainsKey($agentInstanceId)) {
-                            $subAgentStyles[$agentInstanceId] = ConvertFrom-SubduedHue `
-                                -Index $subAgentStyles.Count
-                        }
-                        $baseStyle = [string]$subAgentStyles[$agentInstanceId]
-                        $displayName = if ($subAgentDisplayNames.ContainsKey($agentInstanceId)) {
-                            [string]$subAgentDisplayNames[$agentInstanceId]
-                        }
-                        else {
-                            'Sub-agent'
-                        }
-                        $label = if ($WorkboardState) {
-                            "${baseStyle}`e[1m${displayName}:$($PSStyle.Reset)$baseStyle"
-                        }
-                        else {
-                            "${displayName}:"
-                        }
+            $message = ConvertTo-NormalizedAgentMessage `
+                -Name $Name `
+                -Event $event `
+                -SeenMessageIds $seenMessageIds
+            if ($null -ne $message) {
+                $isSubAgent = -not [string]::IsNullOrEmpty($message.AgentInstanceId)
+                $baseStyle = ''
+                $label = ''
+                if ($isSubAgent) {
+                    $agentInstanceId = $message.AgentInstanceId
+                    if (-not $subAgentStyles.ContainsKey($agentInstanceId)) {
+                        $subAgentStyles[$agentInstanceId] = ConvertFrom-SubduedHue `
+                            -Index $subAgentStyles.Count
                     }
-                    if ($WorkboardState) {
-                        Refresh-RalphWorkboardForResize `
-                            -ScratchDirectory $ScratchDirectory `
-                            -State $WorkboardState | Out-Null
-                    }
-                    $rendered = ConvertTo-RalphMarkdown -Markdown $message.Text `
-                        -BaseStyle $baseStyle `
-                        -Interactive:([bool]$WorkboardState) `
-                        -InnerWidth $(if ($WorkboardState) {
-                            [int]$WorkboardState.InnerWidth
-                        }
-                        else {
-                            $FrameInnerWidth
-                        })
-                    if (-not [string]::IsNullOrEmpty($label)) {
-                        $rendered = "$label`n$rendered"
-                    }
-                    $text = if ($hasCompletedMessage) {
-                        "`n$rendered"
+                    $baseStyle = [string]$subAgentStyles[$agentInstanceId]
+                    $displayName = if ($subAgentDisplayNames.ContainsKey($agentInstanceId)) {
+                        [string]$subAgentDisplayNames[$agentInstanceId]
                     }
                     else {
-                        $rendered
+                        'Sub-agent'
                     }
-                    $hasCompletedMessage = $true
+                    $label = if ($WorkboardState) {
+                        "${baseStyle}`e[1m${displayName}:$($PSStyle.Reset)$baseStyle"
+                    }
+                    else {
+                        "${displayName}:"
+                    }
                 }
-            }
-
-            if ($null -ne $text) {
                 if ($WorkboardState) {
                     Refresh-RalphWorkboardForResize `
                         -ScratchDirectory $ScratchDirectory `
                         -State $WorkboardState | Out-Null
-                    $rows = Split-AgentOutputContent -Content ([string]$text) `
-                        -InnerWidth ([int]$WorkboardState.InnerWidth)
-                    foreach ($row in $rows) {
-                        $typedOutputCellCount += [int]$row.Width
-                        Write-TypedAgentOutputRow -Content $row.Text `
-                            -ContentWidth ([int]$row.Width) `
-                            -InnerWidth ([int]$WorkboardState.InnerWidth) `
-                            -StreamTextCellCount $typedOutputCellCount `
-                            -WorkboardState $WorkboardState
+                }
+                $rendered = ConvertTo-RalphMarkdown -Markdown $message.Text `
+                    -BaseStyle $baseStyle `
+                    -Interactive:([bool]$WorkboardState) `
+                    -InnerWidth $(if ($WorkboardState) {
+                        [int]$WorkboardState.InnerWidth
                     }
+                    else {
+                        $FrameInnerWidth
+                    })
+                if (-not [string]::IsNullOrEmpty($label)) {
+                    $rendered = "$label`n$rendered"
+                }
+                $text = if ($streamState.HasCompletedMessage) {
+                    "`n$rendered"
                 }
                 else {
-                    foreach ($outputLine in ([string]$text -split '\r?\n')) {
-                        $isBlank = [string]::IsNullOrWhiteSpace($outputLine)
-                        if ($isBlank -and (
+                    $rendered
+                }
+                $streamState.HasCompletedMessage = $true
+            }
+        }
+
+        if ($null -ne $text) {
+            if ($WorkboardState) {
+                Refresh-RalphWorkboardForResize `
+                    -ScratchDirectory $ScratchDirectory `
+                    -State $WorkboardState | Out-Null
+                $rows = Split-AgentOutputContent -Content ([string]$text) `
+                    -InnerWidth ([int]$WorkboardState.InnerWidth)
+                foreach ($row in $rows) {
+                    $streamState.TypedOutputCellCount += [int]$row.Width
+                    Write-TypedAgentOutputRow -Content $row.Text `
+                        -ContentWidth ([int]$row.Width) `
+                        -InnerWidth ([int]$WorkboardState.InnerWidth) `
+                        -StreamTextCellCount $streamState.TypedOutputCellCount `
+                        -WorkboardState $WorkboardState
+                }
+            }
+            else {
+                foreach ($outputLine in ([string]$text -split '\r?\n')) {
+                    $isBlank = [string]::IsNullOrWhiteSpace($outputLine)
+                    if ($isBlank -and (
                             -not $outputState.HasEmittedNonBlank -or
                             $outputState.LastWasBlank
                         )) {
-                            continue
-                        }
-
-                        $displayLine = if ($isBlank) { '' } else { $outputLine }
-                        if ($FrameInnerWidth -gt 0) {
-                            Write-AgentOutputRow -Content $displayLine -InnerWidth $FrameInnerWidth
-                        }
-                        else {
-                            Write-Host $displayLine
-                        }
-
-                        if (-not $isBlank) { $outputState.HasEmittedNonBlank = $true }
-                        $outputState.LastWasBlank = $isBlank
+                        continue
                     }
+
+                    $displayLine = if ($isBlank) { '' } else { $outputLine }
+                    if ($FrameInnerWidth -gt 0) {
+                        Write-AgentOutputRow -Content $displayLine -InnerWidth $FrameInnerWidth
+                    }
+                    else {
+                        Write-Host $displayLine
+                    }
+
+                    if (-not $isBlank) { $outputState.HasEmittedNonBlank = $true }
+                    $outputState.LastWasBlank = $isBlank
                 }
             }
+        }
     }
+    $agentResult = Invoke-AgentProcess -CommandPath $CommandPath -ArgumentList $arguments `
+        -OnOutputLine $processOutputLine
+    $agentExitCode = $agentResult.ExitCode
 
     if ($agentExitCode -ne 0) {
         throw "$Name failed with exit code $agentExitCode."
@@ -3324,6 +3343,7 @@ function Resolve-RalphInvocation {
 # and orchestration below this guard so importing the functions has no host,
 # repository, terminal, or process side effects.
 if ($MyInvocation.InvocationName -ne '.') {
+Clear-Host
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 

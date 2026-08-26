@@ -1,0 +1,3 @@
+-r requirements.txt
+pypdfium2==5.1.0
+pytest==9.0.3
