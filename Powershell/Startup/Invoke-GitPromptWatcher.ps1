@@ -28,8 +28,20 @@ param(
     [string] $Path = (Get-Location).Path,
 
     [Parameter(ParameterSetName = 'Worker', DontShow)]
-    [switch] $Worker,
+    [Parameter(ParameterSetName = 'ReportBug')]
+    [switch] $ReportBug,
 
+    [Parameter(ParameterSetName = 'ReportBug')]
+    [string] $Description,
+
+    [Parameter(ParameterSetName = 'ReportBug')]
+    [string] $OutputPath,
+
+    [Parameter(ParameterSetName = 'ReportBug')]
+    [switch] $IncludeSensitivePaths,
+
+    [Parameter(ParameterSetName = 'Worker', DontShow)]
+    [switch] $Worker,
     [Parameter(DontShow)]
     [string] $WorkerIdentityKey,
 
@@ -1105,6 +1117,38 @@ function Invoke-GitPromptWatcherWorker {
     }
 }
 
+function Get-GitPromptDiagnosticRepositoryId {
+    param([Parameter(Mandatory)] [string] $Path)
+    $bytes = [Text.Encoding]::UTF8.GetBytes(([IO.Path]::GetFullPath($Path)).ToLowerInvariant())
+    return 'repo-' + [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 16).ToLowerInvariant()
+}
+
+function ConvertTo-GitPromptDiagnosticSnapshot {
+    param([object] $Snapshot, [switch] $IncludePaths)
+    if (-not $Snapshot) { return $null }
+    $result = [ordered]@{ available = [bool]$Snapshot.available; repositoryId = if ($Snapshot.repositoryRoot) { Get-GitPromptDiagnosticRepositoryId $Snapshot.repositoryRoot }; hasUpstream = [bool]$Snapshot.hasUpstream; hasAheadBehind = [bool]$Snapshot.hasAheadBehind; ahead = [int]$Snapshot.ahead; behind = [int]$Snapshot.behind; staged = $Snapshot.staged; workingTree = $Snapshot.workingTree; conflicts = [int]$Snapshot.conflicts; refreshedAt = [string]$Snapshot.refreshedAt; refreshError = if ($Snapshot.refreshError) { 'git refresh failed' } }
+    if ($IncludePaths) { $result.repositoryRoot = [string]$Snapshot.repositoryRoot; $result.gitDirectory = [string]$Snapshot.gitDirectory; $result.branch = [string]$Snapshot.branch; $result.upstream = [string]$Snapshot.upstream }
+    [pscustomobject]$result
+}
+
+function New-GitPromptBugReport {
+    param([Parameter(Mandatory)]$Identity, [string]$Description, [string]$OutputPath, [switch]$IncludeSensitivePaths)
+    $id = [guid]::NewGuid().ToString('N'); $warnings = [Collections.Generic.List[string]]::new(); $root = Join-Path ([IO.Path]::GetTempPath()) "git-prompt-watcher-report-$id"; $archive = if ($OutputPath) { [IO.Path]::GetFullPath($OutputPath) } else { Join-Path ([IO.Path]::GetTempPath()) "git-prompt-watcher-$id.zip" }; $clock = [Diagnostics.Stopwatch]::StartNew()
+    try {
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+        $status = $null; $probes = @();
+        for ($attempt = 1; $attempt -le 2 -and $clock.Elapsed.TotalSeconds -lt 5; $attempt++) { $watch = [Diagnostics.Stopwatch]::StartNew(); try { $status = Invoke-GitPromptWatcherRequest -PipeName $Identity.PipeName -Message @{ type = 'Status' } -TimeoutMilliseconds 150; $probes += [pscustomobject]@{ attempt = $attempt; outcome = 'Success'; latencyMilliseconds = [math]::Round($watch.Elapsed.TotalMilliseconds,2); state = [string]$status.state } } catch { $probes += [pscustomobject]@{ attempt = $attempt; outcome = 'Unavailable'; latencyMilliseconds = [math]::Round($watch.Elapsed.TotalMilliseconds,2); errorType = $_.Exception.GetType().Name }; $warnings.Add("status probe $attempt failed") } }
+        if (-not $status) { $status = if (Test-GitPromptWatcherStoppedState $Identity.StoppedEventName) { [pscustomobject]@{ state='Stopped' } } else { [pscustomobject]@{ state='NotRunning' } } }
+        $path = (Get-Location).Path; $watcher = $null; try { $watcher = (Invoke-GitPromptWatcherRequest -PipeName $Identity.PipeName -Message @{ type='Snapshot'; path=$path } -TimeoutMilliseconds 150).snapshot } catch { $warnings.Add('watcher snapshot probe failed') }; $direct = $null; try { $direct = Get-GitPromptRepositorySnapshot $path } catch { $warnings.Add('direct Git snapshot failed') }
+        $worker = $null; if ($status.processId) { try { $worker = Get-Process -Id ([int]$status.processId) -ErrorAction Stop } catch { $warnings.Add('worker metrics unavailable') } }
+        $sections = [ordered]@{ status = [pscustomobject]@{ state=[string]$status.state; processId=if($status.processId){[int]$status.processId}; sourceLoadError=if($status.sourceLoadError){'source load failed'}; probes=$probes }; snapshot = [pscustomobject]@{ watcher=ConvertTo-GitPromptDiagnosticSnapshot $watcher -IncludePaths:$IncludeSensitivePaths; directGit=ConvertTo-GitPromptDiagnosticSnapshot $direct -IncludePaths:$IncludeSensitivePaths; matches=if($watcher -and $direct){[pscustomobject]@{available=([bool]$watcher.available -eq [bool]$direct.available); staged=(($watcher.staged|ConvertTo-Json -Compress)-eq($direct.staged|ConvertTo-Json -Compress)); workingTree=(($watcher.workingTree|ConvertTo-Json -Compress)-eq($direct.workingTree|ConvertTo-Json -Compress)); conflicts=([int]$watcher.conflicts -eq [int]$direct.conflicts)}} }; worker=[pscustomobject]@{ state=[string]$status.state; processId=if($worker){[int]$worker.Id}; privateMemoryBytes=if($worker){[int64]$worker.PrivateMemorySize64}; workingSetBytes=if($worker){[int64]$worker.WorkingSet64}; handles=if($worker){[int]$worker.HandleCount}; threads=if($worker){[int]$worker.Threads.Count} } }
+        $source = [ordered]@{ parseable=$false; sourceHash=$null; revision=$null; dirty=$null }; try { $sourcePath=Get-GitPromptWatcherSourcePath; Test-GitPromptWatcherSourceLoad $sourcePath; $source.parseable=$true; $source.sourceHash=(Get-FileHash $sourcePath -Algorithm SHA256).Hash; $source.revision=(& git -C (Split-Path -Parent $sourcePath) rev-parse HEAD 2>$null|Select-Object -First 1); $source.dirty=[bool](& git -C (Split-Path -Parent $sourcePath) status --porcelain -- $sourcePath 2>$null) } catch { $warnings.Add('source metadata collection failed') }; $sections.source=[pscustomobject]$source
+        $sections.environment=[ordered]@{ powershell=$PSVersionTable.PSVersion.ToString(); edition=$PSVersionTable.PSEdition; git=[string]((& git --version 2>$null)-join ' '); windows=[string][Environment]::OSVersion.Version; processBitness=if([Environment]::Is64BitProcess){64}else{32}; terminalHost=[string]$host.Name }
+        $manifest=[ordered]@{ schemaVersion=1; incidentId=$id; capturedAt=[datetime]::UtcNow.ToString('O'); watcherIdentity=[string]$Identity.Key; sensitivePathsIncluded=[bool]$IncludeSensitivePaths; captureReason='Manual ReportBug request'; description=$Description; warnings=@($warnings); sections=[ordered]@{} }; foreach($name in $sections.Keys){$manifest.sections[$name]='complete'}; $sections.manifest=$manifest
+        foreach($name in $sections.Keys){$sections[$name]|ConvertTo-Json -Depth 12|Set-Content (Join-Path $root "$name.json") -Encoding utf8}; Set-Content (Join-Path $root 'summary.md') -Value "# Git Prompt Watcher bug report`n`nState: $($status.state)`nIncident: $id`nWarnings: $($warnings.Count)" -Encoding utf8; if(Test-Path $archive){Remove-Item $archive -Force}; Compress-Archive (Join-Path $root '*') $archive -ErrorAction Stop
+        [pscustomobject]@{ incidentId=$id; archivePath=$archive; captureReason='Manual ReportBug request'; sensitivePathsIncluded=[bool]$IncludeSensitivePaths; collectionWarnings=@($warnings) }
+    } finally { if(Test-Path $root){Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue} }
+}
 function Initialize-GitPromptWatcherStoppedEvent {
     $sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
     $userName = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
@@ -1706,6 +1750,10 @@ if (-not (Get-Variable -Name GitPromptWatcherImportOnly -Scope Script -ValueOnly
         }
         Start-GitPromptWatcherWorker -Identity $identity -StopUnresponsiveWorker
         return (& $PSCommandPath -Status)
+    }
+
+    if ($ReportBug) {
+        return New-GitPromptBugReport -Identity $identity -Description $Description -OutputPath $OutputPath -IncludeSensitivePaths:$IncludeSensitivePaths
     }
 
     if ($Request) {
