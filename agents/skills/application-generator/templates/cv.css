@@ -333,22 +333,58 @@ p.cv-subtitle {
     top: -0.51mm;
     grid-column: 3;
 }
-.technology-section { position: relative; }
 .technology-section h2 {
     padding-bottom: 1.83mm;
     margin-bottom: 2.08mm;
 }
-.technology-section::after {
-    content: "";
-    position: absolute;
-    left: 47.915mm;
-    top: 11.746mm;
-    height: 40.22mm;
+
+/* No-photo variant: retain the proven two-column timeline geometry, but make
+   the former portrait/sidebar field white rather than showing an empty rail. */
+.page-1.no-photo {
+    background-size: 40.64mm auto, 100% 100%;
+    background-position: 12.07mm 8.89mm, 0 0;
+}
+.page-1.no-photo .sidebar-content {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    top: auto;
+    /* Align the sidebar's first heading with the main competency heading. */
+    padding-top: 47.2mm;
+    color: #f2f2f2;
+}
+.page-1.no-photo .cv-header,
+.page-1.no-photo .competencies-section,
+.page-1.no-photo .technology-section {
+    padding-left: 3mm;
+}
+.page-1.no-photo .sidebar-profile h2,
+.page-1.no-photo .sidebar-links h2,
+.page-1.no-photo .sidebar-languages h2 {
+    color: #f2f2f2;
+}
+
+/* Shared page rhythm: use the available page height without changing content. */
+.page-1 .competency-group { margin-bottom: 7mm; }
+.page-1 .tech-group { margin-bottom: 6mm; }
+.page-2 .selected-project { margin-bottom: 17mm; }
+.technology-timeline-segment {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    align-self: start;
+    position: relative;
+    left: -1.015mm;
+    top: 1.4mm;
+    /* Span the intentionally enlarged gap to the next technology point. */
+    height: calc(100% + 6mm);
     width: 0.5pt;
     background: #000000;
 }
-/* The divider reaches the final technology marker when tailored CVs add groups. */
-.technology-section.technology-groups-7::after { height: 60.5mm; }
+.technology-timeline-segment-last {
+    /* The tail ends at the visual bottom of the relatively shifted text. */
+    height: calc(100% - 3.32mm);
+}
 .tech-group .timeline-anchor {
     position: relative;
     left: -1.015mm;
@@ -356,6 +392,7 @@ p.cv-subtitle {
     width: 2.54mm;
     height: 2.46mm;
     grid-column: 2;
+    z-index: 1;
 }
 .tech-group + .tech-group .timeline-anchor { height: 2.48mm; }
 .tech-group:nth-of-type(4) .timeline-anchor,

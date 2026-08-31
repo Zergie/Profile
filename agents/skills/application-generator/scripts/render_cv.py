@@ -131,7 +131,7 @@ def _section(value: Any, path: str, *, item_key: str = "items") -> dict[str, Any
 
 def _merge(narrative: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Apply the deliberately small, safe override surface to the baseline."""
-    override_root = {"schema_version", "language", "subtitle", "profile", "competencies", "technology", "selected_projects", "project_overview", "employment", "cover_letter"}
+    override_root = {"schema_version", "language", "subtitle", "photo", "profile", "competencies", "technology", "selected_projects", "project_overview", "employment", "cover_letter"}
     unknown = set(override) - override_root
     if unknown:
         raise PayloadError(f"input contains protected or unknown field(s): {', '.join(sorted(unknown))}")
@@ -143,6 +143,10 @@ def _merge(narrative: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     merged = json.loads(json.dumps(narrative))
     if "subtitle" in override:
         merged["subtitle"] = _text(override["subtitle"], "input.subtitle")
+    if "photo" in override:
+        if override["photo"] is not None:
+            raise PayloadError("input.photo must be null for the no-photo renderer")
+        merged["photo"] = None
     for name in ("profile", "competencies", "technology", "selected_projects", "project_overview"):
         if name not in override:
             continue
@@ -178,10 +182,10 @@ def _merge(narrative: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
 
 def validate_payload(raw: Any) -> dict[str, Any]:
     required_root_keys = {
-        "schema_version", "language", "title", "subtitle", "photo", "contact", "links", "profile",
+        "schema_version", "language", "title", "subtitle", "contact", "links", "profile",
         "competencies", "technology", "languages", "employment", "education", "selected_projects",
     }
-    allowed_root_keys = required_root_keys | {"project_overview"}
+    allowed_root_keys = required_root_keys | {"photo", "project_overview"}
     if not isinstance(raw, dict):
         raise PayloadError("payload must be a mapping")
     unknown = set(raw) - allowed_root_keys
@@ -203,31 +207,33 @@ def validate_payload(raw: Any) -> dict[str, Any]:
             f"language must be a valid BCP-47 language tag; received {lang!r}"
         )
 
-    photo_path = Path(_text(data["photo"], "photo")).expanduser()
-    if not photo_path.is_absolute():
-        raise PayloadError("photo.path must be an absolute local path")
-    if not photo_path.is_file():
-        raise PayloadError(f"photo.path does not exist: {photo_path}")
-    try:
-        with Image.open(photo_path) as image:
-            width, height = image.size
-            image.verify()
-    except Exception as exc:
-        raise PayloadError(f"photo.path is not a readable image: {exc}") from exc
-    if not math.isclose(
-        width / height,
-        MINIMUM_PHOTO_SIZE[0] / MINIMUM_PHOTO_SIZE[1],
-        abs_tol=0.002,
-    ):
-        raise PayloadError(
-            f"photo must have a 4:5 aspect ratio; received {width}x{height}"
-        )
-    if width < MINIMUM_PHOTO_SIZE[0] or height < MINIMUM_PHOTO_SIZE[1]:
-        raise PayloadError(
-            "photo is below 300-DPI-equivalent resolution; "
-            f"need at least {MINIMUM_PHOTO_SIZE[0]}x{MINIMUM_PHOTO_SIZE[1]}, "
-            f"received {width}x{height}"
-        )
+    photo_value = data.get("photo")
+    if photo_value is not None:
+        photo_path = Path(_text(photo_value, "photo")).expanduser()
+        if not photo_path.is_absolute():
+            raise PayloadError("photo.path must be an absolute local path")
+        if not photo_path.is_file():
+            raise PayloadError(f"photo.path does not exist: {photo_path}")
+        try:
+            with Image.open(photo_path) as image:
+                width, height = image.size
+                image.verify()
+        except Exception as exc:
+            raise PayloadError(f"photo.path is not a readable image: {exc}") from exc
+        if not math.isclose(
+            width / height,
+            MINIMUM_PHOTO_SIZE[0] / MINIMUM_PHOTO_SIZE[1],
+            abs_tol=0.002,
+        ):
+            raise PayloadError(
+                f"photo must have a 4:5 aspect ratio; received {width}x{height}"
+            )
+        if width < MINIMUM_PHOTO_SIZE[0] or height < MINIMUM_PHOTO_SIZE[1]:
+            raise PayloadError(
+                "photo is below 300-DPI-equivalent resolution; "
+                f"need at least {MINIMUM_PHOTO_SIZE[0]}x{MINIMUM_PHOTO_SIZE[1]}, "
+                f"received {width}x{height}"
+            )
 
     contact = _mapping(data["contact"], "contact", {"adress", "tel", "email"})
     for key in ("adress", "tel", "email"):
@@ -282,7 +288,7 @@ def validate_payload(raw: Any) -> dict[str, Any]:
             _text_list(entry["technologies"], f"project_overview.items[{index}].technologies")
     # Convert the public v3 schema to the renderer's small internal view.
     data["document"] = {"title": data["title"], "subtitle": data["subtitle"], "language": data["language"]}
-    data["photo"] = {"path": data["photo"]}
+    data["photo"] = {"path": photo_value} if photo_value is not None else None
     data["contact"] = [
         {"key": key, "value": data["contact"][key]}
         for key in ("adress", "tel", "email")
@@ -1062,18 +1068,20 @@ def render_semantic(data: dict[str, Any], output: Path, *, source_yaml: Path | N
     from weasyprint.text.fonts import FontConfiguration  # noqa: PLC0415
 
     # ── Step 3: encode portrait ─────────────────────────────────────────────
-    photo_path = Path(data["photo"]["path"]).expanduser()
-    with Image.open(photo_path) as source:
-        portrait = ImageOps.fit(
-            source.convert("RGB"),
-            PHOTO_SIZE,
-            Image.Resampling.LANCZOS,
-            centering=(0.5, 0.45),
-        )
-    portrait_bytes = io.BytesIO()
-    portrait.save(portrait_bytes, "PNG")
-    portrait_b64 = base64.b64encode(portrait_bytes.getvalue()).decode("ascii")
-    portrait_data_uri = f"data:image/png;base64,{portrait_b64}"
+    portrait_data_uri = ""
+    if data["photo"] is not None:
+        photo_path = Path(data["photo"]["path"]).expanduser()
+        with Image.open(photo_path) as source:
+            portrait = ImageOps.fit(
+                source.convert("RGB"),
+                PHOTO_SIZE,
+                Image.Resampling.LANCZOS,
+                centering=(0.5, 0.45),
+            )
+        portrait_bytes = io.BytesIO()
+        portrait.save(portrait_bytes, "PNG")
+        portrait_b64 = base64.b64encode(portrait_bytes.getvalue()).decode("ascii")
+        portrait_data_uri = f"data:image/png;base64,{portrait_b64}"
 
     # ── Step 4: generate HTML (in memory; saved only on success or failure) ──
     html_content = _build_semantic_html(data, portrait_data_uri)

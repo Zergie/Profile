@@ -56,6 +56,21 @@ def test_canonical_schema_uses_items_and_points() -> None:
         validate_payload(_merge(narrative(), override()))
 
 
+def test_no_photo_override_is_supported_and_uses_no_photo_layout() -> None:
+    data = validate_payload(_merge(narrative(), override(photo=None)))
+    html = _build_semantic_html(data, "")
+    assert data["photo"] is None
+    assert 'class="cv-page page-1 no-photo"' in html
+    assert '<div class="photo-area"' not in html
+    assert "grid-row: 1 / span 4;" in html
+    assert "padding-top: 47.2mm;" in html
+
+
+def test_non_null_photo_override_remains_protected() -> None:
+    with pytest.raises(PayloadError, match="must be null"):
+        _merge(narrative(), override(photo="C:\\replacement.png"))
+
+
 def test_heading_only_optional_project_overview_is_not_rendered() -> None:
     base = narrative()
     base["project_overview"] = {"heading": "PROJEKTÜBERSICHT"}
@@ -64,7 +79,7 @@ def test_heading_only_optional_project_overview_is_not_rendered() -> None:
 
 def test_baseline_employment_is_normalized_for_the_template() -> None:
     base = narrative()
-    base["photo"] = str((SKILL_ROOT.parents[2] / "secrets" / "cv" / "Foto.png").resolve())
+    base["photo"] = None
     data = validate_payload(_merge(base, override()))
     html = _build_semantic_html(data, "data:image/png;base64,")
     assert "BERUF" in html
@@ -72,21 +87,26 @@ def test_baseline_employment_is_normalized_for_the_template() -> None:
     assert '<aside class="sidebar-content">' in html
 
 
-def test_five_technology_groups_extend_the_timeline_divider() -> None:
+def test_technology_timeline_uses_content_height_aware_segments() -> None:
     base = narrative()
-    base["photo"] = str((SKILL_ROOT.parents[2] / "secrets" / "cv" / "Foto.png").resolve())
+    base["photo"] = None
     base["technology"]["items"] = [
         {"heading": f"Gruppe {index}", "points": ["Python"]}
         for index in range(1, 6)
     ]
     data = validate_payload(_merge(base, override()))
     html = _build_semantic_html(data, "data:image/png;base64,")
-    assert ".technology-section.technology-groups-5::after { height: 60.5mm; }" in html
+    assert html.count('class="technology-timeline-segment') == 5
+    assert html.count("technology-timeline-segment-last") == 2
+    assert ".page-1 .tech-group { margin-bottom: 6mm; }" in html
+    assert "height: calc(100% + 6mm);" in html
+    assert "height: calc(100% - 3.32mm);" in html
+    assert ".technology-section::after" not in html
 
 
 def test_technology_label_keeps_ampersand_continuation_together_when_wrapping() -> None:
     base = narrative()
-    base["photo"] = str((SKILL_ROOT.parents[2] / "secrets" / "cv" / "Foto.png").resolve())
+    base["photo"] = None
     base["technology"]["items"][0]["heading"] = "Architektur & Entwicklung"
     data = validate_payload(_merge(base, override()))
     html = _build_semantic_html(data, "data:image/png;base64,")
@@ -97,7 +117,7 @@ def test_technology_label_keeps_ampersand_continuation_together_when_wrapping() 
 
 def test_unbreakable_competency_heading_that_crosses_timeline_fails() -> None:
     base = narrative()
-    base["photo"] = str((SKILL_ROOT.parents[2] / "secrets" / "cv" / "Foto.png").resolve())
+    base["photo"] = None
     base["competencies"]["items"][0]["heading"] = "DELIVERY & STAKEHOLDER ALIGNMENT"
     with pytest.raises(PayloadError, match="unbreakable uppercase suffix"):
         validate_payload(_merge(base, override()))

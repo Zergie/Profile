@@ -154,20 +154,22 @@ if ($firstUse) {
     Complete-Action
 }
 
-# initialize language
-Start-Action "Initialize language"
-    $languages = Get-WinUserLanguageList
-    Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
-    $languages[0].InputMethodTips.Remove("0407:00000407") | Out-Null
-    $languages[0].InputMethodTips.Remove("0407:00000409") | Out-Null
-    0..($languages.Count-1) | ForEach-Object {
-        $languages[$_].InputMethodTips.Add("0409:00000409") | Out-Null
-        while ($languages[$_].InputMethodTips.Count -gt 1) {
-            $languages[$_].InputMethodTips.RemoveAt(0)
+if (-not $env:SSH_CONNECTION) {
+    # initialize language
+    Start-Action "Initialize language"
+        $languages = Get-WinUserLanguageList
+        Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
+        $languages[0].InputMethodTips.Remove("0407:00000407") | Out-Null
+        $languages[0].InputMethodTips.Remove("0407:00000409") | Out-Null
+        0..($languages.Count-1) | ForEach-Object {
+            $languages[$_].InputMethodTips.Add("0409:00000409") | Out-Null
+            while ($languages[$_].InputMethodTips.Count -gt 1) {
+                $languages[$_].InputMethodTips.RemoveAt(0)
+            }
         }
-    }
-    Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
+        Set-WinUserLanguageList $languages -Force -WarningAction SilentlyContinue | Out-Null
 Complete-Action
+}
 
 # initialize colors
 Start-Action "Initialize colors"

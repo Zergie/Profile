@@ -11,13 +11,15 @@ python scripts/render_cv.py `
   --output C:\path\cv.pdf
 ```
 
-`narrative.yaml` owns identity, photo, contact details, languages, education,
+`narrative.yaml` owns identity, the secured default photo, contact details, languages, education,
 employment, every visible heading, and the default section content. The input
 may override `subtitle` and atomically replace `profile.items`, `competencies.items`,
 `technology.items`, `selected_projects.items`, or `project_overview.items`.
 Section headings always remain baseline-only.
 It may sparsely patch employment records by `period`, changing only `title`
-and `points`. Attempts to supply protected sections fail.
+and `points`. Set top-level `photo: null` to render the supported no-photo
+layout; omit the field to retain the secured narrative portrait. Any non-null
+photo override and all other protected sections fail.
 
 All collections are YAML lists: a section uses `items` and nested list content
 uses `points`. `profile.items` renders as paragraphs; all other `points` render

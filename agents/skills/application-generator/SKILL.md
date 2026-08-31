@@ -7,7 +7,7 @@ Create truthful, tailored application documents from secured facts. The schema-v
 
 ## Shared start
 
-1. Identify the requested output: CV, cover letter, or both. Start `grilling` and confirm, one decision at a time, the document language, role, leadership-versus-technical emphasis, and confirmed motivation. **Done:** the requested documents and positioning are confirmed.
+1. Identify the requested output: CV, cover letter, or both. Start `grilling` and confirm, one decision at a time, the document language, role, leadership-versus-technical emphasis, photo preference for CVs, and confirmed motivation. For freelancer, contracting, project, and B2B applications, omit the motivation decision and all motivation language from the generated artifacts; positioning is complete once the other decisions are confirmed. **Done:** the requested documents and positioning are confirmed.
 
 2. For a supplied job URL, inspect the rendered listing with `playwright-cli` before using another source. Keep the persistent profile so the user can sign in when needed:
 
@@ -31,9 +31,11 @@ Create truthful, tailored application documents from secured facts. The schema-v
 
 ## CV
 
-1. Read `secrets/cv/projects.yaml` and apply the project-source rules below. Propose three to five relevant, evidence-backed `selected_projects` with a relevance reason and obtain confirmation of selection and order. **Done:** the project selection and order are confirmed.
+1. Follow the confirmed photo preference. Omit `photo` from the override to use the secured narrative portrait, or set `photo: null` for the supported no-photo layout. Do not replace the secured portrait from an application override.
 
-2. Create the schema-v3 override in `agents/skills/application-generator/output/`, then render it:
+2. Read `secrets/cv/projects.yaml` and apply the project-source rules below. Propose three to five relevant, evidence-backed `selected_projects` with a relevance reason and obtain confirmation of selection and order. **Done:** the project selection and order are confirmed.
+
+3. Create the schema-v3 override in `agents/skills/application-generator/output/`, then render it:
 
    ```powershell
    python agents/skills/application-generator/scripts/render_cv.py `
@@ -81,6 +83,10 @@ Create truthful, tailored application documents from secured facts. The schema-v
 - Use plain YAML and evidence-led wording. Include only secured credentials, responsibilities, metrics, technologies, language levels, dates, employers, and outcomes.
 - Put selected projects from page 2 onward; career history follows their final page. Put `project_overview`, when used, from page 4 onward.
 - Keep the CV's first page within its supported competency and technology content. Keep cover letters to one A4 page using normal hyphens.
+- Preserve the first-page design system in both photo variants: the dark 64.77 mm rail remains on the left, the main timeline geometry remains unchanged, and a no-photo profile begins no higher than the `competencies` heading.
+- Keep timeline spacing and connector length coupled. If vertical gaps between competency, technology, or project groups change, update and visually verify the corresponding connector so every line passes continuously through its dots.
+- Use four competency groups when the secured evidence supports four distinct, role-relevant themes and the first page validates; do not create a fourth theme by duplicating or inventing claims.
+- Render every final variant and inspect pages 1 and 2 visually in addition to PDF/UA and ATS validation. Page 1 should use its vertical space without oversized technology gaps; page 2 should distribute selected projects evenly without forcing content onto the career-history page.
 
 ## Handoff
 

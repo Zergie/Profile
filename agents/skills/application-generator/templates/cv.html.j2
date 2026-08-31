@@ -8,8 +8,8 @@
 </style>
 </head>
 <body>
-<div class="cv-page page-1"
-     style="background-image: url('{{ portrait_data_uri }}'), linear-gradient(to right, #434345 0, #434345 64.77mm, #ffffff 64.77mm, #ffffff 100%);">
+<div class="cv-page page-1{% if not portrait_data_uri %} no-photo{% endif %}"
+     style="background-image: {% if portrait_data_uri %}url('{{ portrait_data_uri }}'){% else %}linear-gradient(to right, transparent, transparent){% endif %}, linear-gradient(to right, #434345 0, #434345 64.77mm, #ffffff 64.77mm, #ffffff 100%);">
 
   <!--
     Semantic reading order (matches PDF structure tree / ATS extraction):
@@ -26,9 +26,11 @@
   -->
 
   <!-- 1. Decorative portrait — rendered as CSS (not part of the tag tree) -->
+  {% if portrait_data_uri %}
   <div class="photo-area"
        role="presentation"
        aria-hidden="true"></div>
+  {% endif %}
 
   <!-- 2. Candidate identity -->
   <header class="cv-header">
@@ -116,6 +118,7 @@
     <div class="tech-group">
       {%- set _label_parts = group.label.split("&", 1) %}
       <span class="tech-label">{{ _label_parts[0] | trim }}{% if _label_parts | length > 1 %}<span class="tech-label-continuation"> &amp; {{ _label_parts[1] | trim }}</span>{% endif %}</span>
+      <span class="technology-timeline-segment{% if loop.last %} technology-timeline-segment-last{% endif %}" role="presentation" aria-hidden="true"></span>
       <span class="timeline-anchor" role="presentation" aria-hidden="true"></span>
       <span class="tech-items">{{ group['items'] | join(", ") }}</span>
     </div>
