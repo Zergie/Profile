@@ -265,13 +265,28 @@ function Get-GitPromptWatcherRecorderPaths {
     [pscustomobject]@{
         Directory = $directory
         Worker = Join-Path $directory 'worker.jsonl'
+        Client = Join-Path $directory 'client.jsonl'
+        ClientState = Join-Path $directory 'client-state.json'
     }
 }
 
 function Initialize-GitPromptClientDiagnostics {
     param([Parameter(Mandatory)] [string] $IdentityKey)
-    $global:GitPromptClientDiagnostics = [ordered]@{ identity=$IdentityKey; processId=$PID; lastRequest=$null; lastApplicableNotificationUtc=$null; lastApplicableNotificationRepositoryId=$null; cacheAvailable=$false; cacheAgeMilliseconds=$null; snapshotRefreshJobState='NotStarted'; notificationListenerJobState='NotStarted'; idleSubscriptionPresent=$false; consecutiveSnapshotFailures=0; recorderErrors=0 }
+    $global:GitPromptClientDiagnostics = [ordered]@{ identity=$IdentityKey; processId=$PID; lastRequest=$null; lastApplicableNotificationUtc=$null; lastApplicableNotificationRepositoryId=$null; cacheAvailable=$false; cacheAgeMilliseconds=$null; snapshotRefreshJobState='NotStarted'; notificationListenerJobState='NotStarted'; idleSubscriptionPresent=$false; consecutiveSnapshotFailures=0; recorderErrors=0; lastAutomaticReportPath=$null }
     $global:GitPromptClientDiagnosticQueue = [Collections.Generic.Queue[object]]::new()
+    $global:GitPromptAutomaticIncidentQueue = [Collections.Generic.Queue[object]]::new()
+    $global:GitPromptAutomaticIncidentJobs = @{}
+    $global:GitPromptAutomaticIncidentDeduplication = @{}
+    $global:GitPromptAutomaticIncidentNotification = $null
+}
+function Update-GitPromptClientDiagnostics {
+    param([Parameter(Mandatory)][hashtable] $Updates)
+    try {
+        if (-not $global:GitPromptClientDiagnostics) { return }
+        foreach ($key in $Updates.Keys) { $global:GitPromptClientDiagnostics[$key] = $Updates[$key] }
+    } catch {
+        if ($global:GitPromptClientDiagnostics) { $global:GitPromptClientDiagnostics.recorderErrors++ }
+    }
 }
 function Queue-GitPromptClientEvent {
     param([Parameter(Mandatory)] [string] $Event, [ValidateSet('Info','Warning','Error')] [string] $Severity='Info', [string] $CorrelationId, [hashtable] $Data)
@@ -282,6 +297,63 @@ function Flush-GitPromptClientDiagnostics {
 }
 function Get-GitPromptWatcherClientEvents { param([Parameter(Mandatory)][string]$IdentityKey); $paths=Get-GitPromptWatcherRecorderPaths $IdentityKey; $events=@(); foreach($file in @(Get-ChildItem $paths.Directory -Filter 'client*.jsonl' -File -ErrorAction SilentlyContinue)){foreach($line in @(Get-Content $file.FullName -ErrorAction SilentlyContinue)){try{$events+=$line|ConvertFrom-Json -ErrorAction Stop}catch{}}}; @($events) }
 function Get-GitPromptWatcherClientState { param([Parameter(Mandatory)][string]$IdentityKey); $paths=Get-GitPromptWatcherRecorderPaths $IdentityKey; try{return Get-Content $paths.ClientState -Raw -ErrorAction Stop|ConvertFrom-Json}catch{return [pscustomobject]@{available=$false;collectionError='client state unavailable'}} }
+
+function Start-GitPromptAutomaticIncidentCapture {
+    param([Parameter(Mandatory)][ValidateSet('consecutive-snapshot-failures','worker-exit','filesystem-watcher-error','stale-cache','resource-growth')][string]$Trigger)
+    try {
+        if (-not $global:GitPromptClientDiagnostics) { return }
+        $now = [datetime]::UtcNow
+        $last = $global:GitPromptAutomaticIncidentDeduplication[$Trigger]
+        if ($last -and ($now - $last).TotalHours -lt 1) { return }
+        $global:GitPromptAutomaticIncidentDeduplication[$Trigger] = $now
+        $global:GitPromptAutomaticIncidentQueue.Enqueue([pscustomobject]@{ trigger=$Trigger; queuedAtUtc=$now.ToString('O') })
+        Queue-GitPromptClientEvent -Event 'automatic-incident.queued' -Severity Warning -Data @{ trigger=$Trigger }
+    } catch {
+        if ($global:GitPromptClientDiagnostics) { $global:GitPromptClientDiagnostics.recorderErrors++ }
+    }
+}
+
+function Receive-GitPromptAutomaticIncidentCapture {
+    try {
+        if (-not $global:GitPromptAutomaticIncidentQueue) { return }
+        while ($global:GitPromptAutomaticIncidentQueue.Count) {
+            $incident = $global:GitPromptAutomaticIncidentQueue.Dequeue()
+            if ($global:GitPromptAutomaticIncidentJobs[$incident.trigger]) { continue }
+            $paths = Get-GitPromptWatcherDiagnosticsDirectory -IdentityKey $global:GitPromptClientDiagnostics.identity
+            New-Item -ItemType Directory -Path $paths -Force -ErrorAction Stop | Out-Null
+            $archive = Join-Path $paths ("automatic-{0}-{1}.zip" -f $incident.trigger, ([guid]::NewGuid().ToString('N')))
+            $scriptPath = $global:GitPromptWatcherScript
+            $description = "Automatic incident: $($incident.trigger)"
+            $job = Start-ThreadJob -ScriptBlock {
+                param($scriptPath, $archive, $description)
+                & $scriptPath -ReportBug -Description $description -OutputPath $archive
+            } -ArgumentList $scriptPath, $archive, $description
+            $global:GitPromptAutomaticIncidentJobs[$incident.trigger] = [pscustomobject]@{ job=$job; archive=$archive }
+        }
+        foreach ($trigger in @($global:GitPromptAutomaticIncidentJobs.Keys)) {
+            $pending = $global:GitPromptAutomaticIncidentJobs[$trigger]
+            if ($pending.job.State -in @('NotStarted','Running')) { continue }
+            try {
+                $result = Receive-Job -Job $pending.job -ErrorAction Stop | Select-Object -Last 1
+                if ($result -and (Test-Path -LiteralPath $pending.archive -PathType Leaf)) {
+                    $global:GitPromptClientDiagnostics.lastAutomaticReportPath = $pending.archive
+                    $global:GitPromptAutomaticIncidentJobs.Remove($trigger)
+                    Queue-GitPromptClientEvent -Event 'automatic-incident.completed' -Data @{ trigger=$trigger }
+                    $global:GitPromptAutomaticIncidentNotification = "Git prompt watcher saved an automatic incident report ($trigger): $($pending.archive)"
+                } else { throw 'automatic report archive was not created' }
+            } catch {
+                $global:GitPromptAutomaticIncidentJobs.Remove($trigger)
+                Queue-GitPromptClientEvent -Event 'automatic-incident.failed' -Severity Warning -Data @{ trigger=$trigger; error='automatic report unavailable' }
+                $global:GitPromptAutomaticIncidentNotification = "Git prompt watcher could not save an automatic incident report ($trigger)."
+            } finally { Remove-Job -Job $pending.job -Force -ErrorAction SilentlyContinue }
+        }
+        $cutoff = [datetime]::UtcNow.AddDays(-14)
+        $directory = Get-GitPromptWatcherDiagnosticsDirectory -IdentityKey $global:GitPromptClientDiagnostics.identity
+        $automatic = @(Get-ChildItem -LiteralPath $directory -Filter 'automatic-*.zip' -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -ge $cutoff | Sort-Object LastWriteTimeUtc -Descending)
+        foreach ($old in @($automatic | Select-Object -Skip 5)) { Remove-Item -LiteralPath $old.FullName -Force -ErrorAction SilentlyContinue }
+        foreach ($expired in @(Get-ChildItem -LiteralPath $directory -Filter 'automatic-*.zip' -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -lt $cutoff)) { Remove-Item -LiteralPath $expired.FullName -Force -ErrorAction SilentlyContinue }
+    } catch { }
+}
 function Write-GitPromptWatcherWorkerEvent {
     param(
         [Parameter(Mandatory)] [string] $IdentityKey,
@@ -1615,9 +1687,18 @@ function Receive-GitPromptSnapshotRefresh {
                     [StringComparison]::OrdinalIgnoreCase
                 )
             )
+            Update-GitPromptClientDiagnostics @{ consecutiveSnapshotFailures = 0; cacheAvailable = [bool]$response.response.snapshot; cacheAgeMilliseconds = 0 }
+            Queue-GitPromptClientEvent -Event 'snapshot-refresh.completed' -Data @{ outcome = [string]$response.response.state }
+        } else {
+            throw 'snapshot refresh returned no response'
         }
     } catch {
         # A watcher outage must not evict the last usable snapshot.
+        $failures = 1
+        if ($global:GitPromptClientDiagnostics) { $failures = [int]$global:GitPromptClientDiagnostics.consecutiveSnapshotFailures + 1 }
+        Update-GitPromptClientDiagnostics @{ consecutiveSnapshotFailures = $failures; cacheAvailable = [bool]$global:GitPromptSnapshotCache }
+        Queue-GitPromptClientEvent -Event 'snapshot-refresh.failed' -Severity Warning -Data @{ consecutiveFailures = $failures; error = 'snapshot refresh unavailable' }
+        if ($failures -ge 3) { Start-GitPromptAutomaticIncidentCapture -Trigger 'consecutive-snapshot-failures' }
     } finally {
         Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
     }
@@ -1697,6 +1778,7 @@ function Receive-GitPromptNotifications {
     if ($PassThru) { return $receivedApplicableSnapshot }
 }
 function Receive-GitPromptIdleUpdates {
+    Receive-GitPromptAutomaticIncidentCapture
     $snapshotUpdated = Receive-GitPromptSnapshotRefresh -PassThru
     $notificationUpdated = Receive-GitPromptNotifications -PassThru
     Update-GitPromptClientDiagnostics @{ snapshotRefreshJobState = if ($global:GitPromptSnapshotRefreshJob) { [string]$global:GitPromptSnapshotRefreshJob.State } else { 'Idle' }; notificationListenerJobState = if ($global:GitPromptNotificationJob) { [string]$global:GitPromptNotificationJob.State } else { 'NotStarted' } }
@@ -1777,6 +1859,11 @@ function Get-RGB {
 }
 
 function prompt {
+
+    if ($global:GitPromptAutomaticIncidentNotification) {
+        Write-Host $global:GitPromptAutomaticIncidentNotification
+        $global:GitPromptAutomaticIncidentNotification = $null
+    }
 
     $gitPromptSegment = Get-GitPromptCached
     if ($global:GitPromptWatcherLastError) {
