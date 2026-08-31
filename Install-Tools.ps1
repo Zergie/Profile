@@ -188,6 +188,9 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal"
                       destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"}
 
+    [pscustomobject]@{source      = "$PSScriptRoot\PowerToys"
+                      destination = "$env:LOCALAPPDATA\Microsoft\PowerToys"}
+
     [pscustomobject]@{source      = "$PSScriptRoot\Powershell"
                       destination = "$env:USERPROFILE\Documents\PowerShell"}
 

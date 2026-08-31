@@ -13,3 +13,14 @@ wsl/
 *.py[cod]
 # Fontconfig runtime cache (MinGW fontconfig on Windows uses this path)
 LOCAL_APPDATA_FONTCONFIG_CACHE/
+
+# PowerToys runtime and machine-private state
+PowerToys/**/*.log
+PowerToys/etw/
+PowerToys/last_version_run.json
+PowerToys/oobe_settings.json
+PowerToys/settings-placement.json
+PowerToys/UpdateState.json
+PowerToys/PowerRename/power-rename-last-run-data.json
+PowerToys/PowerRename/power-rename-ui-flags
+PowerToys/MouseWithoutBorders/settings.json

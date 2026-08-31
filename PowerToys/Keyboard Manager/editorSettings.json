@@ -1,0 +1,50 @@
+{
+  "ShortcutSettingsDictionary": {
+    "01a11b74-7b6c-4785-973f-adab6bc680cb": {
+      "Id": "01a11b74-7b6c-4785-973f-adab6bc680cb",
+      "Shortcut": {
+        "OriginalKeys": "118",
+        "TargetKeys": "179",
+        "TargetApp": "",
+        "OperationType": 0,
+        "TargetText": "",
+        "ProgramPath": "",
+        "ProgramArgs": "",
+        "StartInDirectory": "",
+        "Elevation": 0,
+        "IfRunningAction": 0,
+        "Visibility": 0,
+        "UriToOpen": ""
+      },
+      "Profiles": [],
+      "IsActive": true
+    },
+    "be350ddd-0ded-461f-ac4b-17b729bae416": {
+      "Id": "be350ddd-0ded-461f-ac4b-17b729bae416",
+      "Shortcut": {
+        "OriginalKeys": "179",
+        "TargetKeys": "118",
+        "TargetApp": "",
+        "OperationType": 0,
+        "TargetText": "",
+        "ProgramPath": "",
+        "ProgramArgs": "",
+        "StartInDirectory": "",
+        "Elevation": 0,
+        "IfRunningAction": 0,
+        "Visibility": 0,
+        "UriToOpen": ""
+      },
+      "Profiles": [],
+      "IsActive": true
+    }
+  },
+  "ProfileDictionary": {},
+  "ShortcutsByOperationType": {
+    "RemapShortcut": [
+      "01a11b74-7b6c-4785-973f-adab6bc680cb",
+      "be350ddd-0ded-461f-ac4b-17b729bae416"
+    ]
+  },
+  "ActiveProfile": ""
+}

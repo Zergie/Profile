@@ -200,9 +200,9 @@ Complete-Action
 # set alias to my programs
 Start-Action "Set alias to my programs"
     Set-Alias az      "C:/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az.cmd"
-    Set-Alias claude  "C:/Users/puchinger/.local/bin/claude.exe"
     Set-Alias bcomp   "C:/Program Files/Beyond Compare 4/bcomp.exe"
     Set-Alias choco   "$PSScriptRoot\Startup\Invoke-Chocolatey.ps1"
+    Set-Alias claude  "C:/Users/puchinger/.local/bin/claude.exe"
     Set-Alias code    "$PSScriptRoot\Startup\Invoke-VsCode.ps1"
     Set-Alias ff      "$PSScriptRoot\Startup\Format-Files.ps1"
     Set-Alias gh      "C:\Program Files\GitHub CLI\gh.exe"
@@ -211,6 +211,7 @@ Start-Action "Set alias to my programs"
     Set-Alias msbuild "C:/Program Files/Microsoft Visual Studio/2022/Community//MSBuild/Current/Bin/amd64/MSBuild.exe"
     Set-Alias nf      "$PSScriptRoot\Startup\New-FeatureBranch.ps1"
     Set-Alias np      "$PSScriptRoot\Startup\New-PullRequest.ps1"
+    Set-Alias psmux   (Get-ChildItem 'C:\ProgramData\chocolatey\lib\psmux*' -Recurse -Filter psmux.exe | Select-Object -First 1).FullName
     Set-Alias sjb     Start-ThreadJob
     Set-Alias sudo    gsudo
     Set-Alias tree    "$PSScriptRoot\Startup\Invoke-Tree.ps1"

@@ -1,0 +1,819 @@
+{
+  "properties": {
+    "defaultActivationShortcut": {
+      "win": true,
+      "ctrl": true,
+      "alt": false,
+      "shift": true,
+      "code": 80,
+      "key": ""
+    },
+    "activation_shortcut": {
+      "win": true,
+      "ctrl": true,
+      "alt": false,
+      "shift": true,
+      "code": 80,
+      "key": ""
+    },
+    "monitor_refresh_delay": 5,
+    "monitors": [
+      {
+        "name": "LG ULTRAGEAR",
+        "monitorNumber": 1,
+        "monitorIconGlyph": "\uE7F4",
+        "id": "\\\\?\\DISPLAY#GSM5BB4#5\u002618b4b005\u00260\u0026UID176385",
+        "communicationMethod": "DDC/CI",
+        "currentBrightness": 59,
+        "colorTemperatureVcp": 5,
+        "contrast": 0,
+        "volume": 0,
+        "isHidden": false,
+        "enableContrast": true,
+        "enableVolume": true,
+        "enableInputSource": false,
+        "enableRotation": false,
+        "enableColorTemperature": false,
+        "enablePowerState": false,
+        "lastSeenUtc": "2026-08-31T11:09:56.0325523Z",
+        "capabilitiesRaw": "(prot(monitor)type(lcd)model(GN800)cmds(01 02 03 0C E3 F3)vcp(02 04 05 08 10 12 14(05 08 0B ) 16 18 1A 52 60(11 12 0F 10 ) AC AE B2 B6 C0 C6 C8 C9 D6(01 04) DF 62 8D F4 F5(01 02 03 04) F6(00 01 02) 4D 4E 4F 15(01 06 11 13 14 15 18 19 20 22 23 24 28 29 32 48) F7(00 01 02 03) F8(00 01) F9 EF FA(00 01) FD(00 01) FE(00 01 02) FF)mccs_ver(2.1)mswhql(1))",
+        "vcpCodesFormatted": [
+          {
+            "code": "0x02",
+            "title": "New Control Value (0x02)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x04",
+            "title": "Restore Factory Defaults (0x04)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x05",
+            "title": "Restore Brightness and Contrast (0x05)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x08",
+            "title": "Restore Color Defaults (0x08)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x10",
+            "title": "Brightness (0x10)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x12",
+            "title": "Contrast (0x12)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x14",
+            "title": "Select Color Preset (0x14)",
+            "values": "Values: 6500K (0x05), 9300K (0x08), User 1 (0x0B)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x05",
+                "name": "6500K"
+              },
+              {
+                "value": "0x08",
+                "name": "9300K"
+              },
+              {
+                "value": "0x0B",
+                "name": "User 1"
+              }
+            ]
+          },
+          {
+            "code": "0x15",
+            "title": "Unknown (0x15) (0x15)",
+            "values": "Values: 0x01, 0x06, 0x11, 0x13, 0x14, 0x15, 0x18, 0x19, 0x20, 0x22, 0x23, 0x24, 0x28, 0x29, 0x32, 0x48",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": null
+              },
+              {
+                "value": "0x06",
+                "name": null
+              },
+              {
+                "value": "0x11",
+                "name": null
+              },
+              {
+                "value": "0x13",
+                "name": null
+              },
+              {
+                "value": "0x14",
+                "name": null
+              },
+              {
+                "value": "0x15",
+                "name": null
+              },
+              {
+                "value": "0x18",
+                "name": null
+              },
+              {
+                "value": "0x19",
+                "name": null
+              },
+              {
+                "value": "0x20",
+                "name": null
+              },
+              {
+                "value": "0x22",
+                "name": null
+              },
+              {
+                "value": "0x23",
+                "name": null
+              },
+              {
+                "value": "0x24",
+                "name": null
+              },
+              {
+                "value": "0x28",
+                "name": null
+              },
+              {
+                "value": "0x29",
+                "name": null
+              },
+              {
+                "value": "0x32",
+                "name": null
+              },
+              {
+                "value": "0x48",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0x16",
+            "title": "Video Gain: Red (0x16)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x18",
+            "title": "Video Gain: Green (0x18)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x1A",
+            "title": "Video Gain: Blue (0x1A)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x4D",
+            "title": "Unknown (0x4D) (0x4D)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x4E",
+            "title": "Unknown (0x4E) (0x4E)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x4F",
+            "title": "Unknown (0x4F) (0x4F)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x52",
+            "title": "Active Control (0x52)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x60",
+            "title": "Input Source (0x60)",
+            "values": "Values: HDMI-1 (0x11), HDMI-2 (0x12), DisplayPort-1 (0x0F), DisplayPort-2 (0x10)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x11",
+                "name": "HDMI-1"
+              },
+              {
+                "value": "0x12",
+                "name": "HDMI-2"
+              },
+              {
+                "value": "0x0F",
+                "name": "DisplayPort-1"
+              },
+              {
+                "value": "0x10",
+                "name": "DisplayPort-2"
+              }
+            ]
+          },
+          {
+            "code": "0x62",
+            "title": "Audio Speaker Volume (0x62)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x8D",
+            "title": "Audio Mute/Screen Blank (0x8D)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xAC",
+            "title": "Horizontal Frequency (0xAC)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xAE",
+            "title": "Vertical Frequency (0xAE)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xB2",
+            "title": "Flat Panel Sub-Pixel Layout (0xB2)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xB6",
+            "title": "Display Technology Type (0xB6)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC0",
+            "title": "Display Usage Time (0xC0)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC6",
+            "title": "Enable Display of \u0027Display Descriptor\u0027 (0xC6)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC8",
+            "title": "Display Controller Type (0xC8)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC9",
+            "title": "Display Firmware Level (0xC9)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xD6",
+            "title": "Power Mode (0xD6)",
+            "values": "Values: On (0x01), Off (DPM) (0x04)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": "On"
+              },
+              {
+                "value": "0x04",
+                "name": "Off (DPM)"
+              }
+            ]
+          },
+          {
+            "code": "0xDF",
+            "title": "VCP Version (0xDF)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xEF",
+            "title": "Manufacturer Specific (0xEF)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xF4",
+            "title": "Manufacturer Specific (0xF4)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xF5",
+            "title": "Manufacturer Specific (0xF5)",
+            "values": "Values: 0x01, 0x02, 0x03, 0x04",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": null
+              },
+              {
+                "value": "0x02",
+                "name": null
+              },
+              {
+                "value": "0x03",
+                "name": null
+              },
+              {
+                "value": "0x04",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xF6",
+            "title": "Manufacturer Specific (0xF6)",
+            "values": "Values: 0x00, 0x01, 0x02",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              },
+              {
+                "value": "0x02",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xF7",
+            "title": "Manufacturer Specific (0xF7)",
+            "values": "Values: 0x00, 0x01, 0x02, 0x03",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              },
+              {
+                "value": "0x02",
+                "name": null
+              },
+              {
+                "value": "0x03",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xF8",
+            "title": "Manufacturer Specific (0xF8)",
+            "values": "Values: 0x00, 0x01",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xF9",
+            "title": "Manufacturer Specific (0xF9)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xFA",
+            "title": "Manufacturer Specific (0xFA)",
+            "values": "Values: 0x00, 0x01",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xFD",
+            "title": "Manufacturer Specific (0xFD)",
+            "values": "Values: 0x00, 0x01",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xFE",
+            "title": "Manufacturer Specific (0xFE)",
+            "values": "Values: 0x00, 0x01, 0x02",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x00",
+                "name": null
+              },
+              {
+                "value": "0x01",
+                "name": null
+              },
+              {
+                "value": "0x02",
+                "name": null
+              }
+            ]
+          },
+          {
+            "code": "0xFF",
+            "title": "Manufacturer Specific (0xFF)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          }
+        ],
+        "supportsBrightness": true,
+        "supportsContrast": true,
+        "supportsColorTemperature": true,
+        "supportsVolume": true,
+        "supportsInputSource": true,
+        "supportsPowerState": true
+      },
+      {
+        "name": "2770",
+        "monitorNumber": 2,
+        "monitorIconGlyph": "\uE7F4",
+        "id": "\\\\?\\DISPLAY#AOC2770#5\u002618b4b005\u00260\u0026UID176384",
+        "communicationMethod": "DDC/CI",
+        "currentBrightness": 80,
+        "colorTemperatureVcp": 6,
+        "contrast": 0,
+        "volume": 0,
+        "isHidden": false,
+        "enableContrast": true,
+        "enableVolume": false,
+        "enableInputSource": false,
+        "enableRotation": false,
+        "enableColorTemperature": false,
+        "enablePowerState": false,
+        "lastSeenUtc": "2026-08-31T11:09:56.0325523Z",
+        "capabilitiesRaw": "(prot(monitor)type(LCD)model(AOC E2270SH)cmds(01 02 03 07 0C E3 F3)vcp(02 04 05 06 08 0B 0C 10 12 14(01 02 04 05 08) 16 18 1A 52 60(01 03 11) 87 AC AE B2 B6 C6 C8 CA CC(01 02 03 04 06 0A 0D) D6(01 04) DF FD FF)mswhql(1)asset_eep(40)mccs_ver(2.2))",
+        "vcpCodesFormatted": [
+          {
+            "code": "0x02",
+            "title": "New Control Value (0x02)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x04",
+            "title": "Restore Factory Defaults (0x04)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x05",
+            "title": "Restore Brightness and Contrast (0x05)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x06",
+            "title": "Restore Factory Geometry (0x06)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x08",
+            "title": "Restore Color Defaults (0x08)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x0B",
+            "title": "Color Temperature Increment (0x0B)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x0C",
+            "title": "Color Temperature Request (0x0C)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x10",
+            "title": "Brightness (0x10)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x12",
+            "title": "Contrast (0x12)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x14",
+            "title": "Select Color Preset (0x14)",
+            "values": "Values: sRGB (0x01), Display Native (0x02), 5000K (0x04), 6500K (0x05), 9300K (0x08)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": "sRGB"
+              },
+              {
+                "value": "0x02",
+                "name": "Display Native"
+              },
+              {
+                "value": "0x04",
+                "name": "5000K"
+              },
+              {
+                "value": "0x05",
+                "name": "6500K"
+              },
+              {
+                "value": "0x08",
+                "name": "9300K"
+              }
+            ]
+          },
+          {
+            "code": "0x16",
+            "title": "Video Gain: Red (0x16)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x18",
+            "title": "Video Gain: Green (0x18)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x1A",
+            "title": "Video Gain: Blue (0x1A)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x52",
+            "title": "Active Control (0x52)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0x60",
+            "title": "Input Source (0x60)",
+            "values": "Values: VGA-1 (0x01), DVI-1 (0x03), HDMI-1 (0x11)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": "VGA-1"
+              },
+              {
+                "value": "0x03",
+                "name": "DVI-1"
+              },
+              {
+                "value": "0x11",
+                "name": "HDMI-1"
+              }
+            ]
+          },
+          {
+            "code": "0x87",
+            "title": "Sharpness (0x87)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xAC",
+            "title": "Horizontal Frequency (0xAC)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xAE",
+            "title": "Vertical Frequency (0xAE)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xB2",
+            "title": "Flat Panel Sub-Pixel Layout (0xB2)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xB6",
+            "title": "Display Technology Type (0xB6)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC6",
+            "title": "Enable Display of \u0027Display Descriptor\u0027 (0xC6)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xC8",
+            "title": "Display Controller Type (0xC8)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xCA",
+            "title": "OSD (0xCA)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xCC",
+            "title": "OSD Language (0xCC)",
+            "values": "Values: Chinese (traditional, Hantai) (0x01), English (0x02), French (0x03), German (0x04), Japanese (0x06), Spanish (0x0A), Chinese (simplified, Kantai) (0x0D)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": "Chinese (traditional, Hantai)"
+              },
+              {
+                "value": "0x02",
+                "name": "English"
+              },
+              {
+                "value": "0x03",
+                "name": "French"
+              },
+              {
+                "value": "0x04",
+                "name": "German"
+              },
+              {
+                "value": "0x06",
+                "name": "Japanese"
+              },
+              {
+                "value": "0x0A",
+                "name": "Spanish"
+              },
+              {
+                "value": "0x0D",
+                "name": "Chinese (simplified, Kantai)"
+              }
+            ]
+          },
+          {
+            "code": "0xD6",
+            "title": "Power Mode (0xD6)",
+            "values": "Values: On (0x01), Off (DPM) (0x04)",
+            "hasValues": true,
+            "valueList": [
+              {
+                "value": "0x01",
+                "name": "On"
+              },
+              {
+                "value": "0x04",
+                "name": "Off (DPM)"
+              }
+            ]
+          },
+          {
+            "code": "0xDF",
+            "title": "VCP Version (0xDF)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xFD",
+            "title": "Manufacturer Specific (0xFD)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          },
+          {
+            "code": "0xFF",
+            "title": "Manufacturer Specific (0xFF)",
+            "values": "Continuous range",
+            "hasValues": true,
+            "valueList": []
+          }
+        ],
+        "supportsBrightness": true,
+        "supportsContrast": true,
+        "supportsColorTemperature": true,
+        "supportsVolume": false,
+        "supportsInputSource": true,
+        "supportsPowerState": true
+      }
+    ],
+    "restore_settings_on_startup": false,
+    "max_compatibility_mode": false,
+    "show_system_tray_icon": true,
+    "show_profile_switcher": true,
+    "show_identify_monitors_button": true,
+    "custom_vcp_mappings": []
+  },
+  "name": "PowerDisplay",
+  "version": "1"
+}
