@@ -209,8 +209,7 @@ function git {
     if ($args.Count -ge 2 -and $args[0] -eq 'add' -and
         ($args -contains '-p' -or $args -contains '--patch')) {
             & 'C:\Program Files\Git\usr\bin\bash.exe' -c (@(
-                    'export PATH="/usr/bin:/bin:$PATH"'
-                    'stty -icanon -echo min 1 time 0 </dev/tty || exit'
+                    '/usr/bin/stty -icanon -echo min 1 time 0 </dev/tty || exit'
                     '"$GIT_WRAPPED_EXE" "$@"'
                     'exit "$?"'
                 ) -join "`n") -- @args
