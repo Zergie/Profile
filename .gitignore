@@ -23,4 +23,6 @@ PowerToys/settings-placement.json
 PowerToys/UpdateState.json
 PowerToys/PowerRename/power-rename-last-run-data.json
 PowerToys/PowerRename/power-rename-ui-flags
+PowerToys/PowerDisplay/settings.json
 PowerToys/MouseWithoutBorders/settings.json
+PowerToys/settings-telemetry.json

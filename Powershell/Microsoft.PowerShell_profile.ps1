@@ -74,27 +74,6 @@ Start-Action "Initialize environment "
 Complete-Action
 
 if ($firstUse) {
-    # initialize veracrypt
-    Start-Action "Initialize veracrypt"
-        if (-not (Test-Path D:\)) {
-            $veracypt_exe = 'C:\Program Files\VeraCrypt\VeraCrypt.exe'
-
-            if ((Test-Path $veracypt_exe)) {
-                $name  = "Encrypted"
-                $drive = "D:"
-                $pass  = $secrets.VeraCrypt.Password
-
-                & $veracypt_exe /d d /q /s | Out-Null
-                & $veracypt_exe /v \Device\Harddisk0\Partition5 /l d /a /q /p $pass
-
-                while (-not (Test-Path $drive)) { Start-Sleep 1 }
-                $rename = New-Object -ComObject Shell.Application
-                $rename.NameSpace("$drive\").Self.Name = "$name"
-            }
-        }
-    Get-Variable | Where-Object name -eq secrets | Remove-Variable
-    Complete-Action
-
     # show devops agent status
     Start-Action "Show devops agent status"
         Start-ThreadJob {
@@ -223,10 +202,22 @@ Start-Action "Set alias to my programs"
     try { Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path } catch { }
     function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
-    function inkscape {
-        if ($null -eq (Get-Process 'Docker Desktop' -ErrorAction SilentlyContinue)) { Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"; Start-Sleep -Seconds 5 }
-        wsl docker run --rm -it -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v .:/app -w /app minidocks/inkscape
+
+function git {
+    $env:GIT_WRAPPED_EXE ??= (Get-Command git.exe -Type Application).Source
+
+    if ($args.Count -ge 2 -and $args[0] -eq 'add' -and
+        ($args -contains '-p' -or $args -contains '--patch')) {
+            & 'C:\Program Files\Git\usr\bin\bash.exe' -c (@(
+                    'export PATH="/usr/bin:/bin:$PATH"'
+                    'stty -icanon -echo min 1 time 0 </dev/tty || exit'
+                    '"$GIT_WRAPPED_EXE" "$@"'
+                    'exit "$?"'
+                ) -join "`n") -- @args
+    } else {
+        & $env:GIT_WRAPPED_EXE @args
     }
+}
 Complete-Action
 
 # set alias to my scripts
