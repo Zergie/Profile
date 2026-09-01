@@ -1707,6 +1707,15 @@ Status: ready-for-agent
         $firstPrompt = ($result.Invocations[0] | ConvertFrom-Json) -join "`n"
         $secondPrompt = ($result.Invocations[1] | ConvertFrom-Json) -join "`n"
         $firstPrompt | Should -Match '(?m)^\.scratch\\feature\\issues\r?$'
+        $firstPrompt | Should -Match ([regex]::Escape(
+                '"feature" must be the exact selected directory name directly under .scratch.'
+            ))
+        $firstPrompt | Should -Match ([regex]::Escape(
+                '"ticket" must be the exact selected ticket filename without the final .md extension.'
+            ))
+        $firstPrompt | Should -Match ([regex]::Escape(
+                'Do not use the Markdown title for either field.'
+            ))
         $secondPrompt | Should -Not -Match '(?m)^\.scratch\\feature\\issues\r?$'
         $secondPrompt | Should -Match '(?m)^\.scratch\\later-feature\\issues\r?$'
         @(Get-Content -LiteralPath (Join-Path $result.Repository '.scratch\progress.jsonl')).Count | Should -Be 2

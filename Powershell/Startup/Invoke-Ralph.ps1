@@ -3507,6 +3507,9 @@ For this iteration:
    build checks. Do not claim completion if a relevant check fails.
 5. Append exactly one JSON object on one line to .scratch/progress.jsonl with
    non-empty string fields "feature", "ticket", "changes", and "checks".
+   "feature" must be the exact selected directory name directly under .scratch.
+   "ticket" must be the exact selected ticket filename without the final .md extension.
+   Do not use the Markdown title for either field.
 6. Leave ticket status changes, staging, and committing to Ralph after success.
 
 Do not work on more than one ticket in this iteration. Do not modify ticket or spec
