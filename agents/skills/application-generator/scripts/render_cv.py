@@ -131,7 +131,7 @@ def _section(value: Any, path: str, *, item_key: str = "items") -> dict[str, Any
 
 def _merge(narrative: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Apply the deliberately small, safe override surface to the baseline."""
-    override_root = {"schema_version", "language", "subtitle", "photo", "profile", "competencies", "technology", "selected_projects", "project_overview", "employment", "cover_letter"}
+    override_root = {"schema_version", "language", "subtitle", "photo", "profile", "competencies", "technology", "selected_projects", "project_overview", "employment", "cover_letter", "layout"}
     unknown = set(override) - override_root
     if unknown:
         raise PayloadError(f"input contains protected or unknown field(s): {', '.join(sorted(unknown))}")
@@ -147,6 +147,21 @@ def _merge(narrative: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
         if override["photo"] is not None:
             raise PayloadError("input.photo must be null for the no-photo renderer")
         merged["photo"] = None
+    if "layout" in override:
+        layout = _mapping(
+            override["layout"],
+            "input.layout",
+            {"page1_group_spacing"},
+        )
+        spacing = _text(
+            layout["page1_group_spacing"],
+            "input.layout.page1_group_spacing",
+        )
+        if spacing != "compact":
+            raise PayloadError(
+                "input.layout.page1_group_spacing must be 'compact'"
+            )
+        merged["layout"] = {"page1_group_spacing": spacing}
     for name in ("profile", "competencies", "technology", "selected_projects", "project_overview"):
         if name not in override:
             continue
@@ -185,7 +200,7 @@ def validate_payload(raw: Any) -> dict[str, Any]:
         "schema_version", "language", "title", "subtitle", "contact", "links", "profile",
         "competencies", "technology", "languages", "employment", "education", "selected_projects",
     }
-    allowed_root_keys = required_root_keys | {"photo", "project_overview"}
+    allowed_root_keys = required_root_keys | {"photo", "project_overview", "layout"}
     if not isinstance(raw, dict):
         raise PayloadError("payload must be a mapping")
     unknown = set(raw) - allowed_root_keys
@@ -197,6 +212,11 @@ def validate_payload(raw: Any) -> dict[str, Any]:
     data = raw
     if data["schema_version"] != 3:
         raise PayloadError("narrative.schema_version must be 3")
+
+    if "layout" in data:
+        layout = _mapping(data["layout"], "layout", {"page1_group_spacing"})
+        if layout["page1_group_spacing"] != "compact":
+            raise PayloadError("layout.page1_group_spacing must be 'compact'")
 
     _text(data["title"], "title")
     _text(data["subtitle"], "subtitle")
@@ -977,6 +997,13 @@ def _build_semantic_html(data: dict[str, Any], portrait_data_uri: str) -> str:
         undefined=jinja2.StrictUndefined,
     )
     css_content = (TEMPLATES_DIR / "cv.css").read_text(encoding="utf-8") + SCREEN_CSS
+    if data.get("layout", {}).get("page1_group_spacing") == "compact":
+        css_content += (
+            "\n/* Application-specific collision correction. */\n"
+            ".page-1 .competency-group { margin-bottom: 4.5mm; }\n"
+            ".page-1 .tech-group { margin-bottom: 4.5mm; }\n"
+            ".technology-timeline-segment { height: calc(100% + 4.5mm); }\n"
+        )
     technology_group_count = len(data["technology"]["groups"])
     if technology_group_count == 5:
         # Five tailored groups can contain wrapped labels or values.  The

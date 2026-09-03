@@ -104,6 +104,24 @@ def test_technology_timeline_uses_content_height_aware_segments() -> None:
     assert ".technology-section::after" not in html
 
 
+def test_compact_page1_spacing_is_application_specific_and_keeps_connectors_coupled() -> None:
+    base = narrative()
+    base["photo"] = None
+    data = validate_payload(_merge(
+        base,
+        override(layout={"page1_group_spacing": "compact"}),
+    ))
+    html = _build_semantic_html(data, "data:image/png;base64,")
+    assert ".page-1 .competency-group { margin-bottom: 4.5mm; }" in html
+    assert ".page-1 .tech-group { margin-bottom: 4.5mm; }" in html
+    assert ".technology-timeline-segment { height: calc(100% + 4.5mm); }" in html
+
+
+def test_unknown_page1_spacing_mode_fails() -> None:
+    with pytest.raises(PayloadError, match="must be 'compact'"):
+        _merge(narrative(), override(layout={"page1_group_spacing": "tight"}))
+
+
 def test_technology_label_keeps_ampersand_continuation_together_when_wrapping() -> None:
     base = narrative()
     base["photo"] = None
