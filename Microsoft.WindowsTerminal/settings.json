@@ -354,7 +354,7 @@
     [
         {
             "id": null,
-            "keys": "ctrl+alt+5"
+            "keys": "ctrl+shift+c"
         },
         {
             "id": "User.resizePane.87C324ED",
@@ -362,11 +362,19 @@
         },
         {
             "id": null,
-            "keys": "ctrl+shift+c"
+            "keys": "ctrl+alt+5"
         },
         {
             "id": "User.sendInput.817164EE",
             "keys": "ctrl+backspace"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+shift+comma"
+        },
+        {
+            "id": null,
+            "keys": "ctrl+0"
         },
         {
             "id": "User.copy.644BA8F2",
@@ -379,14 +387,6 @@
         {
             "id": null,
             "keys": "ctrl+shift+2"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+0"
-        },
-        {
-            "id": null,
-            "keys": "ctrl+shift+comma"
         },
         {
             "id": "User.splitPane.AC2E3015",
@@ -712,7 +712,7 @@
                 "backgroundImageAlignment": "bottomRight",
                 "backgroundImageOpacity": 0.15,
                 "backgroundImageStretchMode": "none",
-                "commandline": "cmd /K \"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"",
+                "commandline": "cmd /K tmux new",
                 "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
                 "hidden": false,
                 "name": "PowerShell",

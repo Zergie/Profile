@@ -497,6 +497,28 @@ function Start-GitPromptWatcherWorker {
     }
 }
 
+function Test-GitPromptRepositoryPath {
+    param([string] $Path, [string] $RepositoryRoot)
+
+    if (-not $Path -or -not $RepositoryRoot) { return $false }
+    $candidate = [IO.Path]::GetFullPath($Path).TrimEnd('\', '/')
+    $root = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/')
+    if ($candidate.Equals($root, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    if (-not $candidate.StartsWith($root + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+
+    # Prefix membership alone crosses nested repositories. A submodule or
+    # linked worktree has a .git file, so check files as well as directories.
+    while (-not $candidate.Equals($root, [StringComparison]::OrdinalIgnoreCase)) {
+        $marker = [IO.Path]::Combine($candidate, '.git')
+        if ([IO.File]::Exists($marker) -or [IO.Directory]::Exists($marker)) { return $false }
+        $candidate = [IO.Path]::GetDirectoryName($candidate)
+        if (-not $candidate) { return $false }
+    }
+    return $true
+}
+
 function Get-GitPromptRepositorySnapshot {
     param([Parameter(Mandatory)] [string] $Path)
 
@@ -1243,7 +1265,8 @@ function Invoke-GitPromptWatcherWorker {
                             }
                             'Snapshot' {
                                 $fullPath = [IO.Path]::GetFullPath([string] $message.path)
-                                $repositoryRoot = if ($pathRepositories.ContainsKey($fullPath)) {
+                                $repositoryRoot = if ($pathRepositories.ContainsKey($fullPath) -and
+                                    (Test-GitPromptRepositoryPath -Path $fullPath -RepositoryRoot $pathRepositories[$fullPath])) {
                                     $pathRepositories[$fullPath]
                                 } else {
                                     $candidateRoots = @()
@@ -1254,11 +1277,7 @@ function Invoke-GitPromptWatcherWorker {
                                     }
                                     $resolvedRoot = $null
                                     foreach ($candidateRoot in $candidateRoots) {
-                                        $normalizedRoot = $candidateRoot.TrimEnd('\', '/')
-                                        if (
-                                            $fullPath.Equals($normalizedRoot, [StringComparison]::OrdinalIgnoreCase) -or
-                                            $fullPath.StartsWith("$normalizedRoot\", [StringComparison]::OrdinalIgnoreCase)
-                                        ) {
+                                        if (Test-GitPromptRepositoryPath -Path $fullPath -RepositoryRoot $candidateRoot) {
                                             $resolvedRoot = $candidateRoot
                                             break
                                         }
@@ -1763,8 +1782,7 @@ function Receive-GitPromptNotifications {
             $notification = $line | ConvertFrom-Json
             $repositoryRoot = [string] $notification.repositoryRoot
             if (-not $repositoryRoot -or -not $notification.snapshot) { continue }
-            if (-not ($path.Equals($repositoryRoot, [StringComparison]::OrdinalIgnoreCase) -or
-                    $path.StartsWith($repositoryRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase))) { continue }
+            if (-not (Test-GitPromptRepositoryPath -Path $path -RepositoryRoot $repositoryRoot)) { continue }
             $global:GitPromptSnapshotCache = [pscustomobject]@{
                 path = $path
                 response = [pscustomobject]@{ state = 'Healthy'; snapshot = $notification.snapshot }
@@ -1827,10 +1845,11 @@ function Get-GitPromptCached {
         }
         # An empty discovery response is not a cache entry: the watcher returns
         # it before its asynchronous repository discovery has completed.
-        $cacheApplies = $cachedSnapshot -and ($global:GitPromptSnapshotCache.path -eq $path -or (
-            $repositoryRoot -and
-            $path.StartsWith($repositoryRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)
-        ))
+        $cacheApplies = $cachedSnapshot -and $(if ($repositoryRoot) {
+            Test-GitPromptRepositoryPath -Path $path -RepositoryRoot $repositoryRoot
+        } else {
+            $global:GitPromptSnapshotCache.path -eq $path
+        })
     }
     if (-not $cacheApplies) {
         Start-GitPromptSnapshotRefresh -Path $path

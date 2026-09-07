@@ -200,8 +200,9 @@ Start-Action "Set alias to my programs"
     Set-Alias vi      "$PSScriptRoot\Startup\Invoke-NeoVim.ps1"
     # Set-Alias tunnel-client (Resolve-Path "C:\GIT\Profile\tunnel-client\tunnel-client.exe").Path
     try { Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path } catch { }
-    function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
+    function bash { . "C:/Program Files/Git/usr/bin/bash.exe" --login -i @args }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
+    function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
 
 function git {
     $env:GIT_WRAPPED_EXE ??= (Get-Command git.exe -Type Application).Source
