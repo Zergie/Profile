@@ -165,6 +165,8 @@ $fusionProductionRoots = @(
     "$env:LOCALAPPDATA\Autodesk\webdeploy\production"
 ) | Where-Object { Test-Path -LiteralPath $_ }
 
+$codexDirectory = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+
 $junctions = @(
     if ((Test-Path "$PSScriptRoot\secrets")) {
         [pscustomobject]@{source      = "$PSScriptRoot\secrets\FileZilla"
@@ -208,6 +210,15 @@ $junctions = @(
 
     [pscustomobject]@{source      = "$PSScriptRoot\agents"
                       destination = "$env:USERPROFILE\.agents"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\codex\config.toml"
+                      destination = "$codexDirectory\config.toml"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\codex\hooks.json"
+                      destination = "$codexDirectory\hooks.json"}
+
+    [pscustomobject]@{source      = "$PSScriptRoot\codex\hooks\deny-ask.ps1"
+                      destination = "$codexDirectory\hooks\deny-ask.ps1"}
 
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}

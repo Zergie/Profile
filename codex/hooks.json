@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "timeout": 10,
+            "command": "powershell.exe -NoLogo -NoProfile -NonInteractive -Command \"$codexDirectory = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexDirectory 'hooks/deny-ask.ps1')\"",
+            "type": "command"
+          }
+        ],
+        "matcher": "^(functions\\.)?request_user_input(_async)?$"
+      }
+    ]
+  }
+}

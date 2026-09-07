@@ -1,0 +1,2 @@
+# This handler is selected only for the ask tools by the PreToolUse matcher.
+[Console]::Out.WriteLine('{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Ask tools are disabled by user policy. Continue with reasonable assumptions or ask in plain text if essential."}}')

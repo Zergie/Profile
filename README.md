@@ -13,3 +13,4 @@ Direct `Invoke-Pester -Path .\Powershell\Tests` remains available for debugging.
 There are some scripts worth mentioning:
 
 1. **Install-Tools.ps1** : Sets up chocolaty and installs my tools, links configuration files to the default locations.
+2. **[codex](codex/README.md)** : Codex configuration and hooks, linked with `Install-Tools.ps1 -junctions` like the other tools.

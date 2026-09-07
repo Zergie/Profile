@@ -1,0 +1,91 @@
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+approvals_reviewer = "guardian_subagent"
+sandbox_mode = "workspace-write"
+service_tier = "default"
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[features]
+js_repl = false
+
+[mcp_servers.evernote]
+url = "https://mcp.evernote.com/mcp"
+
+[desktop]
+conversationDetailMode = "STEPS_COMMANDS"
+ambient-suggestions-enabled = true
+keepRemoteControlAwakeWhilePluggedIn = true
+followUpQueueMode = "queue"
+show-context-window-usage = true
+enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "ultra", "max"]
+
+[desktop.open-in-target-preferences]
+global = "vscode"
+
+[windows]
+sandbox = "elevated"
+
+[apps.asdk_app_6a34f7479fd08191bd5d2fa3c35c080d]
+enabled = false
+
+[[skills.config]]
+name = "openai-templates:artifact-template-analytics-dashboard"
+enabled = false
+
+[[skills.config]]
+name = "openai-templates:artifact-template-business-review"
+enabled = false
+
+[[skills.config]]
+name = "openai-templates:artifact-template-design-report"
+enabled = false
+
+[[skills.config]]
+name = "openai-templates:artifact-template-experiment-analysis"
+enabled = false
+
+[[skills.config]]
+name = "openai-templates:artifact-template-financial-budget"
+enabled = false
+
+[[skills.config]]
+name = "template-creator:template-creator"
+enabled = false
+
+[[skills.config]]
+name = "sites:sites-hosting"
+enabled = false
+
+[[skills.config]]
+name = "sites:sites-building"
+enabled = false
