@@ -39,6 +39,9 @@ if ((Get-Alias ii).Definition -cne 'Invoke-Item') {
 & $StartupScript -LiteralPath $Fixture -WhatIf
 [pscustomobject]@{ Path = $Fixture } | & $StartupScript -WhatIf
 ii -LiteralPath $Fixture -WhatIf
+foreach ($uri in 'https://example.com/path?q=1', 'ftp://example.com/file.txt', 'mailto:user@example.com', 'vscode://file/C:/temp/a.txt') {
+    & $StartupScript -Path $uri -WhatIf
+}
 Write-Output 'proxy-pass-through-complete'
 '@ | Set-Content -LiteralPath $childScript -NoNewline
 
@@ -396,6 +399,9 @@ Describe 'Invoke-Item startup proxy' -Tag Command {
         $result.ExitCode | Should -Be 0 -Because "$($result.Command)`n$($result.StdOut)`n$($result.StdErr)"
         $result.StdOut | Should -Match 'proxy-pass-through-complete'
         $result.StdOut | Should -Match 'What if:'
+        foreach ($uriPattern in 'https://example\.com/path\?q=1', 'ftp://example\.com/file\.txt', 'mailto:user@example\.com', 'vscode://file/C:/temp/a\.txt') {
+            $result.StdOut | Should -Match "Open URL.*$uriPattern"
+        }
     }
 
     It 'reports bounded child-process timeout diagnostics' {

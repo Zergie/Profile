@@ -101,8 +101,21 @@ process
         $paths = @($PSBoundParameters[$pathParameter])
     }
 
-    foreach ($path in $paths) {
-        $resolutionParameters = @{ $pathParameter = $path }
+    foreach ($candidatePath in $paths) {
+        $candidateUri = $null
+        $isExternalUri = $candidatePath -is [string] -and
+            [System.Uri]::TryCreate($candidatePath, [System.UriKind]::Absolute, [ref]$candidateUri) -and
+            -not $candidateUri.IsFile -and
+            $null -eq (Microsoft.PowerShell.Management\Get-PSDrive -Name $candidateUri.Scheme -ErrorAction SilentlyContinue)
+
+        if ($isExternalUri) {
+            if ($PSCmdlet.ShouldProcess($candidatePath, 'Open URL')) {
+                Microsoft.PowerShell.Management\Start-Process -FilePath $candidatePath
+            }
+            continue
+        }
+
+        $resolutionParameters = @{ $pathParameter = $candidatePath }
         foreach ($name in 'Filter', 'Include', 'Exclude') {
             if ($PSBoundParameters.ContainsKey($name)) {
                 $resolutionParameters[$name] = $PSBoundParameters[$name]
@@ -116,7 +129,7 @@ process
             foreach ($entry in $PSBoundParameters.GetEnumerator()) {
                 $fallbackParameters[$entry.Key] = $entry.Value
             }
-            $fallbackParameters[$pathParameter] = $path
+            $fallbackParameters[$pathParameter] = $candidatePath
             & $wrappedCmd @fallbackParameters
             continue
         }
