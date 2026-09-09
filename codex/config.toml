@@ -89,3 +89,7 @@ enabled = false
 [[skills.config]]
 name = "sites:sites-building"
 enabled = false
+
+[marketplaces.openai-bundled]
+source_type = "local"
+source = '\\?\C:\Users\user\.codex\.tmp\bundled-marketplaces\openai-bundled'
