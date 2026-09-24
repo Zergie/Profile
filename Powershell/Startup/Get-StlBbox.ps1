@@ -2,69 +2,81 @@
 param(
     [Parameter(Mandatory,
                ValueFromPipeline)]
-    [ValidateScript({ (Get-Item $_).Extension -eq ".stl" })]
+    [ValidateScript({ (Get-Item $_).Extension -eq '.stl' })]
     [string[]]
     $Path
 )
-Process {
-# needs: pip install numpy-stl
-python -c '
-import stl
-from stl import mesh
 
-min_x = max_x = min_y = max_y = min_z = max_z = None
+process {
+    Get-ChildItem -Path $Path -File | ForEach-Object {
+        $file = $_
+        $bytes = [System.IO.File]::ReadAllBytes($file.FullName)
+        $minX = $minY = $minZ = [double]::PositiveInfinity
+        $maxX = $maxY = $maxZ = [double]::NegativeInfinity
+        $vertexCount = 0
 
-for p in mesh.Mesh.from_file("$1").points:
-    if min_x is None:
-        min_x = p[stl.Dimension.X]
-        max_x = p[stl.Dimension.X]
-        min_y = p[stl.Dimension.Y]
-        max_y = p[stl.Dimension.Y]
-        min_z = p[stl.Dimension.Z]
-        max_z = p[stl.Dimension.Z]
-    else:
-        max_x = max(p[stl.Dimension.X], max_x)
-        min_x = min(p[stl.Dimension.X], min_x)
-        max_y = max(p[stl.Dimension.Y], max_y)
-        min_y = min(p[stl.Dimension.Y], min_y)
-        max_z = max(p[stl.Dimension.Z], max_z)
-        min_z = min(p[stl.Dimension.Z], min_z)
-
-print("{")
-print("min_x :", min_x, ",")
-print("max_x :", max_x, ",")
-print("min_y :", min_y, ",")
-print("max_y :", max_y, ",")
-print("min_z :", min_z, ",")
-print("max_z :", max_z)
-print("}")
-'.Replace('$1', (Get-ChildItem $Path).FullName.Replace("\","\\")) |
-    ConvertFrom-Json |
-    ForEach-Object {
-        [pscustomobject]@{
-            Name     = (Get-ChildItem $Path).Name
-            X        = [Math]::Round($_.min_x, 3)
-            Y        = [Math]::Round($_.min_y, 3)
-            Z        = [Math]::Round($_.min_z, 3)
-            SizeX    = [Math]::Round($_.max_x - $_.min_x, 3)
-            SizeY    = [Math]::Round($_.max_y - $_.min_y, 3)
-            SizeZ    = [Math]::Round($_.max_z - $_.min_z, 3)
-            Center   = [pscustomobject]@{
-                X=[Math]::Round($_.min_x + ($_.max_x - $_.min_x) / 2, 3)
-                Y=[Math]::Round($_.min_y + ($_.max_y - $_.min_y) / 2, 3)
-                Z=[Math]::Round($_.min_z + ($_.max_z - $_.min_z) / 2, 3)
-            }
-            Location = [pscustomobject]@{ X=0; Y=0; Z=0; }
-            Size     = [pscustomobject]@{ X=0; Y=0; Z=0; }
+        $isBinary = $false
+        if ($bytes.Length -ge 84) {
+            $triangleCount = [BitConverter]::ToUInt32($bytes, 80)
+            $isBinary = 84L + 50L * $triangleCount -eq $bytes.LongLength
         }
-    } |
-    ForEach-Object {
-        $_.Location.X = $_.X
-        $_.Location.Y = $_.Y
-        $_.Location.Z = $_.Z
-        $_.Size.X = $_.SizeX
-        $_.Size.Y = $_.SizeY
-        $_.Size.Z = $_.SizeZ
-        $_
+
+        if ($isBinary) {
+            for ($triangle = 0; $triangle -lt $triangleCount; $triangle++) {
+                $triangleOffset = 84 + 50 * $triangle
+                for ($vertex = 0; $vertex -lt 3; $vertex++) {
+                    $vertexOffset = $triangleOffset + 12 + 12 * $vertex
+                    $x = [BitConverter]::ToSingle($bytes, $vertexOffset)
+                    $y = [BitConverter]::ToSingle($bytes, $vertexOffset + 4)
+                    $z = [BitConverter]::ToSingle($bytes, $vertexOffset + 8)
+                    $minX = [Math]::Min($minX, $x); $maxX = [Math]::Max($maxX, $x)
+                    $minY = [Math]::Min($minY, $y); $maxY = [Math]::Max($maxY, $y)
+                    $minZ = [Math]::Min($minZ, $z); $maxZ = [Math]::Max($maxZ, $z)
+                    $vertexCount++
+                }
+            }
+        } else {
+            $numberStyle = [Globalization.NumberStyles]::Float
+            $culture = [Globalization.CultureInfo]::InvariantCulture
+            foreach ($line in [System.IO.File]::ReadLines($file.FullName)) {
+                if ($line -notmatch '^\s*vertex\s+(\S+)\s+(\S+)\s+(\S+)\s*$') { continue }
+
+                $x = [double]::Parse($Matches[1], $numberStyle, $culture)
+                $y = [double]::Parse($Matches[2], $numberStyle, $culture)
+                $z = [double]::Parse($Matches[3], $numberStyle, $culture)
+                $minX = [Math]::Min($minX, $x); $maxX = [Math]::Max($maxX, $x)
+                $minY = [Math]::Min($minY, $y); $maxY = [Math]::Max($maxY, $y)
+                $minZ = [Math]::Min($minZ, $z); $maxZ = [Math]::Max($maxZ, $z)
+                $vertexCount++
+            }
+        }
+
+        if ($vertexCount -eq 0) {
+            throw "'$($file.FullName)' does not contain a valid STL mesh."
+        }
+
+        $sizeX = [Math]::Round($maxX - $minX, 3)
+        $sizeY = [Math]::Round($maxY - $minY, 3)
+        $sizeZ = [Math]::Round($maxZ - $minZ, 3)
+        [pscustomobject]@{
+            Name     = $file.Name
+            X        = [Math]::Round($minX, 3)
+            Y        = [Math]::Round($minY, 3)
+            Z        = [Math]::Round($minZ, 3)
+            SizeX    = $sizeX
+            SizeY    = $sizeY
+            SizeZ    = $sizeZ
+            Center   = [pscustomobject]@{
+                X = [Math]::Round($minX + ($maxX - $minX) / 2, 3)
+                Y = [Math]::Round($minY + ($maxY - $minY) / 2, 3)
+                Z = [Math]::Round($minZ + ($maxZ - $minZ) / 2, 3)
+            }
+            Location = [pscustomobject]@{
+                X = [Math]::Round($minX, 3)
+                Y = [Math]::Round($minY, 3)
+                Z = [Math]::Round($minZ, 3)
+            }
+            Size     = [pscustomobject]@{ X = $sizeX; Y = $sizeY; Z = $sizeZ }
+        }
     }
 }

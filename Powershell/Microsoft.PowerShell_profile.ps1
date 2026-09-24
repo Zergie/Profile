@@ -202,6 +202,7 @@ Start-Action "Set alias to my programs"
     try { Set-Alias ollama (Resolve-Path "C:\Users\user\AppData\Local\Programs\Ollama\ollama.exe").Path } catch { }
     function bash { . "C:/Program Files/Git/usr/bin/bash.exe" --login -i @args }
     function co { . "$PSScriptRoot\Startup\Invoke-ChatGPT.ps1" -WriteGitCommit }
+    function make { if (Test-Path make.ps1) { .\make.ps1 @args } else { bash -c 'make "$@"' _ @args } }
     function rjb { Get-Job | Receive-Job -Wait -AutoRemoveJob }
 
 function git {

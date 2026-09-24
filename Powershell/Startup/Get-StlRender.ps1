@@ -31,6 +31,9 @@ $openscad = Get-ChildItem "$env:ProgramFiles\OpenSCAD*" -Directory |
 
 Write-Host -ForegroundColor Cyan "Getting bbox of stl..."
 $bbox = . "$PSScriptRoot/Get-StlBbox.ps1" -Path $Path
+if ($null -eq $bbox) {
+    throw "Could not calculate the bounding box for '$Path'."
+}
 
 Write-Host -ForegroundColor Cyan "Removing `$env:TEMP\output*.png ..."
 Remove-Item "$env:TEMP\output*.png" -ErrorAction SilentlyContinue

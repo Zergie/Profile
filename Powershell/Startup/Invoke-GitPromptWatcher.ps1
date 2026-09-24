@@ -27,12 +27,9 @@ param(
     [Parameter(ParameterSetName = 'Request')]
     [string] $Path = (Get-Location).Path,
 
-    [Parameter(ParameterSetName = 'Worker', DontShow)]
-    [Parameter(ParameterSetName = 'ReportBug')]
-    [switch] $ReportBug,
-
-    [Parameter(ParameterSetName = 'ReportBug')]
-    [string] $Description,
+    [Parameter(ParameterSetName = 'ReportBug', Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [string] $ReportBug,
 
     [Parameter(ParameterSetName = 'ReportBug')]
     [string] $OutputPath,
@@ -326,7 +323,7 @@ function Receive-GitPromptAutomaticIncidentCapture {
             $description = "Automatic incident: $($incident.trigger)"
             $job = Start-ThreadJob -ScriptBlock {
                 param($scriptPath, $archive, $description)
-                & $scriptPath -ReportBug -Description $description -OutputPath $archive
+                & $scriptPath -ReportBug $description -OutputPath $archive
             } -ArgumentList $scriptPath, $archive, $description
             $global:GitPromptAutomaticIncidentJobs[$incident.trigger] = [pscustomobject]@{ job=$job; archive=$archive }
         }
@@ -1249,8 +1246,14 @@ function Invoke-GitPromptWatcherWorker {
                         $lastClientInteractionAt = [datetime]::UtcNow
                         Set-Variable -Name requestCount -Scope 1 -Value ($requestCount + 1)
                         $requestStartedAt = [datetime]::UtcNow
-                        $correlationId = if ($message.correlationId) { [string]$message.correlationId } else { [guid]::NewGuid().ToString('N') }
-                        $requestAttempt = if ($message.attempt) { [int]$message.attempt } else { 1 }
+                        # Background prompt clients omit these optional diagnostic fields.
+                        # Check for their presence before reading them under strict mode.
+                        $correlationId = if ($message.PSObject.Properties['correlationId'] -and $message.correlationId) {
+                            [string] $message.correlationId
+                        } else { [guid]::NewGuid().ToString('N') }
+                        $requestAttempt = if ($message.PSObject.Properties['attempt'] -and $message.attempt) {
+                            [int] $message.attempt
+                        } else { 1 }
                         Write-GitPromptWatcherWorkerEvent -IdentityKey $Identity.Key -Event 'pipe.request' -CorrelationId $correlationId -Data @{ requestType = [string]$message.type; attempt = $requestAttempt }
                         switch ($message.type) {
                             'Diagnostics' {
@@ -2084,7 +2087,7 @@ if (-not (Get-Variable -Name GitPromptWatcherImportOnly -Scope Script -ValueOnly
     }
 
     if ($ReportBug) {
-        return New-GitPromptBugReport -Identity $identity -Description $Description -OutputPath $OutputPath -IncludeSensitivePaths:$IncludeSensitivePaths
+        return New-GitPromptBugReport -Identity $identity -Description $ReportBug -OutputPath $OutputPath -IncludeSensitivePaths:$IncludeSensitivePaths
     }
 
     if ($Request) {
