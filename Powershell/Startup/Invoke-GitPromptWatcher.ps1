@@ -276,6 +276,60 @@ function Initialize-GitPromptClientDiagnostics {
     $global:GitPromptAutomaticIncidentDeduplication = @{}
     $global:GitPromptAutomaticIncidentNotification = $null
 }
+function Get-GitPromptAutomaticIncidentIntervalSeconds {
+    $seconds = 30
+    $configured = 0
+    if ([int]::TryParse([string]$env:GIT_PROMPT_WATCHER_PERIODIC_SECONDS, [ref]$configured) -and $configured -gt 0) {
+        $seconds = $configured
+    }
+    return $seconds
+}
+
+function Test-GitPromptResourceGrowth {
+    param([Parameter(Mandatory)][object[]]$Samples)
+    $usable = @($Samples | Where-Object {
+        $_.privateMemoryBytes -ne $null -and $_.handles -ne $null -and $_.threads -ne $null -and $_.sampledAtUtc
+    } | Sort-Object { [datetime]$_.sampledAtUtc })
+    if ($usable.Count -lt 2) { return $false }
+    $first = $usable[0]
+    $last = $usable[$usable.Count - 1]
+    if (([datetime]$last.sampledAtUtc - [datetime]$first.sampledAtUtc).TotalMinutes -lt 10) { return $false }
+    $handlesGrew = ([int]$last.handles - [int]$first.handles) -ge 250 -and ([double]$last.handles / [math]::Max(1, [int]$first.handles)) -ge 1.25
+    $memoryGrew = ([int64]$last.privateMemoryBytes - [int64]$first.privateMemoryBytes) -ge 128MB -and ([double]$last.privateMemoryBytes / [math]::Max(1, [int64]$first.privateMemoryBytes)) -ge 1.5
+    $threadsGrew = ([int]$last.threads - [int]$first.threads) -ge 20
+    return ($handlesGrew -or $memoryGrew -or $threadsGrew)
+}
+
+function Test-GitPromptAutomaticIncidentConditions {
+    try {
+        if (-not $global:GitPromptClientDiagnostics) { return }
+        $paths = Get-GitPromptWatcherRecorderPaths -IdentityKey $global:GitPromptClientDiagnostics.identity
+        $events = @(Get-GitPromptWatcherWorkerEvents -IdentityKey $global:GitPromptClientDiagnostics.identity)
+        if ($events | Where-Object { $_.event -eq 'worker.stop' -and $_.reason -eq 'unexpected-exit' } | Select-Object -First 1) {
+            Start-GitPromptAutomaticIncidentCapture -Trigger 'worker-exit'
+        }
+        if ($events | Where-Object event -eq 'filesystem.watcherError' | Select-Object -First 1) {
+            Start-GitPromptAutomaticIncidentCapture -Trigger 'filesystem-watcher-error'
+        }
+        $heartbeats = @($events | Where-Object event -eq 'worker.healthHeartbeat')
+        if ($heartbeats.Count -gt 1) {
+            $samples = @($heartbeats | ForEach-Object { $_.resources })
+            if (Test-GitPromptResourceGrowth -Samples $samples) {
+                Start-GitPromptAutomaticIncidentCapture -Trigger 'resource-growth'
+            }
+        }
+        if ($global:GitPromptSnapshotCache -and $global:GitPromptSnapshotCache.cachedAtUtc) {
+            $age = ([datetime]::UtcNow - [datetime]$global:GitPromptSnapshotCache.cachedAtUtc).TotalSeconds
+            $global:GitPromptClientDiagnostics.cacheAgeMilliseconds = [math]::Max(0, [math]::Round($age * 1000, 0))
+            $isRepository = Test-Path -LiteralPath (Join-Path (Get-Location).Path '.git') -PathType Container
+            if ($isRepository -and $age -gt (2 * (Get-GitPromptAutomaticIncidentIntervalSeconds))) {
+                Start-GitPromptAutomaticIncidentCapture -Trigger 'stale-cache'
+            }
+        }
+    } catch {
+        if ($global:GitPromptClientDiagnostics) { $global:GitPromptClientDiagnostics.recorderErrors++ }
+    }
+}
 function Update-GitPromptClientDiagnostics {
     param([Parameter(Mandatory)][hashtable] $Updates)
     try {
@@ -1799,6 +1853,7 @@ function Receive-GitPromptNotifications {
     if ($PassThru) { return $receivedApplicableSnapshot }
 }
 function Receive-GitPromptIdleUpdates {
+    Test-GitPromptAutomaticIncidentConditions
     Receive-GitPromptAutomaticIncidentCapture
     $snapshotUpdated = Receive-GitPromptSnapshotRefresh -PassThru
     $notificationUpdated = Receive-GitPromptNotifications -PassThru
