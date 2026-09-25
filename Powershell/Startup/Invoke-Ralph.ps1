@@ -3347,7 +3347,8 @@ Clear-Host
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$git = Get-Command git -ErrorAction Stop
+$git = Get-Command git -CommandType Application -ErrorAction Stop |
+    Select-Object -First 1
 
 $repositoryRoot = Invoke-NativeText -FilePath $git.Source -ArgumentList @(
     'rev-parse',

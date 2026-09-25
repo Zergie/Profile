@@ -1519,6 +1519,18 @@ switch ($env:RALPH_SCENARIO) {
         Get-NonScratchStatus $result.Repository | Should -Be ''
     }
 
+    It 'resolves the Git executable when the shell defines a git function' {
+        $repository = New-RalphCommandScenario -Name 'git-function'
+        $quotedScript = $script:ralphScript.Replace("'", "''")
+        $command = "function git { & git.exe @args }; & '$quotedScript' -List"
+        $process = Invoke-BoundedProcess -FilePath $script:pwsh -ArgumentList @(
+            '-NoProfile', '-Command', $command
+        ) -WorkingDirectory $repository -TimeoutSeconds 30
+
+        $process.ExitCode | Should -Be 0 -Because $process.StdErr
+        $process.StdOut | Should -Match 'feature'
+    }
+
     It 'runs archive mode without invoking an agent or changing progress history' {
         $progress = '{"feature":"previous","ticket":"00","changes":"done","checks":"passed"}'
         $result = Invoke-RalphCommandScenario -Name 'archive-mode' -RalphArguments @('-Archive', 'feature') -Setup {
