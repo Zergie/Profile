@@ -17,6 +17,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require('user.opt')
 require('user.keymaps')
+require('user.project')
 require('user.autocmd')
 require('user.lspconfig')
 
@@ -25,6 +26,7 @@ require('user.lspconfig')
 require("lazy").setup({
   {
     "wellle/context.vim",
+    event = { "BufReadPost", "BufNewFile" },
     config = function()
       -- vim.g.context_enabled = 1
       -- vim.g.context_filetype_blacklist = []
@@ -47,19 +49,16 @@ require("lazy").setup({
   },
   {
     "bfredl/nvim-luadev",
-    config = function()
-      local wk = require("which-key")
-
-      wk.add({
-        { "<leader>m", group="Luadev" },
-        { "<leader>ml", "<Plug>(Luadev-RunLine)", desc = "[Luadev] Execute the current line", mode = { "n" } },
-        { "<leader>ma", "<Plug>(Luadev-Run)", desc = "[Luadev] Operator to execute lua code over a movement or text object.", mode = { "v", "n" } },
-      })
-    end
+    ft = "lua",
+    cmd = "Luadev",
+    keys = {
+      { "<leader>ml", "<Plug>(Luadev-RunLine)", desc = "[Luadev] Execute the current line", remap = true },
+      { "<leader>ma", "<Plug>(Luadev-Run)", desc = "[Luadev] Execute Lua over a movement or text object", mode = { "v", "n" }, remap = true },
+    },
   },
   {
     "jackMort/ChatGPT.nvim",
-    event = "VeryLazy",
+    cmd = { "ChatGPT", "ChatGPTActAs", "ChatGPTEditWithInstructions", "ChatGPTRun", "ChatGPTCompleteCode" },
     config = function()
       require("chatgpt").setup {
         api_key_cmd = nil,
@@ -230,15 +229,13 @@ require("lazy").setup({
   -- Translator
   {
     'uga-rosa/translate.nvim',
-    config = function ()
-     local map = function (mode, lhs, rhs, desc)
-       vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Translate]" })
-     end
-      map('n', '<Leader>td', 'viw:Translate de<CR>', 'Translate to german')
-      map('n', '<Leader>te', 'viw:Translate en<CR>', 'Translate to english')
-      map('v', '<Leader>td', ':Translate de<CR>', 'Translate to german')
-      map('v', '<Leader>te', ':Translate en<CR>', 'Translate to english')
-    end
+    cmd = "Translate",
+    keys = {
+      { '<leader>td', 'viw:Translate de<CR>', desc = 'Translate to german [Translate]' },
+      { '<leader>te', 'viw:Translate en<CR>', desc = 'Translate to english [Translate]' },
+      { '<leader>td', ':Translate de<CR>', mode = 'v', desc = 'Translate to german [Translate]' },
+      { '<leader>te', ':Translate en<CR>', mode = 'v', desc = 'Translate to english [Translate]' },
+    },
   },
 
   -- Theme inspired by Atom
@@ -255,32 +252,43 @@ require("lazy").setup({
   -- Git related plugins
   {
     'tpope/vim-fugitive',
+    ft = { 'gitcommit', 'gitrebase', 'fugitive' },
+    event = 'BufReadCmd fugitive://*',
+    cmd = {
+      'G', 'Git', 'Gstatus', 'Gcd', 'Glcd', 'Ggrep', 'Glgrep', 'Gclog', 'GcLog', 'Gllog', 'GlLog',
+      'Ge', 'Gedit', 'Gpedit', 'Gsplit', 'Gvsplit', 'Gtabedit', 'Gdrop', 'Gr', 'Gread',
+      'Gdiffsplit', 'Ghdiffsplit', 'Gvdiffsplit', 'Gw', 'Gwrite', 'Gwq',
+      'GRemove', 'GUnlink', 'GDelete', 'GMove', 'GRename', 'GBrowse',
+      'Gremove', 'Gdelete', 'Gmove', 'Grename', 'Gbrowse',
+    },
+    keys = { { '<leader>l', '<cmd>0Gclog -- %<cr>', desc = 'git log [Fugitive]' } },
     dependencies = {
       'tpope/vim-rhubarb',
     },
-    config = function()
-      local map = function(mode, lhs, rhs, desc)
-        vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [Fugitive]" })
-      end
-
-      map("n", "<Leader>l", "<cmd>0Gclog -- %<cr>", "git log")
-      map("n", "[q", "<cmd>cprev<cr>", "Prev qf item")
-      map("n", "]q", "<cmd>cnext<cr>", "Next qf item")
-      map("n", "[Q", "<cmd>cfirst<cr>", "First qf item")
-      map("n", "]Q", "<cmd>clast<cr>", "Last qf item")
-    end
   },
 
   { -- File Explorer For Neovim Written In Lua
     'nvim-tree/nvim-tree.lua',
+    cmd = { 'NvimTreeToggle', 'NvimTreeOpen', 'NvimTreeClose', 'NvimTreeFocus', 'NvimTreeFindFile',
+      'NvimTreeFindFileToggle', 'NvimTreeRefresh', 'NvimTreeCollapse', 'NvimTreeClipboard', 'NvimTreeResize' },
+    keys = { { '<leader>x', desc = 'File Explorer [NvTree]' } },
+    init = function()
+      vim.g.loaded_netrw = 1
+      vim.g.loaded_netrwPlugin = 1
+      -- Also load the explorer when Neovim is started with a directory.
+      vim.api.nvim_create_autocmd('BufEnter', {
+        callback = function(event)
+          local path = vim.api.nvim_buf_get_name(event.buf)
+          if vim.fn.isdirectory(path) == 1 then
+            require('nvim-tree.api').tree.open({ path = path })
+          end
+        end,
+      })
+    end,
     config = function()
       local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc .. " [NvTree]" })
       end
-
-      -- disable netrw at the very start of your init.lua
-      vim.g.loaded_netrw = 1
-      vim.g.loaded_netrwPlugin = 1
 
       -- set termguicolors to enable highlight groups
       vim.opt.termguicolors = true
@@ -295,6 +303,7 @@ require("lazy").setup({
 
   { -- Fancier statusline
     'nvim-lualine/lualine.nvim',
+    event = "VeryLazy",
     config = function()
       -- See `:help lualine.txt`
       require('lualine').setup {
@@ -341,6 +350,7 @@ require("lazy").setup({
       }
 
       wk.add({
+        { "<leader>m", group = "Luadev" },
         { "<leader>c", group = "workspace" },
         { "<leader>cA", "<cmd>cd C:|cd /GIT/TauOffice/Admintool/|cd<CR>", desc = "Admintool" },
         { "<leader>cP", "<cmd>cd C:|cd /GIT/Profile/|cd<CR>", desc = "Profile" },
@@ -356,12 +366,11 @@ require("lazy").setup({
         { "<leader>pc", "<cmd>ChatGPT<CR>", desc = "ChatGPT" },
         { "H", "<cmd>bp<CR>", desc = "Prev buffer" },
         { "L", "<cmd>bn<CR>", desc = "Next buffer" },
-        { "<leader>ga", "<Plug>(EasyAlign)", desc = "Align [EasyAlign]", mode = {"n", "x"} },
         {
           mode = { "n", "v" },
           { "<leader>pa", "<cmd>ChatGPTRun add_tests<CR>", desc = "Add Tests [AI]" },
           { "<leader>pd", "<cmd>ChatGPTRun docstring<CR>", desc = "Docstring [AI]" },
-          { "<leader>pe", "<cmd>ChatGPTEditWithInstruction<CR>", desc = "Edit with instruction [AI]" },
+          { "<leader>pe", "<cmd>ChatGPTEditWithInstructions<CR>", desc = "Edit with instruction [AI]" },
           { "<leader>pf", "<cmd>ChatGPTRun fix_bugs<CR>", desc = "Fix Bugs [AI]" },
           { "<leader>pg", "<cmd>ChatGPTRun grammar_correction<CR>", desc = "Grammar Correction [AI]" },
           { "<leader>pi", function ()
@@ -401,15 +410,17 @@ require("lazy").setup({
   -- allows align e.g. vipga=
   {
     'junegunn/vim-easy-align',
-    config = function()
-    end
+    cmd = { 'EasyAlign', 'LiveEasyAlign' },
+    keys = { { '<leader>ga', '<Plug>(EasyAlign)', mode = { 'n', 'x' }, desc = 'Align [EasyAlign]', remap = true } },
   },
 
-  'mracos/mermaid.vim', -- mermaid diagram
+  { 'mracos/mermaid.vim', ft = 'mermaid' }, -- mermaid diagram
 
   -- floating terminal for compling
   {
     'numToStr/FTerm.nvim',
+    keys = { { '<leader>n', desc = 'Toggle Terminal [FTerm]' }, { '<Esc><Esc>', mode = 't' } },
+    lazy = true, -- Filetype and build mappings also load this through require('FTerm').
     config = function()
       local fterm = require('FTerm')
       fterm.setup {
@@ -427,6 +438,22 @@ require("lazy").setup({
   -- Fuzzy Finder (files, lsp, etc)
   {
     'nvim-telescope/telescope.nvim',
+    cmd = 'Telescope',
+    -- config() installs the actual search mappings.
+    keys = {
+      { '<leader><space>', desc = 'Find existing buffers' },
+      { '<leader>sf', desc = '[S]earch [F]iles' },
+      { '<leader>so', desc = '[S]earch in old files' },
+      { 'z=', desc = 'Spell Suggest' },
+      { '<leader>/', desc = 'Search in current buffer' },
+      { '<leader>sb', desc = '[S]earch [B]uiltin' },
+      { '<leader>sm', desc = '[S]earch [M]arks' },
+      { '<leader>sr', desc = '[S]earch [R]esume' },
+      { '<leader>sh', desc = '[S]earch [H]elp' },
+      { '<leader>sw', desc = '[S]earch current [W]ord' },
+      { '<leader>sg', desc = '[S]earch by [G]rep' },
+      { '<leader>sd', desc = '[S]earch [D]iagnostics' },
+    },
     branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim'
@@ -491,71 +518,6 @@ require("lazy").setup({
       map('n', '<leader>sw', function() telescope.grep_string() end, '[S]earch current [W]ord')
       map('n', '<leader>sg', telescope.live_grep, '[S]earch by [G]rep')
       map('n', '<leader>sd', telescope.diagnostics, '[S]earch [D]iagnostics')
-
-      local run_commands = function(commands)
-        local fterm = require('FTerm')
-        fterm.run(";pushd " .. vim.fn.getcwd())
-        for _, cmd in ipairs(commands) do fterm.run(cmd) end
-        fterm.run(";popd")
-      end
-
-      local save = function()
-        local buffers = ""
-        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-          if vim.api.nvim_buf_get_option(buf, 'modified') then
-            buffers = buffers .. ' "' .. vim.uri_from_bufnr(buf) .. '"'
-          end
-        end
-        print(vim.inspect(buffers))
-
-        vim.cmd("wa")
-        local cmd_table = {
-          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-            "Import-Msaccess -Path " .. buffers .. " -Compile",
-          },
-        }
-
-        if not (buffers == nil or buffers == "") then
-          run_commands(cmd_table[vim.fn.getcwd()] or { "" })
-        end
-      end
-      map("n", "<Leader>ms", save, "Save project")
-
-      local build = function()
-        vim.cmd("wa")
-        local cmd_table = {
-          ["C:\\GIT\\TauOffice\\Admintool"] = {
-            "./make.ps1",
-          },
-          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-            "sudo ../make.ps1 -dev",
-          },
-        }
-        run_commands(cmd_table[vim.fn.getcwd()] or { "sudo ./make.ps1" })
-      end
-      map("n", "<Leader>mk", build, "Build project")
-
-      local run = function()
-        local cmd_table = {
-          ["C:\\GIT\\TauOffice\\Admintool"] = {
-            "Stop-Process -ProcessName AdminTool.App -ErrorAction SilentlyContinue",
-            ". 'C:/Program Files (x86)/Tau-Office/Admintool/AdminTool.App.exe'",
-            "Watch-Log Admintool.log -Exit",
-          },
-          ["C:\\GIT\\TauOffice\\tau-office\\source"] = {
-            "ii ../bin/tau-office.mdb",
-            "sleep 5;Watch-Log TauError.log -Exit",
-          },
-        }
-        run_commands(cmd_table[vim.fn.getcwd()] or {})
-      end
-      map("n", "<Leader>mr", run, "Run project")
-
-      map("n", "<Leader>mm", function()
-        vim.cmd("wa")
-        require('FTerm').run(
-        ";$history = Get-History; $history | Select-Object -Last 1 |% { Write-Host -ForegroundColor Cyan $_ ; Invoke-Expression $_ }; Clear-History; $history | Add-History")
-      end, "Repeat last command")
     end
   },
 
@@ -563,6 +525,7 @@ require("lazy").setup({
   -- Add indentation guides even on blank lines
   {
     'lukas-reineke/indent-blankline.nvim',
+    event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       -- See `:help indent_blankline.txt`
       local fghighlight = {
@@ -624,17 +587,22 @@ require("lazy").setup({
   },
   { -- "gc" to comment visual regions/lines
     'numToStr/Comment.nvim',
+    keys = { { 'gc', mode = { 'n', 'x' } }, { 'gb', mode = { 'n', 'x' } }, 'gcc', 'gbc' },
     config = function()
       require('Comment').setup()
     end
   },
-  'tpope/vim-sleuth',   -- Detect tabstop and shiftwidth automatically
-  'wilriker/gcode.vim', -- gcode syntax
+  { 'tpope/vim-sleuth', event = { 'BufReadPost', 'BufNewFile' } }, -- Detect indentation
+  { 'wilriker/gcode.vim', ft = 'gcode' }, -- gcode syntax
 
 
   -- LSP Configuration & Plugins
   {
     'neovim/nvim-lspconfig',
+    ft = { 'lua', 'json', 'jsonc', 'python', 'xml', 'xsd', 'xsl', 'xslt', 'svg', 'ps1xml',
+      'cs', 'vb', 'ps1', 'arduino' },
+    cmd = { 'LspInfo', 'LspStart', 'LspStop', 'LspRestart', 'Mason', 'MasonInstall', 'MasonUninstall',
+      'MasonUninstallAll', 'MasonLog', 'MasonUpdate', 'LspInstall', 'LspUninstall' },
     dependencies = {
       { -- Automatically install LSPs to stdpath for neovim
         'williamboman/mason.nvim',
@@ -778,7 +746,6 @@ require("lazy").setup({
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
-      'hrsh7th/nvim-cmp',
       'saadparwaiz1/cmp_luasnip',
       { -- Snippets
         'L3MON4D3/LuaSnip',

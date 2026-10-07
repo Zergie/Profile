@@ -4,7 +4,6 @@ approval_policy = "on-request"
 approvals_reviewer = "guardian_subagent"
 sandbox_mode = "workspace-write"
 service_tier = "default"
-
 [plugins."codex-app-tools@openai-bundled"]
 enabled = true
 

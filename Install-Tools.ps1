@@ -214,12 +214,6 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\codex\config.toml"
                       destination = "$codexDirectory\config.toml"}
 
-    [pscustomobject]@{source      = "$PSScriptRoot\codex\hooks.json"
-                      destination = "$codexDirectory\hooks.json"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\codex\hooks\deny-ask.ps1"
-                      destination = "$codexDirectory\hooks\deny-ask.ps1"}
-
     [pscustomobject]@{source      = "$PSScriptRoot\neovim"
                       destination = "$env:USERPROFILE\AppData\Local\nvim"}
 

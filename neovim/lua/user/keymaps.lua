@@ -55,6 +55,10 @@ map("n", "<C-Left>",  "<cmd>vertical resize -2<cr>")
 map("n", "<C-Right>", "<cmd>vertical resize +2<cr>")
 
 -- Navigate
+map("n", "[q", "<cmd>cprev<cr>", "Prev qf item")
+map("n", "]q", "<cmd>cnext<cr>", "Next qf item")
+map("n", "[Q", "<cmd>cfirst<cr>", "First qf item")
+map("n", "]Q", "<cmd>clast<cr>", "Last qf item")
 map("n", "<C-b><C-b>", "<cmd>w<bar>bd<cr>",                 "Save and Close buffer")
 map("n", "<C-b>c",     "<cmd>bp<bar>sp<bar>bn<bar>bd!<cr>", "Close buffer")
 map("n", "gl",         "`.",                                "Goto last Change")
