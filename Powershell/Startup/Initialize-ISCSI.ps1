@@ -17,22 +17,24 @@ $Addresses = @(
 
 # Self-elevate the script if required
 if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-    $expression = @(
-        "pwsh"
+    $arguments = @(
         "-NoProfile"
         if ($PSBoundParameters.Debug.IsPresent) { "-NoExit" }
         "-File"
-        "`"$($MyInvocation.MyCommand.Path)`""
+        $MyInvocation.MyCommand.Path
         $MyInvocation.BoundParameters.GetEnumerator() |
-            ForEach-Object { "-$($_.Key) $(if ($_.Value.GetType().Name -eq 'SwitchParameter' -and $_.Value.IsPresent) { '' } else { $_.Value })" }
-    ) | Join-String -Separator " "
+            ForEach-Object {
+                if ($_.Value -is [System.Management.Automation.SwitchParameter]) {
+                    '-{0}:${1}' -f $_.Key, $_.Value.IsPresent
+                } else {
+                    "-$($_.Key)"
+                    "$($_.Value)"
+                }
+            }
+    )
 
-    "sudo {${expression}}" |
-        ForEach-Object {
-            Write-Host -ForegroundColor Cyan $_
-            Invoke-Expression $_
-        }
-    exit
+    & gsudo --direct (Join-Path $PSHOME 'pwsh.exe') @arguments
+    exit $LASTEXITCODE
 }
 
 function Invoke-Action {
@@ -74,6 +76,7 @@ if ($Stop) {
 } else {
     $Mount = $true
     Write-Host "Starting iSCSI service and connecting to targets .." -NoNewline
+    Set-Service -Name MSiSCSI -StartupType Automatic -ErrorAction Stop
     Get-Service -Name MSiSCSI | Start-Service
     Write-Host -ForegroundColor Green " Started"
 }
@@ -90,38 +93,55 @@ Get-IscsiTargetPortal | Remove-IscsiTargetPortal -Confirm:$false
 Write-Host -ForegroundColor Green " Removed"
 
 if ($Mount) {
-    $Addresses |
-        ForEach-Object {
-            Invoke-Action `
-                -Message "Testing connectivity to $_ .. " `
-                -Action {
-                    $status = (Test-NetConnection $_).PingSucceeded
-                    if (-not $status) {
-                        throw "Ping failed"
+    foreach ($address in $Addresses) {
+        Invoke-Action `
+            -Message "Testing connectivity to $address .. " `
+            -Action {
+                $status = (Test-NetConnection $address).PingSucceeded
+                if (-not $status) {
+                    throw "Ping failed"
+                }
+            } `
+            -SuccessMessage "OK"
+    }
+
+    foreach ($address in $Addresses) {
+        Invoke-Action `
+            -Message "Adding iSCSI target portal $address .. " `
+            -Action {
+                New-IscsiTargetPortal -TargetPortalAddress $address -ErrorAction Stop | Out-Null
+            } `
+            -SuccessMessage "Added"
+    }
+
+    foreach ($target in (Get-IscsiTarget)) {
+        $nodeAddress = $target.NodeAddress
+        Invoke-Action `
+            -Message "Connecting to iSCSI target $nodeAddress .. " `
+            -Action {
+                # Windows may reconnect a persistent session after discovery.
+                if (-not (Get-IscsiTarget -NodeAddress $nodeAddress -ErrorAction Stop).IsConnected) {
+                    Connect-IscsiTarget -NodeAddress $nodeAddress -ErrorAction Stop | Out-Null
+                }
+            } `
+            -SuccessMessage "Connected"
+
+        Invoke-Action `
+            -Message "Registering persistent iSCSI sessions for $nodeAddress .. " `
+            -Action {
+                $sessions = @(Get-IscsiSession -ErrorAction Stop |
+                    Where-Object { $_.TargetNodeAddress -eq $nodeAddress -and $_.IsConnected })
+                if ($sessions.Count -eq 0) {
+                    throw "No connected iSCSI session found for $nodeAddress"
+                }
+                foreach ($session in $sessions) {
+                    if (-not $session.IsPersistent) {
+                        Register-IscsiSession -SessionIdentifier $session.SessionIdentifier -ErrorAction Stop
                     }
-                } `
-                -SuccessMessage "OK"
-        }
-
-    $Addresses |
-        ForEach-Object {
-            Invoke-Action `
-                -Message "Adding iSCSI target portal $_ .. " `
-                -Action {
-                    New-IscsiTargetPortal -TargetPortalAddress $_ -ErrorAction Stop | Out-Null
-                } `
-                -SuccessMessage "Added"
-        }
-
-    Get-IscsiTarget |
-        ForEach-Object {
-            Invoke-Action `
-                -Message "Connecting to iSCSI target $($_.NodeAddress) .. " `
-                -Action {
-                    Connect-IscsiTarget -NodeAddress $_.NodeAddress -ErrorAction Stop | Out-Null
-                } `
-                -SuccessMessage "Connected"
-        }
+                }
+            } `
+            -SuccessMessage "Persistent"
+    }
 
     # Write-Host "Mounting volume $VolumeName to drive letter $DriveLetter..."
     # mountvol $DriveLetter $VolumeName
