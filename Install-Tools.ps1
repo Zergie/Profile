@@ -211,6 +211,9 @@ $junctions = @(
     [pscustomobject]@{source      = "$PSScriptRoot\agents"
                       destination = "$env:USERPROFILE\.agents"}
 
+    [pscustomobject]@{source      = "$PSScriptRoot\agents\skills"
+                      destination = "$env:USERPROFILE\.claude\skills"}
+
     [pscustomobject]@{source      = "$PSScriptRoot\codex\config.toml"
                       destination = "$codexDirectory\config.toml"}
 

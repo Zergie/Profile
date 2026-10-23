@@ -11,30 +11,29 @@ dynamicparam {
         -Body @{
             query = "SELECT [System.Id] FROM WorkItems WHERE [System.State] == 'Doing' AND [System.WorkItemType] <> 'Task'"
         }
-    if ($doing.workItems.Count -eq 0) {
-        throw "No work items in 'Doing' state found for the current iteration."
+    if ($doing.workItems.Count -gt 0) {
+      @(
+          [pscustomobject]@{
+              Position = 0
+              Type = [string[]]
+              Name = "Issues"
+              ParameterSetName = "IssuesParameterSet"
+              ValidateSet = Invoke-RestApi `
+                  -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=7.0" `
+                  -Body @{
+                      ids= @() + $doing.workItems.id
+                      fields= @(
+                          "System.Id"
+                          "System.Title"
+                       )
+                  } |
+                  ForEach-Object value |
+                  ForEach-Object fields |
+                  ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
+                  Sort-Object
+          }
+      ) | New-DynamicParameter
     }
-    @(
-        [pscustomobject]@{
-            Position = 0
-            Type = [string[]]
-            Name = "Issues"
-            ParameterSetName = "IssuesParameterSet"
-            ValidateSet = Invoke-RestApi `
-                -Endpoint "POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitemsbatch?api-version=7.0" `
-                -Body @{
-                    ids= @() + $doing.workItems.id
-                    fields= @(
-                        "System.Id"
-                        "System.Title"
-                     )
-                } |
-                ForEach-Object value |
-                ForEach-Object fields |
-                ForEach-Object { "$($_.'System.Id') - $($_.'System.Title')" } |
-                Sort-Object
-        }
-    ) | New-DynamicParameter
 }
 begin {
     $Issues = $PSBoundParameters['Issues']
