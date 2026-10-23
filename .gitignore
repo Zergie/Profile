@@ -9,8 +9,10 @@ CQ-editor/
 ttyper/
 warpd/
 wsl/
+agents/skills/synced/
 
 *.py[cod]
+
 # Fontconfig runtime cache (MinGW fontconfig on Windows uses this path)
 LOCAL_APPDATA_FONTCONFIG_CACHE/
 
