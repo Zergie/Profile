@@ -821,6 +821,65 @@ Status: ready-for-agent
             Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
+    It 'truncates the working spec when it has more tickets than fit' {
+        $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
+            'Invoke-Ralph.ManyTickets.' + [guid]::NewGuid().ToString('N')
+        )
+        $scratch = Join-Path $fixture '.scratch'
+        try {
+            $issues = Join-Path $scratch 'big\issues'
+            New-Item -ItemType Directory -Path $issues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'big\spec.md') -Value '# big display'
+            for ($number = 1; $number -le 40; $number++) {
+                $status = if ($number -le 3) { 'done' } else { 'ready-for-agent' }
+                Set-Content -LiteralPath (Join-Path $issues ('{0:D2}.md' -f $number)) `
+                    -Value "# ticket $number`n`nStatus: $status"
+            }
+            $otherIssues = Join-Path $scratch 'other\issues'
+            New-Item -ItemType Directory -Path $otherIssues -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $scratch 'other\spec.md') -Value '# other display'
+            Set-Content -LiteralPath (Join-Path $otherIssues '01.md') -Value "# other ticket`n`nStatus: ready-for-agent"
+
+            $lines = & $script:ralphModule {
+                param($Scratch)
+                Get-AdaptiveTrackerLines -ScratchDirectory $Scratch `
+                    -WorkingFeatureName 'big' -WindowHeight 22
+            } $scratch
+            $text = ($lines -join "`n") -replace "$([char]27)\[[0-9;]*m", ''
+
+            $lines.Count | Should -BeLessOrEqual 12
+            $text | Should -Match '├─ \[✓\] 3 issues completed'
+            $text | Should -Match '\[ \] ticket 4\b'
+            $text | Should -Not -Match 'ticket 40\b'
+            $text | Should -Match '└─ … \d+ more open issues'
+            $text | Should -Match '▸ other display.*1 open issue'
+        }
+        finally {
+            Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'truncates tracker rows that are wider than the panel' {
+        $panel = & $script:ralphModule {
+            $lines = @(
+                (Format-TrackerHeaderRow -Repository ('C:/' + ('x' * 80)) `
+                    -AgentSummary 'codex / model (medium)' -InnerWidth 46),
+                "$($PSStyle.Foreground.BrightCyan)$('Lange Überschrift ' * 6)$($PSStyle.Reset)",
+                "├─ [ ] $('漢字' * 30)"
+            )
+            Format-TrackerPanel -TrackerLines $lines -Width 50
+        }
+
+        foreach ($row in $panel) {
+            & $script:ralphModule { param($Row) Get-DisplayCellWidth -Text $Row } $row |
+                Should -Be 50
+        }
+        $text = ($panel -join "`n") -replace "$([char]27)\[[0-9;]*m", ''
+        $text | Should -Match 'Repository: C:/x+… +codex / model \(medium\) │'
+        $text | Should -Match 'Lange Überschrift.*… │'
+        $text | Should -Match '[漢字]… │'
+    }
+
     It 'sorts specs by title instead of feature directory name' {
         $fixture = Join-Path ([System.IO.Path]::GetTempPath()) (
             'Invoke-Ralph.SpecTitleSort.' + [guid]::NewGuid().ToString('N')

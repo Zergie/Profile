@@ -14,11 +14,6 @@ param(
 )
 Set-Alias Get-Issues "$PSScriptRoot/Get-Issues.ps1"
 
-if ($WaitHours -gt 0) {
-    Set-Alias -Name "Wait-Hours" -Value "$PSScriptRoot\Wait-Hours.ps1"
-    Wait-Hours -Hours $WaitHours
-}
-
 Push-Location C:\GIT\TauOffice
 git checkout master; if ($LASTEXITCODE -ne 0) { exit }
 git fetch --all; if ($LASTEXITCODE -ne 0) { exit }
@@ -368,6 +363,11 @@ Der Inhalt dieser E-Mail ist vertraulich und ausschließlich für den bezeichnet
 "@
 $mail.IsBodyHtml = $true
 $mail.Attachments.Add([System.Net.Mail.Attachment]::new($filename))
+
+if ($WaitHours -gt 0) {
+    Set-Alias -Name "Wait-Hours" -Value "$PSScriptRoot\Wait-Hours.ps1"
+    Wait-Hours -Hours $WaitHours
+}
 
 # send mail via smtp
 $smtp = [System.Net.Mail.SmtpClient]::new($credentials.Server, $credentials.Port)

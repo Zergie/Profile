@@ -1816,6 +1816,11 @@ function Format-TrackerHeaderRow {
     $dimAgent = "`e[2;38;5;8m${AgentSummary}$($PSStyle.Reset)"
     $gap = 2
     if ($InnerWidth -gt 0) {
+        # Shorten the repository first so the agent summary stays visible.
+        $repositoryWidth = $InnerWidth - $gap - (Get-DisplayCellWidth -Text $dimAgent)
+        if ($repositoryWidth -ge 20) {
+            $repositoryText = Limit-DisplayCellWidth -Text $repositoryText -Width $repositoryWidth
+        }
         $gap = [Math]::Max(
             2,
             $InnerWidth -
@@ -2045,8 +2050,10 @@ function Get-TrackerLines {
         $featureRow = $orderedFeatureRows[$featureIndex]
         $isWorkingFeature = $featureRow.DisplayName -ceq $effectiveWorkingFeatureName
         if ($CollapseInactiveFeatures -and -not $isWorkingFeature) {
-            if ($MaximumLines -gt 0 -and $lines.Count -ge $MaximumLines - 1) {
-                $remainingSpecs = $orderedFeatureRows.Count - $featureIndex
+            $remainingSpecs = $orderedFeatureRows.Count - $featureIndex
+            # The last spec can use the row otherwise kept for "… more specs".
+            if ($MaximumLines -gt 0 -and
+                $lines.Count -ge $MaximumLines - [int]($remainingSpecs -gt 1)) {
                 $lines.Add("${muted}… $remainingSpecs more specs${reset}")
                 break
             }
@@ -2077,9 +2084,47 @@ function Get-TrackerLines {
             continue
         }
 
-        for ($index = 0; $index -lt $featureRow.Tickets.Count; $index++) {
-            $ticket   = $featureRow.Tickets[$index]
-            $branch   = if ($index -eq $featureRow.Tickets.Count - 1) { '└─' } else { '├─' }
+        $visibleTickets = @($featureRow.Tickets)
+        $completedSummaryCount = 0
+        $hiddenOpenCount = 0
+        if ($CollapseInactiveFeatures -and $MaximumLines -gt 0) {
+            # Keep one row per following spec, capped by the "… more specs" row.
+            $followingSpecs = $orderedFeatureRows.Count - $featureIndex - 1
+            $ticketBudget = [Math]::Max(
+                1,
+                $MaximumLines - $lines.Count - [Math]::Min($followingSpecs, 2)
+            )
+            if ($visibleTickets.Count -gt $ticketBudget) {
+                # Summarize completed tickets and show the open queue from the
+                # top, so the ticket being worked on stays visible.
+                $openTickets = @($visibleTickets | Where-Object { -not $_.Completed })
+                if ($ticketBudget -gt 1) {
+                    $completedSummaryCount = $visibleTickets.Count - $openTickets.Count
+                }
+                $openBudget = $ticketBudget - [int]($completedSummaryCount -gt 0)
+                if ($openTickets.Count -gt $openBudget) {
+                    $openBudget = [Math]::Max(0, $openBudget - 1)
+                    $hiddenOpenCount = $openTickets.Count - $openBudget
+                }
+                $visibleTickets = @($openTickets | Select-Object -First $openBudget)
+            }
+        }
+
+        if ($completedSummaryCount -gt 0) {
+            $branch = if ($visibleTickets.Count -eq 0 -and $hiddenOpenCount -eq 0) {
+                '└─'
+            } else { '├─' }
+            $issueLabel = if ($completedSummaryCount -eq 1) { 'issue' } else { 'issues' }
+            $lines.Add(
+                "${muted}$branch [✓] $completedSummaryCount $issueLabel completed${reset}"
+            )
+        }
+
+        for ($index = 0; $index -lt $visibleTickets.Count; $index++) {
+            $ticket   = $visibleTickets[$index]
+            $branch   = if ($index -eq $visibleTickets.Count - 1 -and $hiddenOpenCount -eq 0) {
+                '└─'
+            } else { '├─' }
             $ticketId = $ticket.File.BaseName
             $heading = Get-MarkdownHeading `
                 -Path $ticket.File.FullName `
@@ -2090,6 +2135,11 @@ function Get-TrackerLines {
             else {
                 $lines.Add("$branch ${success}[ ]${reset} $heading")
             }
+        }
+
+        if ($hiddenOpenCount -gt 0) {
+            $openLabel = if ($hiddenOpenCount -eq 1) { 'open issue' } else { 'open issues' }
+            $lines.Add("${muted}└─ … $hiddenOpenCount more $openLabel${reset}")
         }
     }
 
@@ -2284,6 +2334,50 @@ function Get-TerminalControlSequenceLength {
     }
 
     return 0
+}
+
+function Limit-DisplayCellWidth {
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string]
+        $Text,
+
+        [Parameter(Mandatory)]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $Width
+    )
+
+    if ($null -eq $Text) { return '' }
+    if ((Get-DisplayCellWidth -Text $Text) -le $Width) { return $Text }
+    if ($Width -lt 1) { return '' }
+
+    # Keep styling sequences intact and end with an ellipsis plus a reset so a
+    # cut-off colour cannot bleed into the panel frame.
+    $builder = [System.Text.StringBuilder]::new()
+    $usedWidth = 0
+    $index = 0
+    while ($index -lt $Text.Length) {
+        $controlLength = Get-TerminalControlSequenceLength -Text $Text -StartIndex $index
+        if ($controlLength -gt 0) {
+            [void] $builder.Append($Text, $index, $controlLength)
+            $index += $controlLength
+            continue
+        }
+
+        $charLength = if ([char]::IsHighSurrogate($Text[$index]) -and
+            $index + 1 -lt $Text.Length) { 2 } else { 1 }
+        $character = $Text.Substring($index, $charLength)
+        $cellWidth = Get-DisplayCellWidth -Text $character
+        if ($usedWidth + $cellWidth -gt $Width - 1) { break }
+        [void] $builder.Append($character)
+        $usedWidth += $cellWidth
+        $index += $charLength
+    }
+
+    return "$($builder.ToString())…$($PSStyle.Reset)"
 }
 
 function Add-AgentOutputWrappedLine {
@@ -2884,9 +2978,8 @@ function Format-TrackerPanel {
     $result = [System.Collections.Generic.List[string]]::new()
     $result.Add($topBorder)
     foreach ($line in $TrackerLines) {
-        # Strip ANSI sequences to calculate visible length for right-padding.
-        $visible  = $line -replace "`e\[[^m]*m", ''
-        $padCount = [Math]::Max(0, $innerWidth - $visible.Length)
+        $line     = Limit-DisplayCellWidth -Text $line -Width $innerWidth
+        $padCount = [Math]::Max(0, $innerWidth - (Get-DisplayCellWidth -Text $line))
         $result.Add("${frame}│${reset} ${line}$(' ' * $padCount) ${frame}│${reset}")
     }
     $result.Add($bottomBorder)
