@@ -1,0 +1,18 @@
+{
+	"from": "User",
+	"inherits": "Voron Trident 300 0.4 nozzle",
+	"machine_start_gcode": "PRINT_START EXTRUDER=[nozzle_temperature_initial_layer] BED=[bed_temperature_initial_layer_single] MATERIAL=[filament_type]",
+	"name": "Voron Trident 300 0.4 nozzle - Red",
+	"nozzle_type": [
+		"hardened_steel"
+	],
+	"print_host": "http://10.0.0.31",
+	"printer_extruder_id": [
+		"1"
+	],
+	"printer_extruder_variant": [
+		"Direct Drive Standard"
+	],
+	"printer_settings_id": "Voron Trident 300 0.4 nozzle - Red",
+	"version": "1.8.0.0"
+}

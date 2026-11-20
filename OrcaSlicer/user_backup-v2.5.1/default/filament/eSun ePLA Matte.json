@@ -1,0 +1,22 @@
+{
+    "activate_air_filtration": [
+        "1"
+    ],
+    "default_filament_colour": [
+        "#3C3C3C"
+    ],
+    "enable_pressure_advance": [
+        "1"
+    ],
+    "filament_settings_id": [
+        "eSun ePLA Matte"
+    ],
+    "filament_start_gcode": [
+        "; filament start gcode"
+    ],
+    "from": "User",
+    "inherits": "Voron Generic PLA",
+    "is_custom_defined": "0",
+    "name": "eSun ePLA Matte",
+    "version": "1.8.0.0"
+}

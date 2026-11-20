@@ -1,0 +1,16 @@
+{
+    "enable_pressure_advance": [
+        "1"
+    ],
+    "filament_settings_id": [
+        "Generic ABS"
+    ],
+    "from": "User",
+    "inherits": "Voron Generic ABS",
+    "is_custom_defined": "0",
+    "name": "Generic ABS",
+    "pressure_advance": [
+        "0.03"
+    ],
+    "version": "1.8.0.0"
+}
