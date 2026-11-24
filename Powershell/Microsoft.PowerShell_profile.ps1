@@ -64,6 +64,8 @@ Start-Action "Initialize environment "
     }
     $env:OPENAI_API_KEY                      = $secrets.'Invoke-AutoCommit'.token
     $env:CONTROL_PLANE_API_KEY               = $env:OPENAI_API_KEY
+    $env:TAILSCALE_OAUTH_CLIENT_ID           = $secrets.tailscale.oauthClientId
+    $env:TAILSCALE_OAUTH_CLIENT_SECRET       = $secrets.tailscale.oauthClientSecret
     $env:POWERSHELL_TELEMETRY_OPTOUT         = 1
     $env:POWERSHELL_UPDATECHECK              = "OFF"
     # $env:PSModuleAnalysisCachePath           = 'NUL'
