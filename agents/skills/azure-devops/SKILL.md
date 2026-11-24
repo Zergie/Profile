@@ -1,6 +1,6 @@
 ---
 name: azure-devops
-description: Operate Azure DevOps Services through Azure CLI. Use when the user wants to inspect or change Azure Boards work items, Repos or pull requests, Pipelines or builds, Artifacts, projects or teams, service connections, policies, permissions, or another Azure DevOps resource.
+description: Operate Azure DevOps Services through Azure CLI. Use for Boards queries and work item changes, or operations on repos, pull requests, pipelines, builds, artifacts, projects, teams, service connections, policies, and permissions. For reading or summarizing explicitly referenced work items or loading them as repository task context, use only devops-issue.
 compatibility: Requires Azure CLI with the azure-devops extension and access to Azure DevOps Services. The extension does not support Azure DevOps Server.
 ---
 
