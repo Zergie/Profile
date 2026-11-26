@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Implements local-tracker features iteratively with Codex or GitHub Copilot CLI.
+    Implements local-tracker features iteratively with Claude Code, Codex, or GitHub Copilot CLI.
 
 .DESCRIPTION
     Runs one bounded agent invocation per iteration. Without Feature, the agent
@@ -11,6 +11,9 @@
 
     Progress is shared through the append-only .scratch/progress.jsonl handoff log.
     Ralph validates each new record and marks its ticket complete.
+
+.EXAMPLE
+    Invoke-Ralph.ps1
 
 .EXAMPLE
     Invoke-Ralph.ps1 -Agent codex
@@ -69,9 +72,9 @@ param(
     $Archive,
 
     [Parameter()]
-    [ValidateSet('codex', 'copilot')]
+    [ValidateSet('claude', 'codex', 'copilot')]
     [string]
-    $Agent = 'codex',
+    $Agent = 'claude',
 
     [Parameter()]
     [string]
@@ -213,7 +216,7 @@ function Get-FirstJsonString {
 function ConvertTo-NormalizedAgentMessage {
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('codex', 'copilot')]
+        [ValidateSet('claude', 'codex', 'copilot')]
         [string]
         $Name,
 
@@ -227,7 +230,29 @@ function ConvertTo-NormalizedAgentMessage {
         $SeenMessageIds
     )
 
-    if ($Name -eq 'codex') {
+    if ($Name -eq 'claude') {
+        if ((Get-JsonPropertyValue -InputObject $Event -Path 'type') -ne 'assistant') {
+            return $null
+        }
+
+        # Claude emits one event per content block, all sharing message.id, so the
+        # per-event uuid is the only safe de-duplication key.
+        $content = Get-JsonPropertyValue -InputObject $Event -Path 'message.content'
+        $text = @(
+            foreach ($block in @($content)) {
+                if ($null -ne $block -and
+                    (Get-JsonPropertyValue -InputObject $block -Path 'type') -eq 'text') {
+                    Get-FirstJsonString -InputObject $block -Paths @('text')
+                }
+            }
+        ) -join [Environment]::NewLine
+        $eventId = Get-FirstJsonString -InputObject $Event -Paths @('uuid')
+        $messageId = $null
+        $agentInstanceId = Get-FirstJsonString -InputObject $Event -Paths @(
+            'parent_tool_use_id'
+        )
+    }
+    elseif ($Name -eq 'codex') {
         if (
             (Get-JsonPropertyValue -InputObject $Event -Path 'type') -ne 'item.completed' -or
             (Get-JsonPropertyValue -InputObject $Event -Path 'item.type') -ne 'agent_message'
@@ -310,6 +335,39 @@ function Update-SubAgentLifecycle {
     if (-not [string]::IsNullOrEmpty($agentInstanceId) -and
         -not [string]::IsNullOrEmpty($displayName)) {
         $DisplayNames[$agentInstanceId] = $displayName
+    }
+}
+
+function Update-ClaudeSubAgentNames {
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $Event,
+
+        [Parameter(Mandatory)]
+        [hashtable]
+        $DisplayNames
+    )
+
+    if ((Get-JsonPropertyValue -InputObject $Event -Path 'type') -ne 'assistant') {
+        return
+    }
+
+    foreach ($block in @(Get-JsonPropertyValue -InputObject $Event -Path 'message.content')) {
+        if ($null -eq $block -or
+            (Get-JsonPropertyValue -InputObject $block -Path 'type') -ne 'tool_use' -or
+            (Get-JsonPropertyValue -InputObject $block -Path 'name') -notin @('Task', 'Agent')) {
+            continue
+        }
+
+        $toolUseId = Get-FirstJsonString -InputObject $block -Paths @('id')
+        $displayName = Get-FirstJsonString -InputObject $block -Paths @(
+            'input.description', 'input.subagent_type'
+        )
+        if (-not [string]::IsNullOrEmpty($toolUseId) -and
+            -not [string]::IsNullOrEmpty($displayName)) {
+            $DisplayNames[$toolUseId] = $displayName
+        }
     }
 }
 
@@ -1002,6 +1060,23 @@ function Invoke-Agent {
     )
 
     $arguments = switch ($Name) {
+        'claude' {
+            # --allowedTools is variadic, so a fixed-arity option must follow it
+            # before the positional prompt.
+            $claudeArguments = @(
+                '--print',
+                '--output-format', 'stream-json',
+                '--verbose',
+                '--allowedTools', 'Bash',
+                '--permission-mode', 'acceptEdits',
+                '--model', $Model
+            )
+            if (-not [string]::IsNullOrEmpty($Effort)) {
+                $claudeArguments += @('--effort', $Effort)
+            }
+            $claudeArguments += @('--', $Prompt)
+            $claudeArguments
+        }
         'codex' {
             @(
                 'exec',
@@ -1061,6 +1136,9 @@ function Invoke-Agent {
         if ($null -ne $event) {
             if ($Name -eq 'copilot') {
                 Update-SubAgentLifecycle -Event $event -DisplayNames $subAgentDisplayNames
+            }
+            elseif ($Name -eq 'claude') {
+                Update-ClaudeSubAgentNames -Event $event -DisplayNames $subAgentDisplayNames
             }
             $message = ConvertTo-NormalizedAgentMessage `
                 -Name $Name `
@@ -3361,7 +3439,7 @@ function Resolve-RalphInvocation {
         [AllowEmptyString()][string] $Archive,
 
         [Parameter(Mandatory)]
-        [ValidateSet('codex', 'copilot')]
+        [ValidateSet('claude', 'codex', 'copilot')]
         [string]
         $Agent,
 
@@ -3426,7 +3504,15 @@ function Resolve-RalphInvocation {
         Archive = $Archive
         Agent   = [pscustomobject]@{
             Name   = $Agent
-            Model  = if ($BoundParameters.ContainsKey('Model')) { $Model } else { 'gpt-5.6-luna' }
+            Model  = if ($BoundParameters.ContainsKey('Model')) {
+                $Model
+            }
+            elseif ($Agent -ceq 'claude') {
+                'sonnet'
+            }
+            else {
+                'gpt-5.6-luna'
+            }
             Effort = if ($BoundParameters.ContainsKey('Effort')) { $Effort } else { 'medium' }
         }
     }

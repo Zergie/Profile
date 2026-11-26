@@ -1,0 +1,10 @@
+# Machine-specific keys are stripped on commit and restored on checkout (git/machine-keys.json).
+# -text: the filter already normalizes line endings, so git must not convert them again.
+claude/claude_desktop_config.json  filter=machine-keys -text
+OrcaSlicer/OrcaSlicer.conf         filter=machine-keys -text
+codex/config.toml                  filter=machine-keys -text
+
+# Run by sh: CRLF line endings would break them.
+git/hooks/*                        text eol=lf
+git/hooks/*.ps1                    text eol=crlf
+git/copy-links.conf                text eol=lf

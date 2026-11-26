@@ -14,6 +14,7 @@ dynamicparam {
             "github-releases"
             "commands"
             "wsl"
+            "links"
     ) |
         ForEach-Object {
             $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
@@ -30,6 +31,106 @@ dynamicparam {
     return $RuntimeParameterDictionary
 }
 process {
+# Returns the links -junctions creates: folders become junctions, files become hard links,
+# and entries with type 'copy' (from git/copy-links.conf) are synced by copying.
+# -links prints them; git/hooks/Update-Links.ps1 and Assert-AppsClosed.ps1 use that.
+function Get-Links {
+    $fusionProductionRoots = @(
+        "$env:ProgramFiles\Autodesk\webdeploy\production"
+        "$env:LOCALAPPDATA\Autodesk\webdeploy\production"
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+
+    $junctions = @(
+        if ((Test-Path "$PSScriptRoot\secrets")) {
+            [pscustomobject]@{source      = "$PSScriptRoot\secrets\FileZilla"
+                              destination = "$env:APPDATA\FileZilla"}
+
+            [pscustomobject]@{source      = "$PSScriptRoot\secrets\Beyond Compare 4\BC4Key.txt"
+                              destination = "$PSScriptRoot\Beyond Compare 4\BC4Key.txt"}
+
+            [pscustomobject]@{source      = "$PSScriptRoot\secrets\secrets.json"
+                              destination = "$PSScriptRoot\Powershell\secrets.json"}
+            [pscustomobject]@{source      = "$PSScriptRoot\secrets\Locations.json"
+                              destination = "$PSScriptRoot\Powershell\Locations.json"}
+        }
+
+        [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
+                          destination = "$env:USERPROFILE\.gitconfig"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\psmux\psmux.conf"
+                          destination = "$env:USERPROFILE\.psmux.conf"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal"
+                          destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\PowerToys"
+                          destination = "$env:LOCALAPPDATA\Microsoft\PowerToys"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\Powershell"
+                          destination = "$env:USERPROFILE\Documents\PowerShell"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\bat"
+                          destination = "$env:APPDATA\bat"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 4"
+                          destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 4"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 5"
+                          destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 5"}
+
+        # [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
+        #                   destination = "$env:APPDATA\warpd\warpd.conf"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\agents"
+                          destination = "$env:USERPROFILE\.agents"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\agents\skills"
+                          destination = "$env:USERPROFILE\.claude\skills"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\claude\settings.json"
+                          destination = "$env:USERPROFILE\.claude\settings.json"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\neovim"
+                          destination = "$env:USERPROFILE\AppData\Local\nvim"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\OrcaSlicer"
+                          destination = "$env:USERPROFILE\AppData\Roaming\OrcaSlicer"}
+
+        [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\Library.json"
+                          destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
+        [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
+                          destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
+        foreach ($fusionProductionRoot in $fusionProductionRoots) {
+            [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
+                              destination = "$fusionProductionRoot\*\Fusion\Server\Fusion\Configuration\ThreadData"}
+        }
+        if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
+            [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
+                              destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Fusion 360 CAM\Posts\MPCNC.cps"}
+        }
+
+        # Apps that replace their config file on save, which breaks hard links (see git/copy-links.conf)
+        foreach ($line in Get-Content "$PSScriptRoot\git\copy-links.conf") {
+            if (-not $line.Trim() -or $line.StartsWith('#')) { continue }
+            $repoPath, $appPattern, $writers = $line.Split("`t")
+            foreach ($appPath in Get-ChildItem (Join-Path $env:USERPROFILE $appPattern) -File -ErrorAction SilentlyContinue) {
+                [pscustomobject]@{source      = Join-Path $PSScriptRoot $repoPath
+                                  destination = $appPath.FullName
+                                  type        = 'copy'
+                                  writers     = if ($writers) { $writers.Split(';') } else { @() }}
+            }
+        }
+    )
+
+    $junctions
+}
+
+# Listing needs no elevation (git hooks call it), so it runs before the self-elevation below.
+if ($PSBoundParameters.links) {
+    Get-Links
+    return
+}
+
 $ErrorActionPreference = 'Stop'
 
 # Self-elevate the script if required
@@ -160,82 +261,7 @@ $patches = @(
                       patch="$PSScriptRoot\neovim\patches\util.lua.patch"}
 )
 
-$fusionProductionRoots = @(
-    "$env:ProgramFiles\Autodesk\webdeploy\production"
-    "$env:LOCALAPPDATA\Autodesk\webdeploy\production"
-) | Where-Object { Test-Path -LiteralPath $_ }
-
-$codexDirectory = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
-
-$junctions = @(
-    if ((Test-Path "$PSScriptRoot\secrets")) {
-        [pscustomobject]@{source      = "$PSScriptRoot\secrets\FileZilla"
-                          destination = "$env:APPDATA\FileZilla"}
-
-        [pscustomobject]@{source      = "$PSScriptRoot\secrets\Beyond Compare 4\BC4Key.txt"
-                          destination = "$PSScriptRoot\Beyond Compare 4\BC4Key.txt"}
-
-        [pscustomobject]@{source      = "$PSScriptRoot\secrets\secrets.json"
-                          destination = "$PSScriptRoot\Powershell\secrets.json"}
-        [pscustomobject]@{source      = "$PSScriptRoot\secrets\Locations.json"
-                          destination = "$PSScriptRoot\Powershell\Locations.json"}
-    }
-
-    [pscustomobject]@{source      = "$PSScriptRoot\git\.gitconfig"
-                      destination = "$env:USERPROFILE\.gitconfig"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\psmux\psmux.conf"
-                      destination = "$env:USERPROFILE\.psmux.conf"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\Microsoft.WindowsTerminal"
-                      destination = "$env:USERPROFILE\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\PowerToys"
-                      destination = "$env:LOCALAPPDATA\Microsoft\PowerToys"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\Powershell"
-                      destination = "$env:USERPROFILE\Documents\PowerShell"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\bat"
-                      destination = "$env:APPDATA\bat"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 4"
-                      destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 4"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\Beyond Compare 5"
-                      destination = "$env:USERPROFILE\AppData\Roaming\Scooter Software\Beyond Compare 5"}
-
-    # [pscustomobject]@{source      = "$PSScriptRoot\warpd\warpd.conf"
-    #                   destination = "$env:APPDATA\warpd\warpd.conf"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\agents"
-                      destination = "$env:USERPROFILE\.agents"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\agents\skills"
-                      destination = "$env:USERPROFILE\.claude\skills"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\codex\config.toml"
-                      destination = "$codexDirectory\config.toml"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\neovim"
-                      destination = "$env:USERPROFILE\AppData\Local\nvim"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\OrcaSlicer"
-                      destination = "$env:USERPROFILE\AppData\Roaming\OrcaSlicer"}
-
-    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\Library.json"
-                      destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\CAM360\libraries\Local\Library.json"}
-    [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\AddIns"
-                      destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"}
-    foreach ($fusionProductionRoot in $fusionProductionRoots) {
-        [pscustomobject]@{source      = "$PSScriptRoot\Fusion360\ThreadData\*"
-                          destination = "$fusionProductionRoot\*\Fusion\Server\Fusion\Configuration\ThreadData"}
-    }
-    if ((Test-Path "$PSScriptRoot\..\mpcnc_post_processor")) {
-        [pscustomobject]@{source      = "$PSScriptRoot\..\mpcnc_post_processor\MPCNC.cps"
-                          destination = "$env:USERPROFILE\AppData\Roaming\Autodesk\Fusion 360 CAM\Posts\MPCNC.cps"}
-    }
-)
+$junctions = Get-Links
 
 $commands = @(
     {
@@ -474,7 +500,16 @@ if ($PSBoundParameters.All -or $PSBoundParameters.npm) {
  ######   #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 
 if ($PSBoundParameters.All -or $PSBoundParameters.junctions) {
-    $junctions | Install-Junction
+    $junctions | Where-Object { -not $_.PSObject.Properties['type'] } | Install-Junction
+
+    # Re-link or copy app configs after git replaces them on pull/checkout (git/hooks/Update-Links.ps1)
+    git -C $PSScriptRoot config core.hooksPath git/hooks
+    # Import configs of apps that replace their file on save before each git command (git/copy-links.conf).
+    # Takes the place of Git's built-in fsmonitor daemon in this repo.
+    git -C $PSScriptRoot config core.fsmonitor git/hooks/fsmonitor-copy-links
+    git -C $PSScriptRoot config core.fsmonitorHookVersion 2
+    # Copy the repo's version of those configs to the apps (backs up local-only settings first).
+    & "$PSScriptRoot\git\hooks\Update-Links.ps1"
 }
 
 

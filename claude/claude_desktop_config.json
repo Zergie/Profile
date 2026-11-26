@@ -1,0 +1,16 @@
+{
+  "preferences": {
+    "ccAutoArchiveInactiveDays": 14,
+    "ccRemoteControlDefaultEnabled": false,
+    "ccdScheduledTasksEnabled": true,
+    "coworkBrowserToolsEnabled": true,
+    "coworkHipaaRestricted": false,
+    "coworkPreferredBrowser": "built_in",
+    "coworkScheduledTasksEnabled": true,
+    "coworkWebSearchEnabled": true,
+    "keepAwakeEnabled": false,
+    "orgWorkAcrossAppsDisabled": false,
+    "releaseChannel": "latest",
+    "sidebarMode": "epitaxy"
+  }
+}

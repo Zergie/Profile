@@ -1,0 +1,45 @@
+{
+  "$comment": "Keys the machine-keys git filter keeps out of the repo. Paths are dot-separated, each segment may use * and ? wildcards. See git/filters/machine_key_filter.py.",
+  "files": {
+    "claude/claude_desktop_config.json": {
+      "exclude": [
+        "coworkUserFilesPath",
+        "preferences.remoteToolsDeviceName",
+        "preferences.*ByAccount",
+        "preferences.launchPreview*",
+        "preferences.epitaxyPrefs",
+        "preferences.*Latched",
+        "preferences.httpCacheTestSide",
+        "preferences.coworkLegacyRootGrantsPruned"
+      ]
+    },
+    "codex/config.toml": {
+      "format": "toml",
+      "exclude": [
+        "notify",
+        "mcp_servers.node_repl",
+        "marketplaces",
+        "projects",
+        "hooks.state",
+        "tui",
+        "desktop.migrated*"
+      ]
+    },
+    "OrcaSlicer/OrcaSlicer.conf": {
+      "indent": "tab",
+      "trailer": "orca-md5",
+      "exclude": [
+        "app.window_mainframe",
+        "app.window_layout",
+        "app.print_host_queue_dialog_*",
+        "app.last_backup_path",
+        "app.last_export_path",
+        "app.download_path",
+        "app.recent_models",
+        "app.slicer_uuid",
+        "recent",
+        "recent_projects"
+      ]
+    }
+  }
+}

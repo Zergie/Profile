@@ -1,0 +1,30 @@
+#!/bin/sh
+# core.fsmonitor hook (protocol version 2), used for a side effect: before git scans the working
+# tree (status, diff, add, commit, stash, pull, ...) it copies each app config listed in
+# git/copy-links.conf into the repo when the app saved a newer version. The clean filter
+# (git/machine-keys.json) then decides whether that counts as a change.
+#
+# It reports "/" (everything may have changed), so git still does its normal full scan and
+# nothing is missed. It must always succeed: a failing hook would break every git command here.
+#
+# Written in sh, not PowerShell, because git runs it constantly and pwsh takes ~1s to start.
+
+conf="git/copy-links.conf"
+
+if [ -f "$conf" ]; then
+    tab=$(printf '\t')
+    while IFS="$tab" read -r repo_path app_pattern writers; do
+        app_pattern=${app_pattern%"$(printf '\r')"}
+        case "$repo_path" in ''|'#'*) continue ;; esac
+        for app_path in "$HOME"/$app_pattern; do
+            [ -f "$app_path" ] || continue
+            # Only compare when the app's copy is newer; cp leaves the repo copy newer afterwards.
+            if [ ! -f "$repo_path" ] || [ "$app_path" -nt "$repo_path" ]; then
+                cmp -s "$app_path" "$repo_path" || cp "$app_path" "$repo_path"
+            fi
+        done
+    done < "$conf"
+fi
+
+printf 'copy-links\0/\0'
+exit 0

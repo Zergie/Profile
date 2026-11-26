@@ -1,0 +1,6 @@
+#!/bin/sh
+# Refuse a pull/rebase that changes a copy-synced app config while its app runs (see git/hooks/Assert-AppsClosed.ps1).
+# $1 = upstream; empty when rebasing onto the configured upstream.
+upstream="$1"
+[ -n "$upstream" ] || upstream='@{upstream}'
+exec pwsh -NoProfile -NonInteractive -File git/hooks/Assert-AppsClosed.ps1 -Upstream "$upstream"

@@ -1,0 +1,9 @@
+{
+  "model": "opus",
+  "enableWorkflows": false,
+  "outputStyle": "Concise",
+  "theme": "dark",
+  "teammateMode": "tmux",
+  "agentPushNotifEnabled": true,
+  "advisorModel": "fable"
+}

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Re-link or copy app configs after git replaced them (see git/hooks/Update-Links.ps1).
+exec pwsh -NoProfile -NonInteractive -File git/hooks/Update-Links.ps1 -PreviousRef "$1"

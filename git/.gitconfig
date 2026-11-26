@@ -6,6 +6,12 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[filter "machine-keys"]
+	; Profile repo: strips machine-specific keys from app configs (see git/machine-keys.json).
+	; Path is relative because git runs filters from the repository root.
+	clean = python -I git/filters/machine_key_filter.py clean %f
+	smudge = python -I git/filters/machine_key_filter.py smudge %f
+	required = true
 [core]
 	ignorecase = false
 	; pager = less --raw-control-chars

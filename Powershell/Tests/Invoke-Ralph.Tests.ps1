@@ -206,6 +206,18 @@ Describe 'Internal' -Tag 'Internal' {
             Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'custom-model'; EffectiveEffort = 'high'
         },
         @{
+            Name = 'Claude defaults'
+            Bound = @{}
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'claude'; Model = ''; Effort = ''; Feature = ''
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'sonnet'; EffectiveEffort = 'medium'
+        },
+        @{
+            Name = 'custom Claude configuration'
+            Bound = @{ Agent = 'claude'; Model = 'opus'; Effort = 'high' }
+            List = $false; Cleanup = $false; Archive = ''; Agent = 'claude'; Model = 'opus'; Effort = 'high'; Feature = ''
+            Mode = 'Run'; Scope = 'automatic'; EffectiveModel = 'opus'; EffectiveEffort = 'high'
+        },
+        @{
             Name = 'custom Copilot configuration'
             Bound = @{ Agent = 'copilot'; Model = 'custom-model'; Effort = 'low' }
             List = $false; Cleanup = $false; Archive = ''; Agent = 'copilot'; Model = 'custom-model'; Effort = 'low'; Feature = ''
@@ -1200,7 +1212,8 @@ exit $LASTEXITCODE
         $script:commandAgentDirectory = Join-Path $temporaryRoot 'agents'
         New-Item -ItemType Directory -Path $commandAgentDirectory | Out-Null
         $fakeAgent = @'
-param([Parameter(ValueFromRemainingArguments)] [string[]] $AgentArguments)
+# $args (not a param block) so pwsh -File passes --flags and -- through verbatim.
+$AgentArguments = [string[]]$args
 $ErrorActionPreference = 'Stop'
 [System.IO.File]::WriteAllLines($env:RALPH_ARGUMENT_LOG, $AgentArguments)
 $root = (& git rev-parse --show-toplevel).Trim()
@@ -1313,7 +1326,18 @@ switch ($env:RALPH_SCENARIO) {
     default {
         Set-Content -LiteralPath (Join-Path $root 'work.txt') -Value 'implemented'
         Add-Content -LiteralPath $progress -Value $record
-        if ($AgentArguments -contains '--json') {
+        if ($AgentArguments -contains 'stream-json') {
+            @(
+                @{ type = 'system'; subtype = 'init'; uuid = 'init-1' }
+                @{ type = 'assistant'; uuid = 'event-1'; parent_tool_use_id = $null; message = @{ id = 'message-1'; content = @(@{ type = 'text'; text = $completedMessage }) } }
+                @{ type = 'assistant'; uuid = 'event-1'; parent_tool_use_id = $null; message = @{ id = 'message-1'; content = @(@{ type = 'text'; text = $completedMessage }) } }
+                @{ type = 'assistant'; uuid = 'event-2'; parent_tool_use_id = $null; message = @{ id = 'message-1'; content = @(@{ type = 'tool_use'; id = 'tool-1'; name = 'Agent'; input = @{ description = 'Checker' } }) } }
+                @{ type = 'assistant'; uuid = 'event-3'; parent_tool_use_id = 'tool-1'; message = @{ id = 'message-2'; content = @(@{ type = 'text'; text = 'sub-agent finding' }) } }
+                @{ type = 'assistant'; uuid = 'event-4'; parent_tool_use_id = $null; message = @{ id = 'message-1'; content = @(@{ type = 'text'; text = 'second block' }) } }
+                @{ type = 'result'; subtype = 'success'; result = 'final result duplicate' }
+            ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 6 }
+        }
+        elseif ($AgentArguments -contains '--json') {
             @(
                 @{ type = 'item.updated'; item = @{ type = 'agent_message'; text = 'transient output' } }
                 @{ id = 'event-1'; type = 'item.completed'; item = @{ id = 'message-1'; type = 'agent_message'; text = $completedMessage } }
@@ -1333,7 +1357,7 @@ switch ($env:RALPH_SCENARIO) {
     }
 }
 '@
-        foreach ($agentName in 'codex', 'copilot') {
+        foreach ($agentName in 'claude', 'codex', 'copilot') {
             Set-Content -LiteralPath (Join-Path $commandAgentDirectory "$agentName.ps1") -Value $fakeAgent
         }
 
@@ -1348,7 +1372,7 @@ switch ($env:RALPH_SCENARIO) {
         function Invoke-RalphCommandScenario {
             param(
                 [Parameter(Mandatory)][string] $Name,
-                [ValidateSet('codex', 'copilot')][string] $Agent = 'codex',
+                [ValidateSet('claude', 'codex', 'copilot')][string] $Agent = 'codex',
                 [string] $Scenario = 'success',
                 [switch] $Interactive,
                 [string] $WorkboardDimensions = '',
@@ -1479,6 +1503,30 @@ switch ($env:RALPH_SCENARIO) {
         [regex]::Matches($result.Output, 'completed message').Count | Should -Be 1
         $result.Output | Should -Not -Match 'transient output'
         $result.Output | Should -Match ([regex]::Escape("`e[36mraw diagnostic`e[0m"))
+        Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
+            Should -Be 'ralph: feature/01, FEATURE completed'
+        Get-NonScratchStatus $result.Repository | Should -Be ''
+    }
+
+    It 'runs the Claude success lifecycle by default with its wire configuration' {
+        $result = Invoke-RalphCommandScenario -Name 'claude-success' `
+            -RalphArguments @('-Feature', 'feature', '-Iterations', '1')
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $result.Arguments[$result.Arguments.IndexOf('--output-format') + 1] | Should -Be 'stream-json'
+        $result.Arguments | Should -Contain '--verbose'
+        $result.Arguments | Should -Contain '--print'
+        $result.Arguments[$result.Arguments.IndexOf('--model') + 1] | Should -Be 'sonnet'
+        $result.Arguments[$result.Arguments.IndexOf('--effort') + 1] | Should -Be 'medium'
+        $result.Arguments[$result.Arguments.IndexOf('--permission-mode') + 1] | Should -Be 'acceptEdits'
+        $result.Arguments[$result.Arguments.IndexOf('--allowedTools') + 2] | Should -Match '^--'
+        $invocation = @($result.Invocations[0] | ConvertFrom-Json)
+        $invocation[-2] | Should -Be '--'
+        $invocation[-1] | Should -Match '^You are implementing work'
+        [regex]::Matches($result.Output, 'completed message').Count | Should -Be 1
+        $result.Output | Should -Match 'second block'
+        $result.Output | Should -Match '(?s)Checker:\s*\n.*sub-agent finding'
+        $result.Output | Should -Not -Match 'final result duplicate'
         Invoke-Git $result.Repository @('log', '-1', '--format=%s') |
             Should -Be 'ralph: feature/01, FEATURE completed'
         Get-NonScratchStatus $result.Repository | Should -Be ''
