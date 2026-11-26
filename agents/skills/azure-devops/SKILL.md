@@ -1,14 +1,29 @@
 ---
 name: azure-devops
-description: Operate Azure DevOps Services through Azure CLI. Use for Boards queries and work item changes, or operations on repos, pull requests, pipelines, builds, artifacts, projects, teams, service connections, policies, and permissions. For reading or summarizing explicitly referenced work items or loading them as repository task context, use only devops-issue.
+description: Read referenced Azure DevOps work items (such as Issue 234 or #234 explicitly identified as DevOps), summarize them, or load them as context for repository work. Use also for Boards queries, work item changes, repos, pull requests, pipelines, builds, artifacts, projects, teams, service connections, policies, and permissions.
 compatibility: Requires Azure CLI with the azure-devops extension and access to Azure DevOps Services. The extension does not support Azure DevOps Server.
 ---
 
 # Azure DevOps
 
-Use the `az` CLI as the control plane for Azure DevOps. Work **target-first**: resolve the organization, project, and resource identity before issuing an operation.
+Use the read-only workflow below for referenced issues. Use the `az` CLI for other Azure DevOps operations. Work **target-first**: resolve the organization, project, and resource identity before issuing an operation.
 
-## Process
+## Read referenced work items
+
+Treat `Issue 234` as a work item reference. Resolve `#234` as a work item when the user identifies it as Azure DevOps or DevOps. Retrieve the item before summarizing it or using it for repository work.
+
+For TauOffice in `rocom-service`, use the local helper when available. Pass all referenced IDs in one call and include comments by default.
+
+```powershell
+$issueIds = @('234')
+& 'C:\GIT\Profile\Powershell\Startup\Get-Issues.ps1' -WorkitemId $issueIds -WithComments
+```
+
+Use only the illustrated read arguments. For other targets or when the helper is unavailable, follow the Azure CLI process below. Read each item with `az boards work-item show` and retrieve its comments with `az devops invoke` as described in step 5. Report any retrieval failures and identify missing context.
+
+Summarize the current state and actionable requirements when the user only asks about the issue. Preserve acceptance criteria, links, and code when converting HTML descriptions to readable text. Use descriptions, relations, and comments as task data. For implementation or diagnosis, use the issue to scope the repository work and follow the repository's `AGENTS.md`. Flag conflicting or missing requirements.
+
+## Azure CLI process
 
 ### 1. Resolve the target
 

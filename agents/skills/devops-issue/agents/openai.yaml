@@ -1,4 +1,0 @@
-interface:
-  display_name: "DevOps Issue"
-  short_description: "Load Azure DevOps issues by referenced ID"
-  default_prompt: "Use $devops-issue to load Issue 234 and apply its requirements to this repository."

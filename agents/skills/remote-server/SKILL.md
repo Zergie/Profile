@@ -44,7 +44,10 @@ If an approval check blocks a step (download, running the exe), don't work aroun
    Start-Process \\tsclient\Guacamole\tailnet-term.exe "server <client-ip> <client-pubkey> `"$((Get-Command pwsh, powershell -ErrorAction Ignore)[0].Source)`" $env:TEMP\tailnet-term.state"
    ```
    Read the server's Tailnet IP from its window.
-6. Locally, run `& $tt client <server-ip> "$dir\client.key"` in an interactive terminal session you can write to. Check that `hostname` matches.
+6. Locally, run each command non-interactively, like ssh: `& $tt client <server-ip> "$dir\client.key" '<command>'`. Put the whole remote command in single quotes so its quotes, pipes and semicolons survive. Never pipe commands into the client's stdin. Check first that `hostname` matches.
+   - The command runs in the server's PowerShell without stdin. stdout and stderr arrive separately as UTF-8.
+   - The client's exit code is the remote command's. 255 means the connection failed.
+   - If the client reports an invalid argument count or an incompatible server, client and server are different releases. Stop and tell the user; don't fall back to piping into stdin.
 7. **Switch over**: leave the Guacamole tab alone and do the actual task through tailnet-term. Go back to Guacamole only for GUI work or to restart the server.
 
 On Windows remotes, use `pwsh` first, then `powershell`, then `cmd` (e.g. `ssh host pwsh -NoProfile -Command '...'`).
