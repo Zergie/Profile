@@ -230,9 +230,9 @@ $tools = [pscustomobject]@{
     npm = @(
         if (Test-IsWorkstation) {
             [pscustomobject]@{name="@mermaid-js/mermaid-cli"} # cli for mermaid diagrams
-            [pscustomobject]@{name="@github/copilot-cli"}     # github copilot cli
             [pscustomobject]@{name="@vscode/vsce"}            # used for Visual Studio Code Plugin Development
             [pscustomobject]@{name="@playwright/cli@latest"}  # playwright cli
+            [pscustomobject]@{name="@alibaba-group/open-code-review"} # ocr cli used by agents/skills/open-code-review*
         }
     )
     pwsh_modules = @(
@@ -485,7 +485,7 @@ if ($PSBoundParameters.All -or $PSBoundParameters.wsl) {
 ##    ## ##        ##     ##
 
 if ($PSBoundParameters.All -or $PSBoundParameters.npm) {
-       foreach ($tool in $tools.wsl) {
+    foreach ($tool in $tools.npm) {
         Write-Host -ForegroundColor Cyan "Installing $tool"
         npm install -g $tool.name
     }

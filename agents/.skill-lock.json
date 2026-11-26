@@ -45,6 +45,26 @@
       "skillFolderHash": "a90dc3b93a368a18d3fa2ab35023b48023bb1404",
       "installedAt": "2026-07-01T03:02:36.543Z",
       "updatedAt": "2026-07-01T03:02:36.543Z"
+    },
+    "open-code-review": {
+      "source": "alibaba/open-code-review",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alibaba/open-code-review.git",
+      "commit": "734a104131de68e31f2b6a6d23823f2ff1b056d9",
+      "skillPath": "skills/open-code-review/SKILL.md",
+      "skillFolderHash": "f96baca3b18ab0e43869f079ff3d5a992de461a6",
+      "installedAt": "2026-11-24T04:20:49.881Z",
+      "updatedAt": "2026-11-24T04:20:49.881Z"
+    },
+    "open-code-review-delegate": {
+      "source": "alibaba/open-code-review",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alibaba/open-code-review.git",
+      "commit": "734a104131de68e31f2b6a6d23823f2ff1b056d9",
+      "skillPath": "skills/open-code-review-delegate/SKILL.md",
+      "skillFolderHash": "6c7a9c99a6b37ee032010c5190822662858de0aa",
+      "installedAt": "2026-11-24T04:20:49.886Z",
+      "updatedAt": "2026-11-24T04:20:49.886Z"
     }
   },
   "dismissed": {
